@@ -4,7 +4,7 @@ WORKDIR /src
 
 # Copy the solution file and restore dependencies for all projects
 # This leverages Docker caching and ensures all projects are known
-COPY src/ProjectLoopbreaker.sln src/ProjectLoopbreaker.sln
+COPY src/ProjectLoopbreaker/ProjectLoopbreaker.sln src/ProjectLoopbreaker/ProjectLoopbreaker.sln
 COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Web.API/*.csproj src/ProjectLoopbreaker/ProjectLoopbreaker.Web.API/
 COPY src/ProjectLoopbreaker.Application/*.csproj src/ProjectLoopbreaker.Application/
 COPY src/ProjectLoopbreaker.Domain/*.csproj src/ProjectLoopbreaker.Domain/
