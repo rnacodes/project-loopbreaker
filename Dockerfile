@@ -6,11 +6,11 @@ WORKDIR /src
 # This leverages Docker caching and ensures all projects are known
 COPY src/ProjectLoopbreaker/ProjectLoopbreaker.sln src/ProjectLoopbreaker/ProjectLoopbreaker.sln
 COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Web.API/*.csproj src/ProjectLoopbreaker/ProjectLoopbreaker.Web.API/
-COPY src/ProjectLoopbreaker.Application/*.csproj src/ProjectLoopbreaker.Application/
-COPY src/ProjectLoopbreaker.Domain/*.csproj src/ProjectLoopbreaker.Domain/
-COPY src/ProjectLoopbreaker.Infrastructure/*.csproj src/ProjectLoopbreaker.Infrastructure/
+COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Application/*.csproj src/ProjectLoopbreaker/ProjectLoopbreaker.Application/
+COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Domain/*.csproj src/ProjectLoopbreaker/ProjectLoopbreaker.Domain/
+COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Infrastructure/*.csproj src/ProjectLoopbreaker/ProjectLoopbreaker.Infrastructure/
 # If you have ProjectLoopbreaker.Core.Shared, add its csproj too:
-COPY src/ProjectLoopbreaker.Core.Shared/*.csproj src/ProjectLoopbreaker.Core.Shared/
+# COPY src/ProjectLoopbreaker.Core.Shared/*.csproj src/ProjectLoopbreaker.Core.Shared/
 
 RUN dotnet restore src/ProjectLoopbreaker.sln
 
