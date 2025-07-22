@@ -13,7 +13,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectLoopbreaker.Web.API"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectLoopbreaker.UnitTests", "..\..\tests\ProjectLoopbreaker.UnitTests\ProjectLoopbreaker.UnitTests.csproj", "{502C0115-58B4-498F-B727-21B10ABB57EA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectLoopbreaker.IntegrationTests", "ProjectLoopbreaker.IntegrationTests\ProjectLoopbreaker.IntegrationTests.csproj", "{59B99394-7D75-4D77-9E19-0A6B319449EB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectLoopbreaker.IntegrationTests", "..\..\tests\ProjectLoopbreaker.IntegrationTests\ProjectLoopbreaker.IntegrationTests.csproj", "{97A8378A-0CBD-A07E-28B3-0ED37D1C4547}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,10 +41,10 @@ Global
 		{502C0115-58B4-498F-B727-21B10ABB57EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{502C0115-58B4-498F-B727-21B10ABB57EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{502C0115-58B4-498F-B727-21B10ABB57EA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{59B99394-7D75-4D77-9E19-0A6B319449EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{59B99394-7D75-4D77-9E19-0A6B319449EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{59B99394-7D75-4D77-9E19-0A6B319449EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{59B99394-7D75-4D77-9E19-0A6B319449EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97A8378A-0CBD-A07E-28B3-0ED37D1C4547}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97A8378A-0CBD-A07E-28B3-0ED37D1C4547}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97A8378A-0CBD-A07E-28B3-0ED37D1C4547}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97A8378A-0CBD-A07E-28B3-0ED37D1C4547}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
