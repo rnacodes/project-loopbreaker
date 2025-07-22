@@ -12,7 +12,7 @@ COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Infrastructure/*.csproj src/Proje
 # If you have ProjectLoopbreaker.Core.Shared, add its csproj too:
 # COPY src/ProjectLoopbreaker.Core.Shared/*.csproj src/ProjectLoopbreaker.Core.Shared/
 
-RUN dotnet restore src/ProjectLoopbreaker.sln
+RUN dotnet restore src/ProjectLoopbreaker/ProjectLoopbreaker.sln
 
 # Copy all source code
 COPY . .
