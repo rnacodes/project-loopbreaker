@@ -6,4 +6,16 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\tests\ProjectLoopbreaker.IntegrationTests\ProjectLoopbreaker.IntegrationTests.csproj" />
+    <ProjectReference Include="..\..\..\tests\ProjectLoopbreaker.UnitTests\ProjectLoopbreaker.UnitTests.csproj" />
+    <ProjectReference Include="..\ProjectLoopbreaker.Application\ProjectLoopbreaker.Application.csproj" />
+    <ProjectReference Include="..\ProjectLoopbreaker.Domain\ProjectLoopbreaker.Domain.csproj" />
+    <ProjectReference Include="..\ProjectLoopbreaker.Web.API\ProjectLoopbreaker.Web.API.csproj" />
+  </ItemGroup>
+
 </Project>
