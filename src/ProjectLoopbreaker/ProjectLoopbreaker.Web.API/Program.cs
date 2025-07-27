@@ -1,27 +1,28 @@
+using Microsoft.EntityFrameworkCore;
+using ProjectLoopbreaker.Infrastructure.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Define a name for the CORS policy
-var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
-
-// Add services to the container.
-
-// <<< ADD THIS SECTION to register the CORS services
+// --- Add CORS Policy ---
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy(name: MyAllowSpecificOrigins,
-                      policy =>
-                      {
-                          // For development, allow your local React app's URL.
-                          // The default for create-react-app is port 3000.
-                          policy.WithOrigins("http://localhost:3000")
-                                .AllowAnyHeader()
-                                .AllowAnyMethod();
-                      });
+    options.AddPolicy("AllowReactApp",
+        policy =>
+        {
+            policy.WithOrigins("http://localhost:3000") // Your React dev server
+                   .AllowAnyHeader()
+                   .AllowAnyMethod();
+        });
 });
 
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// --- Configure EF Core & PostgreSQL ---
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddDbContext<MediaLibraryDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// Add other services like Swagger if needed
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -35,13 +36,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseRouting(); // Ensure routing is enabled
 
-// <<< AND THIS LINE to tell the app to use the CORS policy you defined.
-// It's important to place it here, before UseAuthorization.
-app.UseCors(MyAllowSpecificOrigins);
+// --- Use CORS Policy ---
+app.UseCors("AllowReactApp");
 
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();

@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\tests\ProjectLoopbreaker.UnitTests\ProjectLoopbreaker.UnitTests.csproj" />
+    <ProjectReference Include="..\ProjectLoopbreaker.Domain\ProjectLoopbreaker.Domain.csproj" />
   </ItemGroup>
 
 </Project>

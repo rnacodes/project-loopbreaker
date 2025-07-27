@@ -11,7 +11,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\tests\ProjectLoopbreaker.UnitTests\ProjectLoopbreaker.UnitTests.csproj" />
+    <ProjectReference Include="..\ProjectLoopbreaker.Application\ProjectLoopbreaker.Application.csproj" />
+    <ProjectReference Include="..\ProjectLoopbreaker.Domain\ProjectLoopbreaker.Domain.csproj" />
+    <ProjectReference Include="..\ProjectLoopbreaker.Infrastructure\ProjectLoopbreaker.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
