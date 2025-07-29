@@ -6,13 +6,12 @@ var builder = WebApplication.CreateBuilder(args);
 // --- Add CORS Policy ---
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReactApp",
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:3000") // Your React dev server
-                   .AllowAnyHeader()
-                   .AllowAnyMethod();
-        });
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
 });
 
 builder.Services.AddControllers();
@@ -39,8 +38,12 @@ app.UseHttpsRedirection();
 app.UseRouting(); // Ensure routing is enabled
 
 // --- Use CORS Policy ---
-app.UseCors("AllowReactApp");
+app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
 app.MapControllers();
+
+Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
+Console.WriteLine($"Connection string: {connectionString}");
+
 app.Run();
