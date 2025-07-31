@@ -6,6 +6,7 @@ import { createTheme, ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, B
 import HomePage from './components/HomePage';
 import AddMediaForm from './components/AddMediaForm';
 import MediaItemProfile from './components/MediaItemProfile';
+import AllMedia from './components/AllMedia';
 
 // 1. THEME AND STYLING
 // Define the custom color palette for Dark Mode
@@ -88,6 +89,7 @@ function App() {
                 Project Loopbreaker
               </Button>
             </Typography>
+            <Button color="inherit" component={Link} to="/all-media">All Media</Button>
             <Button color="inherit" component={Link} to="/add">Add Media</Button>
             {/* Add other navigation links here later */}
           </Toolbar>
@@ -97,6 +99,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/add" element={<AddMediaForm />} />
+          <Route path="/all-media" element={<AllMedia />} />
           <Route path="/media/:id" element={<MediaItemProfile />} />
         </Routes>
       </Router>

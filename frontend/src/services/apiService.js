@@ -16,3 +16,7 @@ export const addMedia = (mediaData) => {
 export const getMediaById = (id) => {
     return apiClient.get(`/media/${id}`);
 };
+
+export const getAllMedia = () => {
+    return apiClient.get('/media');
+};
