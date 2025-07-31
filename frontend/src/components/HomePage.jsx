@@ -89,7 +89,14 @@ const SearchBar = () => {
             fontSize: '1.2rem',
           },
         }}
-        sx={{ ml: 1, flex: 1 }}
+        sx={{ 
+          ml: 1, 
+          flex: 1,
+          '& .MuiInputBase-input::placeholder': {
+            color: '#ffffff',
+            opacity: 1
+          }
+        }}
       />
       <IconButton type="submit" sx={{ p: '10px', color: 'primary.main' }} aria-label="search">
         <Search sx={{ fontSize: 30 }} />
@@ -111,7 +118,7 @@ const PlaylistCard = ({ playlist }) => (
       <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
         {playlist.title}
       </Typography>
-      <Typography variant="body2" color="text.secondary">
+      <Typography variant="body2" color="#ffffff">
         {playlist.description}
       </Typography>
     </CardContent>
@@ -176,8 +183,8 @@ export default function HomePage() {
   const theme = useTheme();
   
   return (
-    <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh' }}>
-      <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', width: '100%' }}>
+      <Container maxWidth="lg" sx={{ py: 4, mx: 'auto', px: { xs: 2, sm: 3 } }}>
         
         {/* Header and Search Section */}
         <Box sx={{ textAlign: 'center', my: 4 }}>

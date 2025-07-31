@@ -93,14 +93,12 @@ function App() {
           </Toolbar>
         </AppBar>
 
-        {/* The Container holds the content for each page */}
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/add" element={<AddMediaForm />} />
-            <Route path="/media/:id" element={<MediaItemProfile />} />
-          </Routes>
-        </Container>
+        {/* Routes without outer container - each component handles its own layout */}
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/add" element={<AddMediaForm />} />
+          <Route path="/media/:id" element={<MediaItemProfile />} />
+        </Routes>
       </Router>
     </ThemeProvider>
   );

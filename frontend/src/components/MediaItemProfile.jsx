@@ -40,26 +40,31 @@ function MediaItemProfile() {
             <Typography variant="h4" component="div" gutterBottom>
               {mediaItem.title}
             </Typography>
-            <Typography sx={{ mb: 1.5 }} color="text.secondary">
+            <Typography sx={{ mb: 1.5 }}>
               Type: {mediaItem.mediaType}
             </Typography>
             {mediaItem.link && (
               <Typography variant="body2" sx={{ mb: 2 }}>
-                <Link href={mediaItem.link} target="_blank" rel="noopener">
+                <Link 
+                  href={mediaItem.link.startsWith('http') ? mediaItem.link : `https://${mediaItem.link}`}
+                  target="_blank" 
+                  rel="noopener"
+                  sx={{ color: 'text.primary' }}
+                >
                   View Source
                 </Link>
               </Typography>
-                      )}
-                      <Typography variant="body1">
-                          <strong>Rating:</strong> {mediaItem.Rating || 'N/A'}
-                      </Typography>
-                      <Typography variant="body1">
-                          <strong>Notes:</strong> {mediaItem.Consumed || 'N/A'}
-                      </Typography>
+            )}
+            <Typography variant="body1">
+                <strong>Rating:</strong> {mediaItem.Rating || 'N/A'}
+            </Typography>
+            <Typography variant="body1">
+                <strong>Consumed?</strong> {mediaItem.Consumed || 'N/A'}
+            </Typography>
             <Typography variant="body1">
               <strong>Notes:</strong> {mediaItem.notes || 'N/A'}
             </Typography>
-             <Typography variant="caption" display="block" sx={{ mt: 3 }} color="text.secondary">
+             <Typography variant="caption" display="block" sx={{ mt: 3 }}>
               Added on: {new Date(mediaItem.dateAdded).toLocaleString()}
             </Typography>
           </CardContent>

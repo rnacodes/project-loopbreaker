@@ -18,7 +18,8 @@ function AddMediaForm() {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        const mediaData = { title, mediaType, link, notes };
+        const mediaData = { title, mediaType, link, notes, consumed, 
+            rating: rating || null };
         try {
             const response = await addMedia(mediaData);
             console.log('Media added!', response.data);
@@ -30,21 +31,59 @@ function AddMediaForm() {
     };
 
     return (
-        <Container maxWidth="sm">
-            <Box component="form" onSubmit={handleSubmit} sx={{ mt: 4 }}>
-                <Typography variant="h4" component="h1" gutterBottom>
+        <Box sx={{ 
+            minHeight: '100vh', 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'flex-start',
+            py: 4,
+            px: 2 // Add some horizontal padding for mobile
+        }}>
+            <Box 
+                component="form" 
+                onSubmit={handleSubmit} 
+                sx={{ 
+                    width: '100%',
+                    maxWidth: '500px',
+                    backgroundColor: 'background.paper',
+                    borderRadius: '16px',
+                    p: 4,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                }}
+            >
+                <Typography variant="h4" component="h1" gutterBottom sx={{ textAlign: 'center' }}>
                     Add New Media
                 </Typography>
                 <TextField
                     label="Title"
+                    placeholder="Enter media title..."
                     variant="outlined"
                     fullWidth
                     required
                     margin="normal"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
+                    sx={{
+                        '& .MuiInputBase-input::placeholder': {
+                            color: '#ffffff',
+                            opacity: 1
+                        },
+                        '& .MuiInputLabel-root': {
+                            color: '#ffffff'
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                            color: '#ffffff'
+                        }
+                    }}
                 />
-                <FormControl fullWidth margin="normal" required>
+                <FormControl fullWidth margin="normal" required sx={{
+                    '& .MuiInputLabel-root': {
+                        color: '#ffffff'
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#ffffff'
+                    }
+                }}>
                     <InputLabel id="media-type-label">Media Type</InputLabel>
                     <Select
                         labelId="media-type-label"
@@ -62,11 +101,24 @@ function AddMediaForm() {
                 </FormControl>
                 <TextField
                     label="Link (Optional)"
+                    placeholder="https://example.com"
                     variant="outlined"
                     fullWidth
                     margin="normal"
                     value={link}
                     onChange={(e) => setLink(e.target.value)}
+                    sx={{
+                        '& .MuiInputBase-input::placeholder': {
+                            color: '#ffffff',
+                            opacity: 1
+                        },
+                        '& .MuiInputLabel-root': {
+                            color: '#ffffff'
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                            color: '#ffffff'
+                        }
+                    }}
                 />
 
                 {/* Consumed Checkbox */}
@@ -84,7 +136,14 @@ function AddMediaForm() {
                 </FormControl>
 
                 {/* Rating Dropdown */}
-                <FormControl fullWidth margin="normal">
+                <FormControl fullWidth margin="normal" sx={{
+                    '& .MuiInputLabel-root': {
+                        color: '#ffffff'
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#ffffff'
+                    }
+                }}>
                     <InputLabel id="rating-label">Rating (Optional)</InputLabel>
                     <Select
                         labelId="rating-label"
@@ -103,6 +162,7 @@ function AddMediaForm() {
 
                 <TextField
                     label="Notes (Optional)"
+                    placeholder="Add any notes or thoughts about this media..."
                     variant="outlined"
                     fullWidth
                     multiline
@@ -110,12 +170,24 @@ function AddMediaForm() {
                     margin="normal"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
+                    sx={{
+                        '& .MuiInputBase-input::placeholder': {
+                            color: '#ffffff',
+                            opacity: 1
+                        },
+                        '& .MuiInputLabel-root': {
+                            color: '#ffffff'
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                            color: '#ffffff'
+                        }
+                    }}
                 />
-                <Button type="submit" variant="contained" color="primary" sx={{ mt: 2 }}>
+                <Button type="submit" variant="contained" color="primary" sx={{ mt: 2, width: '100%' }}>
                     Save Media
                 </Button>
             </Box>
-        </Container>
+        </Box>
     );
 }
 
