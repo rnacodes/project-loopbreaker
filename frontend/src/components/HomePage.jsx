@@ -3,13 +3,14 @@ import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedi
 import { 
     Search, Book, Movie, Tv, Article, LibraryMusic, Podcasts, SportsEsports, YouTube, Language, MenuBook, AutoAwesome, 
     AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos, Forest, 
-    PlaylistAdd
+    PlaylistAdd, NoteAlt
 } from '@mui/icons-material';
 
 // MOCK DATA
 const mainMediaIcons = [
     { name: 'Articles & Docs', icon: <Article sx={{ fontSize: 40 }} />, key: 'articles' },
     { name: 'Books', icon: <Book sx={{ fontSize: 40 }} />, key: 'books' },
+    { name: 'Documents and Notes', icon: <NoteAlt sx={{ fontSize: 40 }} />, key: 'articles' },
     { name: 'Movies', icon: <Movie sx={{ fontSize: 40 }} />, key: 'movies' },
     { name: 'Music', icon: <LibraryMusic sx={{ fontSize: 40 }} />, key: 'music' },
     { name: 'Online Videos', icon: <YouTube sx={{ fontSize: 40 }} />, key: 'online_videos' },

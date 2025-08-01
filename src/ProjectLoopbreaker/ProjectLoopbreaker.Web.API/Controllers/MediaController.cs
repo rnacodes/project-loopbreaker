@@ -34,10 +34,16 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return BadRequest("Media item data is null.");
             }
 
+            // Parse the string MediaType to the enum MediaType
+            if (!Enum.TryParse<ProjectLoopbreaker.Domain.Entities.MediaType>(dto.MediaType, true, out var mediaTypeEnum))
+            {
+                return BadRequest($"Invalid media type: {dto.MediaType}");
+            }
+
             var mediaItem = new BaseMediaItem
             {
                 Title = dto.Title,
-                MediaType = dto.MediaType,
+                MediaType = mediaTypeEnum,
                 Link = dto.Link,
                 Notes = dto.Notes,
                 Consumed = dto.Consumed,
