@@ -35,9 +35,20 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
 
             // Parse the string MediaType to the enum MediaType
-            if (!Enum.TryParse<ProjectLoopbreaker.Domain.Entities.MediaType>(dto.MediaType, true, out var mediaTypeEnum))
+            if (!Enum.TryParse<MediaType>(dto.MediaType, true, out var mediaTypeEnum))
             {
                 return BadRequest($"Invalid media type: {dto.MediaType}");
+            }
+
+            // Parse the string Rating to the enum Rating (if provided)
+            Rating? ratingEnum = null;
+            if (!string.IsNullOrEmpty(dto.Rating))
+            {
+                if (!Enum.TryParse<Rating>(dto.Rating, true, out var parsedRating))
+                {
+                    return BadRequest($"Invalid rating: {dto.Rating}. Valid values are: {string.Join(", ", Enum.GetNames<Rating>())}");
+                }
+                ratingEnum = parsedRating;
             }
 
             var mediaItem = new BaseMediaItem
@@ -47,7 +58,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 Link = dto.Link,
                 Notes = dto.Notes,
                 Consumed = dto.Consumed,
-                Rating = dto.Rating
+                DateAdded = DateTime.UtcNow,
+                DateConsumed = dto.Consumed ? DateTime.UtcNow : null,
+                Rating = ratingEnum,
+                RelatedNotes = dto.RelatedNotes,
+                Thumbnail = dto.Thumbnail
+                // Playlists is initialized to new List<Playlist>() by default in the BaseMediaItem class
             };
 
             _context.MediaItems.Add(mediaItem);
@@ -70,5 +86,16 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
             return Ok(mediaItem);
         }
+    }
+    public class CreateMediaItemDto
+    {
+        public string Title { get; set; }
+        public string MediaType { get; set; }
+        public string? Link { get; set; }
+        public string? Notes { get; set; }
+        public bool Consumed { get; set; }
+        public string? Rating { get; set; }
+        public string? RelatedNotes { get; set; }
+        public string? Thumbnail { get; set; }
     }
 }

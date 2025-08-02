@@ -12,6 +12,7 @@ namespace ProjectLoopbreaker.Domain.Entities
         public string Name { get; set; } = string.Empty; // Default to empty string to avoid null issues
         public string Thumbnail { get; set; } = string.Empty; // Default to empty string to avoid null issues
         // Navigation property for many-to-many
-        public ICollection<PodcastSeries> PodcastSeries { get; set; } = new List<PodcastSeries>();
+        public ICollection<BaseMediaItem> MediaItems { get; set; } = new List<BaseMediaItem>();
+
     }
 }
