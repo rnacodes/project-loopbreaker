@@ -1,0 +1,20 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using ProjectLoopbreaker.Domain.Entities;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ProjectLoopbreaker.Application.Interfaces
+{
+    public interface IApplicationDbContext
+    {
+        DbSet<BaseMediaItem> MediaItems { get; }
+        DbSet<Playlist> Playlists { get; }
+        DbSet<PodcastSeries> PodcastSeries { get; }
+        DbSet<PodcastEpisode> PodcastEpisodes { get; }
+
+        Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+        EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;
+
+    }
+}

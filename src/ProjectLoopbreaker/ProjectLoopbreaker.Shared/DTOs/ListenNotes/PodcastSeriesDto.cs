@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace ProjectLoopbreaker.Shared.DTOs.ListenNotes
 {
-    public class PodcastDto
+    public class PodcastSeriesDto
     {
         [JsonPropertyName("id")]
         public string Id { get; set; }
@@ -37,16 +37,16 @@ namespace ProjectLoopbreaker.Shared.DTOs.ListenNotes
         public string Title { get; set; }
 
         [JsonPropertyName("description")]
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         [JsonPropertyName("audio")]
-        public string AudioUrl { get; set; }
+        public string? AudioUrl { get; set; }
 
         [JsonPropertyName("image")]
-        public string Image { get; set; }
+        public string? Image { get; set; }
 
         [JsonPropertyName("thumbnail")]
-        public string Thumbnail { get; set; }
+        public string? Thumbnail { get; set; }
 
         [JsonPropertyName("pub_date_ms")]
         public long PublishDateMs { get; set; }
@@ -55,6 +55,6 @@ namespace ProjectLoopbreaker.Shared.DTOs.ListenNotes
         public int DurationInSeconds { get; set; }
 
         [JsonPropertyName("link")]
-        public string Link { get; set; }
+        public string? Link { get; set; }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
-using ProjectLoopbreaker.Web.API.DTOs.ListenNotes;
+using ProjectLoopbreaker.Shared.DTOs.ListenNotes;
 
 namespace ProjectLoopbreaker.Application.Services
 {
@@ -16,13 +16,13 @@ namespace ProjectLoopbreaker.Application.Services
         {
             try
             {
-                var podcastDto = JsonSerializer.Deserialize<PodcastDto>(jsonResponse, _jsonOptions);
+                var podcastDto = JsonSerializer.Deserialize<PodcastSeriesDto>(jsonResponse, _jsonOptions);
 
                 return new PodcastSeries
                 {
                     Title = podcastDto.Title,
                     MediaType = MediaType.Podcast,
-                    Link = podcastDto.Website,
+                    //Link = podcastDto.Website,
                     Notes = podcastDto.Description,
                     Thumbnail = podcastDto.Image ?? podcastDto.Thumbnail,
                     DateAdded = DateTime.UtcNow,
@@ -66,7 +66,7 @@ namespace ProjectLoopbreaker.Application.Services
         {
             try
             {
-                var podcastDto = JsonSerializer.Deserialize<PodcastDto>(jsonResponse, _jsonOptions);
+                var podcastDto = JsonSerializer.Deserialize<PodcastSeriesDto>(jsonResponse, _jsonOptions);
 
                 var series = MapToPodcastSeries(jsonResponse);
 
