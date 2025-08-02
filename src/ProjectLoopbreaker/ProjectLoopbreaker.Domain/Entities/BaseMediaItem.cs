@@ -14,6 +14,7 @@ namespace ProjectLoopbreaker.Domain.Entities
             public bool Consumed { get; set; }
             public DateTime? DateConsumed { get; set; } // Nullable to allow for items that haven't been consumed yet
             public Rating? Rating { get; set; }
+            public string? Description { get; set; }
 
             //Add a field for one or more strings that would allow me to paste in links to my related Obsidian notes or other documents.
             public string? RelatedNotes { get; set; } // This can store links to Obsidian notes or other documents

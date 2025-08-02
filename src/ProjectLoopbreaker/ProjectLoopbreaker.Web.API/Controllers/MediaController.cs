@@ -62,7 +62,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 DateConsumed = dto.Consumed ? DateTime.UtcNow : null,
                 Rating = ratingEnum,
                 RelatedNotes = dto.RelatedNotes,
-                Thumbnail = dto.Thumbnail
+                Thumbnail = dto.Thumbnail,
+                Description = dto.Description
                 // Playlists is initialized to new List<Playlist>() by default in the BaseMediaItem class
             };
 
@@ -97,5 +98,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         public string? Rating { get; set; }
         public string? RelatedNotes { get; set; }
         public string? Thumbnail { get; set; }
+
+        public string? Description { get; set; }
     }
 }

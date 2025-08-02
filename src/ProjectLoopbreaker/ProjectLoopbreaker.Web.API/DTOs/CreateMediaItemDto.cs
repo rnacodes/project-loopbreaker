@@ -10,5 +10,6 @@ namespace ProjectLoopbreaker.Web.API.DTOs
         public string? Rating { get; set; }
         public string? RelatedNotes { get; set; }
         public string? Thumbnail { get; set; }
+        public string? Description { get; set; }
     }
 }
