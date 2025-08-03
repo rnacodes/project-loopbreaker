@@ -2,6 +2,8 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 
+//This DTO is for creating Podcast Series or Podcast Episodes
+//from user-inputted data in frontend
 namespace ProjectLoopbreaker.Web.API.DTOs
 {
     public class CreatePodcastSeriesDto

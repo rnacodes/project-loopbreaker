@@ -55,12 +55,13 @@ function MediaItemProfile() {
                 </Link>
               </Typography>
             )}
+                        <Typography variant="body1">
+                <strong>Consumed?</strong> {mediaItem.Consumed || 'N/A'}
+            </Typography>
             <Typography variant="body1">
                 <strong>Rating:</strong> {mediaItem.Rating || 'N/A'}
             </Typography>
-            <Typography variant="body1">
-                <strong>Consumed?</strong> {mediaItem.Consumed || 'N/A'}
-            </Typography>
+
             <Typography variant="body1">
               <strong>Notes:</strong> {mediaItem.notes || 'N/A'}
             </Typography>

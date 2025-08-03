@@ -27,18 +27,18 @@ namespace ProjectLoopbreaker.Domain.Entities
 
     public enum MediaType
         {
-            Article,
-            Podcast,
-            Book,
-            Website,
-            Document,
-            Movie,
-            TVShow,
-            Music,
-            Video,
-            VideoGame,
-            Other
-        }
+        Article,
+        Book,
+        Document,
+        Movie,
+        Music,
+        Other,
+        Podcast,
+        TVShow,
+        Video,
+        VideoGame,
+        Website
+    }
 
     public enum Rating
         {
