@@ -14,19 +14,157 @@ function AddMediaForm() {
     const [notes, setNotes] = useState('');
     const [consumed, setConsumed] = useState(false);
     const [rating, setRating] = useState('');
+    const [description, setDescription] = useState('');
+    const [relatedNotes, setRelatedNotes] = useState('');
+    const [thumbnail, setThumbnail] = useState('');
+    
+    // Podcast Episode specific fields
+    const [podcastSeriesId, setPodcastSeriesId] = useState('');
+    const [audioLink, setAudioLink] = useState('');
+    const [releaseDate, setReleaseDate] = useState('');
+    const [durationInSeconds, setDurationInSeconds] = useState('');
+    
     const navigate = useNavigate();
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        const mediaData = { title, mediaType, link, notes, consumed, 
-            rating: rating || null };
+        
+        // Base media data
+        let mediaData = { 
+            title, 
+            mediaType, 
+            link, 
+            notes, 
+            consumed, 
+            rating: rating || null,
+            description: description || null,
+            relatedNotes: relatedNotes || null,
+            thumbnail: thumbnail || null
+        };
+
+        // Add specific fields based on media type
+        if (mediaType === 'Podcast') {
+            mediaData = {
+                ...mediaData,
+                podcastSeriesId: podcastSeriesId || null,
+                audioLink: audioLink || null,
+                releaseDate: releaseDate || null,
+                durationInSeconds: durationInSeconds ? parseInt(durationInSeconds) : null
+            };
+        }
+
         try {
             const response = await addMedia(mediaData);
             console.log('Media added!', response.data);
-            // Navigate to the new item's profile page
             navigate(`/media/${response.data.id}`);
         } catch (error) {
             console.error('Failed to add media:', error);
+        }
+    };
+
+    // Convert duration from minutes to seconds
+    const handleDurationChange = (e) => {
+        const minutes = e.target.value;
+        if (minutes) {
+            setDurationInSeconds((parseFloat(minutes) * 60).toString());
+        } else {
+            setDurationInSeconds('');
+        }
+    };
+
+    const renderMediaTypeSpecificFields = () => {
+        switch (mediaType) {
+            case 'Podcast':
+                return (
+                    <>
+                        <TextField
+                            label="Podcast Series ID (Optional)"
+                            placeholder="Enter podcast series ID..."
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                            value={podcastSeriesId}
+                            onChange={(e) => setPodcastSeriesId(e.target.value)}
+                            sx={{
+                                '& .MuiInputBase-input::placeholder': {
+                                    color: '#ffffff',
+                                    opacity: 1
+                                },
+                                '& .MuiInputLabel-root': {
+                                    color: '#ffffff'
+                                },
+                                '& .MuiInputLabel-root.Mui-focused': {
+                                    color: '#ffffff'
+                                }
+                            }}
+                        />
+                        <TextField
+                            label="Audio Link (Optional)"
+                            placeholder="https://example.com/audio.mp3"
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                            value={audioLink}
+                            onChange={(e) => setAudioLink(e.target.value)}
+                            sx={{
+                                '& .MuiInputBase-input::placeholder': {
+                                    color: '#ffffff',
+                                    opacity: 1
+                                },
+                                '& .MuiInputLabel-root': {
+                                    color: '#ffffff'
+                                },
+                                '& .MuiInputLabel-root.Mui-focused': {
+                                    color: '#ffffff'
+                                }
+                            }}
+                        />
+                        <TextField
+                            label="Release Date (Optional)"
+                            type="date"
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                            value={releaseDate}
+                            onChange={(e) => setReleaseDate(e.target.value)}
+                            InputLabelProps={{
+                                shrink: true,
+                            }}
+                            sx={{
+                                '& .MuiInputLabel-root': {
+                                    color: '#ffffff'
+                                },
+                                '& .MuiInputLabel-root.Mui-focused': {
+                                    color: '#ffffff'
+                                }
+                            }}
+                        />
+                        <TextField
+                            label="Duration (Minutes, Optional)"
+                            placeholder="60"
+                            type="number"
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                            value={durationInSeconds ? (parseInt(durationInSeconds) / 60).toString() : ''}
+                            onChange={handleDurationChange}
+                            sx={{
+                                '& .MuiInputBase-input::placeholder': {
+                                    color: '#ffffff',
+                                    opacity: 1
+                                },
+                                '& .MuiInputLabel-root': {
+                                    color: '#ffffff'
+                                },
+                                '& .MuiInputLabel-root.Mui-focused': {
+                                    color: '#ffffff'
+                                }
+                            }}
+                        />
+                    </>
+                );
+            default:
+                return null;
         }
     };
 
@@ -37,7 +175,7 @@ function AddMediaForm() {
             justifyContent: 'center', 
             alignItems: 'flex-start',
             py: 4,
-            px: 2 // Add some horizontal padding for mobile
+            px: 2
         }}>
             <Box 
                 component="form" 
@@ -54,6 +192,7 @@ function AddMediaForm() {
                 <Typography variant="h4" component="h1" gutterBottom sx={{ textAlign: 'center' }}>
                     Add New Media
                 </Typography>
+                
                 <TextField
                     label="Title"
                     placeholder="Enter media title..."
@@ -76,6 +215,7 @@ function AddMediaForm() {
                         }
                     }}
                 />
+
                 <FormControl fullWidth margin="normal" required sx={{
                     '& .MuiInputLabel-root': {
                         color: '#ffffff'
@@ -94,11 +234,17 @@ function AddMediaForm() {
                         <MenuItem value="Article">Article</MenuItem>
                         <MenuItem value="Podcast">Podcast</MenuItem>
                         <MenuItem value="Book">Book</MenuItem>
-                        <MenuItem value="Video">Video</MenuItem>
+                        <MenuItem value="Website">Website</MenuItem>
+                        <MenuItem value="Document">Document</MenuItem>
                         <MenuItem value="Movie">Movie</MenuItem>
-                        <MenuItem value="TvShow">TV Show</MenuItem>
+                        <MenuItem value="TVShow">TV Show</MenuItem>
+                        <MenuItem value="Music">Music</MenuItem>
+                        <MenuItem value="Video">Video</MenuItem>
+                        <MenuItem value="VideoGame">Video Game</MenuItem>
+                        <MenuItem value="Other">Other</MenuItem>
                     </Select>
                 </FormControl>
+
                 <TextField
                     label="Link (Optional)"
                     placeholder="https://example.com"
@@ -121,7 +267,33 @@ function AddMediaForm() {
                     }}
                 />
 
-                {/* Consumed Checkbox */}
+                <TextField
+                    label="Description (Optional)"
+                    placeholder="Brief description of the media..."
+                    variant="outlined"
+                    fullWidth
+                    multiline
+                    rows={2}
+                    margin="normal"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    sx={{
+                        '& .MuiInputBase-input::placeholder': {
+                            color: '#ffffff',
+                            opacity: 1
+                        },
+                        '& .MuiInputLabel-root': {
+                            color: '#ffffff'
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                            color: '#ffffff'
+                        }
+                    }}
+                />
+
+                {/* Media type specific fields */}
+                {renderMediaTypeSpecificFields()}
+
                 <FormControl fullWidth margin="normal">
                     <FormControlLabel
                         control={
@@ -135,7 +307,6 @@ function AddMediaForm() {
                     />
                 </FormControl>
 
-                {/* Rating Dropdown */}
                 <FormControl fullWidth margin="normal" sx={{
                     '& .MuiInputLabel-root': {
                         color: '#ffffff'
@@ -152,11 +323,10 @@ function AddMediaForm() {
                         onChange={(e) => setRating(e.target.value)}
                     >
                         <MenuItem value="">None</MenuItem>
-                        <MenuItem value="1">1 - Poor</MenuItem>
-                        <MenuItem value="2">2 - Fair</MenuItem>
-                        <MenuItem value="3">3 - Good</MenuItem>
-                        <MenuItem value="4">4 - Very Good</MenuItem>
-                        <MenuItem value="5">5 - Excellent</MenuItem>
+                        <MenuItem value="SuperLike">Super Like</MenuItem>
+                        <MenuItem value="Like">Like</MenuItem>
+                        <MenuItem value="Neutral">Neutral</MenuItem>
+                        <MenuItem value="Dislike">Dislike</MenuItem>
                     </Select>
                 </FormControl>
 
@@ -183,6 +353,53 @@ function AddMediaForm() {
                         }
                     }}
                 />
+
+                <TextField
+                    label="Related Notes/Links (Optional)"
+                    placeholder="Links to Obsidian notes or other documents..."
+                    variant="outlined"
+                    fullWidth
+                    multiline
+                    rows={2}
+                    margin="normal"
+                    value={relatedNotes}
+                    onChange={(e) => setRelatedNotes(e.target.value)}
+                    sx={{
+                        '& .MuiInputBase-input::placeholder': {
+                            color: '#ffffff',
+                            opacity: 1
+                        },
+                        '& .MuiInputLabel-root': {
+                            color: '#ffffff'
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                            color: '#ffffff'
+                        }
+                    }}
+                />
+
+                <TextField
+                    label="Thumbnail URL (Optional)"
+                    placeholder="https://example.com/thumbnail.jpg"
+                    variant="outlined"
+                    fullWidth
+                    margin="normal"
+                    value={thumbnail}
+                    onChange={(e) => setThumbnail(e.target.value)}
+                    sx={{
+                        '& .MuiInputBase-input::placeholder': {
+                            color: '#ffffff',
+                            opacity: 1
+                        },
+                        '& .MuiInputLabel-root': {
+                            color: '#ffffff'
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                            color: '#ffffff'
+                        }
+                    }}
+                />
+
                 <Button type="submit" variant="contained" color="primary" sx={{ mt: 2, width: '100%' }}>
                     Save Media
                 </Button>
