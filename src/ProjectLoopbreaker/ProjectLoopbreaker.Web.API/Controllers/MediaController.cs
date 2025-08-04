@@ -63,8 +63,10 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 Rating = ratingEnum,
                 RelatedNotes = dto.RelatedNotes,
                 Thumbnail = dto.Thumbnail,
-                Description = dto.Description
-                // Playlists is initialized to new List<Playlist>() by default in the BaseMediaItem class
+                Description = dto.Description,
+                Genre = dto.Genre,
+                Topics = dto.Topics
+                // Playlists is initialized to new List<Playlist>() by default
             };
 
             _context.MediaItems.Add(mediaItem);
@@ -98,7 +100,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         public string? Rating { get; set; }
         public string? RelatedNotes { get; set; }
         public string? Thumbnail { get; set; }
-
         public string? Description { get; set; }
+        public string? Genre { get; set; }      // Add this property
+        public string? Topics { get; set; }     // Add this property
     }
 }

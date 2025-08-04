@@ -20,3 +20,16 @@ export const getMediaById = (id) => {
 export const getAllMedia = () => {
     return apiClient.get('/media');
 };
+
+// Playlist API calls
+export const getAllPlaylists = () => {
+    return apiClient.get('/playlist');
+};
+
+export const createPlaylist = (playlistData) => {
+    return apiClient.post('/playlist', playlistData);
+};
+
+export const addMediaToPlaylist = (playlistId, mediaItemId) => {
+    return apiClient.post(`/playlist/${playlistId}/items/${mediaItemId}`);
+};

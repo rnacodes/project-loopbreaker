@@ -20,8 +20,11 @@ namespace ProjectLoopbreaker.Web.API.DTOs
         public string? Rating { get; set; }
         public string? RelatedNotes { get; set; }
         public string? Thumbnail { get; set; }
+        public string? Genre { get; set; }
+        public string? Topics { get; set; }
 
         // Episodes collection as it will be populated later
         // through individual episode creation
     }
+
 }

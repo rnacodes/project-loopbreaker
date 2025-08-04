@@ -18,6 +18,26 @@ namespace ProjectLoopbreaker.Application.Services
             {
                 var podcastDto = JsonSerializer.Deserialize<PodcastSeriesDto>(jsonResponse, _jsonOptions);
 
+                // Try to extract genre information from the raw JSON if not in the DTO
+                string? genreInfo = null;
+                var jsonDocument = JsonDocument.Parse(jsonResponse);
+                if (jsonDocument.RootElement.TryGetProperty("genres", out var genresElement))
+                {
+                    // If genres is available, extract it as a comma-separated list
+                    if (genresElement.ValueKind == JsonValueKind.Array)
+                    {
+                        var genres = new List<string>();
+                        foreach (var genre in genresElement.EnumerateArray())
+                        {
+                            if (genre.TryGetProperty("name", out var nameElement))
+                            {
+                                genres.Add(nameElement.GetString() ?? string.Empty);
+                            }
+                        }
+                        genreInfo = string.Join(", ", genres);
+                    }
+                }
+
                 return new PodcastSeries
                 {
                     Title = podcastDto.Title,
@@ -27,6 +47,8 @@ namespace ProjectLoopbreaker.Application.Services
                     Thumbnail = podcastDto.Image ?? podcastDto.Thumbnail,
                     DateAdded = DateTime.UtcNow,
                     Consumed = false,
+                    Genre = genreInfo, // Add the extracted genre information
+                                       // Topics can be populated later if available
                 };
             }
             catch (Exception ex)
@@ -39,7 +61,24 @@ namespace ProjectLoopbreaker.Application.Services
         {
             try
             {
-                var episodeDto = JsonSerializer.Deserialize<EpisodeDto>(jsonResponse, _jsonOptions);
+                var episodeDto = JsonSerializer.Deserialize<PodcastEpisodeDto>(jsonResponse, _jsonOptions);
+
+                // Try to extract topics from the raw JSON if available
+                string? topicsInfo = null;
+                var jsonDocument = JsonDocument.Parse(jsonResponse);
+                if (jsonDocument.RootElement.TryGetProperty("topics", out var topicsElement))
+                {
+                    // If topics is available, extract it as a comma-separated list
+                    if (topicsElement.ValueKind == JsonValueKind.Array)
+                    {
+                        var topics = new List<string>();
+                        foreach (var topic in topicsElement.EnumerateArray())
+                        {
+                            topics.Add(topic.GetString() ?? string.Empty);
+                        }
+                        topicsInfo = string.Join(", ", topics);
+                    }
+                }
 
                 return new PodcastEpisode
                 {
@@ -53,7 +92,9 @@ namespace ProjectLoopbreaker.Application.Services
                     PodcastSeriesId = podcastSeriesId,
                     AudioLink = episodeDto.AudioUrl,
                     ReleaseDate = DateTimeOffset.FromUnixTimeMilliseconds(episodeDto.PublishDateMs).DateTime,
-                    DurationInSeconds = episodeDto.DurationInSeconds
+                    DurationInSeconds = episodeDto.DurationInSeconds,
+                    Topics = topicsInfo // Add topics information if available
+                                        // Genre is typically associated with the series, not individual episodes
                 };
             }
             catch (Exception ex)
@@ -74,21 +115,9 @@ namespace ProjectLoopbreaker.Application.Services
                 {
                     foreach (var episodeDto in podcastDto.Episodes)
                     {
-                        var episode = new PodcastEpisode
-                        {
-                            Title = episodeDto.Title,
-                            MediaType = MediaType.Podcast,
-                            Link = episodeDto.Link,
-                            Notes = episodeDto.Description,
-                            Thumbnail = episodeDto.Image ?? episodeDto.Thumbnail,
-                            DateAdded = DateTime.UtcNow,
-                            Consumed = false,
-                            PodcastSeriesId = series.Id, // Link to the series
-                            AudioLink = episodeDto.AudioUrl,
-                            ReleaseDate = DateTimeOffset.FromUnixTimeMilliseconds(episodeDto.PublishDateMs).DateTime,
-                            DurationInSeconds = episodeDto.DurationInSeconds
-                        };
-
+                        // Convert episodeDto to JSON to reuse the MapToPodcastEpisode method
+                        string episodeJson = JsonSerializer.Serialize(episodeDto, _jsonOptions);
+                        var episode = MapToPodcastEpisode(episodeJson, series.Id);
                         series.Episodes.Add(episode);
                     }
                 }

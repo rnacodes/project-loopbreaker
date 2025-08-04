@@ -25,10 +25,14 @@ namespace ProjectLoopbreaker.Shared.DTOs.ListenNotes
         public string Description { get; set; }
 
         [JsonPropertyName("episodes")]
-        public List<EpisodeDto> Episodes { get; set; }
+        public List<PodcastEpisodeDto> Episodes { get; set; }
+
+        // Add this property to capture genres information
+        [JsonPropertyName("genres")]
+        public List<string>? Genres { get; set; }
     }
 
-    public class EpisodeDto
+    public class PodcastEpisodeDto
     {
         [JsonPropertyName("id")]
         public string Id { get; set; }
@@ -56,5 +60,9 @@ namespace ProjectLoopbreaker.Shared.DTOs.ListenNotes
 
         [JsonPropertyName("link")]
         public string? Link { get; set; }
+
+        // Add this property to capture topics information
+        [JsonPropertyName("topics")]
+        public List<string>? Topics { get; set; }
     }
 }
