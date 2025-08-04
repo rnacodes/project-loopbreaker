@@ -9,6 +9,7 @@ import MediaItemProfile from './components/MediaItemProfile';
 import AllMedia from './components/AllMedia';
 import PlaylistsPage from './components/PlaylistsPage';
 import CreatePlaylistForm from './components/CreatePlaylistForm';
+import ImportMediaPage from './components/ImportMediaPage';
 
 // 1. THEME AND STYLING
 // Define the custom color palette for Dark Mode
@@ -92,8 +93,9 @@ function App() {
               </Button>
             </Typography>
             <Button color="inherit" component={Link} to="/all-media">All Media</Button>
-            <Button color="inherit" component={Link} to="/playlists">Playlists</Button>
+            <Button color="inherit" component={Link} to="/playlists">Mixlists</Button>
             <Button color="inherit" component={Link} to="/add">Add Media</Button>
+            <Button color="inherit" component={Link} to="/import">Import Media</Button>
             {/* Add other navigation links here later */}
           </Toolbar>
         </AppBar>
@@ -105,6 +107,7 @@ function App() {
           <Route path="/all-media" element={<AllMedia />} />
           <Route path="/playlists" element={<PlaylistsPage />} />
           <Route path="/create-playlist" element={<CreatePlaylistForm />} />
+          <Route path="/import" element={<ImportMediaPage />} />
           <Route path="/media/:id" element={<MediaItemProfile />} />
         </Routes>
       </Router>
