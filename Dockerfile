@@ -9,6 +9,7 @@ COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Web.API/*.csproj src/ProjectLoopb
 COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Application/*.csproj src/ProjectLoopbreaker/ProjectLoopbreaker.Application/
 COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Domain/*.csproj src/ProjectLoopbreaker/ProjectLoopbreaker.Domain/
 COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Infrastructure/*.csproj src/ProjectLoopbreaker/ProjectLoopbreaker.Infrastructure/
+COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Shared/*.csproj src/ProjectLoopbreaker/ProjectLoopbreaker.Shared/
 COPY tests/ProjectLoopbreaker.UnitTests/*.csproj tests/ProjectLoopbreaker.UnitTests/
 COPY tests/ProjectLoopbreaker.IntegrationTests/*.csproj tests/ProjectLoopbreaker.IntegrationTests/
 # If you have ProjectLoopbreaker.Core.Shared, and it's also under src/ProjectLoopbreaker/, uncomment this:
@@ -33,7 +34,7 @@ WORKDIR /app/publish
 # Copy only the published output from the build stage
 COPY --from=build /app/publish .
 
-# Expose the port (Render often uses 10000 by default)
+# Expose the port
 ENV ASPNETCORE_URLS=http://+:10000
 EXPOSE 10000
 
