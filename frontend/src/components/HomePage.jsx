@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedia, CardContent, Button, SpeedDial, SpeedDialIcon, SpeedDialAction, useTheme } from '@mui/material';
 import { 
     Search, Book, Movie, Tv, Article, LibraryMusic, Podcasts, SportsEsports, YouTube, Language, MenuBook, AutoAwesome, 
     AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos, Forest, 
-    PlaylistAdd, NoteAlt
+    PlaylistAdd, NoteAlt, ImportExport
 } from '@mui/icons-material';
 
 // MOCK DATA
@@ -182,6 +183,19 @@ const FloatingMenu = () => (
 // MAIN HOMEPAGE COMPONENT
 export default function HomePage() {
   const theme = useTheme();
+  const navigate = useNavigate();
+
+  const handleCreateMixlist = () => {
+    navigate('/create-playlist');
+  };
+
+  const handleImportMedia = () => {
+    navigate('/import-media');
+  };
+
+  const handleAddMedia = () => {
+    navigate('/add-media');
+  };
   
   return (
     <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', width: '100%' }}>
@@ -220,14 +234,62 @@ export default function HomePage() {
 
             <Box sx={{ mt: 4, p: 3, backgroundColor: 'background.paper', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
                 <Grid container spacing={4} alignItems="center" justifyContent="center">
-                    <Grid item xs={12} sm={6} sx={{ textAlign: 'center' }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: 'text.primary', p: 2 }}>
+                    <Grid item xs={12} sm={4} sx={{ textAlign: 'center' }}>
+                        <Box 
+                            onClick={handleCreateMixlist}
+                            sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center', 
+                                cursor: 'pointer', 
+                                color: 'text.primary', 
+                                p: 2,
+                                '&:hover': {
+                                    transform: 'scale(1.05)',
+                                    transition: 'transform 0.2s ease'
+                                }
+                            }}
+                        >
                             <AddCircleOutline sx={{ fontSize: 70, color: 'primary.main' }} />
                             <Typography variant="h5" sx={{ mt: 1 }}>Create a Mixlist</Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6} sx={{ textAlign: 'center' }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: 'text.primary', p: 2 }}>
+                    <Grid item xs={12} sm={4} sx={{ textAlign: 'center' }}>
+                        <Box 
+                            onClick={handleImportMedia}
+                            sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center', 
+                                cursor: 'pointer', 
+                                color: 'text.primary', 
+                                p: 2,
+                                '&:hover': {
+                                    transform: 'scale(1.05)',
+                                    transition: 'transform 0.2s ease'
+                                }
+                            }}
+                        >
+                            <ImportExport sx={{ fontSize: 70, color: 'primary.main' }} />
+                            <Typography variant="h5" sx={{ mt: 1 }}>Import Media</Typography>
+                        </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={4} sx={{ textAlign: 'center' }}>
+                        <Box 
+                            onClick={handleAddMedia}
+                            sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center', 
+                                cursor: 'pointer', 
+                                color: 'text.primary', 
+                                p: 2,
+                                '&:hover': {
+                                    transform: 'scale(1.05)',
+                                    transition: 'transform 0.2s ease'
+                                }
+                            }}
+                        >
                             <BookmarkAdd sx={{ fontSize: 70, color: 'primary.main' }} />
                             <Typography variant="h5" sx={{ mt: 1 }}>Add Media</Typography>
                         </Box>

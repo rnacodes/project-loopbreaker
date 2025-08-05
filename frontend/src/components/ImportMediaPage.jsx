@@ -162,31 +162,27 @@ function ImportMediaPage() {
         setMockPodcastSearchResults([]);
         
         try {
-            // TODO: Replace with actual ListenNotes API call (mock/test)
+            // Call your backend API which uses the Listen Notes mock API
+            const response = await fetch(`/api/MockListenNotes/search?query=${encodeURIComponent(mockPodcastSearchQuery)}&type=podcast`);
             
-            // Mock data for now
-            setTimeout(() => {
-                const mockResults = [
-                    {
-                        id: 'mock1',
-                        title: 'Example Test Podcast',
-                        publisher: 'Mock Publisher',
-                        description: 'This is a mock podcast for testing purposes using the test API.',
-                        image: 'https://placehold.co/300x300/695a8c/fcfafa?text=Test',
-                        total_episodes: 25
-                    },
-                    {
-                        id: 'mock2',
-                        title: 'Demo Development Show',
-                        publisher: 'Test Network',
-                        description: 'Another mock podcast entry for development and testing.',
-                        image: 'https://placehold.co/300x300/474350/fcfafa?text=Demo',
-                        total_episodes: 12
-                    }
-                ];
-                setMockPodcastSearchResults(mockResults);
-                setMockPodcastIsLoading(false);
-            }, 1500);
+            if (!response.ok) {
+                throw new Error('Failed to search podcasts');
+            }
+            
+            const data = await response.json();
+            
+            // Transform the Listen Notes API response to match your component's expected format
+            const transformedResults = data.results?.map(podcast => ({
+                id: podcast.id,
+                title: podcast.title_original || podcast.title_highlighted || 'Unknown Title',
+                publisher: podcast.publisher_original || podcast.publisher_highlighted || 'Unknown Publisher',
+                description: podcast.description_original || podcast.description_highlighted || 'No description available',
+                image: podcast.image || 'https://placehold.co/300x300/695a8c/fcfafa?text=No+Image',
+                total_episodes: podcast.total_episodes || 0
+            })) || [];
+            
+            setMockPodcastSearchResults(transformedResults);
+            setMockPodcastIsLoading(false);
             
         } catch (err) {
             setMockPodcastError('Failed to search mock podcasts. Please try again.');
@@ -204,14 +200,21 @@ function ImportMediaPage() {
         setMockPodcastError('');
         
         try {
-            // TODO: Implement actual import by ID (mock API)
-            console.log('Importing podcast by ID (mock):', mockPodcastId);
+            // Call your backend API to get podcast by ID
+            const response = await fetch(`/api/MockListenNotes/podcasts/${encodeURIComponent(mockPodcastId)}`);
             
-            setTimeout(() => {
-                setMockPodcastSuccess('Mock podcast imported successfully!');
-                setMockPodcastIsLoading(false);
-                setMockPodcastId('');
-            }, 1500);
+            if (!response.ok) {
+                throw new Error('Failed to import podcast');
+            }
+            
+            const data = await response.json();
+            
+            // TODO: Process the podcast data and save to your database
+            console.log('Importing podcast by ID (mock):', data);
+            
+            setMockPodcastSuccess(`Podcast "${data.title_original || data.title}" imported successfully from mock API!`);
+            setMockPodcastIsLoading(false);
+            setMockPodcastId('');
             
         } catch (err) {
             setMockPodcastError('Failed to import mock podcast. Please check the ID and try again.');
@@ -229,14 +232,30 @@ function ImportMediaPage() {
         setMockPodcastError('');
         
         try {
-            // TODO: Implement actual import by exact name (mock API)
-            console.log('Importing podcast by name (mock):', mockPodcastName);
+            // Search for podcast by exact name first
+            const response = await fetch(`/api/MockListenNotes/search?query=${encodeURIComponent(mockPodcastName)}&type=podcast`);
             
-            setTimeout(() => {
-                setMockPodcastSuccess('Mock podcast imported successfully!');
-                setMockPodcastIsLoading(false);
-                setMockPodcastName('');
-            }, 1500);
+            if (!response.ok) {
+                throw new Error('Failed to search for podcast');
+            }
+            
+            const data = await response.json();
+            
+            // Find exact match by name
+            const exactMatch = data.results?.find(podcast => 
+                (podcast.title_original || podcast.title_highlighted || '').toLowerCase() === mockPodcastName.toLowerCase()
+            );
+            
+            if (!exactMatch) {
+                throw new Error('No exact match found for the podcast name');
+            }
+            
+            // TODO: Process the podcast data and save to your database
+            console.log('Importing podcast by name (mock):', exactMatch);
+            
+            setMockPodcastSuccess(`Podcast "${exactMatch.title_original || exactMatch.title}" imported successfully from mock API!`);
+            setMockPodcastIsLoading(false);
+            setMockPodcastName('');
             
         } catch (err) {
             setMockPodcastError('Failed to import mock podcast. Please check the name and try again.');
@@ -249,13 +268,13 @@ function ImportMediaPage() {
         setMockPodcastError('');
         
         try {
-            // TODO: Implement actual import functionality (mock API)
+            // TODO: Implement actual import functionality to save to your database
             console.log('Importing mock podcast:', podcast);
             
-            setTimeout(() => {
-                setMockPodcastSuccess(`"${podcast.title}" imported successfully from mock API!`);
-                setMockPodcastIsLoading(false);
-            }, 1500);
+            // You might want to call another API endpoint to save this to your database
+            // For now, just simulate success
+            setMockPodcastSuccess(`"${podcast.title}" imported successfully from mock API!`);
+            setMockPodcastIsLoading(false);
             
         } catch (err) {
             setMockPodcastError('Failed to import mock podcast. Please try again.');
@@ -521,7 +540,7 @@ function ImportMediaPage() {
     );
 
     return (
-        <Container maxWidth="lg" sx={{ py: 4 }}>
+        <Container maxWidth="lg" sx={{ py: 4, px: { xs: 3, sm: 4, md: 6 } }}>
             <Box sx={{ mb: 4 }}>
                 <Typography variant="h4" component="h1" gutterBottom sx={{ 
                     textAlign: 'center',

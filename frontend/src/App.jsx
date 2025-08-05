@@ -94,8 +94,8 @@ function App() {
             </Typography>
             <Button color="inherit" component={Link} to="/all-media">All Media</Button>
             <Button color="inherit" component={Link} to="/playlists">Mixlists</Button>
-            <Button color="inherit" component={Link} to="/add">Add Media</Button>
-            <Button color="inherit" component={Link} to="/import">Import Media</Button>
+            <Button color="inherit" component={Link} to="/add-media">Add Media</Button>
+            <Button color="inherit" component={Link} to="/import-media">Import Media</Button>
             {/* Add other navigation links here later */}
           </Toolbar>
         </AppBar>
@@ -103,11 +103,11 @@ function App() {
         {/* Routes without outer container - each component handles its own layout */}
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/add" element={<AddMediaForm />} />
+          <Route path="/add-media" element={<AddMediaForm />} />
           <Route path="/all-media" element={<AllMedia />} />
           <Route path="/playlists" element={<PlaylistsPage />} />
           <Route path="/create-playlist" element={<CreatePlaylistForm />} />
-          <Route path="/import" element={<ImportMediaPage />} />
+          <Route path="/import-media" element={<ImportMediaPage />} />
           <Route path="/media/:id" element={<MediaItemProfile />} />
         </Routes>
       </Router>
