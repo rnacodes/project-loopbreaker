@@ -49,31 +49,27 @@ function ImportMediaPage() {
         setPodcastSearchResults([]);
         
         try {
-            // TODO: Replace with actual ListenNotes API call (production)
+            // Call your backend API which uses the actual ListenNotes API (production)
+            const response = await fetch(`/api/ListenNotes/search?query=${encodeURIComponent(podcastSearchQuery)}&type=podcast`);
             
-            // Mock data for now
-            setTimeout(() => {
-                const mockResults = [
-                    {
-                        id: 'prod1',
-                        title: 'The Joe Rogan Experience',
-                        publisher: 'Joe Rogan',
-                        description: 'The official podcast of comedian Joe Rogan.',
-                        image: 'https://placehold.co/300x300/695a8c/fcfafa?text=JRE',
-                        total_episodes: 2000
-                    },
-                    {
-                        id: 'prod2',
-                        title: 'Serial',
-                        publisher: 'Serial Productions',
-                        description: 'Serial is a podcast where we unfold one nonfiction story.',
-                        image: 'https://placehold.co/300x300/474350/fcfafa?text=Serial',
-                        total_episodes: 45
-                    }
-                ];
-                setPodcastSearchResults(mockResults);
-                setPodcastIsLoading(false);
-            }, 1500);
+            if (!response.ok) {
+                throw new Error('Failed to search podcasts');
+            }
+            
+            const data = await response.json();
+            
+            // Transform the Listen Notes API response to match your component's expected format
+            const transformedResults = data.results?.map(podcast => ({
+                id: podcast.id,
+                title: podcast.title_original || podcast.title_highlighted || 'Unknown Title',
+                publisher: podcast.publisher_original || podcast.publisher_highlighted || 'Unknown Publisher',
+                description: podcast.description_original || podcast.description_highlighted || 'No description available',
+                image: podcast.image || 'https://placehold.co/300x300/695a8c/fcfafa?text=No+Image',
+                total_episodes: podcast.total_episodes || 0
+            })) || [];
+            
+            setPodcastSearchResults(transformedResults);
+            setPodcastIsLoading(false);
             
         } catch (err) {
             setPodcastError('Failed to search podcasts. Please try again.');
@@ -91,14 +87,21 @@ function ImportMediaPage() {
         setPodcastError('');
         
         try {
-            // TODO: Implement actual import by ID (production API)
-            console.log('Importing podcast by ID (production):', podcastId);
+            // Call your backend API to get podcast by ID (production)
+            const response = await fetch(`/api/ListenNotes/podcasts/${encodeURIComponent(podcastId)}`);
             
-            setTimeout(() => {
-                setPodcastSuccess('Podcast imported successfully from production API!');
-                setPodcastIsLoading(false);
-                setPodcastId('');
-            }, 1500);
+            if (!response.ok) {
+                throw new Error('Failed to import podcast');
+            }
+            
+            const data = await response.json();
+            
+            // TODO: Process the podcast data and save to your database
+            console.log('Importing podcast by ID (production):', data);
+            
+            setPodcastSuccess(`Podcast "${data.title_original || data.title}" imported successfully from production API!`);
+            setPodcastIsLoading(false);
+            setPodcastId('');
             
         } catch (err) {
             setPodcastError('Failed to import podcast. Please check the ID and try again.');
@@ -116,14 +119,30 @@ function ImportMediaPage() {
         setPodcastError('');
         
         try {
-            // TODO: Implement actual import by exact name (production API)
-            console.log('Importing podcast by name (production):', podcastName);
+            // Search for podcast by exact name first (production API)
+            const response = await fetch(`/api/ListenNotes/search?query=${encodeURIComponent(podcastName)}&type=podcast`);
             
-            setTimeout(() => {
-                setPodcastSuccess('Podcast imported successfully from production API!');
-                setPodcastIsLoading(false);
-                setPodcastName('');
-            }, 1500);
+            if (!response.ok) {
+                throw new Error('Failed to search for podcast');
+            }
+            
+            const data = await response.json();
+            
+            // Find exact match by name
+            const exactMatch = data.results?.find(podcast => 
+                (podcast.title_original || podcast.title_highlighted || '').toLowerCase() === podcastName.toLowerCase()
+            );
+            
+            if (!exactMatch) {
+                throw new Error('No exact match found for the podcast name');
+            }
+            
+            // TODO: Process the podcast data and save to your database
+            console.log('Importing podcast by name (production):', exactMatch);
+            
+            setPodcastSuccess(`Podcast "${exactMatch.title_original || exactMatch.title}" imported successfully from production API!`);
+            setPodcastIsLoading(false);
+            setPodcastName('');
             
         } catch (err) {
             setPodcastError('Failed to import podcast. Please check the name and try again.');
@@ -136,13 +155,13 @@ function ImportMediaPage() {
         setPodcastError('');
         
         try {
-            // TODO: Implement actual import functionality (production API)
+            // TODO: Implement actual import functionality to save to your database (production API)
             console.log('Importing podcast (production):', podcast);
             
-            setTimeout(() => {
-                setPodcastSuccess(`"${podcast.title}" imported successfully from production API!`);
-                setPodcastIsLoading(false);
-            }, 1500);
+            // You might want to call another API endpoint to save this to your database
+            // For now, just simulate success
+            setPodcastSuccess(`"${podcast.title}" imported successfully from production API!`);
+            setPodcastIsLoading(false);
             
         } catch (err) {
             setPodcastError('Failed to import podcast. Please try again.');
