@@ -1,11 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Domain.Entities;
+using ProjectLoopbreaker.Application.Interfaces;
 using System.Collections.Generic;
 
 namespace ProjectLoopbreaker.Infrastructure.Data
 
 {
-    public class MediaLibraryDbContext : DbContext
+    public class MediaLibraryDbContext : DbContext, IApplicationDbContext
     {
         public DbSet<BaseMediaItem> MediaItems { get; set; }
         public DbSet<Playlist> Playlists { get; set; }

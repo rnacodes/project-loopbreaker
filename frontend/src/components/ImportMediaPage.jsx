@@ -7,6 +7,7 @@ import {
     Divider, Chip, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import { Search, Download, Podcasts, ExpandMore } from '@mui/icons-material';
+import { searchPodcasts, getPodcastById, importPodcastFromApi } from '../services/apiService';
 
 function ImportMediaPage() {
     const [expanded, setExpanded] = useState(false);
@@ -49,14 +50,8 @@ function ImportMediaPage() {
         setPodcastSearchResults([]);
         
         try {
-            // Call your backend API which uses the actual ListenNotes API (production)
-            const response = await fetch(`/api/ListenNotes/search?query=${encodeURIComponent(podcastSearchQuery)}&type=podcast`);
-            
-            if (!response.ok) {
-                throw new Error('Failed to search podcasts');
-            }
-            
-            const data = await response.json();
+            // Use centralized API service (production ListenNotes API)
+            const data = await searchPodcasts(podcastSearchQuery, false);
             
             // Transform the Listen Notes API response to match your component's expected format
             const transformedResults = data.results?.map(podcast => ({
@@ -87,19 +82,10 @@ function ImportMediaPage() {
         setPodcastError('');
         
         try {
-            // Call your backend API to get podcast by ID (production)
-            const response = await fetch(`/api/ListenNotes/podcasts/${encodeURIComponent(podcastId)}`);
+            // Use centralized API service to import podcast (production)
+            const result = await importPodcastFromApi({ PodcastId: podcastId }, false);
             
-            if (!response.ok) {
-                throw new Error('Failed to import podcast');
-            }
-            
-            const data = await response.json();
-            
-            // TODO: Process the podcast data and save to your database
-            console.log('Importing podcast by ID (production):', data);
-            
-            setPodcastSuccess(`Podcast "${data.title_original || data.title}" imported successfully from production API!`);
+            setPodcastSuccess(`Podcast imported successfully from production API!`);
             setPodcastIsLoading(false);
             setPodcastId('');
             
@@ -119,28 +105,10 @@ function ImportMediaPage() {
         setPodcastError('');
         
         try {
-            // Search for podcast by exact name first (production API)
-            const response = await fetch(`/api/ListenNotes/search?query=${encodeURIComponent(podcastName)}&type=podcast`);
+            // Use centralized API service to import podcast by name (production)
+            const result = await importPodcastFromApi({ PodcastName: podcastName }, false);
             
-            if (!response.ok) {
-                throw new Error('Failed to search for podcast');
-            }
-            
-            const data = await response.json();
-            
-            // Find exact match by name
-            const exactMatch = data.results?.find(podcast => 
-                (podcast.title_original || podcast.title_highlighted || '').toLowerCase() === podcastName.toLowerCase()
-            );
-            
-            if (!exactMatch) {
-                throw new Error('No exact match found for the podcast name');
-            }
-            
-            // TODO: Process the podcast data and save to your database
-            console.log('Importing podcast by name (production):', exactMatch);
-            
-            setPodcastSuccess(`Podcast "${exactMatch.title_original || exactMatch.title}" imported successfully from production API!`);
+            setPodcastSuccess(`Podcast imported successfully from production API!`);
             setPodcastIsLoading(false);
             setPodcastName('');
             
@@ -155,11 +123,9 @@ function ImportMediaPage() {
         setPodcastError('');
         
         try {
-            // TODO: Implement actual import functionality to save to your database (production API)
-            console.log('Importing podcast (production):', podcast);
+            // Use centralized API service to import podcast (production)
+            const result = await importPodcastFromApi({ PodcastId: podcast.id }, false);
             
-            // You might want to call another API endpoint to save this to your database
-            // For now, just simulate success
             setPodcastSuccess(`"${podcast.title}" imported successfully from production API!`);
             setPodcastIsLoading(false);
             
@@ -181,14 +147,8 @@ function ImportMediaPage() {
         setMockPodcastSearchResults([]);
         
         try {
-            // Call your backend API which uses the Listen Notes mock API
-            const response = await fetch(`/api/MockListenNotes/search?query=${encodeURIComponent(mockPodcastSearchQuery)}&type=podcast`);
-            
-            if (!response.ok) {
-                throw new Error('Failed to search podcasts');
-            }
-            
-            const data = await response.json();
+            // Use centralized API service (Mock ListenNotes API)
+            const data = await searchPodcasts(mockPodcastSearchQuery, true);
             
             // Transform the Listen Notes API response to match your component's expected format
             const transformedResults = data.results?.map(podcast => ({
@@ -219,19 +179,10 @@ function ImportMediaPage() {
         setMockPodcastError('');
         
         try {
-            // Call your backend API to get podcast by ID
-            const response = await fetch(`/api/MockListenNotes/podcasts/${encodeURIComponent(mockPodcastId)}`);
+            // Use centralized API service to import podcast (mock)
+            const result = await importPodcastFromApi({ PodcastId: mockPodcastId }, true);
             
-            if (!response.ok) {
-                throw new Error('Failed to import podcast');
-            }
-            
-            const data = await response.json();
-            
-            // TODO: Process the podcast data and save to your database
-            console.log('Importing podcast by ID (mock):', data);
-            
-            setMockPodcastSuccess(`Podcast "${data.title_original || data.title}" imported successfully from mock API!`);
+            setMockPodcastSuccess(`Podcast imported successfully from mock API!`);
             setMockPodcastIsLoading(false);
             setMockPodcastId('');
             
@@ -251,28 +202,10 @@ function ImportMediaPage() {
         setMockPodcastError('');
         
         try {
-            // Search for podcast by exact name first
-            const response = await fetch(`/api/MockListenNotes/search?query=${encodeURIComponent(mockPodcastName)}&type=podcast`);
+            // Use centralized API service to import podcast by name (mock)
+            const result = await importPodcastFromApi({ PodcastName: mockPodcastName }, true);
             
-            if (!response.ok) {
-                throw new Error('Failed to search for podcast');
-            }
-            
-            const data = await response.json();
-            
-            // Find exact match by name
-            const exactMatch = data.results?.find(podcast => 
-                (podcast.title_original || podcast.title_highlighted || '').toLowerCase() === mockPodcastName.toLowerCase()
-            );
-            
-            if (!exactMatch) {
-                throw new Error('No exact match found for the podcast name');
-            }
-            
-            // TODO: Process the podcast data and save to your database
-            console.log('Importing podcast by name (mock):', exactMatch);
-            
-            setMockPodcastSuccess(`Podcast "${exactMatch.title_original || exactMatch.title}" imported successfully from mock API!`);
+            setMockPodcastSuccess(`Podcast imported successfully from mock API!`);
             setMockPodcastIsLoading(false);
             setMockPodcastName('');
             
@@ -287,11 +220,9 @@ function ImportMediaPage() {
         setMockPodcastError('');
         
         try {
-            // TODO: Implement actual import functionality to save to your database
-            console.log('Importing mock podcast:', podcast);
+            // Use centralized API service to import podcast (mock)
+            const result = await importPodcastFromApi({ PodcastId: podcast.id }, true);
             
-            // You might want to call another API endpoint to save this to your database
-            // For now, just simulate success
             setMockPodcastSuccess(`"${podcast.title}" imported successfully from mock API!`);
             setMockPodcastIsLoading(false);
             

@@ -34,9 +34,15 @@ export const addMediaToPlaylist = (playlistId, mediaItemId) => {
     return apiClient.post(`/playlist/${playlistId}/items/${mediaItemId}`);
 };
 
+// Podcast Episode API calls
+export const addPodcastEpisode = (episodeData) => {
+    return apiClient.post('/podcastepisode', episodeData);
+};
+
 // Podcast Search Functions
 export const searchPodcasts = async (query, useMockApi = false) => {
-    const endpoint = useMockApi ? '/ListenNotes/search' : '/MockListenNotes/search';
+    // Fixed: When useMockApi is true, use MockListenNotes, otherwise use ListenNotes
+    const endpoint = useMockApi ? '/MockListenNotes/search' : '/ListenNotes/search';
     try {
         const response = await apiClient.get(`${endpoint}?query=${encodeURIComponent(query)}&type=podcast`);
         return response.data;
@@ -47,6 +53,7 @@ export const searchPodcasts = async (query, useMockApi = false) => {
 };
 
 export const getPodcastById = async (id, useMockApi = false) => {
+    // Fixed: When useMockApi is true, use MockListenNotes, otherwise use ListenNotes
     const endpoint = useMockApi ? '/MockListenNotes/podcasts' : '/ListenNotes/podcasts';
     try {
         const response = await apiClient.get(`${endpoint}/${id}`);

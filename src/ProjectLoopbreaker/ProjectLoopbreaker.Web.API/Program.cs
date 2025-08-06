@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Infrastructure.Data;
 using ProjectLoopbreaker.Infrastructure.Clients;
+using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +23,13 @@ builder.Services.AddControllers();
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<MediaLibraryDbContext>(options =>
     options.UseNpgsql(connectionString));
+
+// Register IApplicationDbContext
+builder.Services.AddScoped<IApplicationDbContext>(provider => provider.GetService<MediaLibraryDbContext>());
+
+// Register Application Services
+builder.Services.AddScoped<IPodcastMappingService, PodcastMappingService>();
+builder.Services.AddScoped<IPodcastService, PodcastService>();
 
 // In Program.cs
 

@@ -6,7 +6,7 @@ import {
     Checkbox, FormControlLabel, Radio, RadioGroup,
     FormLabel, Chip, OutlinedInput
 } from '@mui/material';
-import { addMedia, getAllPlaylists, addMediaToPlaylist } from '../services/apiService';
+import { addMedia, getAllPlaylists, addMediaToPlaylist, addPodcastEpisode } from '../services/apiService';
 
 function AddMediaForm() {
     const [title, setTitle] = useState('');
@@ -162,15 +162,7 @@ function AddMediaForm() {
                         durationInSeconds: durationInSeconds ? parseInt(durationInSeconds) : 0
                     };
                     
-                    response = await fetch('/api/podcastepisode', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(episodeData)
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
+                    response = await addPodcastEpisode(episodeData);
                 } else {
                     // No podcast type selected, create as regular media
                     response = await addMedia(mediaData);
