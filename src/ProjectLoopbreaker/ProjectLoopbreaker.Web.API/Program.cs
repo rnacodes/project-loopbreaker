@@ -63,6 +63,15 @@ else
                      builder.Configuration["ApiKeys:ListenNotes"] ??
                      builder.Configuration["ListenNotes_ApiKey"];
 
+        Console.WriteLine($"API Key found: {(!string.IsNullOrEmpty(apiKey) ? "YES" : "NO")}");
+        Console.WriteLine($"API Key value: {apiKey}");
+
+        if (string.IsNullOrEmpty(apiKey) || apiKey == "LISTENNOTES_API_KEY")
+        {
+            Console.WriteLine("WARNING: No valid ListenNotes API key found. Please set a valid API key.");
+            throw new InvalidOperationException("ListenNotes API key is required but not configured properly.");
+        }
+
         client.DefaultRequestHeaders.Add("X-ListenAPI-Key", apiKey);
     });
 }

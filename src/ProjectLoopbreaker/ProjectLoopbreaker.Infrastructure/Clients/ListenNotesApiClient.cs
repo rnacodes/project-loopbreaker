@@ -62,8 +62,24 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
             if (unique_podcasts != null) queryParams.Add($"unique_podcasts={Uri.EscapeDataString(unique_podcasts)}");
 
             var queryString = string.Join("&", queryParams);
-            var response = await _httpClient.GetAsync($"search?{queryString}");
-            response.EnsureSuccessStatusCode();
+            var fullUrl = $"search?{queryString}";
+            
+            Console.WriteLine($"Making request to: {_httpClient.BaseAddress}{fullUrl}");
+            var hasApiKey = _httpClient.DefaultRequestHeaders.Contains("X-ListenAPI-Key");
+            Console.WriteLine($"API Key present: {(hasApiKey ? "YES" : "NO")}");
+            
+            var response = await _httpClient.GetAsync(fullUrl);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"HTTP Error: {response.StatusCode} - {errorContent}");
+                Console.WriteLine($"Request URL: {_httpClient.BaseAddress}{fullUrl}");
+                var headers = string.Join(", ", _httpClient.DefaultRequestHeaders.Select(h => $"{h.Key}={string.Join(",", h.Value)}"));
+                Console.WriteLine($"Request Headers: {headers}");
+                throw new HttpRequestException($"HTTP {response.StatusCode}: {errorContent}");
+            }
+            
             return await response.Content.ReadAsStringAsync();
         }
 

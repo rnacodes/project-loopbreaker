@@ -85,17 +85,20 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
+                _logger.LogInformation("Starting search with query: {Query}", query);
+                
                 var result = await _listenNotesClient.SearchAsync(
                     query, type, offset, len_min, len_max, genre_ids,
                     published_before, published_after, only_in, language,
                     region, sort_by_date, safe_mode, unique_podcasts);
 
+                _logger.LogInformation("Search completed successfully for query: {Query}", query);
                 return Content(result, "application/json");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error searching with query {Query}", query);
-                return StatusCode(500, "An error occurred while performing the search");
+                _logger.LogError(ex, "Error searching with query {Query}. Exception details: {ExceptionMessage}", query, ex.Message);
+                return StatusCode(500, $"An error occurred while performing the search: {ex.Message}");
             }
         }
 
