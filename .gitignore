@@ -680,3 +680,6 @@ ProjectLoopbreaker.Web.API/Controllers/DevController.cs
 
 # End of https://www.toptal.com/developers/gitignore/api/csharp,react,node,aspnetcore
 /src/ProjectLoopbreaker/ProjectLoopbreaker.Web.API/Controllers/DevController.cs
+
+# Project-specific ignores
+temp-docs/
