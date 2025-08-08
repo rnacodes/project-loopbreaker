@@ -17,7 +17,13 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.Services.AddControllers();
+// Configure JSON serialization to return enums as strings
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 
 // --- Configure EF Core & PostgreSQL ---
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");

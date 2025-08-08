@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-import { createTheme, ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, Button, Container } from '@mui/material';
+import { ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, Button } from '@mui/material';
 
 // --- Import your page components ---
 import HomePage from './components/HomePage';
@@ -11,73 +11,10 @@ import PlaylistsPage from './components/PlaylistsPage';
 import CreatePlaylistForm from './components/CreatePlaylistForm';
 import MixlistDetailPage from './components/MixlistDetailPage';
 import ImportMediaPage from './components/ImportMediaPage';
+import DemoPage from './components/DemoPage';
 
-// 1. THEME AND STYLING
-// Define the custom color palette for Dark Mode
-const theme = createTheme({
-  palette: {
-    mode: 'dark',
-    primary: {
-      main: '#695a8c', // ultra-violet
-    },
-    secondary: {
-      main: '#fcfafa', // seasalt
-    },
-    background: {
-      default: '#1B1B1B', // Updated to match HomePage
-      paper: '#474350', // davys-gray
-    },
-    text: {
-      primary: '#fcfafa', // seasalt
-      secondary: '#695a8c', // Updated to match HomePage
-    },
-  },
-  typography: {
-    fontFamily: 'Roboto, sans-serif',
-    h1: {
-      fontSize: '3rem', // Updated to match HomePage
-      fontWeight: 700,
-      color: '#fcfafa',
-      textAlign: 'center',
-      marginBottom: '1rem',
-    },
-    h4: {
-      fontWeight: 600,
-      color: '#fcfafa',
-      borderBottom: '2px solid #695a8c',
-      paddingBottom: '0.5rem',
-      marginBottom: '1.5rem',
-    },
-    body1: {
-      fontSize: '1.1rem',
-    },
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: '20px',
-          textTransform: 'none',
-          fontWeight: 'bold',
-          padding: '10px 20px',
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          backgroundColor: '#474350', // davys-gray
-          borderRadius: '16px',
-          transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
-          '&:hover': {
-            transform: 'translateY(-5px)',
-            boxShadow: '0 8px 25px rgba(252, 250, 250, 0.2)',
-          },
-        },
-      },
-    },
-  },
-});
+// --- Import Design System ---
+import { theme } from './components/shared/DesignSystem';
 
 function App() {
   return (
@@ -97,6 +34,7 @@ function App() {
             <Button color="inherit" component={Link} to="/playlists">Mixlists</Button>
             <Button color="inherit" component={Link} to="/add-media">Add Media</Button>
             <Button color="inherit" component={Link} to="/import-media">Import Media</Button>
+            <Button color="inherit" component={Link} to="/demo">Demo</Button>
             {/* Add other navigation links here later */}
           </Toolbar>
         </AppBar>
@@ -111,6 +49,7 @@ function App() {
           <Route path="/create-playlist" element={<CreatePlaylistForm />} />
           <Route path="/import-media" element={<ImportMediaPage />} />
           <Route path="/media/:id" element={<MediaItemProfile />} />
+          <Route path="/demo" element={<DemoPage />} />
         </Routes>
       </Router>
     </ThemeProvider>

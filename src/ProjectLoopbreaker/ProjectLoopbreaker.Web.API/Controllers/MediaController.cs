@@ -51,6 +51,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     Description = dto.Description,
                     Genre = dto.Genre,
                     Topics = dto.Topics,
+                    Genres = dto.Genres,
                     RelatedNotes = dto.RelatedNotes,
                     Thumbnail = dto.Thumbnail
                 },
@@ -111,6 +112,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 existingItem.Description = dto.Description;
                 existingItem.Genre = dto.Genre;
                 existingItem.Topics = dto.Topics;
+                existingItem.Genres = dto.Genres;
                 existingItem.RelatedNotes = dto.RelatedNotes;
                 existingItem.Thumbnail = dto.Thumbnail;
 
