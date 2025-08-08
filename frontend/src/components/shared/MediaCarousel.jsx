@@ -58,9 +58,9 @@ const MediaCarousel = ({
       coverflowEffect: {
         rotate: 0,
         stretch: 0,
-        depth: 100,
-        modifier: 1,
-        slideShadows: true,
+        depth: 200,
+        modifier: 1.5,
+        slideShadows: false,
       },
     },
     cards: {
@@ -142,7 +142,19 @@ const MediaCarousel = ({
       </Box>
 
       {/* Carousel */}
-      <Box sx={{ position: 'relative' }}>
+      <Box sx={{ 
+        position: 'relative',
+        '& .swiper-slide': {
+          zIndex: 1,
+          transition: 'z-index 0.3s ease'
+        },
+        '& .swiper-slide-active': {
+          zIndex: 10
+        },
+        '& .swiper-slide-prev, & .swiper-slide-next': {
+          zIndex: 5
+        }
+      }}>
         <Swiper
           modules={[Navigation, Pagination, Autoplay, EffectCoverflow]}
           {...currentVariant}
@@ -166,6 +178,8 @@ const MediaCarousel = ({
             padding: '20px 0',
             '--swiper-navigation-color': COLORS.primary.main,
             '--swiper-pagination-color': COLORS.primary.main,
+            '--swiper-pagination-bullet-inactive-color': COLORS.background.elevated,
+            '--swiper-pagination-bullet-inactive-opacity': 0.5,
           }}
         >
           {mediaItems.map((media, index) => (
@@ -189,6 +203,7 @@ const MediaCarousel = ({
                     media={media}
                     variant={variant === 'coverflow' ? 'featured' : 'default'}
                     onClick={handleMediaClick}
+                    showMediaTypeIcon={false}
                     sx={{
                       width: '100%',
                       maxWidth: variant === 'coverflow' ? '300px' : '280px',

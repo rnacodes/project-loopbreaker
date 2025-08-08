@@ -7,12 +7,9 @@ import {
   Typography,
   Chip,
   Box,
-  Rating,
-  IconButton,
-  Tooltip
+  Rating
 } from '@mui/material';
 import {
-  PlayArrow,
   Book,
   Movie,
   Tv,
@@ -23,8 +20,7 @@ import {
   YouTube,
   Language,
   MenuBook,
-  AutoAwesome,
-  MoreVert
+  AutoAwesome
 } from '@mui/icons-material';
 import { getMediaTypeColor, getStatusColor, commonStyles } from './DesignSystem';
 
@@ -46,9 +42,9 @@ const mediaTypeIcons = {
 const MediaCard = ({
   media,
   variant = 'default', // 'default', 'compact', 'featured'
-  showActions = true,
   onClick,
   className,
+  showMediaTypeIcon = true, // new prop to control media type icon visibility
   ...props
 }) => {
   const getMediaIcon = (mediaType) => {
@@ -96,61 +92,23 @@ const MediaCard = ({
       />
 
       {/* Overlay with media type icon */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 8,
-          left: 8,
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          borderRadius: '50%',
-          p: 0.5,
-          color: getMediaTypeColor(media.mediaType)
-        }}
-      >
-        {getMediaIcon(media.mediaType)}
-      </Box>
-
-      {/* Actions overlay */}
-      {showActions && (
+      {showMediaTypeIcon && (
         <Box
           sx={{
             position: 'absolute',
             top: 8,
-            right: 8,
-            display: 'flex',
-            gap: 0.5
+            left: 8,
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            borderRadius: '50%',
+            p: 0.5,
+            color: getMediaTypeColor(media.mediaType)
           }}
         >
-          <Tooltip title="Play">
-            <IconButton
-              size="small"
-              sx={{
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)'
-                }
-              }}
-            >
-              <PlayArrow />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="More options">
-            <IconButton
-              size="small"
-              sx={{
-                backgroundColor: 'rgba(0, 0, 0, 0.7)',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)'
-                }
-              }}
-            >
-              <MoreVert />
-            </IconButton>
-          </Tooltip>
+          {getMediaIcon(media.mediaType)}
         </Box>
       )}
+
+
 
       {/* Card Content */}
       <CardContent
@@ -183,21 +141,23 @@ const MediaCard = ({
         <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
           <Chip
             label={media.mediaType}
-            size="small"
+            size="medium"
             sx={{
               backgroundColor: getMediaTypeColor(media.mediaType),
               color: 'white',
-              fontSize: '0.75rem'
+              fontSize: '0.85rem',
+              height: '28px'
             }}
           />
           {media.status && (
             <Chip
               label={media.status}
-              size="small"
+              size="medium"
               sx={{
                 backgroundColor: getStatusColor(media.status),
                 color: 'white',
-                fontSize: '0.75rem'
+                fontSize: '0.85rem',
+                height: '28px'
               }}
             />
           )}

@@ -23,7 +23,7 @@ const mockMediaItems = [
     id: 1,
     title: 'The Great Gatsby',
     mediaType: 'book',
-    status: 'consumed',
+    status: 'completed',
     rating: 4.5,
     notes: 'A classic American novel about the Jazz Age.',
     dateAdded: '2024-01-15',
@@ -33,7 +33,7 @@ const mockMediaItems = [
     id: 2,
     title: 'Inception',
     mediaType: 'movie',
-    status: 'inprogress',
+    status: 'actively exploring',
     rating: 4.8,
     notes: 'Mind-bending sci-fi thriller about dreams within dreams.',
     dateAdded: '2024-01-20',
@@ -43,7 +43,7 @@ const mockMediaItems = [
     id: 3,
     title: 'Breaking Bad',
     mediaType: 'tv',
-    status: 'consumed',
+    status: 'completed',
     rating: 5.0,
     notes: 'One of the greatest TV series ever made.',
     dateAdded: '2024-01-10',
@@ -53,7 +53,7 @@ const mockMediaItems = [
     id: 4,
     title: 'The Joe Rogan Experience',
     mediaType: 'podcast',
-    status: 'notconsumed',
+    status: 'uncharted',
     rating: 4.2,
     notes: 'Long-form conversations with interesting guests.',
     dateAdded: '2024-01-25',
@@ -63,7 +63,7 @@ const mockMediaItems = [
     id: 5,
     title: 'Cyberpunk 2077',
     mediaType: 'game',
-    status: 'didnotfinish',
+    status: 'abandoned',
     rating: 3.5,
     notes: 'Open-world RPG set in a dystopian future.',
     dateAdded: '2024-01-30',
@@ -73,7 +73,7 @@ const mockMediaItems = [
     id: 6,
     title: 'React Documentation',
     mediaType: 'document',
-    status: 'inprogress',
+    status: 'actively exploring',
     rating: 4.7,
     notes: 'Official React documentation and tutorials.',
     dateAdded: '2024-02-01',
@@ -243,12 +243,12 @@ const DemoPage = () => {
               Status Colors
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {['consumed', 'inprogress', 'notconsumed', 'didnotfinish'].map((status) => (
+              {['uncharted', 'actively exploring', 'completed', 'abandoned'].map((status) => (
                 <Chip
                   key={status}
                   label={status}
                   sx={{
-                    backgroundColor: COLORS[status === 'consumed' ? 'success' : status === 'inprogress' ? 'warning' : status === 'notconsumed' ? 'info' : 'error'],
+                    backgroundColor: COLORS.status[status === 'uncharted' ? 'uncharted' : status === 'actively exploring' ? 'activelyExploring' : status === 'completed' ? 'completed' : 'abandoned'],
                     color: 'white',
                     fontWeight: 'bold'
                   }}

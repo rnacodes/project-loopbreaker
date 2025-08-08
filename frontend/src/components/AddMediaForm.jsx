@@ -734,7 +734,7 @@ function AddMediaForm() {
                     }}
                 />
 
-                {/* Playlist Selection */}
+                {/* Mixlist Selection */}
                 <Box sx={{ mb: 3 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                         <Typography variant="body1" sx={{ 
@@ -747,7 +747,7 @@ function AddMediaForm() {
                         <Button
                             variant="outlined"
                             size="small"
-                            onClick={() => navigate('/create-playlist')}
+                            onClick={() => navigate('/create-mixlist')}
                             sx={{ 
                                 fontSize: '12px',
                                 textTransform: 'none',

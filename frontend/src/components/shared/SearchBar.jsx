@@ -212,7 +212,7 @@ const SearchBar = ({
                         }
                       }}
                     >
-                      <ListItemIcon sx={{ color: COLORS.primary.main }}>
+                      <ListItemIcon sx={{ color: COLORS.primary.dark }}>
                         {mediaTypeIcons[item.mediaType?.toLowerCase()] || <Search />}
                       </ListItemIcon>
                       <ListItemText

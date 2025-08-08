@@ -7,8 +7,8 @@ import HomePage from './components/HomePage';
 import AddMediaForm from './components/AddMediaForm';
 import MediaItemProfile from './components/MediaItemProfile';
 import AllMedia from './components/AllMedia';
-import PlaylistsPage from './components/PlaylistsPage';
-import CreatePlaylistForm from './components/CreatePlaylistForm';
+import MixlistsPage from './components/MixlistsPage';
+import CreateMixlistForm from './components/CreateMixlistForm';
 import MixlistDetailPage from './components/MixlistDetailPage';
 import ImportMediaPage from './components/ImportMediaPage';
 import DemoPage from './components/DemoPage';
@@ -31,7 +31,7 @@ function App() {
               </Button>
             </Typography>
             <Button color="inherit" component={Link} to="/all-media">All Media</Button>
-            <Button color="inherit" component={Link} to="/playlists">Mixlists</Button>
+            <Button color="inherit" component={Link} to="/mixlists">Mixlists</Button>
             <Button color="inherit" component={Link} to="/add-media">Add Media</Button>
             <Button color="inherit" component={Link} to="/import-media">Import Media</Button>
             <Button color="inherit" component={Link} to="/demo">Demo</Button>
@@ -44,9 +44,9 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/add-media" element={<AddMediaForm />} />
           <Route path="/all-media" element={<AllMedia />} />
-          <Route path="/playlists" element={<PlaylistsPage />} />
-          <Route path="/playlist/:id" element={<MixlistDetailPage />} />
-          <Route path="/create-playlist" element={<CreatePlaylistForm />} />
+          <Route path="/mixlists" element={<MixlistsPage />} />
+          <Route path="/mixlist/:id" element={<MixlistDetailPage />} />
+          <Route path="/create-mixlist" element={<CreateMixlistForm />} />
           <Route path="/import-media" element={<ImportMediaPage />} />
           <Route path="/media/:id" element={<MediaItemProfile />} />
           <Route path="/demo" element={<DemoPage />} />

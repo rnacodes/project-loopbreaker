@@ -27,7 +27,7 @@ export const COLORS = {
   // Text Colors
   text: {
     primary: '#fcfafa',
-    secondary: '#695a8c',
+    secondary: '#fcfafa', // white for better readability
     disabled: '#666666',
     hint: '#999999'
   },
@@ -37,6 +37,14 @@ export const COLORS = {
   warning: '#ff9800',
   error: '#f44336',
   info: '#2196f3',
+  
+  // New Status Colors
+  status: {
+    uncharted: '#666666', // dark grey
+    activelyExploring: '#4caf50', // green
+    completed: '#2196f3', // blue
+    abandoned: '#ff9800' // orange
+  },
   
   // Media Type Colors
   mediaTypes: {
@@ -138,17 +146,17 @@ export const theme = createTheme({
       color: COLORS.text.primary
     },
     body1: {
-      fontSize: '1.1rem',
+      fontSize: '1.2rem', // increased from 1.1rem
       lineHeight: 1.6,
       color: COLORS.text.primary
     },
     body2: {
-      fontSize: '1rem',
+      fontSize: '1.1rem', // increased from 1rem
       lineHeight: 1.5,
       color: COLORS.text.secondary
     },
     caption: {
-      fontSize: '0.875rem',
+      fontSize: '1.1rem', // increased from 1rem
       color: COLORS.text.hint
     }
   },
@@ -244,14 +252,24 @@ export const getMediaTypeColor = (mediaType) => {
 
 export const getStatusColor = (status) => {
   switch (status?.toLowerCase()) {
+    case 'uncharted':
+      return COLORS.status.uncharted;
+    case 'activelyexploring':
+    case 'actively exploring':
+      return COLORS.status.activelyExploring;
+    case 'completed':
+      return COLORS.status.completed;
+    case 'abandoned':
+      return COLORS.status.abandoned;
+    // Legacy status support
     case 'consumed':
-      return COLORS.success;
+      return COLORS.status.completed;
     case 'inprogress':
-      return COLORS.warning;
+      return COLORS.status.activelyExploring;
     case 'notconsumed':
-      return COLORS.info;
+      return COLORS.status.uncharted;
     case 'didnotfinish':
-      return COLORS.error;
+      return COLORS.status.abandoned;
     default:
       return COLORS.text.secondary;
   }

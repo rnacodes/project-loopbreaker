@@ -23,23 +23,23 @@ export const getAllMedia = () => {
 
 // Mixlist API calls
 export const getAllMixlists = () => {
-    return apiClient.get('/playlist');
+    return apiClient.get('/mixlist');
 };
 
 export const createMixlist = (mixlistData) => {
-    return apiClient.post('/playlist', mixlistData);
+    return apiClient.post('/mixlist', mixlistData);
 };
 
 export const addMediaToMixlist = (mixlistId, mediaItemId) => {
-    return apiClient.post(`/playlist/${mixlistId}/items/${mediaItemId}`);
+    return apiClient.post(`/mixlist/${mixlistId}/items/${mediaItemId}`);
 };
 
 export const getMixlistById = (id) => {
-    return apiClient.get(`/playlist/${id}`);
+    return apiClient.get(`/mixlist/${id}`);
 };
 
 export const removeMediaFromMixlist = (mixlistId, mediaItemId) => {
-    return apiClient.delete(`/playlist/${mixlistId}/items/${mediaItemId}`);
+    return apiClient.delete(`/mixlist/${mixlistId}/items/${mediaItemId}`);
 };
 
 // Podcast Episode API calls

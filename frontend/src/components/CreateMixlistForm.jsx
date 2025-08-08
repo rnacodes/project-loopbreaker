@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { createMixlist } from '../services/apiService';
 
-function CreatePlaylistForm() {
+function CreateMixlistForm() {
     const [name, setName] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
@@ -22,15 +22,18 @@ function CreatePlaylistForm() {
                 Thumbnail: `https://picsum.photos/400/400?random=${Date.now()}&blur=1`
             };
 
+            console.log('Attempting to create mixlist with data:', mixlistData);
             const response = await createMixlist(mixlistData);
             console.log('Mixlist created!', response);
             console.log('Mixlist data:', response.data);
             
             // Navigate to the mixlist or back to mixlists list
-            navigate('/playlists'); // Adjust the route as needed
+            navigate('/mixlists'); // Updated route
         } catch (error) {
             console.error('Failed to create mixlist:', error);
-            alert('Failed to create mixlist. Please try again.');
+            console.error('Error details:', error.response?.data);
+            console.error('Error status:', error.response?.status);
+            alert(`Failed to create mixlist: ${error.response?.data?.error || error.message}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -73,7 +76,7 @@ function CreatePlaylistForm() {
                     Create New Mixlist
                 </Typography>
                 
-                {/* Playlist Name */}
+                {/* Mixlist Name */}
                 <Typography variant="h5" sx={{ 
                     fontSize: '20px', 
                     fontWeight: 'bold', 
@@ -147,4 +150,4 @@ function CreatePlaylistForm() {
     );
 }
 
-export default CreatePlaylistForm;
+export default CreateMixlistForm;

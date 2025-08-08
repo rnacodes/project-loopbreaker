@@ -7,21 +7,24 @@ import {
 import { Add } from '@mui/icons-material';
 import { getAllMixlists } from '../services/apiService';
 
-function PlaylistsPage() {
-    const [playlists, setPlaylists] = useState([]);
+function MixlistsPage() {
+    const [mixlists, setMixlists] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
         const loadMixlists = async () => {
             try {
+                console.log('Attempting to load mixlists...');
                 const response = await getAllMixlists();
                 console.log('Mixlists response:', response);
                 console.log('Mixlists data:', response.data);
-                // Use the actual playlists from the main endpoint
-                setPlaylists(response.data);
+                // Use the actual mixlists from the main endpoint
+                setMixlists(response.data);
             } catch (error) {
                 console.error('Error loading mixlists:', error);
+                console.error('Error details:', error.response?.data);
+                console.error('Error status:', error.response?.status);
             } finally {
                 setLoading(false);
             }
@@ -48,7 +51,7 @@ function PlaylistsPage() {
                 My Mixlists
             </Typography>
 
-            {playlists.length === 0 ? (
+            {mixlists.length === 0 ? (
                 <Box sx={{ textAlign: 'center', mt: 8 }}>
                     <Typography variant="h5" sx={{ mb: 2, color: '#888' }}>
                         No mixlists yet
@@ -59,7 +62,7 @@ function PlaylistsPage() {
                     <Button 
                         variant="contained" 
                         size="large"
-                        onClick={() => navigate('/create-playlist')}
+                        onClick={() => navigate('/create-mixlist')}
                         sx={{ fontSize: '16px', px: 4, py: 1.5 }}
                     >
                         Create First Mixlist
@@ -67,8 +70,8 @@ function PlaylistsPage() {
                 </Box>
             ) : (
                 <Grid container spacing={3}>
-                    {playlists.map((playlist) => (
-                        <Grid item xs={12} sm={6} md={4} lg={3} key={playlist.id}>
+                    {mixlists.map((mixlist) => (
+                        <Grid item xs={12} sm={6} md={4} lg={3} key={mixlist.id}>
                             <Card 
                                 sx={{ 
                                     height: '100%',
@@ -79,14 +82,14 @@ function PlaylistsPage() {
                                         boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
                                     }
                                 }}
-                                onClick={() => navigate(`/playlist/${playlist.id}`)}
+                                onClick={() => navigate(`/mixlist/${mixlist.id}`)}
                             >
-                                {playlist.Thumbnail && (
+                                {mixlist.Thumbnail && (
                                     <CardMedia
                                         component="img"
                                         height="200"
-                                        image={playlist.Thumbnail}
-                                        alt={playlist.Name}
+                                        image={mixlist.Thumbnail}
+                                        alt={mixlist.Name}
                                         sx={{ objectFit: 'cover' }}
                                     />
                                 )}
@@ -96,14 +99,14 @@ function PlaylistsPage() {
                                         fontWeight: 'bold',
                                         textAlign: 'center'
                                     }}>
-                                        {playlist.Name}
+                                        {mixlist.Name}
                                     </Typography>
                                     <Typography variant="body2" sx={{ 
                                         mt: 1,
                                         textAlign: 'center',
                                         color: '#888'
                                     }}>
-                                        {playlist.MediaItems ? playlist.MediaItems.length : 0} item{(playlist.MediaItems ? playlist.MediaItems.length : 0) !== 1 ? 's' : ''}
+                                        {mixlist.MediaItems ? mixlist.MediaItems.length : 0} item{(mixlist.MediaItems ? mixlist.MediaItems.length : 0) !== 1 ? 's' : ''}
                                     </Typography>
                                 </CardContent>
                             </Card>
@@ -122,7 +125,7 @@ function PlaylistsPage() {
                     right: 32,
                     zIndex: 1000
                 }}
-                onClick={() => navigate('/create-playlist')}
+                onClick={() => navigate('/create-mixlist')}
             >
                 <Add />
             </Fab>
@@ -130,4 +133,4 @@ function PlaylistsPage() {
     );
 }
 
-export default PlaylistsPage;
+export default MixlistsPage;

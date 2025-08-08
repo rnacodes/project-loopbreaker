@@ -186,7 +186,7 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   const handleCreateMixlist = () => {
-    navigate('/create-playlist');
+                            navigate('/create-mixlist');
   };
 
   const handleImportMedia = () => {

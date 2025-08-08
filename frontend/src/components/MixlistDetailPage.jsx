@@ -60,7 +60,7 @@ function MixlistDetailPage() {
         <Box sx={{ p: 3, minHeight: '100vh' }}>
             {/* Header */}
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
-                <IconButton onClick={() => navigate('/playlists')} sx={{ mr: 2 }}>
+                <IconButton onClick={() => navigate('/mixlists')} sx={{ mr: 2 }}>
                     <ArrowBack />
                 </IconButton>
                 <Box>
