@@ -34,39 +34,29 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return BadRequest("Media item data is null.");
             }
 
-            // Parse the string MediaType to the enum MediaType
-            if (!Enum.TryParse<MediaType>(dto.MediaType, true, out var mediaTypeEnum))
+            // Create the appropriate concrete type based on MediaType
+            BaseMediaItem mediaItem = dto.MediaType switch
             {
-                return BadRequest($"Invalid media type: {dto.MediaType}");
-            }
-
-            // Parse the string Rating to the enum Rating (if provided)
-            Rating? ratingEnum = null;
-            if (!string.IsNullOrEmpty(dto.Rating))
-            {
-                if (!Enum.TryParse<Rating>(dto.Rating, true, out var parsedRating))
+                MediaType.Podcast => new PodcastSeries
                 {
-                    return BadRequest($"Invalid rating: {dto.Rating}. Valid values are: {string.Join(", ", Enum.GetNames<Rating>())}");
-                }
-                ratingEnum = parsedRating;
-            }
-
-            var mediaItem = new BaseMediaItem
-            {
-                Title = dto.Title,
-                MediaType = mediaTypeEnum,
-                Link = dto.Link,
-                Notes = dto.Notes,
-                Consumed = dto.Consumed,
-                DateAdded = DateTime.UtcNow,
-                DateConsumed = dto.Consumed ? DateTime.UtcNow : null,
-                Rating = ratingEnum,
-                RelatedNotes = dto.RelatedNotes,
-                Thumbnail = dto.Thumbnail,
-                Description = dto.Description,
-                Genre = dto.Genre,
-                Topics = dto.Topics
-                // Playlists is initialized to new List<Playlist>() by default
+                    Title = dto.Title,
+                    MediaType = dto.MediaType,
+                    Link = dto.Link,
+                    Notes = dto.Notes,
+                    Status = dto.Status,
+                    DateAdded = DateTime.UtcNow,
+                    DateCompleted = dto.DateCompleted,
+                    Rating = dto.Rating,
+                    OwnershipStatus = dto.OwnershipStatus,
+                    Description = dto.Description,
+                    Genre = dto.Genre,
+                    Topics = dto.Topics,
+                    RelatedNotes = dto.RelatedNotes,
+                    Thumbnail = dto.Thumbnail
+                },
+                // TODO: Add concrete types for other media types as they're implemented
+                // For now, return an error for unsupported types
+                _ => throw new NotSupportedException($"Media type '{dto.MediaType}' is not yet supported. Please implement a concrete class for this media type.")
             };
 
             _context.MediaItems.Add(mediaItem);
@@ -80,28 +70,108 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<BaseMediaItem>> GetMediaItem(Guid id)
         {
-            var mediaItem = await _context.MediaItems.FindAsync(id);
+            var mediaItem = await _context.MediaItems
+                .Include(m => m.Mixlists)
+                .FirstOrDefaultAsync(m => m.Id == id);
 
             if (mediaItem == null)
             {
-                return NotFound();
+                return NotFound($"Media item with ID {id} not found.");
             }
 
             return Ok(mediaItem);
         }
-    }
-    public class CreateMediaItemDto
-    {
-        public string Title { get; set; }
-        public string MediaType { get; set; }
-        public string? Link { get; set; }
-        public string? Notes { get; set; }
-        public bool Consumed { get; set; }
-        public string? Rating { get; set; }
-        public string? RelatedNotes { get; set; }
-        public string? Thumbnail { get; set; }
-        public string? Description { get; set; }
-        public string? Genre { get; set; }      // Add this property
-        public string? Topics { get; set; }     // Add this property
+
+        // PUT: api/media/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateMediaItem(Guid id, [FromBody] CreateMediaItemDto dto)
+        {
+            if (dto == null)
+            {
+                return BadRequest("Media item data is null.");
+            }
+
+            var existingItem = await _context.MediaItems.FindAsync(id);
+            if (existingItem == null)
+            {
+                return NotFound($"Media item with ID {id} not found.");
+            }
+
+            try
+            {
+                // Update properties
+                existingItem.Title = dto.Title;
+                existingItem.MediaType = dto.MediaType;
+                existingItem.Link = dto.Link;
+                existingItem.Notes = dto.Notes;
+                existingItem.Status = dto.Status;
+                existingItem.DateCompleted = dto.DateCompleted;
+                existingItem.Rating = dto.Rating;
+                existingItem.OwnershipStatus = dto.OwnershipStatus;
+                existingItem.Description = dto.Description;
+                existingItem.Genre = dto.Genre;
+                existingItem.Topics = dto.Topics;
+                existingItem.RelatedNotes = dto.RelatedNotes;
+                existingItem.Thumbnail = dto.Thumbnail;
+
+                await _context.SaveChangesAsync();
+                return Ok(existingItem);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to update media item", details = ex.Message });
+            }
+        }
+
+        // DELETE: api/media/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteMediaItem(Guid id)
+        {
+            try
+            {
+                var mediaItem = await _context.MediaItems.FindAsync(id);
+                if (mediaItem == null)
+                {
+                    return NotFound($"Media item with ID {id} not found.");
+                }
+
+                _context.MediaItems.Remove(mediaItem);
+                await _context.SaveChangesAsync();
+                
+                return Ok(new { message = $"Media item '{mediaItem.Title}' deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to delete media item", details = ex.Message });
+            }
+        }
+
+        // GET: api/media/search?query={query}
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<BaseMediaItem>>> SearchMedia([FromQuery] string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return BadRequest("Search query cannot be empty.");
+            }
+
+            try
+            {
+                var results = await _context.MediaItems
+                    .Where(m => m.Title.Contains(query) || 
+                               (m.Description != null && m.Description.Contains(query)) ||
+                               (m.Genre != null && m.Genre.Contains(query)) ||
+                               (m.Topics.Any(t => t.Contains(query))) ||
+                               (m.Genres.Any(g => g.Contains(query))))
+                    .Include(m => m.Mixlists)
+                    .ToListAsync();
+
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Search failed", details = ex.Message });
+            }
+        }
     }
 }

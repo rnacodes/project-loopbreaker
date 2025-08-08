@@ -21,17 +21,25 @@ export const getAllMedia = () => {
     return apiClient.get('/media');
 };
 
-// Playlist API calls
-export const getAllPlaylists = () => {
+// Mixlist API calls
+export const getAllMixlists = () => {
     return apiClient.get('/playlist');
 };
 
-export const createPlaylist = (playlistData) => {
-    return apiClient.post('/playlist', playlistData);
+export const createMixlist = (mixlistData) => {
+    return apiClient.post('/playlist', mixlistData);
 };
 
-export const addMediaToPlaylist = (playlistId, mediaItemId) => {
-    return apiClient.post(`/playlist/${playlistId}/items/${mediaItemId}`);
+export const addMediaToMixlist = (mixlistId, mediaItemId) => {
+    return apiClient.post(`/playlist/${mixlistId}/items/${mediaItemId}`);
+};
+
+export const getMixlistById = (id) => {
+    return apiClient.get(`/playlist/${id}`);
+};
+
+export const removeMediaFromMixlist = (mixlistId, mediaItemId) => {
+    return apiClient.delete(`/playlist/${mixlistId}/items/${mediaItemId}`);
 };
 
 // Podcast Episode API calls

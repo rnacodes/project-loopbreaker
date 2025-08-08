@@ -5,6 +5,7 @@ using ProjectLoopbreaker.Infrastructure.Data;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Application.Services;
 using ProjectLoopbreaker.Infrastructure.Clients;
+using ProjectLoopbreaker.Web.API.DTOs;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -85,32 +86,22 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return BadRequest($"Podcast series with ID {dto.PodcastSeriesId} not found.");
             }
 
-            // Parse the string Rating to the enum Rating (if provided)
-            Rating? ratingEnum = null;
-            if (!string.IsNullOrEmpty(dto.Rating))
-            {
-                if (!Enum.TryParse<Rating>(dto.Rating, true, out var parsedRating))
-                {
-                    return BadRequest($"Invalid rating: {dto.Rating}. Valid values are: {string.Join(", ", Enum.GetNames<Rating>())}");
-                }
-                ratingEnum = parsedRating;
-            }
-
             var episode = new PodcastEpisode
             {
                 Title = dto.Title,
                 MediaType = MediaType.Podcast,
                 Link = dto.Link,
                 Notes = dto.Notes,
+                Status = dto.Status,
+                DateAdded = DateTime.UtcNow,
+                DateCompleted = dto.DateCompleted,
+                Rating = dto.Rating,
+                OwnershipStatus = dto.OwnershipStatus,
                 Description = dto.Description,
                 Genre = dto.Genre,
                 Topics = dto.Topics,
                 RelatedNotes = dto.RelatedNotes,
                 Thumbnail = dto.Thumbnail,
-                DateAdded = DateTime.UtcNow,
-                Consumed = dto.Consumed,
-                DateConsumed = dto.Consumed && dto.DateConsumed.HasValue ? dto.DateConsumed : null,
-                Rating = ratingEnum,
                 PodcastSeriesId = dto.PodcastSeriesId,
                 AudioLink = dto.AudioLink,
                 ReleaseDate = dto.ReleaseDate,
@@ -173,29 +164,26 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return NotFound($"Podcast episode with ID {id} not found.");
             }
 
-            // Parse the string Rating to the enum Rating (if provided)
-            Rating? ratingEnum = null;
-            if (!string.IsNullOrEmpty(dto.Rating))
-            {
-                if (!Enum.TryParse<Rating>(dto.Rating, true, out var parsedRating))
-                {
-                    return BadRequest($"Invalid rating: {dto.Rating}. Valid values are: {string.Join(", ", Enum.GetNames<Rating>())}");
-                }
-                ratingEnum = parsedRating;
-            }
-
             // Update properties
             episode.Title = dto.Title ?? episode.Title;
             episode.Link = dto.Link ?? episode.Link;
             episode.Notes = dto.Notes ?? episode.Notes;
             episode.Description = dto.Description ?? episode.Description;
             episode.Genre = dto.Genre ?? episode.Genre;
-            episode.Topics = dto.Topics ?? episode.Topics;
+            if (dto.Topics != null)
+                episode.Topics = dto.Topics;
+            if (dto.Genres != null)
+                episode.Genres = dto.Genres;
             episode.RelatedNotes = dto.RelatedNotes ?? episode.RelatedNotes;
             episode.Thumbnail = dto.Thumbnail ?? episode.Thumbnail;
-            episode.Consumed = dto.Consumed;
-            episode.DateConsumed = dto.Consumed ? DateTime.UtcNow : null;
-            episode.Rating = ratingEnum ?? episode.Rating;
+            if (dto.Status.HasValue)
+                episode.Status = dto.Status.Value;
+            if (dto.DateCompleted.HasValue)
+                episode.DateCompleted = dto.DateCompleted;
+            if (dto.Rating.HasValue)
+                episode.Rating = dto.Rating;
+            if (dto.OwnershipStatus.HasValue)
+                episode.OwnershipStatus = dto.OwnershipStatus;
             episode.AudioLink = dto.AudioLink ?? episode.AudioLink;
             episode.ReleaseDate = dto.ReleaseDate ?? episode.ReleaseDate;
             episode.DurationInSeconds = dto.DurationInSeconds ?? episode.DurationInSeconds;
@@ -224,25 +212,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         }
     }
 
-    // DTOs for the controller
-    public class CreatePodcastEpisodeDto
-    {
-        public string Title { get; set; } = string.Empty;
-        public string? Link { get; set; }
-        public string? Notes { get; set; }
-        public string? Description { get; set; }
-        public string? Genre { get; set; }
-        public string? Topics { get; set; }
-        public string? RelatedNotes { get; set; }
-        public string? Thumbnail { get; set; }
-        public bool Consumed { get; set; }
-        public DateTime? DateConsumed { get; set; }
-        public string? Rating { get; set; }
-        public Guid PodcastSeriesId { get; set; }
-        public string? AudioLink { get; set; }
-        public DateTime? ReleaseDate { get; set; }
-        public int DurationInSeconds { get; set; }
-    }
+
 
     public class UpdatePodcastEpisodeDto
     {
@@ -251,11 +221,14 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         public string? Notes { get; set; }
         public string? Description { get; set; }
         public string? Genre { get; set; }
-        public string? Topics { get; set; }
+        public string[]? Topics { get; set; }
+        public string[]? Genres { get; set; }
         public string? RelatedNotes { get; set; }
         public string? Thumbnail { get; set; }
-        public bool Consumed { get; set; }
-        public string? Rating { get; set; }
+        public Status? Status { get; set; }
+        public DateTime? DateCompleted { get; set; }
+        public Rating? Rating { get; set; }
+        public OwnershipStatus? OwnershipStatus { get; set; }
         public string? AudioLink { get; set; }
         public DateTime? ReleaseDate { get; set; }
         public int? DurationInSeconds { get; set; }

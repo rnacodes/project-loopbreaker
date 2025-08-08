@@ -22,19 +22,19 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("BaseMediaItemPlaylist", b =>
+            modelBuilder.Entity("MixlistMediaItems", b =>
                 {
-                    b.Property<Guid>("MediaItemsId")
+                    b.Property<Guid>("MixlistId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("PlaylistsId")
-                        .HasColumnType("integer");
+                    b.Property<Guid>("MediaItemId")
+                        .HasColumnType("uuid");
 
-                    b.HasKey("MediaItemsId", "PlaylistsId");
+                    b.HasKey("MixlistId", "MediaItemId");
 
-                    b.HasIndex("PlaylistsId");
+                    b.HasIndex("MediaItemId");
 
-                    b.ToTable("MediaItemPlaylists", (string)null);
+                    b.ToTable("MixlistMediaItems", (string)null);
                 });
 
             modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.BaseMediaItem", b =>
@@ -43,45 +43,63 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<bool>("Consumed")
-                        .HasColumnType("boolean");
-
                     b.Property<DateTime>("DateAdded")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("DateConsumed")
+                    b.Property<DateTime?>("DateCompleted")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
                     b.Property<string>("Genre")
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.PrimitiveCollection<string[]>("Genres")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.Property<string>("Link")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
-                    b.Property<int>("MediaType")
-                        .HasColumnType("integer");
+                    b.Property<string>("MediaType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Notes")
                         .HasColumnType("text");
 
-                    b.Property<int?>("Rating")
-                        .HasColumnType("integer");
+                    b.Property<string>("OwnershipStatus")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Rating")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("RelatedNotes")
                         .HasColumnType("text");
 
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("Thumbnail")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
-                    b.Property<string>("Topics")
-                        .HasColumnType("text");
+                    b.PrimitiveCollection<string[]>("Topics")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
 
                     b.HasKey("Id");
 
@@ -90,25 +108,31 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                     b.UseTptMappingStrategy();
                 });
 
-            modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.Playlist", b =>
+            modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.Mixlist", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("uuid");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("Thumbnail")
-                        .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Playlists");
+                    b.ToTable("Mixlists");
                 });
 
             modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.PodcastEpisode", b =>
@@ -116,10 +140,13 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                     b.HasBaseType("ProjectLoopbreaker.Domain.Entities.BaseMediaItem");
 
                     b.Property<string>("AudioLink")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<int>("DurationInSeconds")
-                        .HasColumnType("integer");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
 
                     b.Property<Guid>("PodcastSeriesId")
                         .HasColumnType("uuid");
@@ -139,17 +166,17 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                     b.ToTable("PodcastSeries", (string)null);
                 });
 
-            modelBuilder.Entity("BaseMediaItemPlaylist", b =>
+            modelBuilder.Entity("MixlistMediaItems", b =>
                 {
                     b.HasOne("ProjectLoopbreaker.Domain.Entities.BaseMediaItem", null)
                         .WithMany()
-                        .HasForeignKey("MediaItemsId")
+                        .HasForeignKey("MediaItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ProjectLoopbreaker.Domain.Entities.Playlist", null)
+                    b.HasOne("ProjectLoopbreaker.Domain.Entities.Mixlist", null)
                         .WithMany()
-                        .HasForeignKey("PlaylistsId")
+                        .HasForeignKey("MixlistId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

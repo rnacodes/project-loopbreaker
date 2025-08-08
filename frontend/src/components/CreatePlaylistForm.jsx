@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     TextField, Button, Box, Typography, Container
 } from '@mui/material';
-import { createPlaylist } from '../services/apiService';
+import { createMixlist } from '../services/apiService';
 
 function CreatePlaylistForm() {
     const [name, setName] = useState('');
@@ -15,21 +15,22 @@ function CreatePlaylistForm() {
         setIsSubmitting(true);
         
         try {
-            // Create playlist with AI-generated thumbnail placeholder
+            // Create mixlist with AI-generated thumbnail placeholder
             // TODO: Replace with actual LLM API call for thumbnail generation
-            const playlistData = {
-                name: name.trim(),
-                thumbnail: `https://picsum.photos/400/400?random=${Date.now()}&blur=1`
+            const mixlistData = {
+                Name: name.trim(),
+                Thumbnail: `https://picsum.photos/400/400?random=${Date.now()}&blur=1`
             };
 
-            const response = await createPlaylist(playlistData);
-            console.log('Playlist created!', response.data);
+            const response = await createMixlist(mixlistData);
+            console.log('Mixlist created!', response);
+            console.log('Mixlist data:', response.data);
             
-            // Navigate to the playlist or back to playlists list
+            // Navigate to the mixlist or back to mixlists list
             navigate('/playlists'); // Adjust the route as needed
         } catch (error) {
-            console.error('Failed to create playlist:', error);
-            alert('Failed to create playlist. Please try again.');
+            console.error('Failed to create mixlist:', error);
+            alert('Failed to create mixlist. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -69,7 +70,7 @@ function CreatePlaylistForm() {
                     fontWeight: 'bold',
                     mb: 3
                 }}>
-                    Create New Playlist
+                    Create New Mixlist
                 </Typography>
                 
                 {/* Playlist Name */}
@@ -79,10 +80,10 @@ function CreatePlaylistForm() {
                     mb: 1,
                     color: '#ffffff'
                 }}>
-                    Playlist Name
+                    Mixlist Name
                 </Typography>
                 <TextField
-                    placeholder="Enter playlist name..."
+                    placeholder="Enter mixlist name..."
                     variant="outlined"
                     fullWidth
                     required
@@ -108,7 +109,7 @@ function CreatePlaylistForm() {
                         color: '#ffffff',
                         opacity: 0.8
                     }}>
-                        🎨 A custom thumbnail will be generated for this playlist using AI based on the playlist name. For now, a placeholder image will be used.
+                        🎨 A custom thumbnail will be generated for this mixlist using AI based on the mixlist name. For now, a placeholder image will be used.
                     </Typography>
                 </Box>
 
@@ -138,7 +139,7 @@ function CreatePlaylistForm() {
                             py: 1.5
                         }}
                     >
-                        {isSubmitting ? 'Creating...' : 'Create Playlist'}
+                        {isSubmitting ? 'Creating...' : 'Create Mixlist'}
                     </Button>
                 </Box>
             </Box>

@@ -26,7 +26,7 @@ const specialMediaIcons = [
     { name: 'Panorama', icon: <AutoAwesome sx={{ fontSize: 40 }} />, key: 'panorama' },
 ];
 
-const playlists = [
+    const mixlists = [
   {
     title: 'Cyberpunk Dystopia',
     description: 'Neon-drenched streets and high-tech, low-life stories.',
@@ -54,7 +54,7 @@ const playlists = [
   },
   {
     title: 'Code & Coffee',
-    description: 'Deep work playlists and tech podcasts to fuel your projects.',
+            description: 'Deep work mixlists and tech podcasts to fuel your projects.',
     imageUrl: 'https://placehold.co/600x400/fcfafa/474350.png',
   },
 ];
@@ -107,21 +107,21 @@ const SearchBar = () => {
   );
 };
 
-const PlaylistCard = ({ playlist }) => (
+    const MixlistCard = ({ mixlist }) => (
   <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
     <CardMedia
       component="img"
       sx={{ flexShrink: 0, height: 180 }}
-      image={playlist.imageUrl}
-      alt={playlist.title}
+              image={mixlist.imageUrl}
+        alt={mixlist.title}
       onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/600x400/1e1e1e/fcfafa?text=Image+Error'; }}
     />
     <CardContent sx={{ flexGrow: 1 }}>
       <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-        {playlist.title}
+        {mixlist.title}
       </Typography>
       <Typography variant="body2" color="#ffffff">
-        {playlist.description}
+        {mixlist.description}
       </Typography>
     </CardContent>
   </Card>
@@ -301,9 +301,9 @@ export default function HomePage() {
         {/* Mixlists Section */}
         <Section title="My Mixlists">
           <Grid container spacing={4}>
-              {playlists.map((item, index) => (
+              {mixlists.map((item, index) => (
                   <Grid item key={index} xs={12} sm={6} md={4}>
-                      <PlaylistCard playlist={item} />
+                      <MixlistCard mixlist={item} />
                   </Grid>
               ))}
           </Grid>

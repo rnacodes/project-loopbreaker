@@ -46,9 +46,10 @@ namespace ProjectLoopbreaker.Application.Services
                     Notes = podcastDto.Description,
                     Thumbnail = podcastDto.Image ?? podcastDto.Thumbnail,
                     DateAdded = DateTime.UtcNow,
-                    Consumed = false,
-                    Genre = genreInfo, // Add the extracted genre information
-                                       // Topics can be populated later if available
+                    Status = Status.Uncharted,
+                    Genre = genreInfo, // Keep the old Genre property for backward compatibility
+                    Genres = !string.IsNullOrEmpty(genreInfo) ? genreInfo.Split(',').Select(g => g.Trim()).ToArray() : Array.Empty<string>(),
+                    Topics = Array.Empty<string>() // Topics can be populated later if available
                 };
             }
             catch (Exception ex)
@@ -88,13 +89,13 @@ namespace ProjectLoopbreaker.Application.Services
                     Notes = episodeDto.Description,
                     Thumbnail = episodeDto.Image ?? episodeDto.Thumbnail,
                     DateAdded = DateTime.UtcNow,
-                    Consumed = false,
+                    Status = Status.Uncharted,
                     PodcastSeriesId = podcastSeriesId,
                     AudioLink = episodeDto.AudioUrl,
                     ReleaseDate = DateTimeOffset.FromUnixTimeMilliseconds(episodeDto.PublishDateMs).DateTime,
                     DurationInSeconds = episodeDto.DurationInSeconds,
-                    Topics = topicsInfo // Add topics information if available
-                                        // Genre is typically associated with the series, not individual episodes
+                    Topics = !string.IsNullOrEmpty(topicsInfo) ? topicsInfo.Split(',').Select(t => t.Trim()).ToArray() : Array.Empty<string>(),
+                    Genres = Array.Empty<string>() // Genre is typically associated with the series, not individual episodes
                 };
             }
             catch (Exception ex)

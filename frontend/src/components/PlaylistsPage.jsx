@@ -5,7 +5,7 @@ import {
     Grid, Fab
 } from '@mui/material';
 import { Add } from '@mui/icons-material';
-import { getAllPlaylists } from '../services/apiService';
+import { getAllMixlists } from '../services/apiService';
 
 function PlaylistsPage() {
     const [playlists, setPlaylists] = useState([]);
@@ -13,23 +13,26 @@ function PlaylistsPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const loadPlaylists = async () => {
+        const loadMixlists = async () => {
             try {
-                const response = await getAllPlaylists();
+                const response = await getAllMixlists();
+                console.log('Mixlists response:', response);
+                console.log('Mixlists data:', response.data);
+                // Use the actual playlists from the main endpoint
                 setPlaylists(response.data);
             } catch (error) {
-                console.error('Error loading playlists:', error);
+                console.error('Error loading mixlists:', error);
             } finally {
                 setLoading(false);
             }
         };
-        loadPlaylists();
+        loadMixlists();
     }, []);
 
     if (loading) {
         return (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-                <Typography variant="h6">Loading playlists...</Typography>
+                <Typography variant="h6">Loading mixlists...</Typography>
             </Box>
         );
     }
@@ -42,16 +45,16 @@ function PlaylistsPage() {
                 mb: 4,
                 textAlign: 'center'
             }}>
-                My Playlists
+                My Mixlists
             </Typography>
 
             {playlists.length === 0 ? (
                 <Box sx={{ textAlign: 'center', mt: 8 }}>
                     <Typography variant="h5" sx={{ mb: 2, color: '#888' }}>
-                        No playlists yet
+                        No mixlists yet
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 4, color: '#666' }}>
-                        Create your first playlist to organize your media!
+                        Create your first mixlist to organize your media!
                     </Typography>
                     <Button 
                         variant="contained" 
@@ -59,7 +62,7 @@ function PlaylistsPage() {
                         onClick={() => navigate('/create-playlist')}
                         sx={{ fontSize: '16px', px: 4, py: 1.5 }}
                     >
-                        Create First Playlist
+                        Create First Mixlist
                     </Button>
                 </Box>
             ) : (
@@ -78,12 +81,12 @@ function PlaylistsPage() {
                                 }}
                                 onClick={() => navigate(`/playlist/${playlist.id}`)}
                             >
-                                {playlist.thumbnail && (
+                                {playlist.Thumbnail && (
                                     <CardMedia
                                         component="img"
                                         height="200"
-                                        image={playlist.thumbnail}
-                                        alt={playlist.name}
+                                        image={playlist.Thumbnail}
+                                        alt={playlist.Name}
                                         sx={{ objectFit: 'cover' }}
                                     />
                                 )}
@@ -93,17 +96,15 @@ function PlaylistsPage() {
                                         fontWeight: 'bold',
                                         textAlign: 'center'
                                     }}>
-                                        {playlist.name}
+                                        {playlist.Name}
                                     </Typography>
-                                    {playlist.mediaItems && (
-                                        <Typography variant="body2" sx={{ 
-                                            mt: 1,
-                                            textAlign: 'center',
-                                            color: '#888'
-                                        }}>
-                                            {playlist.mediaItems.length} item{playlist.mediaItems.length !== 1 ? 's' : ''}
-                                        </Typography>
-                                    )}
+                                    <Typography variant="body2" sx={{ 
+                                        mt: 1,
+                                        textAlign: 'center',
+                                        color: '#888'
+                                    }}>
+                                        {playlist.MediaItems ? playlist.MediaItems.length : 0} item{(playlist.MediaItems ? playlist.MediaItems.length : 0) !== 1 ? 's' : ''}
+                                    </Typography>
                                 </CardContent>
                             </Card>
                         </Grid>
@@ -111,10 +112,10 @@ function PlaylistsPage() {
                 </Grid>
             )}
 
-            {/* Floating Action Button to create new playlist */}
+            {/* Floating Action Button to create new mixlist */}
             <Fab 
                 color="primary" 
-                aria-label="create playlist"
+                aria-label="create mixlist"
                 sx={{ 
                     position: 'fixed', 
                     bottom: 32, 

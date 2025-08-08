@@ -1,13 +1,12 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace ProjectLoopbreaker.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class CompleteSchema : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -17,17 +16,21 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Title = table.Column<string>(type: "text", nullable: false),
-                    MediaType = table.Column<int>(type: "integer", nullable: false),
-                    Link = table.Column<string>(type: "text", nullable: true),
+                    Title = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    MediaType = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Link = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
                     Notes = table.Column<string>(type: "text", nullable: true),
                     DateAdded = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Consumed = table.Column<bool>(type: "boolean", nullable: false),
-                    DateConsumed = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Rating = table.Column<int>(type: "integer", nullable: true),
+                    Status = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    DateCompleted = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    Rating = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
+                    OwnershipStatus = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
+                    Genre = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    Topics = table.Column<string[]>(type: "jsonb", nullable: false),
+                    Genres = table.Column<string[]>(type: "jsonb", nullable: false),
                     RelatedNotes = table.Column<string>(type: "text", nullable: true),
-                    Thumbnail = table.Column<string>(type: "text", nullable: true)
+                    Thumbnail = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -35,17 +38,18 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Playlists",
+                name: "Mixlists",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Name = table.Column<string>(type: "text", nullable: false),
-                    Thumbnail = table.Column<string>(type: "text", nullable: false)
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    Thumbnail = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                    DateCreated = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Playlists", x => x.Id);
+                    table.PrimaryKey("PK_Mixlists", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -66,25 +70,25 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "MediaItemPlaylists",
+                name: "MixlistMediaItems",
                 columns: table => new
                 {
-                    MediaItemsId = table.Column<Guid>(type: "uuid", nullable: false),
-                    PlaylistsId = table.Column<int>(type: "integer", nullable: false)
+                    MixlistId = table.Column<Guid>(type: "uuid", nullable: false),
+                    MediaItemId = table.Column<Guid>(type: "uuid", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MediaItemPlaylists", x => new { x.MediaItemsId, x.PlaylistsId });
+                    table.PrimaryKey("PK_MixlistMediaItems", x => new { x.MixlistId, x.MediaItemId });
                     table.ForeignKey(
-                        name: "FK_MediaItemPlaylists_MediaItems_MediaItemsId",
-                        column: x => x.MediaItemsId,
+                        name: "FK_MixlistMediaItems_MediaItems_MediaItemId",
+                        column: x => x.MediaItemId,
                         principalTable: "MediaItems",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_MediaItemPlaylists_Playlists_PlaylistsId",
-                        column: x => x.PlaylistsId,
-                        principalTable: "Playlists",
+                        name: "FK_MixlistMediaItems_Mixlists_MixlistId",
+                        column: x => x.MixlistId,
+                        principalTable: "Mixlists",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -95,9 +99,9 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     PodcastSeriesId = table.Column<Guid>(type: "uuid", nullable: false),
-                    AudioLink = table.Column<string>(type: "text", nullable: true),
+                    AudioLink = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
                     ReleaseDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    DurationInSeconds = table.Column<int>(type: "integer", nullable: false)
+                    DurationInSeconds = table.Column<int>(type: "integer", nullable: false, defaultValue: 0)
                 },
                 constraints: table =>
                 {
@@ -117,9 +121,9 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_MediaItemPlaylists_PlaylistsId",
-                table: "MediaItemPlaylists",
-                column: "PlaylistsId");
+                name: "IX_MixlistMediaItems_MediaItemId",
+                table: "MixlistMediaItems",
+                column: "MediaItemId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PodcastEpisodes_PodcastSeriesId",
@@ -131,13 +135,13 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "MediaItemPlaylists");
+                name: "MixlistMediaItems");
 
             migrationBuilder.DropTable(
                 name: "PodcastEpisodes");
 
             migrationBuilder.DropTable(
-                name: "Playlists");
+                name: "Mixlists");
 
             migrationBuilder.DropTable(
                 name: "PodcastSeries");

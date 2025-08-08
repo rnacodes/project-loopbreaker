@@ -9,7 +9,7 @@ namespace ProjectLoopbreaker.Application.Interfaces
     public interface IApplicationDbContext
     {
         DbSet<BaseMediaItem> MediaItems { get; }
-        DbSet<Playlist> Playlists { get; }
+        DbSet<Mixlist> Mixlists { get; }
         DbSet<PodcastSeries> PodcastSeries { get; }
         DbSet<PodcastEpisode> PodcastEpisodes { get; }
 

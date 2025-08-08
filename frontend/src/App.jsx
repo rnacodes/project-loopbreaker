@@ -9,6 +9,7 @@ import MediaItemProfile from './components/MediaItemProfile';
 import AllMedia from './components/AllMedia';
 import PlaylistsPage from './components/PlaylistsPage';
 import CreatePlaylistForm from './components/CreatePlaylistForm';
+import MixlistDetailPage from './components/MixlistDetailPage';
 import ImportMediaPage from './components/ImportMediaPage';
 
 // 1. THEME AND STYLING
@@ -106,6 +107,7 @@ function App() {
           <Route path="/add-media" element={<AddMediaForm />} />
           <Route path="/all-media" element={<AllMedia />} />
           <Route path="/playlists" element={<PlaylistsPage />} />
+          <Route path="/playlist/:id" element={<MixlistDetailPage />} />
           <Route path="/create-playlist" element={<CreatePlaylistForm />} />
           <Route path="/import-media" element={<ImportMediaPage />} />
           <Route path="/media/:id" element={<MediaItemProfile />} />

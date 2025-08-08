@@ -6,7 +6,7 @@ import {
     Checkbox, FormControlLabel, Radio, RadioGroup,
     FormLabel, Chip, OutlinedInput
 } from '@mui/material';
-import { addMedia, getAllPlaylists, addMediaToPlaylist, addPodcastEpisode } from '../services/apiService';
+import { addMedia, getAllMixlists, addMediaToMixlist, addPodcastEpisode } from '../services/apiService';
 
 function AddMediaForm() {
     const [title, setTitle] = useState('');
@@ -32,42 +32,42 @@ function AddMediaForm() {
     const [releaseDate, setReleaseDate] = useState('');
     const [durationInSeconds, setDurationInSeconds] = useState('');
     
-    // Playlist selection
-    const [availablePlaylists, setAvailablePlaylists] = useState([]);
-    const [selectedPlaylists, setSelectedPlaylists] = useState([]);
-    const [playlistInput, setPlaylistInput] = useState('');
+    // Mixlist selection
+    const [availableMixlists, setAvailableMixlists] = useState([]);
+    const [selectedMixlists, setSelectedMixlists] = useState([]);
+    const [mixlistInput, setMixlistInput] = useState('');
     
     const navigate = useNavigate();
 
-    // Load available playlists on component mount
+    // Load available mixlists on component mount
     useEffect(() => {
-        const loadPlaylists = async () => {
+        const loadMixlists = async () => {
             try {
-                const response = await getAllPlaylists();
-                setAvailablePlaylists(response.data);
+                const response = await getAllMixlists();
+                setAvailableMixlists(response.data);
             } catch (error) {
-                console.error('Error loading playlists:', error);
+                console.error('Error loading mixlists:', error);
             }
         };
-        loadPlaylists();
+        loadMixlists();
     }, []);
 
-    // Handle playlist selection
-    const handlePlaylistKeyPress = (event) => {
-        if (event.key === 'Enter' && playlistInput.trim()) {
+    // Handle mixlist selection
+    const handleMixlistKeyPress = (event) => {
+        if (event.key === 'Enter' && mixlistInput.trim()) {
             event.preventDefault();
-            const playlist = availablePlaylists.find(p => 
-                p.name.toLowerCase().includes(playlistInput.toLowerCase())
+            const mixlist = availableMixlists.find(p => 
+                p.Name.toLowerCase().includes(mixlistInput.toLowerCase())
             );
-            if (playlist && !selectedPlaylists.some(p => p.id === playlist.id)) {
-                setSelectedPlaylists([...selectedPlaylists, playlist]);
+            if (mixlist && !selectedMixlists.some(p => p.id === mixlist.id)) {
+                setSelectedMixlists([...selectedMixlists, mixlist]);
             }
-            setPlaylistInput('');
+            setMixlistInput('');
         }
     };
 
-    const removePlaylist = (playlistToRemove) => {
-        setSelectedPlaylists(selectedPlaylists.filter(playlist => playlist.id !== playlistToRemove.id));
+    const removeMixlist = (mixlistToRemove) => {
+        setSelectedMixlists(selectedMixlists.filter(mixlist => mixlist.id !== mixlistToRemove.id));
     };
 
     // Handle genre input
@@ -125,7 +125,6 @@ function AddMediaForm() {
             link, 
             notes, 
             consumed, 
-            dateConsumed: consumed && dateConsumed ? dateConsumed : null,
             rating: consumed && rating ? rating : null,
             description: description || null,
             relatedNotes: relatedNotes || null,
@@ -154,7 +153,6 @@ function AddMediaForm() {
                         relatedNotes,
                         thumbnail,
                         consumed,
-                        dateConsumed: consumed && dateConsumed ? dateConsumed : null,
                         rating: consumed && rating ? rating : null,
                         PodcastSeriesId: podcastSeriesId, // Note capital P to match DTO
                         audioLink: audioLink || null,
@@ -182,14 +180,14 @@ function AddMediaForm() {
                 data = response.data;
             }
             
-            // Add media to selected playlists
-            if (selectedPlaylists.length > 0 && data.id) {
-                for (const playlist of selectedPlaylists) {
+            // Add media to selected mixlists
+            if (selectedMixlists.length > 0 && data.id) {
+                for (const mixlist of selectedMixlists) {
                     try {
-                        await addMediaToPlaylist(playlist.id, data.id);
-                        console.log(`Added media to playlist: ${playlist.name}`);
-                    } catch (playlistError) {
-                        console.error(`Failed to add media to playlist ${playlist.name}:`, playlistError);
+                        await addMediaToMixlist(mixlist.id, data.id);
+                        console.log(`Added media to mixlist: ${mixlist.Name}`);
+                    } catch (mixlistError) {
+                        console.error(`Failed to add media to mixlist ${mixlist.Name}:`, mixlistError);
                     }
                 }
             }
@@ -744,7 +742,7 @@ function AddMediaForm() {
                             fontWeight: 'bold',
                             color: '#ffffff'
                         }}>
-                            Add to Playlists
+                            Add to Mixlists
                         </Typography>
                         <Button
                             variant="outlined"
@@ -757,16 +755,16 @@ function AddMediaForm() {
                                 px: 2
                             }}
                         >
-                            + New Playlist
+                            + New Mixlist
                         </Button>
                     </Box>
                     <TextField
-                        placeholder="Type to search playlists..."
+                        placeholder="Type to search mixlists..."
                         variant="outlined"
                         fullWidth
-                        value={playlistInput}
-                        onChange={(e) => setPlaylistInput(e.target.value)}
-                        onKeyPress={handlePlaylistKeyPress}
+                        value={mixlistInput}
+                        onChange={(e) => setMixlistInput(e.target.value)}
+                        onKeyPress={handleMixlistKeyPress}
                         sx={{
                             '& .MuiInputBase-input': {
                                 fontSize: '14px'
@@ -778,36 +776,36 @@ function AddMediaForm() {
                         }}
                     />
                     <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {selectedPlaylists.map((playlist) => (
+                        {selectedMixlists.map((mixlist) => (
                             <Chip
-                                key={playlist.id}
-                                label={playlist.name}
-                                onDelete={() => removePlaylist(playlist)}
+                                key={mixlist.id}
+                                label={mixlist.Name}
+                                onDelete={() => removeMixlist(mixlist)}
                                 size="small"
                                 sx={{ fontSize: '12px' }}
                             />
                         ))}
                     </Box>
-                    {availablePlaylists.length > 0 && playlistInput && (
+                    {availableMixlists.length > 0 && mixlistInput && (
                         <Box sx={{ mt: 1 }}>
                             <Typography variant="body2" sx={{ fontSize: '12px', color: '#888', mb: 1 }}>
-                                Available playlists:
+                                Available mixlists:
                             </Typography>
-                            {availablePlaylists
-                                .filter(playlist => 
-                                    playlist.name.toLowerCase().includes(playlistInput.toLowerCase()) &&
-                                    !selectedPlaylists.some(p => p.id === playlist.id)
+                            {availableMixlists
+                                .filter(mixlist => 
+                                    mixlist.Name && mixlist.Name.toLowerCase().includes(mixlistInput.toLowerCase()) &&
+                                    !selectedMixlists.some(p => p.id === mixlist.id)
                                 )
                                 .slice(0, 5)
-                                .map(playlist => (
+                                .map(mixlist => (
                                     <Chip
-                                        key={playlist.id}
-                                        label={playlist.name}
+                                        key={mixlist.id}
+                                        label={mixlist.Name || 'Unnamed Mixlist'}
                                         variant="outlined"
                                         size="small"
                                         onClick={() => {
-                                            setSelectedPlaylists([...selectedPlaylists, playlist]);
-                                            setPlaylistInput('');
+                                            setSelectedMixlists([...selectedMixlists, mixlist]);
+                                            setMixlistInput('');
                                         }}
                                         sx={{ 
                                             fontSize: '10px', 
