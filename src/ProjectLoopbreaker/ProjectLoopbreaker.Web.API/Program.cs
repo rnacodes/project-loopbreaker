@@ -27,8 +27,14 @@ builder.Services.AddControllers()
 
 // --- Configure EF Core & PostgreSQL ---
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Configure Npgsql for JSON serialization
+var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
+dataSourceBuilder.EnableDynamicJson(); // Enable dynamic JSON serialization for arrays
+var dataSource = dataSourceBuilder.Build();
+
 builder.Services.AddDbContext<MediaLibraryDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(dataSource));
 
 // Register IApplicationDbContext
 builder.Services.AddScoped<IApplicationDbContext>(provider => provider.GetService<MediaLibraryDbContext>());

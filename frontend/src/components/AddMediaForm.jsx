@@ -4,7 +4,7 @@ import {
     TextField, Button, Box, Typography, Container,
     Select, MenuItem, InputLabel, FormControl,
     Checkbox, FormControlLabel, Radio, RadioGroup,
-    FormLabel, Chip, OutlinedInput
+    FormLabel, Chip, OutlinedInput, Paper, Grid
 } from '@mui/material';
 import { addMedia, getAllMixlists, addMediaToMixlist, addPodcastEpisode } from '../services/apiService';
 
@@ -13,9 +13,10 @@ function AddMediaForm() {
     const [mediaType, setMediaType] = useState('');
     const [link, setLink] = useState('');
     const [notes, setNotes] = useState('');
-    const [consumed, setConsumed] = useState(false);
-    const [dateConsumed, setDateConsumed] = useState('');
+    const [status, setStatus] = useState('Uncharted'); // Changed from consumed to status
+    const [dateCompleted, setDateCompleted] = useState(''); // Changed from dateConsumed
     const [rating, setRating] = useState('');
+    const [ownershipStatus, setOwnershipStatus] = useState('');
     const [description, setDescription] = useState('');
     const [relatedNotes, setRelatedNotes] = useState('');
     const [thumbnail, setThumbnail] = useState('');
@@ -43,10 +44,15 @@ function AddMediaForm() {
     useEffect(() => {
         const loadMixlists = async () => {
             try {
+                console.log('Loading mixlists...');
                 const response = await getAllMixlists();
+                console.log('Mixlists response:', response);
+                console.log('Mixlists data:', response.data);
                 setAvailableMixlists(response.data);
             } catch (error) {
                 console.error('Error loading mixlists:', error);
+                console.error('Error details:', error.response?.data);
+                console.error('Error status:', error.response?.status);
             }
         };
         loadMixlists();
@@ -57,17 +63,17 @@ function AddMediaForm() {
         if (event.key === 'Enter' && mixlistInput.trim()) {
             event.preventDefault();
             const mixlist = availableMixlists.find(p => 
-                p.Name.toLowerCase().includes(mixlistInput.toLowerCase())
+                p.Name && p.Name.toLowerCase().includes(mixlistInput.toLowerCase())
             );
-            if (mixlist && !selectedMixlists.some(p => p.id === mixlist.id)) {
+            if (mixlist && !selectedMixlists.some(p => p.Id === mixlist.Id)) {
                 setSelectedMixlists([...selectedMixlists, mixlist]);
+                setMixlistInput('');
             }
-            setMixlistInput('');
         }
     };
 
     const removeMixlist = (mixlistToRemove) => {
-        setSelectedMixlists(selectedMixlists.filter(mixlist => mixlist.id !== mixlistToRemove.id));
+        setSelectedMixlists(selectedMixlists.filter(mixlist => mixlist.Id !== mixlistToRemove.Id));
     };
 
     // Handle genre input
@@ -114,26 +120,45 @@ function AddMediaForm() {
     const handleSubmit = async (event) => {
         event.preventDefault();
         
-        // Convert arrays to comma-separated strings for database storage
-        const genresString = genres.length > 0 ? genres.join(', ') : null;
-        const topicsString = topics.length > 0 ? topics.join(', ') : null;
-        
-        // Base media data
+        // Base media data - CRITICAL: Use Pascal case to match backend DTO
         let mediaData = { 
-            title, 
-            mediaType, 
-            link, 
-            notes, 
-            consumed, 
-            rating: consumed && rating ? rating : null,
-            description: description || null,
-            relatedNotes: relatedNotes || null,
-            thumbnail: thumbnail || null,
-            genre: genresString,
-            topics: topicsString
+            Title: title, 
+            MediaType: mediaType, 
+            Status: status, // Required field
+            Topics: topics.length > 0 ? topics : [], // Required array
+            Genres: genres.length > 0 ? genres : [] // Required array
         };
+        
+        // Add optional fields only if they have values
+        if (link && link.trim()) mediaData.Link = link;
+        if (notes && notes.trim()) mediaData.Notes = notes;
+        if (status === 'Completed' && dateCompleted) mediaData.DateCompleted = dateCompleted;
+        if (status === 'Completed' && rating) mediaData.Rating = rating;
+        if (ownershipStatus) mediaData.OwnershipStatus = ownershipStatus;
+        if (description && description.trim()) mediaData.Description = description;
+        if (relatedNotes && relatedNotes.trim()) mediaData.RelatedNotes = relatedNotes;
+        if (thumbnail && thumbnail.trim()) mediaData.Thumbnail = thumbnail;
 
         try {
+            // Basic validation
+            if (!title.trim()) {
+                alert('Title is required');
+                return;
+            }
+            if (!mediaType) {
+                alert('Media Type is required');
+                return;
+            }
+            
+            console.log('Submitting media data:', mediaData);
+            console.log('Raw form values:', { title, mediaType, status, ownershipStatus, rating });
+            
+            // Check if media type is supported by backend
+            if (mediaType !== 'Podcast') {
+                alert('Currently only Podcast media type is supported by the backend. Other media types are not yet implemented.');
+                return;
+            }
+            
             let response;
             
             // Handle podcast-specific creation
@@ -142,22 +167,24 @@ function AddMediaForm() {
                     // For now, create as regular media until PodcastSeriesController exists
                     response = await addMedia(mediaData);
                 } else if (podcastType === 'Episode') {
-                    // Create podcast episode with additional fields
+                    // Create podcast episode with additional fields - Pascal case for backend
                     const episodeData = {
-                        title,
-                        link,
-                        notes,
-                        description,
-                        genre: genresString,
-                        topics: topicsString,
-                        relatedNotes,
-                        thumbnail,
-                        consumed,
-                        rating: consumed && rating ? rating : null,
-                        PodcastSeriesId: podcastSeriesId, // Note capital P to match DTO
-                        audioLink: audioLink || null,
-                        releaseDate: releaseDate || null,
-                        durationInSeconds: durationInSeconds ? parseInt(durationInSeconds) : 0
+                        Title: title,
+                        Link: link,
+                        Notes: notes,
+                        Description: description,
+                        Status: status,
+                        DateCompleted: status === 'Completed' && dateCompleted ? dateCompleted : null,
+                        Rating: status === 'Completed' && rating ? rating : null,
+                        OwnershipStatus: ownershipStatus || null,
+                        Topics: topics.length > 0 ? topics : [], // Ensure proper array format
+                        Genres: genres.length > 0 ? genres : [], // Ensure proper array format
+                        RelatedNotes: relatedNotes,
+                        Thumbnail: thumbnail,
+                        PodcastSeriesId: podcastSeriesId, // Capital P to match DTO
+                        AudioLink: audioLink || null,
+                        ReleaseDate: releaseDate || null,
+                        DurationInSeconds: durationInSeconds ? parseInt(durationInSeconds) : 0
                     };
                     
                     response = await addPodcastEpisode(episodeData);
@@ -180,11 +207,14 @@ function AddMediaForm() {
                 data = response.data;
             }
             
+            console.log('Response data received:', data);
+            
             // Add media to selected mixlists
-            if (selectedMixlists.length > 0 && data.id) {
+            const mediaId = data.id || data.Id; // Handle both lowercase and uppercase Id
+            if (selectedMixlists.length > 0 && mediaId) {
                 for (const mixlist of selectedMixlists) {
                     try {
-                        await addMediaToMixlist(mixlist.id, data.id);
+                        await addMediaToMixlist(mixlist.Id, mediaId);
                         console.log(`Added media to mixlist: ${mixlist.Name}`);
                     } catch (mixlistError) {
                         console.error(`Failed to add media to mixlist ${mixlist.Name}:`, mixlistError);
@@ -193,10 +223,35 @@ function AddMediaForm() {
             }
             
             console.log('Media added!', data);
-            navigate(`/media/${data.id}`);
+            navigate(`/media/${mediaId}`);
         } catch (error) {
             console.error('Failed to add media:', error);
-            // You might want to show an error message to the user here
+            console.error('Error details:', error.response?.data);
+            console.error('Error status:', error.response?.status);
+            console.error('Full error response:', error.response);
+            
+            // More detailed error message
+            let errorMessage = 'Unknown error';
+            if (error.response?.data) {
+                if (typeof error.response.data === 'string') {
+                    errorMessage = error.response.data;
+                } else if (error.response.data.message) {
+                    errorMessage = error.response.data.message;
+                } else if (error.response.data.errors) {
+                    // Handle validation errors
+                    const validationErrors = Object.entries(error.response.data.errors)
+                        .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+                        .join('\n');
+                    errorMessage = `Validation errors:\n${validationErrors}`;
+                } else {
+                    errorMessage = JSON.stringify(error.response.data);
+                }
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+            
+            // Show error to user
+            alert(`Failed to add media (Status ${error.response?.status}):\n${errorMessage}`);
         }
     };
 
@@ -389,7 +444,7 @@ function AddMediaForm() {
                     mb: 3,
                     '& .MuiInputLabel-root': {
                         color: '#ffffff',
-                        fontSize: '14px'
+                        fontSize: '16px'
                     },
                     '& .MuiInputLabel-root.Mui-focused': {
                         color: '#ffffff'
@@ -479,35 +534,61 @@ function AddMediaForm() {
                     }}
                 />
 
-                {/* Consumed Checkbox */}
-                <FormControl fullWidth margin="normal" sx={{ mb: 2 }}>
-                    <FormControlLabel
-                        control={
-                            <Checkbox
-                                checked={consumed}
-                                onChange={(e) => setConsumed(e.target.checked)}
-                                color="primary"
+                {/* Status Selection */}
+                <Box sx={{ mb: 3 }}>
+                    <Typography variant="h6" sx={{ 
+                        fontSize: '18px', 
+                        fontWeight: 'bold', 
+                        mb: 2,
+                        color: '#ffffff'
+                    }}>
+                        Status
+                    </Typography>
+                    <FormControl component="fieldset" fullWidth>
+                        <RadioGroup
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            row
+                            sx={{ gap: 2 }}
+                        >
+                            <FormControlLabel 
+                                value="Uncharted" 
+                                control={<Radio size="small" />} 
+                                label="Uncharted"
+                                sx={{ '& .MuiFormControlLabel-label': { fontSize: '14px' } }}
                             />
-                        }
-                        label="Already consumed this media?"
-                        sx={{ 
-                            '& .MuiFormControlLabel-label': { 
-                                fontSize: '14px' 
-                            }
-                        }}
-                    />
-                </FormControl>
+                            <FormControlLabel 
+                                value="ActivelyExploring" 
+                                control={<Radio size="small" />} 
+                                label="Actively Exploring"
+                                sx={{ '& .MuiFormControlLabel-label': { fontSize: '14px' } }}
+                            />
+                            <FormControlLabel 
+                                value="Completed" 
+                                control={<Radio size="small" />} 
+                                label="Completed"
+                                sx={{ '& .MuiFormControlLabel-label': { fontSize: '14px' } }}
+                            />
+                            <FormControlLabel 
+                                value="Abandoned" 
+                                control={<Radio size="small" />} 
+                                label="Abandoned"
+                                sx={{ '& .MuiFormControlLabel-label': { fontSize: '14px' } }}
+                            />
+                        </RadioGroup>
+                    </FormControl>
+                </Box>
 
-                {/* Conditional Date Consumed */}
-                {consumed && (
+                {/* Conditional Date Completed */}
+                {status === 'Completed' && (
                     <TextField
-                        label="Date Consumed"
+                        label="Date Completed"
                         type="date"
                         variant="outlined"
                         fullWidth
                         margin="normal"
-                        value={dateConsumed}
-                        onChange={(e) => setDateConsumed(e.target.value)}
+                        value={dateCompleted}
+                        onChange={(e) => setDateCompleted(e.target.value)}
                         InputLabelProps={{
                             shrink: true,
                         }}
@@ -528,7 +609,7 @@ function AddMediaForm() {
                 )}
 
                 {/* Conditional Rating */}
-                {consumed && (
+                {status === 'Completed' && (
                     <FormControl fullWidth margin="normal" sx={{
                         mb: 3,
                         '& .MuiInputLabel-root': {
@@ -559,6 +640,36 @@ function AddMediaForm() {
                         </Select>
                     </FormControl>
                 )}
+
+                {/* Ownership Status */}
+                <FormControl fullWidth margin="normal" sx={{
+                    mb: 3,
+                    '& .MuiInputLabel-root': {
+                        color: '#ffffff',
+                        fontSize: '14px'
+                    },
+                    '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#ffffff'
+                    }
+                }}>
+                    <InputLabel id="ownership-label">Ownership Status</InputLabel>
+                    <Select
+                        labelId="ownership-label"
+                        value={ownershipStatus}
+                        label="Ownership Status"
+                        onChange={(e) => setOwnershipStatus(e.target.value)}
+                        sx={{
+                            '& .MuiSelect-select': {
+                                fontSize: '14px'
+                            }
+                        }}
+                    >
+                        <MenuItem value="">None</MenuItem>
+                        <MenuItem value="Own">Own</MenuItem>
+                        <MenuItem value="Rented">Rented</MenuItem>
+                        <MenuItem value="Streamed">Streamed</MenuItem>
+                    </Select>
+                </FormControl>
 
                 {/* Thumbnail URL */}
                 <TextField
@@ -591,18 +702,24 @@ function AddMediaForm() {
                 {/* Thumbnail Upload */}
                 <Box sx={{ mb: 3 }}>
                     <Typography variant="body1" sx={{ 
-                        mb: 1, 
-                        fontSize: '14px',
+                        mb: 2, 
+                        fontSize: '16px',
+                        fontWeight: 'bold',
                         color: '#ffffff'
                     }}>
                         Upload Thumbnail
                     </Typography>
                     <Button
-                        variant="outlined"
+                        variant="contained"
+                        color="secondary"
                         component="label"
                         sx={{ 
-                            fontSize: '14px',
-                            textTransform: 'none'
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            textTransform: 'none',
+                            py: 1.5,
+                            px: 3,
+                            borderRadius: '8px'
                         }}
                     >
                         Choose File
@@ -616,8 +733,8 @@ function AddMediaForm() {
                     {thumbnailFile && (
                         <Typography variant="body2" sx={{ 
                             mt: 1, 
-                            fontSize: '12px',
-                            color: '#888'
+                            fontSize: '14px',
+                            color: '#ffffff'
                         }}>
                             Selected: {thumbnailFile.name}
                         </Typography>
@@ -736,23 +853,25 @@ function AddMediaForm() {
 
                 {/* Mixlist Selection */}
                 <Box sx={{ mb: 3 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                        <Typography variant="body1" sx={{ 
-                            fontSize: '16px',
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="h6" sx={{ 
+                            fontSize: '18px',
                             fontWeight: 'bold',
                             color: '#ffffff'
                         }}>
                             Add to Mixlists
                         </Typography>
                         <Button
-                            variant="outlined"
-                            size="small"
+                            variant="contained"
+                            color="secondary"
                             onClick={() => navigate('/create-mixlist')}
                             sx={{ 
-                                fontSize: '12px',
+                                fontSize: '16px',
+                                fontWeight: 'bold',
                                 textTransform: 'none',
-                                minWidth: 'auto',
-                                px: 2
+                                py: 1.5,
+                                px: 3,
+                                borderRadius: '8px'
                             }}
                         >
                             + New Mixlist
@@ -766,8 +885,9 @@ function AddMediaForm() {
                         onChange={(e) => setMixlistInput(e.target.value)}
                         onKeyPress={handleMixlistKeyPress}
                         sx={{
+                            mb: 2,
                             '& .MuiInputBase-input': {
-                                fontSize: '14px'
+                                fontSize: '16px'
                             },
                             '& .MuiInputBase-input::placeholder': {
                                 color: '#ffffff',
@@ -775,47 +895,113 @@ function AddMediaForm() {
                             }
                         }}
                     />
-                    <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {selectedMixlists.map((mixlist) => (
-                            <Chip
-                                key={mixlist.id}
-                                label={mixlist.Name}
-                                onDelete={() => removeMixlist(mixlist)}
-                                size="small"
-                                sx={{ fontSize: '12px' }}
-                            />
-                        ))}
-                    </Box>
+                    
+                    {/* Selected Mixlists */}
+                    {selectedMixlists.length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                            <Typography variant="body2" sx={{ 
+                                fontSize: '14px', 
+                                color: '#ffffff', 
+                                mb: 1,
+                                fontWeight: 'bold'
+                            }}>
+                                Selected mixlists:
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                {selectedMixlists.map((mixlist) => (
+                                    <Chip
+                                        key={mixlist.Id}
+                                        label={mixlist.Name}
+                                        onDelete={() => removeMixlist(mixlist)}
+                                        size="small"
+                                        sx={{ fontSize: '14px' }}
+                                    />
+                                ))}
+                            </Box>
+                        </Box>
+                    )}
+                    
+                    {/* Available Mixlists */}
                     {availableMixlists.length > 0 && mixlistInput && (
                         <Box sx={{ mt: 1 }}>
-                            <Typography variant="body2" sx={{ fontSize: '12px', color: '#888', mb: 1 }}>
+                            <Typography variant="body2" sx={{ 
+                                fontSize: '14px', 
+                                color: '#ffffff', 
+                                mb: 1,
+                                fontWeight: 'bold'
+                            }}>
                                 Available mixlists:
                             </Typography>
-                            {availableMixlists
-                                .filter(mixlist => 
-                                    mixlist.Name && mixlist.Name.toLowerCase().includes(mixlistInput.toLowerCase()) &&
-                                    !selectedMixlists.some(p => p.id === mixlist.id)
-                                )
-                                .slice(0, 5)
-                                .map(mixlist => (
-                                    <Chip
-                                        key={mixlist.id}
-                                        label={mixlist.Name || 'Unnamed Mixlist'}
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() => {
-                                            setSelectedMixlists([...selectedMixlists, mixlist]);
-                                            setMixlistInput('');
-                                        }}
-                                        sx={{ 
-                                            fontSize: '10px', 
-                                            mr: 1, 
-                                            mb: 1,
-                                            cursor: 'pointer'
-                                        }}
-                                    />
-                                ))
-                            }
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                {availableMixlists
+                                    .filter(mixlist => 
+                                        mixlist.Name && mixlist.Name.toLowerCase().includes(mixlistInput.toLowerCase()) &&
+                                        !selectedMixlists.some(p => p.Id === mixlist.Id)
+                                    )
+                                    .slice(0, 5)
+                                    .map(mixlist => (
+                                        <Chip
+                                            key={mixlist.Id}
+                                            label={mixlist.Name || 'Unnamed Mixlist'}
+                                            variant="outlined"
+                                            size="small"
+                                            onClick={() => {
+                                                setSelectedMixlists([...selectedMixlists, mixlist]);
+                                                setMixlistInput('');
+                                            }}
+                                            sx={{ 
+                                                fontSize: '12px', 
+                                                cursor: 'pointer',
+                                                '&:hover': {
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                                }
+                                            }}
+                                        />
+                                    ))
+                                }
+                            </Box>
+                        </Box>
+                    )}
+                    
+                    {/* Show all mixlists when no search input */}
+                    {availableMixlists.length > 0 && !mixlistInput && (
+                        <Box sx={{ mt: 1 }}>
+                            <Typography variant="body2" sx={{ 
+                                fontSize: '14px', 
+                                color: '#ffffff', 
+                                mb: 1,
+                                fontWeight: 'bold'
+                            }}>
+                                All mixlists ({availableMixlists.length}):
+                            </Typography>
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                {availableMixlists
+                                    .filter(mixlist => !selectedMixlists.some(p => p.Id === mixlist.Id))
+                                    .slice(0, 10)
+                                    .map(mixlist => {
+                                        console.log('Rendering mixlist:', mixlist);
+                                        return (
+                                            <Chip
+                                                key={mixlist.Id || mixlist.id}
+                                                label={mixlist.Name || mixlist.name || `Mixlist ${mixlist.Id || mixlist.id}`}
+                                                variant="outlined"
+                                                size="small"
+                                                onClick={() => {
+                                                    console.log('Selected mixlist:', mixlist);
+                                                    setSelectedMixlists([...selectedMixlists, mixlist]);
+                                                }}
+                                                sx={{ 
+                                                    fontSize: '12px', 
+                                                    cursor: 'pointer',
+                                                    '&:hover': {
+                                                        backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                                    }
+                                                }}
+                                            />
+                                        );
+                                    })
+                                }
+                            </Box>
                         </Box>
                     )}
                 </Box>

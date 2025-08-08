@@ -50,6 +50,16 @@ function App() {
           <Route path="/import-media" element={<ImportMediaPage />} />
           <Route path="/media/:id" element={<MediaItemProfile />} />
           <Route path="/demo" element={<DemoPage />} />
+          {/* Catch-all route for 404 */}
+          <Route path="*" element={
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+              <Typography variant="h4">Page Not Found</Typography>
+              <Typography variant="body1">The page you're looking for doesn't exist.</Typography>
+              <Button component={Link} to="/" variant="contained" sx={{ mt: 2 }}>
+                Go Home
+              </Button>
+            </div>
+          } />
         </Routes>
       </Router>
     </ThemeProvider>

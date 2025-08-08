@@ -62,7 +62,7 @@ function AllMedia() {
         
         {mediaItems.length === 0 ? (
           <Typography variant="body1" sx={{ mt: 4 }}>
-            No media items found. <Link to="/add">Add your first media item!</Link>
+            No media items found. <Link to="/add-media">Add your first media item!</Link>
           </Typography>
         ) : (
           <Grid container spacing={3} sx={{ mt: 2 }}>
