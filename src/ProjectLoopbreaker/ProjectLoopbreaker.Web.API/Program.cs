@@ -86,6 +86,10 @@ if (string.IsNullOrEmpty(connectionString))
 Console.WriteLine($"Connection string length: {connectionString.Length}");
 Console.WriteLine($"Connection string starts with: {connectionString.Substring(0, Math.Min(20, connectionString.Length))}...");
 
+// Show the connection string pattern without exposing credentials
+var pattern = System.Text.RegularExpressions.Regex.Replace(connectionString, @"://([^:]+):([^@]+)@", "://[USER]:[PASSWORD]@");
+Console.WriteLine($"Connection string pattern: {pattern}");
+
 // Handle potential connection string format issues
 try
 {
@@ -96,7 +100,6 @@ try
 catch (Exception ex)
 {
     Console.WriteLine($"ERROR: Failed to parse connection string: {ex.Message}");
-    Console.WriteLine($"Raw connection string (first 100 chars): {connectionString.Substring(0, Math.Min(100, connectionString.Length))}");
     
     // Check for common issues and try to fix them
     var fixedConnectionString = connectionString;
@@ -118,6 +121,29 @@ catch (Exception ex)
         Console.WriteLine("Converted postgres:// to postgresql://");
     }
     
+    // Issue 4: Check if the connection string is complete (has all required parts)
+    var uriMatch = System.Text.RegularExpressions.Regex.Match(fixedConnectionString, @"^postgresql://([^:]+):([^@]+)@([^/]+)/(.+)$");
+    if (!uriMatch.Success)
+    {
+        Console.WriteLine("ERROR: Connection string doesn't match expected PostgreSQL URL format: postgresql://user:password@host/database");
+        Console.WriteLine($"Full connection string length: {fixedConnectionString.Length}");
+        Console.WriteLine($"Connection string ends with: ...{fixedConnectionString.Substring(Math.Max(0, fixedConnectionString.Length - 20))}");
+        
+        // Check if it's just missing the database name or has other issues
+        if (fixedConnectionString.EndsWith("/"))
+        {
+            Console.WriteLine("ERROR: Connection string ends with '/' but has no database name");
+        }
+        else if (!fixedConnectionString.Contains("/") || fixedConnectionString.LastIndexOf("/") == fixedConnectionString.IndexOf("//") + 1)
+        {
+            Console.WriteLine("ERROR: Connection string is missing database name part");
+        }
+        
+        throw new InvalidOperationException($"Connection string format is invalid. Expected format: postgresql://user:password@host/database. Got: {pattern}");
+    }
+    
+    Console.WriteLine($"Connection string appears to have correct format: user={uriMatch.Groups[1].Value}, host={uriMatch.Groups[3].Value}, database={uriMatch.Groups[4].Value}");
+    
     // Try parsing the fixed connection string
     try
     {
@@ -128,7 +154,29 @@ catch (Exception ex)
     catch (Exception ex2)
     {
         Console.WriteLine($"ERROR: Even after fixes, connection string still invalid: {ex2.Message}");
-        throw new InvalidOperationException($"Database connection string format is invalid. Original error: {ex.Message}. After fixes: {ex2.Message}");
+        
+        // Try alternative: parse manually and rebuild
+        try
+        {
+            Console.WriteLine("Attempting to manually parse and rebuild connection string...");
+            var user = uriMatch.Groups[1].Value;
+            var password = uriMatch.Groups[2].Value;
+            var host = uriMatch.Groups[3].Value;
+            var database = uriMatch.Groups[4].Value;
+            
+            // Rebuild as key-value format instead of URL format
+            var rebuiltConnectionString = $"Host={host};Database={database};Username={user};Password={password};SSL Mode=Require;Trust Server Certificate=true";
+            Console.WriteLine($"Rebuilt connection string format: Host={host};Database={database};Username={user};Password=[HIDDEN];SSL Mode=Require;Trust Server Certificate=true");
+            
+            var testBuilder3 = new Npgsql.NpgsqlConnectionStringBuilder(rebuiltConnectionString);
+            Console.WriteLine($"Rebuilt connection string parsed successfully! Host: {testBuilder3.Host}, Database: {testBuilder3.Database}");
+            connectionString = rebuiltConnectionString;
+        }
+        catch (Exception ex3)
+        {
+            Console.WriteLine($"ERROR: Manual rebuild also failed: {ex3.Message}");
+            throw new InvalidOperationException($"Database connection string format is invalid and cannot be fixed. Original error: {ex.Message}. After fixes: {ex2.Message}. After rebuild: {ex3.Message}");
+        }
     }
 }
 
