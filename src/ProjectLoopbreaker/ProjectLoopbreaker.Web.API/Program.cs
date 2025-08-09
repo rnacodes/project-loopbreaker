@@ -11,9 +11,47 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
+        if (builder.Environment.IsDevelopment())
+        {
+            // Development: Allow localhost
+            policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else
+        {
+            // Production: Allow your frontend domain and configure based on environment variables
+            var allowedOrigins = new List<string>();
+            
+            // Add frontend URL from environment variable if provided
+            var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL");
+            if (!string.IsNullOrEmpty(frontendUrl))
+            {
+                allowedOrigins.Add(frontendUrl);
+            }
+            
+            // Add any additional allowed origins from configuration
+            var configuredOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+            if (configuredOrigins != null)
+            {
+                allowedOrigins.AddRange(configuredOrigins);
+            }
+            
+            if (allowedOrigins.Any())
+            {
+                policy.WithOrigins(allowedOrigins.ToArray())
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            }
+            else
+            {
+                // Fallback: Allow any origin (less secure, but prevents CORS errors during deployment testing)
+                Console.WriteLine("WARNING: No specific frontend origins configured. Allowing all origins for CORS.");
+                policy.AllowAnyOrigin()
+                      .AllowAnyHeader()
+                      .AllowAnyMethod();
+            }
+        }
     });
 });
 
@@ -26,7 +64,23 @@ builder.Services.AddControllers()
     });
 
 // --- Configure EF Core & PostgreSQL ---
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Try to get connection string from various sources with priority:
+// 1. Environment variable DATABASE_URL (Render.com standard)
+// 2. Environment variable ConnectionStrings__DefaultConnection
+// 3. Configuration DefaultConnection
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ??
+                      Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") ??
+                      builder.Configuration.GetConnectionString("DefaultConnection");
+
+Console.WriteLine($"Connection string source: {(Environment.GetEnvironmentVariable("DATABASE_URL") != null ? "DATABASE_URL env var" : 
+                                               Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") != null ? "ConnectionStrings__DefaultConnection env var" : 
+                                               "appsettings.json")}");
+
+// Validate connection string before proceeding
+if (string.IsNullOrEmpty(connectionString))
+{
+    throw new InvalidOperationException("Database connection string is required but not configured. Please set DATABASE_URL environment variable or configure DefaultConnection in appsettings.json");
+}
 
 // Configure Npgsql for JSON serialization
 var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
