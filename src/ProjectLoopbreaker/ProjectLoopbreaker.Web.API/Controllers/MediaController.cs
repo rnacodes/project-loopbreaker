@@ -19,10 +19,36 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/media
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BaseMediaItem>>> GetAllMedia()
+        public async Task<ActionResult<IEnumerable<MediaItemResponseDto>>> GetAllMedia()
         {
-            var mediaItems = await _context.MediaItems.ToListAsync();
-            return Ok(mediaItems);
+            var mediaItems = await _context.MediaItems
+                .Include(m => m.Mixlists)
+                .Include(m => m.Topics)
+                .Include(m => m.Genres)
+                .ToListAsync();
+                
+            var response = mediaItems.Select(item => new MediaItemResponseDto
+            {
+                Id = item.Id,
+                Title = item.Title,
+                MediaType = item.MediaType,
+                Link = item.Link,
+                Notes = item.Notes,
+                DateAdded = item.DateAdded,
+                Status = item.Status,
+                DateCompleted = item.DateCompleted,
+                Rating = item.Rating,
+                OwnershipStatus = item.OwnershipStatus,
+                Description = item.Description,
+                Genre = item.Genre,
+                RelatedNotes = item.RelatedNotes,
+                Thumbnail = item.Thumbnail,
+                Topics = item.Topics.Select(t => t.Name).ToArray(),
+                Genres = item.Genres.Select(g => g.Name).ToArray(),
+                MixlistIds = item.Mixlists.Select(m => m.Id).ToArray()
+            }).ToList();
+            
+            return Ok(response);
         }
 
         // POST: api/media
@@ -37,24 +63,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             // Create the appropriate concrete type based on MediaType
             BaseMediaItem mediaItem = dto.MediaType switch
             {
-                MediaType.Podcast => new PodcastSeries
-                {
-                    Title = dto.Title,
-                    MediaType = dto.MediaType,
-                    Link = dto.Link,
-                    Notes = dto.Notes,
-                    Status = dto.Status,
-                    DateAdded = DateTime.UtcNow,
-                    DateCompleted = dto.DateCompleted,
-                    Rating = dto.Rating,
-                    OwnershipStatus = dto.OwnershipStatus,
-                    Description = dto.Description,
-                    Genre = dto.Genre,
-                    Topics = dto.Topics,
-                    Genres = dto.Genres,
-                    RelatedNotes = dto.RelatedNotes,
-                    Thumbnail = dto.Thumbnail
-                },
+                MediaType.Podcast => await CreatePodcastSeriesAsync(dto),
                 // TODO: Add concrete types for other media types as they're implemented
                 // For now, return an error for unsupported types
                 _ => throw new NotSupportedException($"Media type '{dto.MediaType}' is not yet supported. Please implement a concrete class for this media type.")
@@ -67,20 +76,106 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             return CreatedAtAction(nameof(GetMediaItem), new { id = mediaItem.Id }, mediaItem);
         }
 
-        // GET: api/media/{id}
-        [HttpGet("{id}")]
-        public async Task<ActionResult<BaseMediaItem>> GetMediaItem(Guid id)
+        private async Task<PodcastSeries> CreatePodcastSeriesAsync(CreateMediaItemDto dto)
         {
-            var mediaItem = await _context.MediaItems
-                .Include(m => m.Mixlists)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (mediaItem == null)
+            var podcastSeries = new PodcastSeries
             {
-                return NotFound($"Media item with ID {id} not found.");
+                Title = dto.Title,
+                MediaType = dto.MediaType,
+                Link = dto.Link,
+                Notes = dto.Notes,
+                Status = dto.Status,
+                DateAdded = DateTime.UtcNow,
+                DateCompleted = dto.DateCompleted,
+                Rating = dto.Rating,
+                OwnershipStatus = dto.OwnershipStatus,
+                Description = dto.Description,
+                Genre = dto.Genre,
+                RelatedNotes = dto.RelatedNotes,
+                Thumbnail = dto.Thumbnail
+            };
+
+            // Handle Topics - check if they exist or create new ones
+            if (dto.Topics?.Length > 0)
+            {
+                foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
+                {
+                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == topicName);
+                    if (existingTopic != null)
+                    {
+                        podcastSeries.Topics.Add(existingTopic);
+                    }
+                    else
+                    {
+                        podcastSeries.Topics.Add(new Topic { Name = topicName });
+                    }
+                }
             }
 
-            return Ok(mediaItem);
+            // Handle Genres - check if they exist or create new ones
+            if (dto.Genres?.Length > 0)
+            {
+                foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
+                {
+                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == genreName);
+                    if (existingGenre != null)
+                    {
+                        podcastSeries.Genres.Add(existingGenre);
+                    }
+                    else
+                    {
+                        podcastSeries.Genres.Add(new Genre { Name = genreName });
+                    }
+                }
+            }
+
+            return podcastSeries;
+        }
+
+        // GET: api/media/{id}
+        [HttpGet("{id}")]
+        public async Task<ActionResult<MediaItemResponseDto>> GetMediaItem(Guid id)
+        {
+            try
+            {
+                var mediaItem = await _context.MediaItems
+                    .Include(m => m.Mixlists)
+                    .Include(m => m.Topics)
+                    .Include(m => m.Genres)
+                    .FirstOrDefaultAsync(m => m.Id == id);
+
+                if (mediaItem == null)
+                {
+                    return NotFound($"Media item with ID {id} not found.");
+                }
+
+                var response = new MediaItemResponseDto
+                {
+                    Id = mediaItem.Id,
+                    Title = mediaItem.Title,
+                    MediaType = mediaItem.MediaType,
+                    Link = mediaItem.Link,
+                    Notes = mediaItem.Notes,
+                    DateAdded = mediaItem.DateAdded,
+                    Status = mediaItem.Status,
+                    DateCompleted = mediaItem.DateCompleted,
+                    Rating = mediaItem.Rating,
+                    OwnershipStatus = mediaItem.OwnershipStatus,
+                    Description = mediaItem.Description,
+                    Genre = mediaItem.Genre,
+                    RelatedNotes = mediaItem.RelatedNotes,
+                    Thumbnail = mediaItem.Thumbnail,
+                    Topics = mediaItem.Topics.Select(t => t.Name).ToArray(),
+                    Genres = mediaItem.Genres.Select(g => g.Name).ToArray(),
+                    MixlistIds = mediaItem.Mixlists.Select(m => m.Id).ToArray()
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to retrieve media item", details = ex.Message, stackTrace = ex.StackTrace });
+            }
         }
 
         // PUT: api/media/{id}
@@ -92,7 +187,10 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return BadRequest("Media item data is null.");
             }
 
-            var existingItem = await _context.MediaItems.FindAsync(id);
+            var existingItem = await _context.MediaItems
+                .Include(m => m.Topics)
+                .Include(m => m.Genres)
+                .FirstOrDefaultAsync(m => m.Id == id);
             if (existingItem == null)
             {
                 return NotFound($"Media item with ID {id} not found.");
@@ -100,7 +198,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
             try
             {
-                // Update properties
+                // Update basic properties
                 existingItem.Title = dto.Title;
                 existingItem.MediaType = dto.MediaType;
                 existingItem.Link = dto.Link;
@@ -111,10 +209,46 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 existingItem.OwnershipStatus = dto.OwnershipStatus;
                 existingItem.Description = dto.Description;
                 existingItem.Genre = dto.Genre;
-                existingItem.Topics = dto.Topics;
-                existingItem.Genres = dto.Genres;
                 existingItem.RelatedNotes = dto.RelatedNotes;
                 existingItem.Thumbnail = dto.Thumbnail;
+
+                // Clear existing topics and genres
+                existingItem.Topics.Clear();
+                existingItem.Genres.Clear();
+
+                // Add new topics - check if they exist or create new ones
+                if (dto.Topics?.Length > 0)
+                {
+                    foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
+                    {
+                        var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == topicName);
+                        if (existingTopic != null)
+                        {
+                            existingItem.Topics.Add(existingTopic);
+                        }
+                        else
+                        {
+                            existingItem.Topics.Add(new Topic { Name = topicName });
+                        }
+                    }
+                }
+
+                // Add new genres - check if they exist or create new ones
+                if (dto.Genres?.Length > 0)
+                {
+                    foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
+                    {
+                        var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == genreName);
+                        if (existingGenre != null)
+                        {
+                            existingItem.Genres.Add(existingGenre);
+                        }
+                        else
+                        {
+                            existingItem.Genres.Add(new Genre { Name = genreName });
+                        }
+                    }
+                }
 
                 await _context.SaveChangesAsync();
                 return Ok(existingItem);
@@ -163,9 +297,11 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     .Where(m => m.Title.Contains(query) || 
                                (m.Description != null && m.Description.Contains(query)) ||
                                (m.Genre != null && m.Genre.Contains(query)) ||
-                               (m.Topics.Any(t => t.Contains(query))) ||
-                               (m.Genres.Any(g => g.Contains(query))))
+                               (m.Topics.Any(t => t.Name.Contains(query))) ||
+                               (m.Genres.Any(g => g.Name.Contains(query))))
                     .Include(m => m.Mixlists)
+                    .Include(m => m.Topics)
+                    .Include(m => m.Genres)
                     .ToListAsync();
 
                 return Ok(results);

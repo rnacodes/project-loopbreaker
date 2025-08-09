@@ -12,6 +12,8 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<Mixlist> Mixlists { get; set; }
         public DbSet<PodcastSeries> PodcastSeries { get; set; }
         public DbSet<PodcastEpisode> PodcastEpisodes { get; set; }
+        public DbSet<Topic> Topics { get; set; }
+        public DbSet<Genre> Genres { get; set; }
 
 
         public MediaLibraryDbContext(DbContextOptions<MediaLibraryDbContext> options) : base(options) { }
@@ -58,12 +60,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.Property(e => e.Genre)
                     .HasMaxLength(200);
                     
-                // Configure JSON array properties for better query performance
-                entity.Property(e => e.Topics)
-                    .HasColumnType("jsonb"); // PostgreSQL JSONB for better performance
-                    
-                entity.Property(e => e.Genres)
-                    .HasColumnType("jsonb"); // PostgreSQL JSONB for better performance
+                // Topics and Genres are now navigation properties, no column configuration needed
                     
                 entity.Property(e => e.Thumbnail)
                     .HasMaxLength(2000);
@@ -91,6 +88,74 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.Property(e => e.DateCreated)
                     .IsRequired();
             });
+
+            // Configure Topic entity
+            modelBuilder.Entity<Topic>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name)
+                    .HasMaxLength(100)
+                    .IsRequired();
+                    
+                // Create unique index on topic name to prevent duplicates
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            // Configure Genre entity
+            modelBuilder.Entity<Genre>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name)
+                    .HasMaxLength(100)
+                    .IsRequired();
+                    
+                // Create unique index on genre name to prevent duplicates
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            // Configure many-to-many relationship between BaseMediaItem and Topic
+            modelBuilder.Entity<BaseMediaItem>()
+                .HasMany(m => m.Topics)
+                .WithMany(t => t.MediaItems)
+                .UsingEntity<Dictionary<string, object>>(
+                    "MediaItemTopics",
+                    j => j
+                        .HasOne<Topic>()
+                        .WithMany()
+                        .HasForeignKey("TopicId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j => j
+                        .HasOne<BaseMediaItem>()
+                        .WithMany()
+                        .HasForeignKey("MediaItemId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j =>
+                    {
+                        j.HasKey("MediaItemId", "TopicId");
+                        j.ToTable("MediaItemTopics");
+                    });
+
+            // Configure many-to-many relationship between BaseMediaItem and Genre
+            modelBuilder.Entity<BaseMediaItem>()
+                .HasMany(m => m.Genres)
+                .WithMany(g => g.MediaItems)
+                .UsingEntity<Dictionary<string, object>>(
+                    "MediaItemGenres",
+                    j => j
+                        .HasOne<Genre>()
+                        .WithMany()
+                        .HasForeignKey("GenreId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j => j
+                        .HasOne<BaseMediaItem>()
+                        .WithMany()
+                        .HasForeignKey("MediaItemId")
+                        .OnDelete(DeleteBehavior.Cascade),
+                    j =>
+                    {
+                        j.HasKey("MediaItemId", "GenreId");
+                        j.ToTable("MediaItemGenres");
+                    });
 
             // Configure many-to-many relationship between BaseMediaItem and Mixlist
             modelBuilder.Entity<BaseMediaItem>()

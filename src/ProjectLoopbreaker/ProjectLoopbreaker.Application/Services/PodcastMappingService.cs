@@ -38,19 +38,29 @@ namespace ProjectLoopbreaker.Application.Services
                     }
                 }
 
-                return new PodcastSeries
+                var podcastSeries = new PodcastSeries
                 {
-                    Title = podcastDto.Title,
+                    Title = podcastDto.Title ?? string.Empty,
                     MediaType = MediaType.Podcast,
                     //Link = podcastDto.Website,
                     Notes = podcastDto.Description,
                     Thumbnail = podcastDto.Image ?? podcastDto.Thumbnail,
                     DateAdded = DateTime.UtcNow,
                     Status = Status.Uncharted,
-                    Genre = genreInfo, // Keep the old Genre property for backward compatibility
-                    Genres = !string.IsNullOrEmpty(genreInfo) ? genreInfo.Split(',').Select(g => g.Trim()).ToArray() : Array.Empty<string>(),
-                    Topics = Array.Empty<string>() // Topics can be populated later if available
+                    Genre = genreInfo // Keep the old Genre property for backward compatibility
                 };
+
+                // Add genres to the new Genres collection
+                if (!string.IsNullOrEmpty(genreInfo))
+                {
+                    var genreNames = genreInfo.Split(',').Select(g => g.Trim()).Where(g => !string.IsNullOrEmpty(g));
+                    foreach (var genreName in genreNames)
+                    {
+                        podcastSeries.Genres.Add(new Genre { Name = genreName });
+                    }
+                }
+
+                return podcastSeries;
             }
             catch (Exception ex)
             {
@@ -81,9 +91,9 @@ namespace ProjectLoopbreaker.Application.Services
                     }
                 }
 
-                return new PodcastEpisode
+                var podcastEpisode = new PodcastEpisode
                 {
-                    Title = episodeDto.Title,
+                    Title = episodeDto.Title ?? string.Empty,
                     MediaType = MediaType.Podcast,
                     Link = episodeDto.Link,
                     Notes = episodeDto.Description,
@@ -93,10 +103,20 @@ namespace ProjectLoopbreaker.Application.Services
                     PodcastSeriesId = podcastSeriesId,
                     AudioLink = episodeDto.AudioUrl,
                     ReleaseDate = DateTimeOffset.FromUnixTimeMilliseconds(episodeDto.PublishDateMs).DateTime,
-                    DurationInSeconds = episodeDto.DurationInSeconds,
-                    Topics = !string.IsNullOrEmpty(topicsInfo) ? topicsInfo.Split(',').Select(t => t.Trim()).ToArray() : Array.Empty<string>(),
-                    Genres = Array.Empty<string>() // Genre is typically associated with the series, not individual episodes
+                    DurationInSeconds = episodeDto.DurationInSeconds
                 };
+
+                // Add topics to the new Topics collection
+                if (!string.IsNullOrEmpty(topicsInfo))
+                {
+                    var topicNames = topicsInfo.Split(',').Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t));
+                    foreach (var topicName in topicNames)
+                    {
+                        podcastEpisode.Topics.Add(new Topic { Name = topicName });
+                    }
+                }
+
+                return podcastEpisode;
             }
             catch (Exception ex)
             {

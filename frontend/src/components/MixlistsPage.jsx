@@ -70,48 +70,81 @@ function MixlistsPage() {
                 </Box>
             ) : (
                 <Grid container spacing={3}>
-                    {mixlists.map((mixlist) => (
-                        <Grid item xs={12} sm={6} md={4} lg={3} key={mixlist.id}>
-                            <Card 
-                                sx={{ 
-                                    height: '100%',
-                                    cursor: 'pointer',
-                                    transition: 'transform 0.2s',
-                                    '&:hover': {
-                                        transform: 'translateY(-4px)',
-                                        boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
-                                    }
-                                }}
-                                onClick={() => navigate(`/mixlist/${mixlist.id}`)}
-                            >
-                                {mixlist.Thumbnail && (
-                                    <CardMedia
-                                        component="img"
-                                        height="200"
-                                        image={mixlist.Thumbnail}
-                                        alt={mixlist.Name}
-                                        sx={{ objectFit: 'cover' }}
-                                    />
-                                )}
-                                <CardContent>
-                                    <Typography variant="h6" component="h2" sx={{ 
-                                        fontSize: '18px',
-                                        fontWeight: 'bold',
-                                        textAlign: 'center'
-                                    }}>
-                                        {mixlist.Name}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ 
-                                        mt: 1,
-                                        textAlign: 'center',
-                                        color: '#888'
-                                    }}>
-                                        {mixlist.MediaItems ? mixlist.MediaItems.length : 0} item{(mixlist.MediaItems ? mixlist.MediaItems.length : 0) !== 1 ? 's' : ''}
-                                    </Typography>
-                                </CardContent>
-                            </Card>
-                        </Grid>
-                    ))}
+                    {mixlists.map((mixlist) => {
+                        // Handle both possible property names
+                        const id = mixlist.id || mixlist.Id;
+                        const name = mixlist.Name || mixlist.name || 'Unnamed Mixlist';
+                        const thumbnail = mixlist.Thumbnail || mixlist.thumbnail;
+                        const description = mixlist.Description || mixlist.description;
+                        const mediaCount = mixlist.MediaItems ? mixlist.MediaItems.length : (mixlist.mediaItems ? mixlist.mediaItems.length : 0);
+                        
+                        return (
+                            <Grid item xs={12} sm={6} md={4} lg={3} key={id}>
+                                <Card 
+                                    sx={{ 
+                                        height: '100%',
+                                        cursor: 'pointer',
+                                        transition: 'transform 0.2s',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        '&:hover': {
+                                            transform: 'translateY(-4px)',
+                                            boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
+                                        }
+                                    }}
+                                    onClick={() => navigate(`/mixlist/${id}`)}
+                                >
+                                    {thumbnail && (
+                                        <CardMedia
+                                            component="img"
+                                            height="200"
+                                            image={thumbnail}
+                                            alt={name}
+                                            sx={{ objectFit: 'cover' }}
+                                        />
+                                    )}
+                                    <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                                        <Typography variant="h6" component="h2" sx={{ 
+                                            fontSize: '18px',
+                                            fontWeight: 'bold',
+                                            textAlign: 'center',
+                                            mb: 1
+                                        }}>
+                                            {name}
+                                        </Typography>
+                                        
+                                        {description && (
+                                            <Typography variant="body2" sx={{ 
+                                                mb: 2,
+                                                color: 'text.secondary',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: 3,
+                                                WebkitBoxOrient: 'vertical',
+                                                lineHeight: 1.4
+                                            }}>
+                                                {description}
+                                            </Typography>
+                                        )}
+                                        
+                                        <Box sx={{ mt: 'auto', display: 'flex', justifyContent: 'center' }}>
+                                            <Typography variant="body2" sx={{ 
+                                                color: '#888',
+                                                fontWeight: 'medium',
+                                                backgroundColor: 'rgba(0,0,0,0.1)',
+                                                px: 2,
+                                                py: 0.5,
+                                                borderRadius: 1
+                                            }}>
+                                                {mediaCount} item{mediaCount !== 1 ? 's' : ''}
+                                            </Typography>
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+                        );
+                    })}
                 </Grid>
             )}
 

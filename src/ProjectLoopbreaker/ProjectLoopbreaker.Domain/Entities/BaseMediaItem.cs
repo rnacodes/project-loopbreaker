@@ -35,11 +35,9 @@ namespace ProjectLoopbreaker.Domain.Entities
         [StringLength(200)]
         public string? Genre { get; set; }
         
-        // Store as JSON array for better query performance
-        public string[] Topics { get; set; } = Array.Empty<string>();
-        
-        // Store as JSON array for better query performance  
-        public string[] Genres { get; set; } = Array.Empty<string>();
+        // Navigation properties for many-to-many relationships
+        public ICollection<Topic> Topics { get; set; } = new List<Topic>();
+        public ICollection<Genre> Genres { get; set; } = new List<Genre>();
         
         // Add a field for one or more strings that would allow me to paste in links to my related Obsidian notes or other documents.
         public string? RelatedNotes { get; set; } // This can store links to Obsidian notes or other documents

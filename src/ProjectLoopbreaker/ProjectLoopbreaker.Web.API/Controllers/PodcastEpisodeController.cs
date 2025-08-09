@@ -99,7 +99,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 OwnershipStatus = dto.OwnershipStatus,
                 Description = dto.Description,
                 Genre = dto.Genre,
-                Topics = dto.Topics,
                 RelatedNotes = dto.RelatedNotes,
                 Thumbnail = dto.Thumbnail,
                 PodcastSeriesId = dto.PodcastSeriesId,
@@ -107,6 +106,40 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 ReleaseDate = dto.ReleaseDate,
                 DurationInSeconds = dto.DurationInSeconds
             };
+
+            // Handle Topics array conversion - check if they exist or create new ones
+            if (dto.Topics?.Length > 0)
+            {
+                foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
+                {
+                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == topicName);
+                    if (existingTopic != null)
+                    {
+                        episode.Topics.Add(existingTopic);
+                    }
+                    else
+                    {
+                        episode.Topics.Add(new Topic { Name = topicName });
+                    }
+                }
+            }
+
+            // Handle Genres array conversion - check if they exist or create new ones
+            if (dto.Genres?.Length > 0)
+            {
+                foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
+                {
+                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == genreName);
+                    if (existingGenre != null)
+                    {
+                        episode.Genres.Add(existingGenre);
+                    }
+                    else
+                    {
+                        episode.Genres.Add(new Genre { Name = genreName });
+                    }
+                }
+            }
 
             _context.Set<PodcastEpisode>().Add(episode);
             await _context.SaveChangesAsync();
@@ -170,12 +203,44 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             episode.Notes = dto.Notes ?? episode.Notes;
             episode.Description = dto.Description ?? episode.Description;
             episode.Genre = dto.Genre ?? episode.Genre;
-            if (dto.Topics != null)
-                episode.Topics = dto.Topics;
-            if (dto.Genres != null)
-                episode.Genres = dto.Genres;
             episode.RelatedNotes = dto.RelatedNotes ?? episode.RelatedNotes;
             episode.Thumbnail = dto.Thumbnail ?? episode.Thumbnail;
+
+            // Handle Topics update
+            if (dto.Topics != null)
+            {
+                episode.Topics.Clear();
+                foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
+                {
+                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == topicName);
+                    if (existingTopic != null)
+                    {
+                        episode.Topics.Add(existingTopic);
+                    }
+                    else
+                    {
+                        episode.Topics.Add(new Topic { Name = topicName });
+                    }
+                }
+            }
+
+            // Handle Genres update
+            if (dto.Genres != null)
+            {
+                episode.Genres.Clear();
+                foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
+                {
+                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == genreName);
+                    if (existingGenre != null)
+                    {
+                        episode.Genres.Add(existingGenre);
+                    }
+                    else
+                    {
+                        episode.Genres.Add(new Genre { Name = genreName });
+                    }
+                }
+            }
             if (dto.Status.HasValue)
                 episode.Status = dto.Status.Value;
             if (dto.DateCompleted.HasValue)

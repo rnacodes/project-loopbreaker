@@ -12,7 +12,7 @@ using ProjectLoopbreaker.Infrastructure.Data;
 namespace ProjectLoopbreaker.Infrastructure.Migrations
 {
     [DbContext(typeof(MediaLibraryDbContext))]
-    [Migration("20250807235832_InitialCreate")]
+    [Migration("20250809233540_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -24,6 +24,36 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("MediaItemGenres", b =>
+                {
+                    b.Property<Guid>("MediaItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("GenreId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("MediaItemId", "GenreId");
+
+                    b.HasIndex("GenreId");
+
+                    b.ToTable("MediaItemGenres", (string)null);
+                });
+
+            modelBuilder.Entity("MediaItemTopics", b =>
+                {
+                    b.Property<Guid>("MediaItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TopicId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("MediaItemId", "TopicId");
+
+                    b.HasIndex("TopicId");
+
+                    b.ToTable("MediaItemTopics", (string)null);
+                });
 
             modelBuilder.Entity("MixlistMediaItems", b =>
                 {
@@ -58,10 +88,6 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                     b.Property<string>("Genre")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
-
-                    b.PrimitiveCollection<string[]>("Genres")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
 
                     b.Property<string>("Link")
                         .HasMaxLength(2000)
@@ -100,15 +126,30 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
-                    b.PrimitiveCollection<string[]>("Topics")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
                     b.HasKey("Id");
 
                     b.ToTable("MediaItems", (string)null);
 
                     b.UseTptMappingStrategy();
+                });
+
+            modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.Genre", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Genres");
                 });
 
             modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.Mixlist", b =>
@@ -136,6 +177,25 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Mixlists");
+                });
+
+            modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.Topic", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Topics");
                 });
 
             modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.PodcastEpisode", b =>
@@ -167,6 +227,36 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                     b.HasBaseType("ProjectLoopbreaker.Domain.Entities.BaseMediaItem");
 
                     b.ToTable("PodcastSeries", (string)null);
+                });
+
+            modelBuilder.Entity("MediaItemGenres", b =>
+                {
+                    b.HasOne("ProjectLoopbreaker.Domain.Entities.Genre", null)
+                        .WithMany()
+                        .HasForeignKey("GenreId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjectLoopbreaker.Domain.Entities.BaseMediaItem", null)
+                        .WithMany()
+                        .HasForeignKey("MediaItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MediaItemTopics", b =>
+                {
+                    b.HasOne("ProjectLoopbreaker.Domain.Entities.BaseMediaItem", null)
+                        .WithMany()
+                        .HasForeignKey("MediaItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ProjectLoopbreaker.Domain.Entities.Topic", null)
+                        .WithMany()
+                        .HasForeignKey("TopicId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MixlistMediaItems", b =>

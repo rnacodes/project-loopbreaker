@@ -12,6 +12,18 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Genres",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Genres", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "MediaItems",
                 columns: table => new
                 {
@@ -27,8 +39,6 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                     OwnershipStatus = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     Description = table.Column<string>(type: "text", nullable: true),
                     Genre = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    Topics = table.Column<string[]>(type: "jsonb", nullable: false),
-                    Genres = table.Column<string[]>(type: "jsonb", nullable: false),
                     RelatedNotes = table.Column<string>(type: "text", nullable: true),
                     Thumbnail = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true)
                 },
@@ -50,6 +60,42 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Mixlists", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Topics",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Topics", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MediaItemGenres",
+                columns: table => new
+                {
+                    MediaItemId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GenreId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MediaItemGenres", x => new { x.MediaItemId, x.GenreId });
+                    table.ForeignKey(
+                        name: "FK_MediaItemGenres_Genres_GenreId",
+                        column: x => x.GenreId,
+                        principalTable: "Genres",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MediaItemGenres_MediaItems_MediaItemId",
+                        column: x => x.MediaItemId,
+                        principalTable: "MediaItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -94,6 +140,30 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "MediaItemTopics",
+                columns: table => new
+                {
+                    MediaItemId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TopicId = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MediaItemTopics", x => new { x.MediaItemId, x.TopicId });
+                    table.ForeignKey(
+                        name: "FK_MediaItemTopics_MediaItems_MediaItemId",
+                        column: x => x.MediaItemId,
+                        principalTable: "MediaItems",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MediaItemTopics_Topics_TopicId",
+                        column: x => x.TopicId,
+                        principalTable: "Topics",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PodcastEpisodes",
                 columns: table => new
                 {
@@ -121,6 +191,22 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Genres_Name",
+                table: "Genres",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MediaItemGenres_GenreId",
+                table: "MediaItemGenres",
+                column: "GenreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MediaItemTopics_TopicId",
+                table: "MediaItemTopics",
+                column: "TopicId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_MixlistMediaItems_MediaItemId",
                 table: "MixlistMediaItems",
                 column: "MediaItemId");
@@ -129,16 +215,34 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                 name: "IX_PodcastEpisodes_PodcastSeriesId",
                 table: "PodcastEpisodes",
                 column: "PodcastSeriesId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Topics_Name",
+                table: "Topics",
+                column: "Name",
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "MediaItemGenres");
+
+            migrationBuilder.DropTable(
+                name: "MediaItemTopics");
+
+            migrationBuilder.DropTable(
                 name: "MixlistMediaItems");
 
             migrationBuilder.DropTable(
                 name: "PodcastEpisodes");
+
+            migrationBuilder.DropTable(
+                name: "Genres");
+
+            migrationBuilder.DropTable(
+                name: "Topics");
 
             migrationBuilder.DropTable(
                 name: "Mixlists");

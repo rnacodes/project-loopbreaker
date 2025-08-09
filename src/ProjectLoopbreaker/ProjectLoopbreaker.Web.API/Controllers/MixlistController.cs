@@ -28,7 +28,25 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 var mixlists = await _context.Mixlists
                     .Include(m => m.MediaItems)
                     .ToListAsync();
-                return Ok(mixlists);
+                    
+                var response = mixlists.Select(mixlist => new
+                {
+                    Id = mixlist.Id,
+                    Name = mixlist.Name,
+                    Description = mixlist.Description,
+                    DateCreated = mixlist.DateCreated,
+                    Thumbnail = mixlist.Thumbnail,
+                    MediaItemIds = mixlist.MediaItems.Select(mi => mi.Id).ToArray(),
+                    MediaItems = mixlist.MediaItems.Select(mi => new
+                    {
+                        Id = mi.Id,
+                        Title = mi.Title,
+                        MediaType = mi.MediaType,
+                        Thumbnail = mi.Thumbnail
+                    }).ToArray()
+                }).ToList();
+                
+                return Ok(response);
             }
             catch (Exception ex)
             {

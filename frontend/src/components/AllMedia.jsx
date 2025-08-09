@@ -93,8 +93,35 @@ function AllMedia() {
                       </Typography>
                     )}
                     <Typography variant="body2" color="text.secondary">
-                      {item.consumed ? 'Consumed' : 'Not consumed yet'}
+                      {item.status || 'No status set'}
                     </Typography>
+                    
+                    {/* Topics and Genres */}
+                    {(item.topics?.length > 0 || item.genres?.length > 0) && (
+                      <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {item.topics?.map((topic, index) => (
+                          <Chip
+                            key={`topic-${index}`}
+                            label={topic}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            sx={{ fontSize: '0.7rem', height: '20px' }}
+                          />
+                        ))}
+                        {item.genres?.map((genre, index) => (
+                          <Chip
+                            key={`genre-${index}`}
+                            label={genre}
+                            size="small"
+                            color="secondary"
+                            variant="outlined"
+                            sx={{ fontSize: '0.7rem', height: '20px' }}
+                          />
+                        ))}
+                      </Box>
+                    )}
+                    
                     {item.notes && (
                       <Typography 
                         variant="body2" 

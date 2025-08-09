@@ -62,11 +62,18 @@ function AddMediaForm() {
     const handleMixlistKeyPress = (event) => {
         if (event.key === 'Enter' && mixlistInput.trim()) {
             event.preventDefault();
-            const mixlist = availableMixlists.find(p => 
-                p.Name && p.Name.toLowerCase().includes(mixlistInput.toLowerCase())
-            );
-            if (mixlist && !selectedMixlists.some(p => p.Id === mixlist.Id)) {
-                setSelectedMixlists([...selectedMixlists, mixlist]);
+            const mixlist = availableMixlists.find(p => {
+                const name = p.Name || p.name || '';
+                return name.toLowerCase().includes(mixlistInput.toLowerCase());
+            });
+            if (mixlist && !selectedMixlists.some(p => (p.Id || p.id) === (mixlist.Id || mixlist.id))) {
+                // Normalize the mixlist object
+                const normalizedMixlist = {
+                    ...mixlist,
+                    Id: mixlist.Id || mixlist.id,
+                    Name: mixlist.Name || mixlist.name || `Mixlist ${mixlist.Id || mixlist.id}`
+                };
+                setSelectedMixlists([...selectedMixlists, normalizedMixlist]);
                 setMixlistInput('');
             }
         }
@@ -934,61 +941,31 @@ function AddMediaForm() {
                             </Typography>
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                                 {availableMixlists
-                                    .filter(mixlist => 
-                                        mixlist.Name && mixlist.Name.toLowerCase().includes(mixlistInput.toLowerCase()) &&
-                                        !selectedMixlists.some(p => p.Id === mixlist.Id)
-                                    )
+                                    .filter(mixlist => {
+                                        // Handle both Name and name properties, and Id vs id
+                                        const name = mixlist.Name || mixlist.name || '';
+                                        const id = mixlist.Id || mixlist.id;
+                                        return name.toLowerCase().includes(mixlistInput.toLowerCase()) &&
+                                            !selectedMixlists.some(p => (p.Id || p.id) === id);
+                                    })
                                     .slice(0, 5)
-                                    .map(mixlist => (
-                                        <Chip
-                                            key={mixlist.Id}
-                                            label={mixlist.Name || 'Unnamed Mixlist'}
-                                            variant="outlined"
-                                            size="small"
-                                            onClick={() => {
-                                                setSelectedMixlists([...selectedMixlists, mixlist]);
-                                                setMixlistInput('');
-                                            }}
-                                            sx={{ 
-                                                fontSize: '12px', 
-                                                cursor: 'pointer',
-                                                '&:hover': {
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                                                }
-                                            }}
-                                        />
-                                    ))
-                                }
-                            </Box>
-                        </Box>
-                    )}
-                    
-                    {/* Show all mixlists when no search input */}
-                    {availableMixlists.length > 0 && !mixlistInput && (
-                        <Box sx={{ mt: 1 }}>
-                            <Typography variant="body2" sx={{ 
-                                fontSize: '14px', 
-                                color: '#ffffff', 
-                                mb: 1,
-                                fontWeight: 'bold'
-                            }}>
-                                All mixlists ({availableMixlists.length}):
-                            </Typography>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                {availableMixlists
-                                    .filter(mixlist => !selectedMixlists.some(p => p.Id === mixlist.Id))
-                                    .slice(0, 10)
                                     .map(mixlist => {
-                                        console.log('Rendering mixlist:', mixlist);
+                                        // Ensure we have consistent property names
+                                        const normalizedMixlist = {
+                                            ...mixlist,
+                                            Id: mixlist.Id || mixlist.id,
+                                            Name: mixlist.Name || mixlist.name || `Mixlist ${mixlist.Id || mixlist.id}`
+                                        };
+                                        
                                         return (
                                             <Chip
-                                                key={mixlist.Id || mixlist.id}
-                                                label={mixlist.Name || mixlist.name || `Mixlist ${mixlist.Id || mixlist.id}`}
+                                                key={normalizedMixlist.Id}
+                                                label={normalizedMixlist.Name}
                                                 variant="outlined"
                                                 size="small"
                                                 onClick={() => {
-                                                    console.log('Selected mixlist:', mixlist);
-                                                    setSelectedMixlists([...selectedMixlists, mixlist]);
+                                                    setSelectedMixlists([...selectedMixlists, normalizedMixlist]);
+                                                    setMixlistInput('');
                                                 }}
                                                 sx={{ 
                                                     fontSize: '12px', 
@@ -1004,6 +981,8 @@ function AddMediaForm() {
                             </Box>
                         </Box>
                     )}
+                    
+
                 </Box>
 
                 {/* Media type specific fields */}
