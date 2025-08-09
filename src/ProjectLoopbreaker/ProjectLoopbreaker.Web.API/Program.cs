@@ -82,6 +82,56 @@ if (string.IsNullOrEmpty(connectionString))
     throw new InvalidOperationException("Database connection string is required but not configured. Please set DATABASE_URL environment variable or configure DefaultConnection in appsettings.json");
 }
 
+// Debug connection string (safely)
+Console.WriteLine($"Connection string length: {connectionString.Length}");
+Console.WriteLine($"Connection string starts with: {connectionString.Substring(0, Math.Min(20, connectionString.Length))}...");
+
+// Handle potential connection string format issues
+try
+{
+    // Test if the connection string can be parsed
+    var testBuilder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+    Console.WriteLine($"Connection string parsed successfully. Host: {testBuilder.Host}, Database: {testBuilder.Database}");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"ERROR: Failed to parse connection string: {ex.Message}");
+    Console.WriteLine($"Raw connection string (first 100 chars): {connectionString.Substring(0, Math.Min(100, connectionString.Length))}");
+    
+    // Check for common issues and try to fix them
+    var fixedConnectionString = connectionString;
+    
+    // Issue 1: Remove any leading/trailing whitespace
+    fixedConnectionString = fixedConnectionString.Trim();
+    
+    // Issue 2: Handle URL-encoded characters that might cause issues
+    if (fixedConnectionString.Contains("%"))
+    {
+        fixedConnectionString = Uri.UnescapeDataString(fixedConnectionString);
+        Console.WriteLine("Attempted to URL-decode the connection string");
+    }
+    
+    // Issue 3: Check if it's a postgres:// URL that needs to be converted to postgresql://
+    if (fixedConnectionString.StartsWith("postgres://"))
+    {
+        fixedConnectionString = fixedConnectionString.Replace("postgres://", "postgresql://");
+        Console.WriteLine("Converted postgres:// to postgresql://");
+    }
+    
+    // Try parsing the fixed connection string
+    try
+    {
+        var testBuilder2 = new Npgsql.NpgsqlConnectionStringBuilder(fixedConnectionString);
+        Console.WriteLine($"Fixed connection string parsed successfully! Host: {testBuilder2.Host}, Database: {testBuilder2.Database}");
+        connectionString = fixedConnectionString;
+    }
+    catch (Exception ex2)
+    {
+        Console.WriteLine($"ERROR: Even after fixes, connection string still invalid: {ex2.Message}");
+        throw new InvalidOperationException($"Database connection string format is invalid. Original error: {ex.Message}. After fixes: {ex2.Message}");
+    }
+}
+
 // Configure Npgsql for JSON serialization
 var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
 dataSourceBuilder.EnableDynamicJson(); // Enable dynamic JSON serialization for arrays
