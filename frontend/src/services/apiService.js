@@ -146,3 +146,44 @@ export const getMediaByTopic = (topicId) => {
 export const getMediaByGenre = (genreId) => {
     return apiClient.get(`/media/by-genre/${genreId}`);
 };
+
+// Book API calls
+export const getAllBooks = () => {
+    return apiClient.get('/book');
+};
+
+export const getBookById = (id) => {
+    return apiClient.get(`/book/${id}`);
+};
+
+export const getBooksByAuthor = (author) => {
+    return apiClient.get(`/book/by-author/${encodeURIComponent(author)}`);
+};
+
+export const getBookSeries = () => {
+    return apiClient.get('/book/series');
+};
+
+export const createBook = (bookData) => {
+    return apiClient.post('/book', bookData);
+};
+
+export const updateBook = (id, bookData) => {
+    return apiClient.put(`/book/${id}`, bookData);
+};
+
+export const deleteBook = (id) => {
+    return apiClient.delete(`/book/${id}`);
+};
+
+// Upload API calls
+export const uploadCsv = (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return apiClient.post('/upload/csv', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+};

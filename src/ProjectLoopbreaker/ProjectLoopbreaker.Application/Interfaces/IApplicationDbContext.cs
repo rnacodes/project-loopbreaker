@@ -11,6 +11,7 @@ namespace ProjectLoopbreaker.Application.Interfaces
         DbSet<BaseMediaItem> MediaItems { get; }
         DbSet<Mixlist> Mixlists { get; }
         DbSet<Podcast> Podcasts { get; }
+        DbSet<Book> Books { get; }
         DbSet<Topic> Topics { get; }
         DbSet<Genre> Genres { get; }
 

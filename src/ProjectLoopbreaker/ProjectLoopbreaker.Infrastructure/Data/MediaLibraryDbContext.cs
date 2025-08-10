@@ -11,6 +11,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<BaseMediaItem> MediaItems { get; set; }
         public DbSet<Mixlist> Mixlists { get; set; }
         public DbSet<Podcast> Podcasts { get; set; }
+        public DbSet<Book> Books { get; set; }
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Genre> Genres { get; set; }
 
@@ -181,8 +182,8 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             // Configure Table-Per-Type (TPT) inheritance for all media entities
             modelBuilder.Entity<BaseMediaItem>().ToTable("MediaItems");
             modelBuilder.Entity<Podcast>().ToTable("Podcasts");
+            modelBuilder.Entity<Book>().ToTable("Books");
             // TODO: Add configurations for other media types as they're implemented:
-            // modelBuilder.Entity<Book>().ToTable("Books");
             // modelBuilder.Entity<Movie>().ToTable("Movies");
             // modelBuilder.Entity<Article>().ToTable("Articles");
             // etc.
@@ -221,6 +222,34 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 
                 // Create index on ExternalId for API imports
                 entity.HasIndex(e => e.ExternalId);
+            });
+
+            // Configure Book specific properties
+            modelBuilder.Entity<Book>(entity =>
+            {
+                entity.Property(e => e.Author)
+                    .HasMaxLength(300)
+                    .IsRequired();
+                    
+                entity.Property(e => e.ISBN)
+                    .HasMaxLength(17);
+                    
+                entity.Property(e => e.ASIN)
+                    .HasMaxLength(20);
+                    
+                entity.Property(e => e.Format)
+                    .HasConversion<string>()
+                    .HasMaxLength(50)
+                    .IsRequired();
+                    
+                // Create index on ISBN for better query performance
+                entity.HasIndex(e => e.ISBN);
+                
+                // Create index on Author for better query performance
+                entity.HasIndex(e => e.Author);
+                
+                // Create index on ASIN for better query performance
+                entity.HasIndex(e => e.ASIN);
             });
         }
 

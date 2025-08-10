@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { 
     addMedia, getAllMixlists, addMediaToMixlist, createPodcastEpisode,
-    searchTopics, searchGenres, searchPodcastSeries 
+    searchTopics, searchGenres, searchPodcastSeries, createBook 
 } from '../services/apiService';
 
 function AddMediaForm() {
@@ -36,6 +36,13 @@ function AddMediaForm() {
     const [audioLink, setAudioLink] = useState('');
     const [releaseDate, setReleaseDate] = useState('');
     const [durationInSeconds, setDurationInSeconds] = useState('');
+    
+    // Book specific fields
+    const [author, setAuthor] = useState('');
+    const [isbn, setIsbn] = useState('');
+    const [asin, setAsin] = useState('');
+    const [format, setFormat] = useState('Digital'); // 'Digital' or 'Physical'
+    const [partOfSeries, setPartOfSeries] = useState(false);
     
     // Mixlist selection
     const [availableMixlists, setAvailableMixlists] = useState([]);
@@ -214,15 +221,39 @@ function AddMediaForm() {
             console.log('Raw form values:', { title, mediaType, status, ownershipStatus, rating });
             
             // Check if media type is supported by backend
-            if (mediaType !== 'Podcast') {
-                alert('Currently only Podcast media type is supported by the backend. Other media types are not yet implemented.');
+            if (mediaType !== 'Podcast' && mediaType !== 'Book') {
+                alert('Currently only Podcast and Book media types are supported by the backend. Other media types are not yet implemented.');
                 return;
             }
             
             let response;
             
+            // Handle book-specific creation
+            if (mediaType === 'Book') {
+                const bookData = {
+                    title: title,
+                    link: link,
+                    notes: notes,
+                    description: description,
+                    status: status,
+                    dateCompleted: status === 'Completed' && dateCompleted ? dateCompleted : null,
+                    rating: status === 'Completed' && rating ? rating : null,
+                    ownershipStatus: ownershipStatus || null,
+                    topics: topics.length > 0 ? topics : [],
+                    genres: genres.length > 0 ? genres : [],
+                    relatedNotes: relatedNotes,
+                    thumbnail: thumbnail,
+                    author: author,
+                    isbn: isbn || null,
+                    asin: asin || null,
+                    format: format,
+                    partOfSeries: partOfSeries
+                };
+                
+                response = await createBook(bookData);
+            }
             // Handle podcast-specific creation
-            if (mediaType === 'Podcast') {
+            else if (mediaType === 'Podcast') {
                 if (podcastType === 'Series') {
                     // For now, create as regular media until PodcastSeriesController exists
                     response = await addMedia(mediaData);
@@ -326,7 +357,142 @@ function AddMediaForm() {
     };
 
     const renderMediaTypeSpecificFields = () => {
-        if (mediaType === 'Podcast') {
+        if (mediaType === 'Book') {
+            return (
+                <Box sx={{ mt: 3, mb: 2 }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>
+                        Book Details
+                    </Typography>
+                    
+                    {/* Author - Required */}
+                    <TextField
+                        label="Author"
+                        placeholder="Enter author name..."
+                        variant="outlined"
+                        fullWidth
+                        required
+                        margin="normal"
+                        value={author}
+                        onChange={(e) => setAuthor(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* ISBN */}
+                    <TextField
+                        label="ISBN"
+                        placeholder="978-0123456789"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={isbn}
+                        onChange={(e) => setIsbn(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* ASIN */}
+                    <TextField
+                        label="ASIN"
+                        placeholder="B0010SKUYM"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={asin}
+                        onChange={(e) => setAsin(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* Format */}
+                    <FormControl fullWidth margin="normal" sx={{
+                        mb: 2,
+                        '& .MuiInputLabel-root': {
+                            color: '#ffffff',
+                            fontSize: '14px'
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                            color: '#ffffff'
+                        }
+                    }}>
+                        <InputLabel id="format-label">Format</InputLabel>
+                        <Select
+                            labelId="format-label"
+                            value={format}
+                            label="Format"
+                            onChange={(e) => setFormat(e.target.value)}
+                        >
+                            <MenuItem value="Digital">Digital</MenuItem>
+                            <MenuItem value="Physical">Physical</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    {/* Part of Series */}
+                    <FormControlLabel
+                        control={
+                            <Checkbox
+                                checked={partOfSeries}
+                                onChange={(e) => setPartOfSeries(e.target.checked)}
+                            />
+                        }
+                        label="Part of Series"
+                        sx={{ 
+                            mt: 1,
+                            '& .MuiFormControlLabel-label': { 
+                                fontSize: '14px',
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+                </Box>
+            );
+        }
+        else if (mediaType === 'Podcast') {
             return (
                 <Box sx={{ mt: 3, mb: 2 }}>
                     <Typography variant="h6" sx={{ mb: 2, fontSize: '18px', fontWeight: 'bold' }}>

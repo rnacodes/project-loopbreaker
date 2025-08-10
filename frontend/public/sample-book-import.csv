@@ -1,0 +1,6 @@
+Title,Author,Description,Format,PartOfSeries,Status,Rating,OwnershipStatus,ISBN,ASIN,Topics,Genres,Notes
+"The Pragmatic Programmer","Andrew Hunt, David Thomas","Your journey to mastery","Digital","false","Completed","SuperLike","Own","978-0201616224","","Programming,Software Development","Technical,Education","Excellent resource for developers"
+"Clean Code","Robert Martin","A handbook of agile software craftsmanship","Physical","false","ActivelyExploring","Like","Own","978-0132350884","","Programming,Best Practices","Technical","Classic programming book"
+"The Name of the Wind","Patrick Rothfuss","The first book in the Kingkiller Chronicle series","Digital","true","Completed","SuperLike","Streamed","","B0010SKUYM","Fantasy,Magic","Fantasy,Fiction","Amazing fantasy novel"
+
+

@@ -14,6 +14,7 @@ import ImportMediaPage from './components/ImportMediaPage';
 import SearchByTopicOrGenre from './components/SearchByTopicOrGenre';
 import SearchResults from './components/SearchResults';
 import DemoPage from './components/DemoPage';
+import UploadMediaPage from './components/UploadMediaPage';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
@@ -36,6 +37,7 @@ function App() {
             <Button color="inherit" component={Link} to="/mixlists">Mixlists</Button>
             <Button color="inherit" component={Link} to="/add-media">Add Media</Button>
             <Button color="inherit" component={Link} to="/import-media">Import Media</Button>
+            <Button color="inherit" component={Link} to="/upload-media">Upload Media</Button>
             <Button color="inherit" component={Link} to="/search-by-topic-genre">Search by Topic/Genre</Button>
             <Button color="inherit" component={Link} to="/demo">Demo</Button>
             {/* Add other navigation links here later */}
@@ -51,6 +53,7 @@ function App() {
           <Route path="/mixlist/:id" element={<MixlistDetailPage />} />
           <Route path="/create-mixlist" element={<CreateMixlistForm />} />
           <Route path="/import-media" element={<ImportMediaPage />} />
+          <Route path="/upload-media" element={<UploadMediaPage />} />
           <Route path="/search-by-topic-genre" element={<SearchByTopicOrGenre />} />
           <Route path="/search-results" element={<SearchResults />} />
           <Route path="/media/:id" element={<MediaItemProfile />} />
