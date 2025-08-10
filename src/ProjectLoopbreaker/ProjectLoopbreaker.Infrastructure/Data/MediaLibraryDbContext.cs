@@ -10,8 +10,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
     {
         public DbSet<BaseMediaItem> MediaItems { get; set; }
         public DbSet<Mixlist> Mixlists { get; set; }
-        public DbSet<PodcastSeries> PodcastSeries { get; set; }
-        public DbSet<PodcastEpisode> PodcastEpisodes { get; set; }
+        public DbSet<Podcast> Podcasts { get; set; }
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Genre> Genres { get; set; }
 
@@ -181,16 +180,15 @@ namespace ProjectLoopbreaker.Infrastructure.Data
 
             // Configure Table-Per-Type (TPT) inheritance for all media entities
             modelBuilder.Entity<BaseMediaItem>().ToTable("MediaItems");
-            modelBuilder.Entity<PodcastSeries>().ToTable("PodcastSeries");
-            modelBuilder.Entity<PodcastEpisode>().ToTable("PodcastEpisodes");
+            modelBuilder.Entity<Podcast>().ToTable("Podcasts");
             // TODO: Add configurations for other media types as they're implemented:
             // modelBuilder.Entity<Book>().ToTable("Books");
             // modelBuilder.Entity<Movie>().ToTable("Movies");
             // modelBuilder.Entity<Article>().ToTable("Articles");
             // etc.
 
-            // Configure PodcastEpisode specific properties
-            modelBuilder.Entity<PodcastEpisode>(entity =>
+            // Configure Podcast specific properties
+            modelBuilder.Entity<Podcast>(entity =>
             {
                 entity.Property(e => e.AudioLink)
                     .HasMaxLength(2000);
@@ -198,11 +196,31 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.Property(e => e.DurationInSeconds)
                     .HasDefaultValue(0);
                     
-                // Configure one-to-many relationship between PodcastSeries and PodcastEpisode
-                entity.HasOne(e => e.PodcastSeries)
+                entity.Property(e => e.PodcastType)
+                    .HasConversion<string>()
+                    .HasMaxLength(50)
+                    .IsRequired();
+                    
+                entity.Property(e => e.ExternalId)
+                    .HasMaxLength(200);
+                    
+                entity.Property(e => e.Publisher)
+                    .HasMaxLength(500);
+                    
+                // Configure self-referencing relationship for Series->Episodes
+                entity.HasOne(e => e.ParentPodcast)
                     .WithMany(s => s.Episodes)
-                    .HasForeignKey(e => e.PodcastSeriesId)
+                    .HasForeignKey(e => e.ParentPodcastId)
                     .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete to avoid orphaned episodes
+                    
+                // Create index on PodcastType for better query performance
+                entity.HasIndex(e => e.PodcastType);
+                
+                // Create index on ParentPodcastId for better query performance
+                entity.HasIndex(e => e.ParentPodcastId);
+                
+                // Create index on ExternalId for API imports
+                entity.HasIndex(e => e.ExternalId);
             });
         }
 

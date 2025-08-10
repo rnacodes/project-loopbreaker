@@ -63,7 +63,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             // Create the appropriate concrete type based on MediaType
             BaseMediaItem mediaItem = dto.MediaType switch
             {
-                MediaType.Podcast => await CreatePodcastSeriesAsync(dto),
+                MediaType.Podcast => await CreatePodcastAsync(dto),
                 // TODO: Add concrete types for other media types as they're implemented
                 // For now, return an error for unsupported types
                 _ => throw new NotSupportedException($"Media type '{dto.MediaType}' is not yet supported. Please implement a concrete class for this media type.")
@@ -76,9 +76,9 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             return CreatedAtAction(nameof(GetMediaItem), new { id = mediaItem.Id }, mediaItem);
         }
 
-        private async Task<PodcastSeries> CreatePodcastSeriesAsync(CreateMediaItemDto dto)
+        private async Task<Podcast> CreatePodcastAsync(CreateMediaItemDto dto)
         {
-            var podcastSeries = new PodcastSeries
+            var podcast = new Podcast
             {
                 Title = dto.Title,
                 MediaType = dto.MediaType,
@@ -92,7 +92,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 Description = dto.Description,
                 Genre = dto.Genre,
                 RelatedNotes = dto.RelatedNotes,
-                Thumbnail = dto.Thumbnail
+                Thumbnail = dto.Thumbnail,
+                PodcastType = PodcastType.Series // Default to Series for now
             };
 
             // Handle Topics - check if they exist or create new ones
@@ -103,11 +104,11 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == topicName);
                     if (existingTopic != null)
                     {
-                        podcastSeries.Topics.Add(existingTopic);
+                        podcast.Topics.Add(existingTopic);
                     }
                     else
                     {
-                        podcastSeries.Topics.Add(new Topic { Name = topicName });
+                        podcast.Topics.Add(new Topic { Name = topicName });
                     }
                 }
             }
@@ -120,16 +121,16 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == genreName);
                     if (existingGenre != null)
                     {
-                        podcastSeries.Genres.Add(existingGenre);
+                        podcast.Genres.Add(existingGenre);
                     }
                     else
                     {
-                        podcastSeries.Genres.Add(new Genre { Name = genreName });
+                        podcast.Genres.Add(new Genre { Name = genreName });
                     }
                 }
             }
 
-            return podcastSeries;
+            return podcast;
         }
 
         // GET: api/media/{id}
@@ -309,6 +310,90 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { error = "Search failed", details = ex.Message });
+            }
+        }
+
+        // GET: api/media/by-topic/{topicId}
+        [HttpGet("by-topic/{topicId}")]
+        public async Task<ActionResult<IEnumerable<MediaItemResponseDto>>> GetMediaByTopic(Guid topicId)
+        {
+            try
+            {
+                var mediaItems = await _context.MediaItems
+                    .Where(m => m.Topics.Any(t => t.Id == topicId))
+                    .Include(m => m.Mixlists)
+                    .Include(m => m.Topics)
+                    .Include(m => m.Genres)
+                    .ToListAsync();
+
+                var response = mediaItems.Select(item => new MediaItemResponseDto
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                    MediaType = item.MediaType,
+                    Link = item.Link,
+                    Notes = item.Notes,
+                    DateAdded = item.DateAdded,
+                    Status = item.Status,
+                    DateCompleted = item.DateCompleted,
+                    Rating = item.Rating,
+                    OwnershipStatus = item.OwnershipStatus,
+                    Description = item.Description,
+                    Genre = item.Genre,
+                    RelatedNotes = item.RelatedNotes,
+                    Thumbnail = item.Thumbnail,
+                    Topics = item.Topics.Select(t => t.Name).ToArray(),
+                    Genres = item.Genres.Select(g => g.Name).ToArray(),
+                    MixlistIds = item.Mixlists.Select(m => m.Id).ToArray()
+                }).ToList();
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to retrieve media by topic", details = ex.Message });
+            }
+        }
+
+        // GET: api/media/by-genre/{genreId}
+        [HttpGet("by-genre/{genreId}")]
+        public async Task<ActionResult<IEnumerable<MediaItemResponseDto>>> GetMediaByGenre(Guid genreId)
+        {
+            try
+            {
+                var mediaItems = await _context.MediaItems
+                    .Where(m => m.Genres.Any(g => g.Id == genreId))
+                    .Include(m => m.Mixlists)
+                    .Include(m => m.Topics)
+                    .Include(m => m.Genres)
+                    .ToListAsync();
+
+                var response = mediaItems.Select(item => new MediaItemResponseDto
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                    MediaType = item.MediaType,
+                    Link = item.Link,
+                    Notes = item.Notes,
+                    DateAdded = item.DateAdded,
+                    Status = item.Status,
+                    DateCompleted = item.DateCompleted,
+                    Rating = item.Rating,
+                    OwnershipStatus = item.OwnershipStatus,
+                    Description = item.Description,
+                    Genre = item.Genre,
+                    RelatedNotes = item.RelatedNotes,
+                    Thumbnail = item.Thumbnail,
+                    Topics = item.Topics.Select(t => t.Name).ToArray(),
+                    Genres = item.Genres.Select(g => g.Name).ToArray(),
+                    MixlistIds = item.Mixlists.Select(m => m.Id).ToArray()
+                }).ToList();
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to retrieve media by genre", details = ex.Message });
             }
         }
     }

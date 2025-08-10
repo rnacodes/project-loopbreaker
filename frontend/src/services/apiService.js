@@ -42,10 +42,10 @@ export const removeMediaFromMixlist = (mixlistId, mediaItemId) => {
     return apiClient.delete(`/mixlist/${mixlistId}/items/${mediaItemId}`);
 };
 
-// Podcast Episode API calls
-export const addPodcastEpisode = (episodeData) => {
-    return apiClient.post('/podcastepisode', episodeData);
-};
+// Legacy - Remove after migration
+// export const addPodcastEpisode = (episodeData) => {
+//     return apiClient.post('/podcastepisode', episodeData);
+// };
 
 // Podcast Search Functions
 export const searchPodcasts = async (query, useMockApi = false) => {
@@ -60,7 +60,7 @@ export const searchPodcasts = async (query, useMockApi = false) => {
     }
 };
 
-export const getPodcastById = async (id, useMockApi = false) => {
+export const getPodcastFromApi = async (id, useMockApi = false) => {
     // Fixed: When useMockApi is true, use MockListenNotes, otherwise use ListenNotes
     const endpoint = useMockApi ? '/MockListenNotes/podcasts' : '/ListenNotes/podcasts';
     try {
@@ -78,12 +78,11 @@ export const importPodcastFromApi = async (podcastData, useMockApi = false) => {
         
         if (podcastData.PodcastId) {
             // Import by ID
-            response = await apiClient.post(`/podcastseries/from-api/${podcastData.PodcastId}?useMock=${useMockApi}`);
+            response = await apiClient.post(`/podcast/from-api/${podcastData.PodcastId}`);
         } else if (podcastData.PodcastName) {
             // Import by name
-            response = await apiClient.post('/podcastseries/from-api/by-name', {
-                PodcastName: podcastData.PodcastName,
-                UseMock: useMockApi
+            response = await apiClient.post('/podcast/from-api/by-name', {
+                PodcastName: podcastData.PodcastName
             });
         } else {
             throw new Error('Either PodcastId or PodcastName must be provided');
@@ -94,4 +93,60 @@ export const importPodcastFromApi = async (podcastData, useMockApi = false) => {
         console.error('Error importing podcast:', error);
         throw error;
     }
+};
+
+// Topics API calls
+export const getAllTopics = () => {
+    return apiClient.get('/topics');
+};
+
+export const searchTopics = (query) => {
+    return apiClient.get(`/topics/search?query=${encodeURIComponent(query)}`);
+};
+
+export const createTopic = (topicData) => {
+    return apiClient.post('/topics', topicData);
+};
+
+// Genres API calls
+export const getAllGenres = () => {
+    return apiClient.get('/genres');
+};
+
+export const searchGenres = (query) => {
+    return apiClient.get(`/genres/search?query=${encodeURIComponent(query)}`);
+};
+
+export const createGenre = (genreData) => {
+    return apiClient.post('/genres', genreData);
+};
+
+// Podcast API calls (unified for series and episodes)
+export const getAllPodcasts = () => {
+    return apiClient.get('/podcast');
+};
+
+export const getPodcastSeries = () => {
+    return apiClient.get('/podcast/series');
+};
+
+export const searchPodcastSeries = (query) => {
+    return apiClient.get(`/podcast/series/search?query=${encodeURIComponent(query)}`);
+};
+
+export const getPodcastById = (id) => {
+    return apiClient.get(`/podcast/${id}`);
+};
+
+export const createPodcastEpisode = (episodeData) => {
+    return apiClient.post('/podcast/episode', episodeData);
+};
+
+// Media filtering API calls
+export const getMediaByTopic = (topicId) => {
+    return apiClient.get(`/media/by-topic/${topicId}`);
+};
+
+export const getMediaByGenre = (genreId) => {
+    return apiClient.get(`/media/by-genre/${genreId}`);
 };

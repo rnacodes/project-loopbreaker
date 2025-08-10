@@ -11,6 +11,8 @@ import MixlistsPage from './components/MixlistsPage';
 import CreateMixlistForm from './components/CreateMixlistForm';
 import MixlistDetailPage from './components/MixlistDetailPage';
 import ImportMediaPage from './components/ImportMediaPage';
+import SearchByTopicOrGenre from './components/SearchByTopicOrGenre';
+import SearchResults from './components/SearchResults';
 import DemoPage from './components/DemoPage';
 
 // --- Import Design System ---
@@ -34,6 +36,7 @@ function App() {
             <Button color="inherit" component={Link} to="/mixlists">Mixlists</Button>
             <Button color="inherit" component={Link} to="/add-media">Add Media</Button>
             <Button color="inherit" component={Link} to="/import-media">Import Media</Button>
+            <Button color="inherit" component={Link} to="/search-by-topic-genre">Search by Topic/Genre</Button>
             <Button color="inherit" component={Link} to="/demo">Demo</Button>
             {/* Add other navigation links here later */}
           </Toolbar>
@@ -48,6 +51,8 @@ function App() {
           <Route path="/mixlist/:id" element={<MixlistDetailPage />} />
           <Route path="/create-mixlist" element={<CreateMixlistForm />} />
           <Route path="/import-media" element={<ImportMediaPage />} />
+          <Route path="/search-by-topic-genre" element={<SearchByTopicOrGenre />} />
+          <Route path="/search-results" element={<SearchResults />} />
           <Route path="/media/:id" element={<MediaItemProfile />} />
           <Route path="/demo" element={<DemoPage />} />
           {/* Catch-all route for 404 */}

@@ -1,16 +1,16 @@
-﻿using ProjectLoopbreaker.Domain.Entities;
+using ProjectLoopbreaker.Domain.Entities;
 using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace ProjectLoopbreaker.Web.API.DTOs
 {
-    public class CreatePodcastEpisodeDto
+    public class CreatePodcastDto
     {
         // Base media item properties
         [Required]
         public string Title { get; set; }
 
-        public MediaType MediaType { get; set; } = MediaType.Podcast; // Default value for this type
+        public MediaType MediaType { get; set; } = MediaType.Podcast;
 
         [Url]
         [StringLength(2000)]
@@ -43,13 +43,20 @@ namespace ProjectLoopbreaker.Web.API.DTOs
         
         public string[] Genres { get; set; } = Array.Empty<string>();
 
-        // PodcastEpisode specific properties
+        // Unified Podcast properties
         [Required]
-        public Guid PodcastSeriesId { get; set; } // Foreign Key to PodcastSeries
+        public PodcastType PodcastType { get; set; } = PodcastType.Series;
+
+        // For episodes: Foreign Key to parent series
+        public Guid? ParentPodcastId { get; set; }
+
+        public string? ExternalId { get; set; }
+        
+        public string? Publisher { get; set; }
 
         [Url]
         [StringLength(2000)]
-        public string? AudioLink { get; set; } // Link to the audio file
+        public string? AudioLink { get; set; }
         
         public DateTime? ReleaseDate { get; set; }
 

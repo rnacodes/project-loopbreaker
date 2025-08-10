@@ -16,22 +16,22 @@ namespace ProjectLoopbreaker.Application.Services
             _context = context;
         }
 
-        public async Task<PodcastSeries> SavePodcastSeriesAsync(PodcastSeries podcastSeries, bool updateIfExists = true)
+        public async Task<Podcast> SavePodcastAsync(Podcast podcast, bool updateIfExists = true)
         {
             // Check if a podcast with the same title already exists
-            var existingPodcast = await GetPodcastSeriesByTitleAsync(podcastSeries.Title);
+            var existingPodcast = await GetPodcastByTitleAsync(podcast.Title);
 
             if (existingPodcast != null)
             {
                 if (updateIfExists)
                 {
                     // Update existing podcast properties
-                    existingPodcast.Link = podcastSeries.Link ?? existingPodcast.Link;
-                    existingPodcast.Notes = podcastSeries.Notes ?? existingPodcast.Notes;
-                    existingPodcast.Thumbnail = podcastSeries.Thumbnail ?? existingPodcast.Thumbnail;
+                    existingPodcast.Link = podcast.Link ?? existingPodcast.Link;
+                    existingPodcast.Notes = podcast.Notes ?? existingPodcast.Notes;
+                    existingPodcast.Thumbnail = podcast.Thumbnail ?? existingPodcast.Thumbnail;
                     // Don't overwrite these if they exist
-                    existingPodcast.Description = existingPodcast.Description ?? podcastSeries.Description;
-                    existingPodcast.RelatedNotes = existingPodcast.RelatedNotes ?? podcastSeries.RelatedNotes;
+                    existingPodcast.Description = existingPodcast.Description ?? podcast.Description;
+                    existingPodcast.RelatedNotes = existingPodcast.RelatedNotes ?? podcast.RelatedNotes;
 
                     await _context.SaveChangesAsync();
                     return existingPodcast;
@@ -44,55 +44,18 @@ namespace ProjectLoopbreaker.Application.Services
             else
             {
                 // It's a new podcast, add it
-                _context.PodcastSeries.Add(podcastSeries);
+                _context.Podcasts.Add(podcast);
                 await _context.SaveChangesAsync();
-                return podcastSeries;
+                return podcast;
             }
         }
 
-        public async Task<PodcastEpisode> SavePodcastEpisodeAsync(PodcastEpisode episode, bool updateIfExists = true)
-        {
-            // Check if an episode with the same title already exists in the series
-            var existingEpisode = await GetPodcastEpisodeByTitleAsync(episode.PodcastSeriesId, episode.Title);
+        // This method is now merged into SavePodcastAsync since episodes are just podcasts with PodcastType.Episode
 
-            if (existingEpisode != null)
-            {
-                if (updateIfExists)
-                {
-                    // Update existing episode properties
-                    existingEpisode.Link = episode.Link ?? existingEpisode.Link;
-                    existingEpisode.Notes = episode.Notes ?? existingEpisode.Notes;
-                    existingEpisode.Thumbnail = episode.Thumbnail ?? existingEpisode.Thumbnail;
-                    existingEpisode.AudioLink = episode.AudioLink ?? existingEpisode.AudioLink;
-                    existingEpisode.ReleaseDate = episode.ReleaseDate ?? existingEpisode.ReleaseDate;
-
-                    // Only update duration if it's greater than 0 (valid)
-                    if (episode.DurationInSeconds > 0)
-                    {
-                        existingEpisode.DurationInSeconds = episode.DurationInSeconds;
-                    }
-
-                    await _context.SaveChangesAsync();
-                    return existingEpisode;
-                }
-                else
-                {
-                    return existingEpisode; // Return existing without modifications
-                }
-            }
-            else
-            {
-                // It's a new episode, add it
-                _context.PodcastEpisodes.Add(episode);
-                await _context.SaveChangesAsync();
-                return episode;
-            }
-        }
-
-        public async Task<PodcastSeries> SavePodcastWithEpisodesAsync(PodcastSeries podcastSeries, bool updateIfExists = true)
+        public async Task<Podcast> SavePodcastWithEpisodesAsync(Podcast podcastSeries, bool updateIfExists = true)
         {
             // First save or update the podcast series
-            var savedSeries = await SavePodcastSeriesAsync(podcastSeries, updateIfExists);
+            var savedSeries = await SavePodcastAsync(podcastSeries, updateIfExists);
 
             // If there are episodes to save
             if (podcastSeries.Episodes != null && podcastSeries.Episodes.Any())
@@ -100,10 +63,11 @@ namespace ProjectLoopbreaker.Application.Services
                 foreach (var episode in podcastSeries.Episodes)
                 {
                     // Make sure episode is linked to the correct series
-                    episode.PodcastSeriesId = savedSeries.Id;
+                    episode.ParentPodcastId = savedSeries.Id;
+                    episode.PodcastType = PodcastType.Episode;
 
                     // Save the episode (with duplicate checking)
-                    await SavePodcastEpisodeAsync(episode, updateIfExists);
+                    await SavePodcastAsync(episode, updateIfExists);
                 }
 
                 // Refresh the series with all episodes
@@ -115,9 +79,9 @@ namespace ProjectLoopbreaker.Application.Services
             return savedSeries;
         }
 
-        public async Task<bool> PodcastSeriesExistsAsync(string title, string publisher = null)
+        public async Task<bool> PodcastExistsAsync(string title, string publisher = null)
         {
-            var query = _context.PodcastSeries.AsQueryable();
+            var query = _context.Podcasts.AsQueryable();
 
             // Always check title (case-insensitive)
             query = query.Where(p => p.Title.ToLower() == title.ToLower());
@@ -125,17 +89,18 @@ namespace ProjectLoopbreaker.Application.Services
             return await query.AnyAsync();
         }
 
-        public async Task<bool> PodcastEpisodeExistsAsync(Guid seriesId, string episodeTitle)
+        public async Task<bool> PodcastEpisodeExistsAsync(Guid? parentPodcastId, string episodeTitle)
         {
-            return await _context.PodcastEpisodes
+            return await _context.Podcasts
                 .AnyAsync(e =>
-                    e.PodcastSeriesId == seriesId &&
+                    e.ParentPodcastId == parentPodcastId &&
+                    e.PodcastType == PodcastType.Episode &&
                     e.Title.ToLower() == episodeTitle.ToLower());
         }
 
-        public async Task<PodcastSeries> GetPodcastSeriesByTitleAsync(string title, string publisher = null)
+        public async Task<Podcast> GetPodcastByTitleAsync(string title, string publisher = null)
         {
-            var query = _context.PodcastSeries.AsQueryable();
+            var query = _context.Podcasts.AsQueryable();
 
             // Always check title (case-insensitive)
             query = query.Where(p => p.Title.ToLower() == title.ToLower());
@@ -143,11 +108,12 @@ namespace ProjectLoopbreaker.Application.Services
             return await query.FirstOrDefaultAsync();
         }
 
-        public async Task<PodcastEpisode> GetPodcastEpisodeByTitleAsync(Guid seriesId, string episodeTitle)
+        public async Task<Podcast> GetPodcastEpisodeByTitleAsync(Guid? parentPodcastId, string episodeTitle)
         {
-            return await _context.PodcastEpisodes
+            return await _context.Podcasts
                 .FirstOrDefaultAsync(e =>
-                    e.PodcastSeriesId == seriesId &&
+                    e.ParentPodcastId == parentPodcastId &&
+                    e.PodcastType == PodcastType.Episode &&
                     e.Title.ToLower() == episodeTitle.ToLower());
         }
     }

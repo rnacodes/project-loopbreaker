@@ -191,7 +191,8 @@ builder.Services.AddDbContext<MediaLibraryDbContext>(options =>
     options.UseNpgsql(dataSource));
 
 // Register IApplicationDbContext
-builder.Services.AddScoped<IApplicationDbContext>(provider => provider.GetService<MediaLibraryDbContext>());
+builder.Services.AddScoped<IApplicationDbContext>(provider => 
+    provider.GetRequiredService<MediaLibraryDbContext>());
 
 // Register Application Services
 builder.Services.AddScoped<IPodcastMappingService, PodcastMappingService>();
@@ -199,48 +200,30 @@ builder.Services.AddScoped<IPodcastService, PodcastService>();
 
 // In Program.cs
 
-// Register ListenNotesApiClient based on environment
-if (builder.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("UseMockListenNotesApi", false))
+// ALWAYS use the real Listen Notes API - no mock API
+builder.Services.AddHttpClient<ListenNotesApiClient>(client =>
 {
-    builder.Services.AddHttpClient<MockListenNotesApiClient>(client =>
+    client.BaseAddress = new Uri("https://listen-api.listennotes.com/api/v2/");
+
+    // Try to get API key from various sources with priority:
+    // 1. Environment variable (Render.com)
+    // 2. Configuration (appsettings.json)
+    // 3. User secrets
+    var apiKey = builder.Configuration["LISTENNOTES_API_KEY"] ??
+                 builder.Configuration["ApiKeys:ListenNotes"] ??
+                 builder.Configuration["ListenNotes_ApiKey"];
+
+    Console.WriteLine($"API Key found: {(!string.IsNullOrEmpty(apiKey) ? "YES" : "NO")}");
+    Console.WriteLine($"API Key value: {apiKey}");
+
+    if (string.IsNullOrEmpty(apiKey) || apiKey == "LISTENNOTES_API_KEY")
     {
-        // No API key needed for mock client, base URL is set in the constructor
-    });
+        Console.WriteLine("WARNING: No valid ListenNotes API key found. Please set a valid API key.");
+        throw new InvalidOperationException("ListenNotes API key is required but not configured properly.");
+    }
 
-    // Register the mock client as the implementation for ListenNotesApiClient
-    builder.Services.AddScoped<ListenNotesApiClient>(sp =>
-    {
-        var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-        return new ListenNotesApiClient(httpClientFactory.CreateClient(nameof(MockListenNotesApiClient)));
-    });
-}
-else
-{
-    // Register real Listen Notes API client
-    builder.Services.AddHttpClient<ListenNotesApiClient>(client =>
-    {
-        client.BaseAddress = new Uri("https://listen-api.listennotes.com/api/v2/");
-
-        // Try to get API key from various sources with priority:
-        // 1. Environment variable (Render.com)
-        // 2. Configuration (appsettings.json)
-        // 3. User secrets
-        var apiKey = builder.Configuration["LISTENNOTES_API_KEY"] ??
-                     builder.Configuration["ApiKeys:ListenNotes"] ??
-                     builder.Configuration["ListenNotes_ApiKey"];
-
-        Console.WriteLine($"API Key found: {(!string.IsNullOrEmpty(apiKey) ? "YES" : "NO")}");
-        Console.WriteLine($"API Key value: {apiKey}");
-
-        if (string.IsNullOrEmpty(apiKey) || apiKey == "LISTENNOTES_API_KEY")
-        {
-            Console.WriteLine("WARNING: No valid ListenNotes API key found. Please set a valid API key.");
-            throw new InvalidOperationException("ListenNotes API key is required but not configured properly.");
-        }
-
-        client.DefaultRequestHeaders.Add("X-ListenAPI-Key", apiKey);
-    });
-}
+    client.DefaultRequestHeaders.Add("X-ListenAPI-Key", apiKey);
+});
 
 
 // Add other services like Swagger if needed

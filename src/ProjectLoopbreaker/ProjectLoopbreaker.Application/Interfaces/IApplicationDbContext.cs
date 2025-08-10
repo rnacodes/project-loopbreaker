@@ -10,8 +10,9 @@ namespace ProjectLoopbreaker.Application.Interfaces
     {
         DbSet<BaseMediaItem> MediaItems { get; }
         DbSet<Mixlist> Mixlists { get; }
-        DbSet<PodcastSeries> PodcastSeries { get; }
-        DbSet<PodcastEpisode> PodcastEpisodes { get; }
+        DbSet<Podcast> Podcasts { get; }
+        DbSet<Topic> Topics { get; }
+        DbSet<Genre> Genres { get; }
 
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
         EntityEntry<TEntity> Entry<TEntity>(TEntity entity) where TEntity : class;

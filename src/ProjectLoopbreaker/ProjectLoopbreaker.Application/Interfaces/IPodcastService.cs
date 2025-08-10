@@ -6,12 +6,11 @@ namespace ProjectLoopbreaker.Application.Interfaces
 {
     public interface IPodcastService
     {
-        Task<PodcastSeries> SavePodcastSeriesAsync(PodcastSeries podcastSeries, bool updateIfExists = true);
-        Task<PodcastEpisode> SavePodcastEpisodeAsync(PodcastEpisode episode, bool updateIfExists = true);
-        Task<PodcastSeries> SavePodcastWithEpisodesAsync(PodcastSeries podcastSeries, bool updateIfExists = true);
-        Task<bool> PodcastSeriesExistsAsync(string title, string publisher = null);
-        Task<bool> PodcastEpisodeExistsAsync(Guid seriesId, string episodeTitle);
-        Task<PodcastSeries> GetPodcastSeriesByTitleAsync(string title, string publisher = null);
-        Task<PodcastEpisode> GetPodcastEpisodeByTitleAsync(Guid seriesId, string episodeTitle);
+        Task<Podcast> SavePodcastAsync(Podcast podcast, bool updateIfExists = true);
+        Task<Podcast> SavePodcastWithEpisodesAsync(Podcast podcastSeries, bool updateIfExists = true);
+        Task<bool> PodcastExistsAsync(string title, string publisher = null);
+        Task<bool> PodcastEpisodeExistsAsync(Guid? parentPodcastId, string episodeTitle);
+        Task<Podcast> GetPodcastByTitleAsync(string title, string publisher = null);
+        Task<Podcast> GetPodcastEpisodeByTitleAsync(Guid? parentPodcastId, string episodeTitle);
     }
 }

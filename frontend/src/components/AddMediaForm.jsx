@@ -4,9 +4,13 @@ import {
     TextField, Button, Box, Typography, Container,
     Select, MenuItem, InputLabel, FormControl,
     Checkbox, FormControlLabel, Radio, RadioGroup,
-    FormLabel, Chip, OutlinedInput, Paper, Grid
+    FormLabel, Chip, OutlinedInput, Paper, Grid,
+    Autocomplete
 } from '@mui/material';
-import { addMedia, getAllMixlists, addMediaToMixlist, addPodcastEpisode } from '../services/apiService';
+import { 
+    addMedia, getAllMixlists, addMediaToMixlist, createPodcastEpisode,
+    searchTopics, searchGenres, searchPodcastSeries 
+} from '../services/apiService';
 
 function AddMediaForm() {
     const [title, setTitle] = useState('');
@@ -37,6 +41,12 @@ function AddMediaForm() {
     const [availableMixlists, setAvailableMixlists] = useState([]);
     const [selectedMixlists, setSelectedMixlists] = useState([]);
     const [mixlistInput, setMixlistInput] = useState('');
+    
+    // Autocomplete states
+    const [topicSuggestions, setTopicSuggestions] = useState([]);
+    const [genreSuggestions, setGenreSuggestions] = useState([]);
+    const [podcastSeriesSuggestions, setPodcastSeriesSuggestions] = useState([]);
+    const [selectedPodcastSeries, setSelectedPodcastSeries] = useState(null);
     
     const navigate = useNavigate();
 
@@ -111,6 +121,49 @@ function AddMediaForm() {
 
     const removeTopic = (topicToRemove) => {
         setTopics(topics.filter(topic => topic !== topicToRemove));
+    };
+
+    // Autocomplete search functions
+    const handleTopicSearch = async (inputValue) => {
+        if (inputValue.length > 0) {
+            try {
+                const response = await searchTopics(inputValue);
+                setTopicSuggestions(response.data);
+            } catch (error) {
+                console.error('Error searching topics:', error);
+                setTopicSuggestions([]);
+            }
+        } else {
+            setTopicSuggestions([]);
+        }
+    };
+
+    const handleGenreSearch = async (inputValue) => {
+        if (inputValue.length > 0) {
+            try {
+                const response = await searchGenres(inputValue);
+                setGenreSuggestions(response.data);
+            } catch (error) {
+                console.error('Error searching genres:', error);
+                setGenreSuggestions([]);
+            }
+        } else {
+            setGenreSuggestions([]);
+        }
+    };
+
+    const handlePodcastSeriesSearch = async (inputValue) => {
+        if (inputValue.length > 0) {
+            try {
+                const response = await searchPodcastSeries(inputValue);
+                setPodcastSeriesSuggestions(response.data);
+            } catch (error) {
+                console.error('Error searching podcast series:', error);
+                setPodcastSeriesSuggestions([]);
+            }
+        } else {
+            setPodcastSeriesSuggestions([]);
+        }
     };
 
     // Handle thumbnail file upload
@@ -188,13 +241,13 @@ function AddMediaForm() {
                         Genres: genres.length > 0 ? genres : [], // Ensure proper array format
                         RelatedNotes: relatedNotes,
                         Thumbnail: thumbnail,
-                        PodcastSeriesId: podcastSeriesId, // Capital P to match DTO
+                        ParentPodcastId: selectedPodcastSeries?.id || selectedPodcastSeries?.Id || podcastSeriesId, // Capital P to match DTO
                         AudioLink: audioLink || null,
                         ReleaseDate: releaseDate || null,
                         DurationInSeconds: durationInSeconds ? parseInt(durationInSeconds) : 0
                     };
                     
-                    response = await addPodcastEpisode(episodeData);
+                    response = await createPodcastEpisode(episodeData);
                 } else {
                     // No podcast type selected, create as regular media
                     response = await addMedia(mediaData);
@@ -315,30 +368,43 @@ function AddMediaForm() {
 
                     {podcastType === 'Episode' && (
                         <>
-                            <TextField
-                                label="Podcast Series"
-                                placeholder="Select or add podcast series..."
-                                variant="outlined"
-                                fullWidth
-                                margin="normal"
-                                value={podcastSeriesId}
-                                onChange={(e) => setPodcastSeriesId(e.target.value)}
-                                sx={{
-                                    '& .MuiInputBase-input': {
-                                        fontSize: '14px'
-                                    },
-                                    '& .MuiInputBase-input::placeholder': {
-                                        color: '#ffffff',
-                                        opacity: 1
-                                    },
-                                    '& .MuiInputLabel-root': {
-                                        color: '#ffffff',
-                                        fontSize: '14px'
-                                    },
-                                    '& .MuiInputLabel-root.Mui-focused': {
-                                        color: '#ffffff'
-                                    }
+                            <Autocomplete
+                                options={podcastSeriesSuggestions}
+                                getOptionLabel={(option) => option.title || option.Title || ''}
+                                value={selectedPodcastSeries}
+                                onChange={(event, newValue) => {
+                                    setSelectedPodcastSeries(newValue);
+                                    setPodcastSeriesId(newValue?.id || newValue?.Id || '');
                                 }}
+                                onInputChange={(event, newInputValue) => {
+                                    handlePodcastSeriesSearch(newInputValue);
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Podcast Series"
+                                        placeholder="Search for podcast series..."
+                                        variant="outlined"
+                                        fullWidth
+                                        margin="normal"
+                                        sx={{
+                                            '& .MuiInputBase-input': {
+                                                fontSize: '14px'
+                                            },
+                                            '& .MuiInputBase-input::placeholder': {
+                                                color: '#ffffff',
+                                                opacity: 1
+                                            },
+                                            '& .MuiInputLabel-root': {
+                                                color: '#ffffff',
+                                                fontSize: '14px'
+                                            },
+                                            '& .MuiInputLabel-root.Mui-focused': {
+                                                color: '#ffffff'
+                                            }
+                                        }}
+                                    />
+                                )}
                             />
                             <TextField
                                 label="Duration (Minutes)"
@@ -750,82 +816,108 @@ function AddMediaForm() {
 
                 {/* Genres */}
                 <Box sx={{ mb: 3 }}>
-                    <TextField
-                        label="Genres"
-                        placeholder="Type a genre and press Enter..."
-                        variant="outlined"
-                        fullWidth
-                        value={genreInput}
-                        onChange={(e) => setGenreInput(e.target.value)}
-                        onKeyPress={handleGenreKeyPress}
-                        sx={{
-                            '& .MuiInputBase-input': {
-                                fontSize: '14px'
-                            },
-                            '& .MuiInputBase-input::placeholder': {
-                                color: '#ffffff',
-                                opacity: 1
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: '#ffffff',
-                                fontSize: '14px'
-                            },
-                            '& .MuiInputLabel-root.Mui-focused': {
-                                color: '#ffffff'
-                            }
+                    <Autocomplete
+                        multiple
+                        freeSolo
+                        options={genreSuggestions.map((option) => option.name)}
+                        value={genres}
+                        onChange={(event, newValue) => {
+                            setGenres(newValue);
                         }}
-                    />
-                    <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {genres.map((genre, index) => (
-                            <Chip
-                                key={index}
-                                label={genre}
-                                onDelete={() => removeGenre(genre)}
-                                size="small"
-                                sx={{ fontSize: '12px' }}
+                        onInputChange={(event, newInputValue) => {
+                            setGenreInput(newInputValue);
+                            handleGenreSearch(newInputValue);
+                        }}
+                        renderTags={(value, getTagProps) =>
+                            value.map((option, index) => (
+                                <Chip
+                                    key={index}
+                                    variant="outlined"
+                                    label={option}
+                                    size="small"
+                                    sx={{ fontSize: '12px' }}
+                                    {...getTagProps({ index })}
+                                />
+                            ))
+                        }
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Genres"
+                                placeholder="Type to search genres or add new..."
+                                variant="outlined"
+                                sx={{
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
                             />
-                        ))}
-                    </Box>
+                        )}
+                    />
                 </Box>
 
                 {/* Topics */}
                 <Box sx={{ mb: 3 }}>
-                    <TextField
-                        label="Topics"
-                        placeholder="Type a topic and press Enter..."
-                        variant="outlined"
-                        fullWidth
-                        value={topicInput}
-                        onChange={(e) => setTopicInput(e.target.value)}
-                        onKeyPress={handleTopicKeyPress}
-                        sx={{
-                            '& .MuiInputBase-input': {
-                                fontSize: '14px'
-                            },
-                            '& .MuiInputBase-input::placeholder': {
-                                color: '#ffffff',
-                                opacity: 1
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: '#ffffff',
-                                fontSize: '14px'
-                            },
-                            '& .MuiInputLabel-root.Mui-focused': {
-                                color: '#ffffff'
-                            }
+                    <Autocomplete
+                        multiple
+                        freeSolo
+                        options={topicSuggestions.map((option) => option.name)}
+                        value={topics}
+                        onChange={(event, newValue) => {
+                            setTopics(newValue);
                         }}
-                    />
-                    <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {topics.map((topic, index) => (
-                            <Chip
-                                key={index}
-                                label={topic}
-                                onDelete={() => removeTopic(topic)}
-                                size="small"
-                                sx={{ fontSize: '12px' }}
+                        onInputChange={(event, newInputValue) => {
+                            setTopicInput(newInputValue);
+                            handleTopicSearch(newInputValue);
+                        }}
+                        renderTags={(value, getTagProps) =>
+                            value.map((option, index) => (
+                                <Chip
+                                    key={index}
+                                    variant="outlined"
+                                    label={option}
+                                    size="small"
+                                    sx={{ fontSize: '12px' }}
+                                    {...getTagProps({ index })}
+                                />
+                            ))
+                        }
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Topics"
+                                placeholder="Type to search topics or add new..."
+                                variant="outlined"
+                                sx={{
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
                             />
-                        ))}
-                    </Box>
+                        )}
+                    />
                 </Box>
 
                 {/* Notes */}

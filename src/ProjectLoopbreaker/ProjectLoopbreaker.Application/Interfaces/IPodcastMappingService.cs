@@ -4,8 +4,8 @@ namespace ProjectLoopbreaker.Application.Interfaces
 {
     public interface IPodcastMappingService
     {
-        PodcastSeries MapToPodcastSeries(string jsonResponse);
-        PodcastEpisode MapToPodcastEpisode(string jsonResponse, Guid podcastSeriesId);
-        PodcastSeries MapToPodcastSeriesWithEpisodes(string jsonResponse);
+        Task<Podcast> MapToPodcastAsync(string jsonResponse);
+        Task<Podcast> MapToPodcastEpisodeAsync(string jsonResponse, Guid? parentPodcastId = null);
+        Task<Podcast> MapToPodcastWithEpisodesAsync(string jsonResponse);
     }
 }

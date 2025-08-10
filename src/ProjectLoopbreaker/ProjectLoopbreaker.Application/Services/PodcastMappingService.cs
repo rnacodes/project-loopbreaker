@@ -12,7 +12,7 @@ namespace ProjectLoopbreaker.Application.Services
             PropertyNameCaseInsensitive = true
         };
 
-        public PodcastSeries MapToPodcastSeries(string jsonResponse)
+        public async Task<Podcast> MapToPodcastAsync(string jsonResponse)
         {
             try
             {
@@ -38,16 +38,19 @@ namespace ProjectLoopbreaker.Application.Services
                     }
                 }
 
-                var podcastSeries = new PodcastSeries
+                var podcast = new Podcast
                 {
-                    Title = podcastDto.Title ?? string.Empty,
+                    Title = podcastDto?.Title ?? string.Empty,
                     MediaType = MediaType.Podcast,
+                    PodcastType = PodcastType.Series, // Default to Series for API imports
                     //Link = podcastDto.Website,
                     Notes = podcastDto.Description,
                     Thumbnail = podcastDto.Image ?? podcastDto.Thumbnail,
                     DateAdded = DateTime.UtcNow,
                     Status = Status.Uncharted,
-                    Genre = genreInfo // Keep the old Genre property for backward compatibility
+                    Genre = genreInfo, // Keep the old Genre property for backward compatibility
+                    ExternalId = podcastDto.Id,
+                    Publisher = podcastDto.Publisher
                 };
 
                 // Add genres to the new Genres collection
@@ -56,11 +59,11 @@ namespace ProjectLoopbreaker.Application.Services
                     var genreNames = genreInfo.Split(',').Select(g => g.Trim()).Where(g => !string.IsNullOrEmpty(g));
                     foreach (var genreName in genreNames)
                     {
-                        podcastSeries.Genres.Add(new Genre { Name = genreName });
+                        podcast.Genres.Add(new Genre { Name = genreName });
                     }
                 }
 
-                return podcastSeries;
+                return await Task.FromResult(podcast);
             }
             catch (Exception ex)
             {
@@ -68,7 +71,7 @@ namespace ProjectLoopbreaker.Application.Services
             }
         }
 
-        public PodcastEpisode MapToPodcastEpisode(string jsonResponse, Guid podcastSeriesId)
+        public async Task<Podcast> MapToPodcastEpisodeAsync(string jsonResponse, Guid? parentPodcastId = null)
         {
             try
             {
@@ -91,19 +94,21 @@ namespace ProjectLoopbreaker.Application.Services
                     }
                 }
 
-                var podcastEpisode = new PodcastEpisode
+                var podcastEpisode = new Podcast
                 {
                     Title = episodeDto.Title ?? string.Empty,
                     MediaType = MediaType.Podcast,
+                    PodcastType = PodcastType.Episode,
                     Link = episodeDto.Link,
                     Notes = episodeDto.Description,
                     Thumbnail = episodeDto.Image ?? episodeDto.Thumbnail,
                     DateAdded = DateTime.UtcNow,
                     Status = Status.Uncharted,
-                    PodcastSeriesId = podcastSeriesId,
+                    ParentPodcastId = parentPodcastId,
                     AudioLink = episodeDto.AudioUrl,
                     ReleaseDate = DateTimeOffset.FromUnixTimeMilliseconds(episodeDto.PublishDateMs).DateTime,
-                    DurationInSeconds = episodeDto.DurationInSeconds
+                    DurationInSeconds = episodeDto.DurationInSeconds,
+                    ExternalId = episodeDto.Id
                 };
 
                 // Add topics to the new Topics collection
@@ -116,7 +121,7 @@ namespace ProjectLoopbreaker.Application.Services
                     }
                 }
 
-                return podcastEpisode;
+                return await Task.FromResult(podcastEpisode);
             }
             catch (Exception ex)
             {
@@ -124,13 +129,13 @@ namespace ProjectLoopbreaker.Application.Services
             }
         }
 
-        public PodcastSeries MapToPodcastSeriesWithEpisodes(string jsonResponse)
+        public async Task<Podcast> MapToPodcastWithEpisodesAsync(string jsonResponse)
         {
             try
             {
                 var podcastDto = JsonSerializer.Deserialize<PodcastSeriesDto>(jsonResponse, _jsonOptions);
 
-                var series = MapToPodcastSeries(jsonResponse);
+                var series = await MapToPodcastAsync(jsonResponse);
 
                 if (podcastDto.Episodes != null && podcastDto.Episodes.Any())
                 {
@@ -138,7 +143,7 @@ namespace ProjectLoopbreaker.Application.Services
                     {
                         // Convert episodeDto to JSON to reuse the MapToPodcastEpisode method
                         string episodeJson = JsonSerializer.Serialize(episodeDto, _jsonOptions);
-                        var episode = MapToPodcastEpisode(episodeJson, series.Id);
+                        var episode = await MapToPodcastEpisodeAsync(episodeJson, series.Id);
                         series.Episodes.Add(episode);
                     }
                 }
