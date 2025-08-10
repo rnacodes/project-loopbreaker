@@ -47,12 +47,10 @@ export const removeMediaFromMixlist = (mixlistId, mediaItemId) => {
 //     return apiClient.post('/podcastepisode', episodeData);
 // };
 
-// Podcast Search Functions
-export const searchPodcasts = async (query, useMockApi = false) => {
-    // Fixed: When useMockApi is true, use MockListenNotes, otherwise use ListenNotes
-    const endpoint = useMockApi ? '/MockListenNotes/search' : '/ListenNotes/search';
+// Podcast Search Functions - Using real ListenNotes API only
+export const searchPodcasts = async (query) => {
     try {
-        const response = await apiClient.get(`${endpoint}?query=${encodeURIComponent(query)}&type=podcast`);
+        const response = await apiClient.get(`/ListenNotes/search?query=${encodeURIComponent(query)}&type=podcast`);
         return response.data;
     } catch (error) {
         console.error('Error searching podcasts:', error);
@@ -60,11 +58,9 @@ export const searchPodcasts = async (query, useMockApi = false) => {
     }
 };
 
-export const getPodcastFromApi = async (id, useMockApi = false) => {
-    // Fixed: When useMockApi is true, use MockListenNotes, otherwise use ListenNotes
-    const endpoint = useMockApi ? '/MockListenNotes/podcasts' : '/ListenNotes/podcasts';
+export const getPodcastFromApi = async (id) => {
     try {
-        const response = await apiClient.get(`${endpoint}/${id}`);
+        const response = await apiClient.get(`/ListenNotes/podcasts/${id}`);
         return response.data;
     } catch (error) {
         console.error('Error getting podcast:', error);
@@ -72,7 +68,7 @@ export const getPodcastFromApi = async (id, useMockApi = false) => {
     }
 };
 
-export const importPodcastFromApi = async (podcastData, useMockApi = false) => {
+export const importPodcastFromApi = async (podcastData) => {
     try {
         let response;
         

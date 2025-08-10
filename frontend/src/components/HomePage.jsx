@@ -194,7 +194,7 @@ export default function HomePage() {
   };
 
   const handleSearchByTopicOrGenre = () => {
-    navigate('/search-by-topic-or-genre');
+    navigate('/search-by-topic-genre');
   };
 
   const handleAddMedia = () => {

@@ -200,7 +200,7 @@ builder.Services.AddScoped<IPodcastService, PodcastService>();
 
 // In Program.cs
 
-// ALWAYS use the real Listen Notes API - no mock API
+// Register both real and mock Listen Notes API clients
 builder.Services.AddHttpClient<ListenNotesApiClient>(client =>
 {
     client.BaseAddress = new Uri("https://listen-api.listennotes.com/api/v2/");
@@ -224,6 +224,8 @@ builder.Services.AddHttpClient<ListenNotesApiClient>(client =>
 
     client.DefaultRequestHeaders.Add("X-ListenAPI-Key", apiKey);
 });
+
+// Mock Listen Notes API client removed as per requirements to use only real API
 
 
 // Add other services like Swagger if needed

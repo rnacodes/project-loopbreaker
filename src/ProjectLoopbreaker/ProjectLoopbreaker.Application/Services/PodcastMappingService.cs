@@ -133,11 +133,42 @@ namespace ProjectLoopbreaker.Application.Services
         {
             try
             {
+                // First, try to parse as search results
+                try
+                {
+                    var searchResults = JsonSerializer.Deserialize<SearchResultDto>(jsonResponse, _jsonOptions);
+                    if (searchResults?.Results != null && searchResults.Results.Any())
+                    {
+                        // Get the first podcast from search results
+                        var firstResult = searchResults.Results.First();
+                        
+                        // Convert search result to PodcastSeriesDto format for mapping
+                        var podcastForMapping = new PodcastSeriesDto
+                        {
+                            Id = firstResult.Id,
+                            Title = firstResult.TitleOriginal ?? firstResult.TitleHighlighted ?? "Unknown Title",
+                            Publisher = firstResult.PublisherOriginal ?? firstResult.PublisherHighlighted ?? "Unknown Publisher",
+                            Description = firstResult.DescriptionOriginal ?? firstResult.DescriptionHighlighted ?? "No description available",
+                            Image = firstResult.Image,
+                            Thumbnail = firstResult.Thumbnail,
+                            Genres = firstResult.Genres?.Select(g => g.Name).ToList()
+                        };
+
+                        var mappingJson = JsonSerializer.Serialize(podcastForMapping, _jsonOptions);
+                        return await MapToPodcastAsync(mappingJson);
+                    }
+                }
+                catch (JsonException)
+                {
+                    // If it's not search results, continue with original logic
+                }
+
+                // Original logic for single podcast with episodes
                 var podcastDto = JsonSerializer.Deserialize<PodcastSeriesDto>(jsonResponse, _jsonOptions);
 
                 var series = await MapToPodcastAsync(jsonResponse);
 
-                if (podcastDto.Episodes != null && podcastDto.Episodes.Any())
+                if (podcastDto?.Episodes != null && podcastDto.Episodes.Any())
                 {
                     foreach (var episodeDto in podcastDto.Episodes)
                     {
@@ -153,6 +184,51 @@ namespace ProjectLoopbreaker.Application.Services
             catch (Exception ex)
             {
                 throw new ApplicationException("Failed to map podcast series with episodes from ListenNotes API response", ex);
+            }
+        }
+
+        public async Task<Podcast?> MapSearchResultToPodcastAsync(string searchJsonResponse)
+        {
+            try
+            {
+                var searchResults = JsonSerializer.Deserialize<SearchResultDto>(searchJsonResponse, _jsonOptions);
+                if (searchResults?.Results == null || !searchResults.Results.Any())
+                {
+                    return null;
+                }
+
+                // Get the first podcast from search results
+                var firstResult = searchResults.Results.First();
+                
+                // Convert search result to podcast
+                var podcast = new Podcast
+                {
+                    Title = firstResult.TitleOriginal ?? firstResult.TitleHighlighted ?? "Unknown Title",
+                    MediaType = MediaType.Podcast,
+                    PodcastType = PodcastType.Series,
+                    Link = firstResult.Website,
+                    Notes = firstResult.DescriptionOriginal ?? firstResult.DescriptionHighlighted ?? "No description available",
+                    Thumbnail = firstResult.Image ?? firstResult.Thumbnail,
+                    DateAdded = DateTime.UtcNow,
+                    Status = Status.Uncharted,
+                    ExternalId = firstResult.Id,
+                    Publisher = firstResult.PublisherOriginal ?? firstResult.PublisherHighlighted ?? "Unknown Publisher"
+                };
+
+                // Add genres to the podcast
+                if (firstResult.Genres?.Any() == true)
+                {
+                    foreach (var genre in firstResult.Genres)
+                    {
+                        podcast.Genres.Add(new Genre { Name = genre.Name });
+                    }
+                }
+
+                return await Task.FromResult(podcast);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Failed to map search result to podcast from ListenNotes API response", ex);
             }
         }
     }

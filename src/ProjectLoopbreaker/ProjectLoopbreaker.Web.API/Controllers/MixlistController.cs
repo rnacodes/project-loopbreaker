@@ -22,7 +22,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/mixlist
         [HttpGet]
-        public async Task<IActionResult> GetAllMixlists()
+        public async Task<ActionResult<IEnumerable<MixlistResponseDto>>> GetAllMixlists()
         {
             try
             {
@@ -30,7 +30,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     .Include(m => m.MediaItems)
                     .ToListAsync();
                     
-                var response = mixlists.Select(mixlist => new
+                var response = mixlists.Select(mixlist => new MixlistResponseDto
                 {
                     Id = mixlist.Id,
                     Name = mixlist.Name,
@@ -38,7 +38,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     DateCreated = mixlist.DateCreated,
                     Thumbnail = mixlist.Thumbnail,
                     MediaItemIds = mixlist.MediaItems.Select(mi => mi.Id).ToArray(),
-                    MediaItems = mixlist.MediaItems.Select(mi => new
+                    MediaItems = mixlist.MediaItems.Select(mi => new MediaItemSummary
                     {
                         Id = mi.Id,
                         Title = mi.Title,
@@ -57,7 +57,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/mixlist/{id}
         [HttpGet("{id:guid}")]
-        public async Task<IActionResult> GetMixlist(Guid id)
+        public async Task<ActionResult<MixlistResponseDto>> GetMixlist(Guid id)
         {
             try
             {
@@ -70,7 +70,24 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return NotFound($"Mixlist with ID {id} not found.");
                 }
 
-                return Ok(mixlist);
+                var response = new MixlistResponseDto
+                {
+                    Id = mixlist.Id,
+                    Name = mixlist.Name,
+                    Description = mixlist.Description,
+                    DateCreated = mixlist.DateCreated,
+                    Thumbnail = mixlist.Thumbnail,
+                    MediaItemIds = mixlist.MediaItems.Select(mi => mi.Id).ToArray(),
+                    MediaItems = mixlist.MediaItems.Select(mi => new MediaItemSummary
+                    {
+                        Id = mi.Id,
+                        Title = mi.Title,
+                        MediaType = mi.MediaType,
+                        Thumbnail = mi.Thumbnail
+                    }).ToArray()
+                };
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -80,7 +97,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // POST: api/mixlist
         [HttpPost]
-        public async Task<IActionResult> CreateMixlist([FromBody] CreateMixlistDto dto)
+        public async Task<ActionResult<MixlistResponseDto>> CreateMixlist([FromBody] CreateMixlistDto dto)
         {
             if (dto == null)
             {
@@ -103,7 +120,18 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             _context.Mixlists.Add(mixlist);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetMixlist), new { id = mixlist.Id }, mixlist);
+            var response = new MixlistResponseDto
+            {
+                Id = mixlist.Id,
+                Name = mixlist.Name,
+                Description = mixlist.Description,
+                DateCreated = mixlist.DateCreated,
+                Thumbnail = mixlist.Thumbnail,
+                MediaItemIds = Array.Empty<Guid>(),
+                MediaItems = Array.Empty<MediaItemSummary>()
+            };
+
+            return CreatedAtAction(nameof(GetMixlist), new { id = mixlist.Id }, response);
         }
 
         // POST: api/mixlist/{mixlistId}/items/{mediaItemId}

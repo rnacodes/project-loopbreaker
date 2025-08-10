@@ -31,31 +31,32 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/podcast
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<object>>> GetAllPodcasts()
+        public async Task<ActionResult<IEnumerable<PodcastResponseDto>>> GetAllPodcasts()
         {
             try
             {
-                var podcasts = await _context.Podcasts
-                    .Select(p => new {
-                        p.Id,
-                        p.Title,
-                        p.Description,
-                        p.MediaType,
-                        p.Status,
-                        p.DateAdded,
-                        p.Link,
-                        p.Thumbnail,
-                        p.PodcastType,
-                        p.ParentPodcastId,
-                        p.Publisher,
-                        p.ExternalId,
-                        p.AudioLink,
-                        p.ReleaseDate,
-                        p.DurationInSeconds
-                    })
-                    .ToListAsync();
+                var podcasts = await _context.Podcasts.ToListAsync();
+                
+                var response = podcasts.Select(p => new PodcastResponseDto
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Description = p.Description,
+                    MediaType = p.MediaType,
+                    Status = p.Status,
+                    DateAdded = p.DateAdded,
+                    Link = p.Link,
+                    Thumbnail = p.Thumbnail,
+                    PodcastType = p.PodcastType,
+                    ParentPodcastId = p.ParentPodcastId,
+                    Publisher = p.Publisher,
+                    ExternalId = p.ExternalId,
+                    AudioLink = p.AudioLink,
+                    ReleaseDate = p.ReleaseDate,
+                    DurationInSeconds = p.DurationInSeconds
+                }).ToList();
 
-                return Ok(podcasts);
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -126,7 +127,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/podcast/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<Podcast>> GetPodcast(Guid id)
+        public async Task<ActionResult<PodcastResponseDto>> GetPodcast(Guid id)
         {
             try
             {
@@ -141,7 +142,26 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return NotFound($"Podcast with ID {id} not found.");
                 }
 
-                return Ok(podcast);
+                var response = new PodcastResponseDto
+                {
+                    Id = podcast.Id,
+                    Title = podcast.Title,
+                    Description = podcast.Description,
+                    MediaType = podcast.MediaType,
+                    Status = podcast.Status,
+                    DateAdded = podcast.DateAdded,
+                    Link = podcast.Link,
+                    Thumbnail = podcast.Thumbnail,
+                    PodcastType = podcast.PodcastType,
+                    ParentPodcastId = podcast.ParentPodcastId,
+                    Publisher = podcast.Publisher,
+                    ExternalId = podcast.ExternalId,
+                    AudioLink = podcast.AudioLink,
+                    ReleaseDate = podcast.ReleaseDate,
+                    DurationInSeconds = podcast.DurationInSeconds
+                };
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -387,8 +407,5 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         }
     }
 
-    public class ImportPodcastByNameDto
-    {
-        public string PodcastName { get; set; } = string.Empty;
-    }
+
 }

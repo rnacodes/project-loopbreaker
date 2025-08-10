@@ -22,23 +22,13 @@ function ImportMediaPage() {
     const [podcastError, setPodcastError] = useState('');
     const [podcastSuccess, setPodcastSuccess] = useState('');
     
-    // Mock Podcast states
-    const [mockPodcastImportMethod, setMockPodcastImportMethod] = useState('search');
-    const [mockPodcastSearchQuery, setMockPodcastSearchQuery] = useState('');
-    const [mockPodcastId, setMockPodcastId] = useState('');
-    const [mockPodcastName, setMockPodcastName] = useState('');
-    const [mockPodcastSearchResults, setMockPodcastSearchResults] = useState([]);
-    const [mockPodcastIsLoading, setMockPodcastIsLoading] = useState(false);
-    const [mockPodcastError, setMockPodcastError] = useState('');
-    const [mockPodcastSuccess, setMockPodcastSuccess] = useState('');
-    
     const navigate = useNavigate();
 
     const handleAccordionChange = (panel) => (event, isExpanded) => {
         setExpanded(isExpanded ? panel : false);
     };
 
-    // Regular Podcast handlers
+    // Podcast handlers
     const handlePodcastSearch = async () => {
         if (!podcastSearchQuery.trim()) {
             setPodcastError('Please enter a search term');
@@ -50,8 +40,8 @@ function ImportMediaPage() {
         setPodcastSearchResults([]);
         
         try {
-            // Use centralized API service (production ListenNotes API)
-            const data = await searchPodcasts(podcastSearchQuery, false);
+            // Use real ListenNotes API for search
+            const data = await searchPodcasts(podcastSearchQuery);
             
             // Transform the Listen Notes API response to match your component's expected format
             const transformedResults = data.results?.map(podcast => ({
@@ -67,6 +57,7 @@ function ImportMediaPage() {
             setPodcastIsLoading(false);
             
         } catch (err) {
+            console.error('Search error:', err);
             setPodcastError('Failed to search podcasts. Please try again.');
             setPodcastIsLoading(false);
         }
@@ -82,14 +73,25 @@ function ImportMediaPage() {
         setPodcastError('');
         
         try {
-            // Use centralized API service to import podcast (production)
-            const result = await importPodcastFromApi({ PodcastId: podcastId }, false);
+            // Use real API to import podcast
+            const result = await importPodcastFromApi({ podcastId: podcastId });
             
-            setPodcastSuccess(`Podcast imported successfully from production API!`);
+            setPodcastSuccess(`Podcast imported successfully!`);
             setPodcastIsLoading(false);
             setPodcastId('');
             
+            console.log('Podcast imported successfully:', result);
+            
+            // Navigate to the media detail page (same as manual import flow)
+            const mediaId = result.id || result.Id;
+            if (mediaId) {
+                setTimeout(() => {
+                    navigate(`/media/${mediaId}`);
+                }, 1500); // Give user time to see success message
+            }
+            
         } catch (err) {
+            console.error('Import by ID error:', err);
             setPodcastError('Failed to import podcast. Please check the ID and try again.');
             setPodcastIsLoading(false);
         }
@@ -105,14 +107,25 @@ function ImportMediaPage() {
         setPodcastError('');
         
         try {
-            // Use centralized API service to import podcast by name (production)
-            const result = await importPodcastFromApi({ PodcastName: podcastName }, false);
+            // Use real API to import podcast by name
+            const result = await importPodcastFromApi({ podcastName: podcastName });
             
-            setPodcastSuccess(`Podcast imported successfully from production API!`);
+            setPodcastSuccess(`Podcast imported successfully!`);
             setPodcastIsLoading(false);
             setPodcastName('');
             
+            console.log('Podcast imported successfully:', result);
+            
+            // Navigate to the media detail page (same as manual import flow)
+            const mediaId = result.id || result.Id;
+            if (mediaId) {
+                setTimeout(() => {
+                    navigate(`/media/${mediaId}`);
+                }, 1500); // Give user time to see success message
+            }
+            
         } catch (err) {
+            console.error('Import by name error:', err);
             setPodcastError('Failed to import podcast. Please check the name and try again.');
             setPodcastIsLoading(false);
         }
@@ -123,392 +136,201 @@ function ImportMediaPage() {
         setPodcastError('');
         
         try {
-            // Use centralized API service to import podcast (production)
-            const result = await importPodcastFromApi({ PodcastId: podcast.id }, false);
+            // Use real API to import podcast
+            const result = await importPodcastFromApi({ podcastId: podcast.id });
             
-            setPodcastSuccess(`"${podcast.title}" imported successfully from production API!`);
+            // Show success message
+            setPodcastSuccess(`"${podcast.title}" imported successfully!`);
             setPodcastIsLoading(false);
             
+            console.log('Podcast imported successfully:', result);
+            
+            // Navigate to the media detail page (same as manual import flow)
+            const mediaId = result.id || result.Id;
+            if (mediaId) {
+                setTimeout(() => {
+                    navigate(`/media/${mediaId}`);
+                }, 1500); // Give user time to see success message
+            }
+            
         } catch (err) {
+            console.error('Import podcast error:', err);
             setPodcastError('Failed to import podcast. Please try again.');
             setPodcastIsLoading(false);
         }
     };
 
-    // Mock Podcast handlers
-    const handleMockPodcastSearch = async () => {
-        if (!mockPodcastSearchQuery.trim()) {
-            setMockPodcastError('Please enter a search term');
-            return;
-        }
-        
-        setMockPodcastIsLoading(true);
-        setMockPodcastError('');
-        setMockPodcastSearchResults([]);
-        
-        try {
-            // Use centralized API service (Mock ListenNotes API)
-            const data = await searchPodcasts(mockPodcastSearchQuery, true);
-            
-            // Transform the Listen Notes API response to match your component's expected format
-            const transformedResults = data.results?.map(podcast => ({
-                id: podcast.id,
-                title: podcast.title_original || podcast.title_highlighted || 'Unknown Title',
-                publisher: podcast.publisher_original || podcast.publisher_highlighted || 'Unknown Publisher',
-                description: podcast.description_original || podcast.description_highlighted || 'No description available',
-                image: podcast.image || 'https://placehold.co/300x300/695a8c/fcfafa?text=No+Image',
-                total_episodes: podcast.total_episodes || 0
-            })) || [];
-            
-            setMockPodcastSearchResults(transformedResults);
-            setMockPodcastIsLoading(false);
-            
-        } catch (err) {
-            setMockPodcastError('Failed to search mock podcasts. Please try again.');
-            setMockPodcastIsLoading(false);
-        }
-    };
-
-    const handleMockPodcastImportById = async () => {
-        if (!mockPodcastId.trim()) {
-            setMockPodcastError('Please enter a podcast ID');
-            return;
-        }
-        
-        setMockPodcastIsLoading(true);
-        setMockPodcastError('');
-        
-        try {
-            // Use centralized API service to import podcast (mock)
-            const result = await importPodcastFromApi({ PodcastId: mockPodcastId }, true);
-            
-            setMockPodcastSuccess(`Podcast imported successfully from mock API!`);
-            setMockPodcastIsLoading(false);
-            setMockPodcastId('');
-            
-        } catch (err) {
-            setMockPodcastError('Failed to import mock podcast. Please check the ID and try again.');
-            setMockPodcastIsLoading(false);
-        }
-    };
-
-    const handleMockPodcastImportByName = async () => {
-        if (!mockPodcastName.trim()) {
-            setMockPodcastError('Please enter a podcast name');
-            return;
-        }
-        
-        setMockPodcastIsLoading(true);
-        setMockPodcastError('');
-        
-        try {
-            // Use centralized API service to import podcast by name (mock)
-            const result = await importPodcastFromApi({ PodcastName: mockPodcastName }, true);
-            
-            setMockPodcastSuccess(`Podcast imported successfully from mock API!`);
-            setMockPodcastIsLoading(false);
-            setMockPodcastName('');
-            
-        } catch (err) {
-            setMockPodcastError('Failed to import mock podcast. Please check the name and try again.');
-            setMockPodcastIsLoading(false);
-        }
-    };
-
-    const handleImportMockPodcast = async (podcast) => {
-        setMockPodcastIsLoading(true);
-        setMockPodcastError('');
-        
-        try {
-            // Use centralized API service to import podcast (mock)
-            const result = await importPodcastFromApi({ PodcastId: podcast.id }, true);
-            
-            setMockPodcastSuccess(`"${podcast.title}" imported successfully from mock API!`);
-            setMockPodcastIsLoading(false);
-            
-        } catch (err) {
-            setMockPodcastError('Failed to import mock podcast. Please try again.');
-            setMockPodcastIsLoading(false);
-        }
-    };
-
-    const renderPodcastSection = (
+    const renderPodcastImportSection = (
         importMethod, setImportMethod,
         searchQuery, setSearchQuery, handleSearch,
-        podcastIdValue, setPodcastIdValue, handleImportById,
-        podcastNameValue, setPodcastNameValue, handleImportByName,
-        searchResults, handleImportPodcast,
+        idValue, setIdValue, handleImportById,
+        nameValue, setNameValue, handleImportByName,
+        searchResults, handleImport,
         isLoading, error, success
     ) => (
-        <Box>
-            <FormControl fullWidth sx={{ mb: 3 }}>
-                <InputLabel id="import-method-label" sx={{ color: '#ffffff' }}>
-                    Choose Import Method
-                </InputLabel>
+        <Box sx={{ padding: 2 }}>
+            <FormControl fullWidth margin="normal">
+                <InputLabel>Import Method</InputLabel>
                 <Select
-                    labelId="import-method-label"
                     value={importMethod}
-                    label="Choose Import Method"
+                    label="Import Method"
                     onChange={(e) => setImportMethod(e.target.value)}
-                    sx={{
-                        '& .MuiSelect-select': {
-                            color: '#ffffff'
-                        }
-                    }}
                 >
                     <MenuItem value="search">Search and Select</MenuItem>
-                    <MenuItem value="id">Import by Podcast ID</MenuItem>
-                    <MenuItem value="name">Import by Exact Name</MenuItem>
+                    <MenuItem value="id">By Podcast ID</MenuItem>
+                    <MenuItem value="name">By Podcast Name</MenuItem>
                 </Select>
             </FormControl>
 
-            {/* Search Method */}
             {importMethod === 'search' && (
                 <Box>
-                    <Typography variant="body1" sx={{ 
-                        fontSize: '16px', 
-                        fontWeight: 'bold', 
-                        mb: 1,
-                        color: '#ffffff'
-                    }}>
-                        Search Podcasts
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                    <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                         <TextField
-                            placeholder="Enter podcast name or keywords..."
-                            variant="outlined"
-                            fullWidth
+                            label="Search Podcasts"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            variant="outlined"
+                            fullWidth
                             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                            sx={{
-                                '& .MuiInputBase-input': {
-                                    fontSize: '16px'
-                                },
-                                '& .MuiInputBase-input::placeholder': {
-                                    color: '#ffffff',
-                                    opacity: 1
-                                }
-                            }}
                         />
                         <Button
                             variant="contained"
                             onClick={handleSearch}
                             disabled={isLoading}
                             startIcon={<Search />}
-                            sx={{ minWidth: '120px' }}
                         >
                             Search
                         </Button>
                     </Box>
+
+                    {searchResults.length > 0 && (
+                        <Box sx={{ mt: 2 }}>
+                            <Typography variant="h6" gutterBottom>
+                                Search Results ({searchResults.length})
+                            </Typography>
+                            {searchResults.map((podcast) => (
+                                <Card key={podcast.id} sx={{ mb: 2 }}>
+                                    <CardContent>
+                                        <Box sx={{ display: 'flex', gap: 2 }}>
+                                            <img
+                                                src={podcast.image}
+                                                alt={podcast.title}
+                                                style={{
+                                                    width: 80,
+                                                    height: 80,
+                                                    objectFit: 'cover',
+                                                    borderRadius: 4
+                                                }}
+                                            />
+                                            <Box sx={{ flex: 1 }}>
+                                                <Typography variant="h6" gutterBottom>
+                                                    {podcast.title}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary" gutterBottom>
+                                                    {podcast.publisher}
+                                                </Typography>
+                                                <Typography variant="body2" sx={{ mb: 1 }}>
+                                                    {podcast.description.length > 200
+                                                        ? `${podcast.description.substring(0, 200)}...`
+                                                        : podcast.description}
+                                                </Typography>
+                                                <Chip 
+                                                    label={`${podcast.total_episodes} episodes`} 
+                                                    size="small" 
+                                                    sx={{ mb: 1 }}
+                                                />
+                                                <Box>
+                                                    <Button
+                                                        variant="contained"
+                                                        size="small"
+                                                        onClick={() => handleImport(podcast)}
+                                                        disabled={isLoading}
+                                                        startIcon={<Download />}
+                                                    >
+                                                        Import
+                                                    </Button>
+                                                </Box>
+                                            </Box>
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </Box>
+                    )}
                 </Box>
             )}
 
-            {/* Import by ID Method */}
             {importMethod === 'id' && (
-                <Box>
-                    <Typography variant="body1" sx={{ 
-                        fontSize: '16px', 
-                        fontWeight: 'bold', 
-                        mb: 1,
-                        color: '#ffffff'
-                    }}>
-                        Podcast ID
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-                        <TextField
-                            placeholder="Enter ListenNotes podcast ID..."
-                            variant="outlined"
-                            fullWidth
-                            value={podcastIdValue}
-                            onChange={(e) => setPodcastIdValue(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleImportById()}
-                            sx={{
-                                '& .MuiInputBase-input': {
-                                    fontSize: '16px'
-                                },
-                                '& .MuiInputBase-input::placeholder': {
-                                    color: '#ffffff',
-                                    opacity: 1
-                                }
-                            }}
-                        />
-                        <Button
-                            variant="contained"
-                            onClick={handleImportById}
-                            disabled={isLoading}
-                            startIcon={<Download />}
-                            sx={{ minWidth: '120px' }}
-                        >
-                            Import
-                        </Button>
-                    </Box>
+                <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                    <TextField
+                        label="Podcast ID"
+                        value={idValue}
+                        onChange={(e) => setIdValue(e.target.value)}
+                        variant="outlined"
+                        fullWidth
+                        onKeyPress={(e) => e.key === 'Enter' && handleImportById()}
+                    />
+                    <Button
+                        variant="contained"
+                        onClick={handleImportById}
+                        disabled={isLoading}
+                        startIcon={<Download />}
+                    >
+                        Import
+                    </Button>
                 </Box>
             )}
 
-            {/* Import by Name Method */}
             {importMethod === 'name' && (
-                <Box>
-                    <Typography variant="body1" sx={{ 
-                        fontSize: '16px', 
-                        fontWeight: 'bold', 
-                        mb: 1,
-                        color: '#ffffff'
-                    }}>
-                        Exact Podcast Name
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-                        <TextField
-                            placeholder="Enter exact podcast name..."
-                            variant="outlined"
-                            fullWidth
-                            value={podcastNameValue}
-                            onChange={(e) => setPodcastNameValue(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleImportByName()}
-                            sx={{
-                                '& .MuiInputBase-input': {
-                                    fontSize: '16px'
-                                },
-                                '& .MuiInputBase-input::placeholder': {
-                                    color: '#ffffff',
-                                    opacity: 1
-                                }
-                            }}
-                        />
-                        <Button
-                            variant="contained"
-                            onClick={handleImportByName}
-                            disabled={isLoading}
-                            startIcon={<Download />}
-                            sx={{ minWidth: '120px' }}
-                        >
-                            Import
-                        </Button>
-                    </Box>
+                <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+                    <TextField
+                        label="Podcast Name"
+                        value={nameValue}
+                        onChange={(e) => setNameValue(e.target.value)}
+                        variant="outlined"
+                        fullWidth
+                        onKeyPress={(e) => e.key === 'Enter' && handleImportByName()}
+                    />
+                    <Button
+                        variant="contained"
+                        onClick={handleImportByName}
+                        disabled={isLoading}
+                        startIcon={<Download />}
+                    >
+                        Import
+                    </Button>
                 </Box>
             )}
 
-            {/* Loading Indicator */}
             {isLoading && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
                     <CircularProgress />
                 </Box>
             )}
 
-            {/* Error Message */}
             {error && (
-                <Alert severity="error" sx={{ mb: 3 }}>
+                <Alert severity="error" sx={{ mt: 2 }}>
                     {error}
                 </Alert>
             )}
 
-            {/* Success Message */}
             {success && (
-                <Alert severity="success" sx={{ mb: 3 }}>
+                <Alert severity="success" sx={{ mt: 2 }}>
                     {success}
                 </Alert>
-            )}
-
-            {/* Search Results */}
-            {searchResults.length > 0 && (
-                <Box>
-                    <Typography variant="h6" sx={{ 
-                        fontSize: '18px', 
-                        fontWeight: 'bold', 
-                        mb: 2,
-                        color: '#ffffff'
-                    }}>
-                        Search Results
-                    </Typography>
-                    
-                    {searchResults.map((podcast) => (
-                        <Card key={podcast.id} sx={{ mb: 2, p: 2 }}>
-                            <Box sx={{ display: 'flex', gap: 2 }}>
-                                <Box sx={{ flexShrink: 0 }}>
-                                    <img 
-                                        src={podcast.image} 
-                                        alt={podcast.title}
-                                        style={{ 
-                                            width: '80px', 
-                                            height: '80px', 
-                                            borderRadius: '8px',
-                                            objectFit: 'cover'
-                                        }}
-                                    />
-                                </Box>
-                                <Box sx={{ flexGrow: 1 }}>
-                                    <Typography variant="h6" sx={{ 
-                                        fontSize: '16px',
-                                        fontWeight: 'bold',
-                                        mb: 0.5,
-                                        color: '#ffffff'
-                                    }}>
-                                        {podcast.title}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ 
-                                        color: '#ffffff',
-                                        opacity: 0.7,
-                                        mb: 0.5,
-                                        fontSize: '12px'
-                                    }}>
-                                        by {podcast.publisher}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ 
-                                        color: '#ffffff',
-                                        opacity: 0.8,
-                                        mb: 1,
-                                        lineHeight: 1.3,
-                                        fontSize: '12px'
-                                    }}>
-                                        {podcast.description}
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <Chip 
-                                            icon={<Podcasts />}
-                                            label={`${podcast.total_episodes} episodes`}
-                                            size="small"
-                                            sx={{ fontSize: '10px' }}
-                                        />
-                                        <Button
-                                            variant="contained"
-                                            size="small"
-                                            onClick={() => handleImportPodcast(podcast)}
-                                            disabled={isLoading}
-                                            startIcon={<Download />}
-                                            sx={{ fontSize: '11px' }}
-                                        >
-                                            Import
-                                        </Button>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </Card>
-                    ))}
-                </Box>
             )}
         </Box>
     );
 
     return (
-        <Container maxWidth="lg" sx={{ py: 4, px: { xs: 3, sm: 4, md: 6 } }}>
-            <Box sx={{ mb: 4 }}>
-                <Typography variant="h4" component="h1" gutterBottom sx={{ 
-                    textAlign: 'center',
-                    fontSize: '28px',
-                    fontWeight: 'bold',
-                    mb: 2
-                }}>
-                    Import Media
-                </Typography>
-                <Typography variant="body1" sx={{ 
-                    textAlign: 'center',
-                    color: '#ffffff',
-                    opacity: 0.8,
-                    mb: 4
-                }}>
-                    Import content from various sources and APIs
-                </Typography>
-            </Box>
+        <Container maxWidth="lg">
+            <Typography variant="h4" gutterBottom sx={{ mt: 4, mb: 3 }}>
+                Import Media
+            </Typography>
+            
+            <Typography variant="body1" sx={{ mb: 4 }}>
+                Import media from external sources into your library.
+            </Typography>
 
             {/* Podcast Import Section */}
             <Accordion 
@@ -521,16 +343,15 @@ function ImportMediaPage() {
                     aria-controls="podcasts-content"
                     id="podcasts-header"
                 >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Podcasts />
-                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                            Import Podcasts
+                        <Typography variant="h6">
+                            Podcasts
                         </Typography>
-                        <Chip label="Production API" size="small" color="primary" />
                     </Box>
                 </AccordionSummary>
                 <AccordionDetails>
-                    {renderPodcastSection(
+                    {renderPodcastImportSection(
                         podcastImportMethod, setPodcastImportMethod,
                         podcastSearchQuery, setPodcastSearchQuery, handlePodcastSearch,
                         podcastId, setPodcastId, handlePodcastImportById,
@@ -541,61 +362,15 @@ function ImportMediaPage() {
                 </AccordionDetails>
             </Accordion>
 
-            {/* Mock Podcast Import Section */}
-            <Accordion 
-                expanded={expanded === 'mockPodcasts'} 
-                onChange={handleAccordionChange('mockPodcasts')}
-                sx={{ mb: 2 }}
-            >
-                <AccordionSummary
-                    expandIcon={<ExpandMore />}
-                    aria-controls="mock-podcasts-content"
-                    id="mock-podcasts-header"
-                >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Podcasts />
-                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                            Mock Podcasts
-                        </Typography>
-                        <Chip label="Test API" size="small" color="secondary" />
-                    </Box>
-                </AccordionSummary>
-                <AccordionDetails>
-                    {renderPodcastSection(
-                        mockPodcastImportMethod, setMockPodcastImportMethod,
-                        mockPodcastSearchQuery, setMockPodcastSearchQuery, handleMockPodcastSearch,
-                        mockPodcastId, setMockPodcastId, handleMockPodcastImportById,
-                        mockPodcastName, setMockPodcastName, handleMockPodcastImportByName,
-                        mockPodcastSearchResults, handleImportMockPodcast,
-                        mockPodcastIsLoading, mockPodcastError, mockPodcastSuccess
-                    )}
-                </AccordionDetails>
-            </Accordion>
-
-            {/* Placeholder for future media types */}
-            <Box sx={{ mt: 4, p: 3, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '8px', textAlign: 'center' }}>
-                <Typography variant="body1" sx={{ 
-                    color: '#ffffff',
-                    opacity: 0.6,
-                    fontStyle: 'italic'
-                }}>
-                    Additional media import sections (Books, Videos, etc.) will be added here
-                </Typography>
-            </Box>
-
-            {/* Back Button */}
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <Divider sx={{ my: 4 }} />
+            
+            <Box sx={{ textAlign: 'center' }}>
                 <Button 
                     variant="outlined" 
                     onClick={() => navigate(-1)}
-                    sx={{ 
-                        fontSize: '16px',
-                        fontWeight: 'bold',
-                        px: 4,
-                        py: 1.5
-                    }}
+                    sx={{ mr: 2 }}
                 >
-                    Back
+                    Go Back
                 </Button>
             </Box>
         </Container>
