@@ -18,8 +18,8 @@ function CreateMixlistForm() {
             // Create mixlist with AI-generated thumbnail placeholder
             // TODO: Replace with actual LLM API call for thumbnail generation
             const mixlistData = {
-                Name: name.trim(),
-                Thumbnail: `https://picsum.photos/400/400?random=${Date.now()}&blur=1`
+                name: name.trim(),
+                thumbnail: `https://picsum.photos/400/400?random=${Date.now()}&blur=1`
             };
 
             console.log('Attempting to create mixlist with data:', mixlistData);

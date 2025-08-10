@@ -76,16 +76,16 @@ export const importPodcastFromApi = async (podcastData, useMockApi = false) => {
     try {
         let response;
         
-        if (podcastData.PodcastId) {
+        if (podcastData.podcastId || podcastData.PodcastId) {
             // Import by ID
-            response = await apiClient.post(`/podcast/from-api/${podcastData.PodcastId}`);
-        } else if (podcastData.PodcastName) {
+            response = await apiClient.post(`/podcast/from-api/${podcastData.podcastId || podcastData.PodcastId}`);
+        } else if (podcastData.podcastName || podcastData.PodcastName) {
             // Import by name
             response = await apiClient.post('/podcast/from-api/by-name', {
-                PodcastName: podcastData.PodcastName
+                podcastName: podcastData.podcastName || podcastData.PodcastName
             });
         } else {
-            throw new Error('Either PodcastId or PodcastName must be provided');
+            throw new Error('Either podcastId or podcastName must be provided');
         }
         
         return response.data;

@@ -180,24 +180,24 @@ function AddMediaForm() {
     const handleSubmit = async (event) => {
         event.preventDefault();
         
-        // Base media data - CRITICAL: Use Pascal case to match backend DTO
+        // Base media data - Using camelCase to match backend DTO
         let mediaData = { 
-            Title: title, 
-            MediaType: mediaType, 
-            Status: status, // Required field
-            Topics: topics.length > 0 ? topics : [], // Required array
-            Genres: genres.length > 0 ? genres : [] // Required array
+            title: title, 
+            mediaType: mediaType, 
+            status: status, // Required field
+            topics: topics.length > 0 ? topics : [], // Required array
+            genres: genres.length > 0 ? genres : [] // Required array
         };
         
         // Add optional fields only if they have values
-        if (link && link.trim()) mediaData.Link = link;
-        if (notes && notes.trim()) mediaData.Notes = notes;
-        if (status === 'Completed' && dateCompleted) mediaData.DateCompleted = dateCompleted;
-        if (status === 'Completed' && rating) mediaData.Rating = rating;
-        if (ownershipStatus) mediaData.OwnershipStatus = ownershipStatus;
-        if (description && description.trim()) mediaData.Description = description;
-        if (relatedNotes && relatedNotes.trim()) mediaData.RelatedNotes = relatedNotes;
-        if (thumbnail && thumbnail.trim()) mediaData.Thumbnail = thumbnail;
+        if (link && link.trim()) mediaData.link = link;
+        if (notes && notes.trim()) mediaData.notes = notes;
+        if (status === 'Completed' && dateCompleted) mediaData.dateCompleted = dateCompleted;
+        if (status === 'Completed' && rating) mediaData.rating = rating;
+        if (ownershipStatus) mediaData.ownershipStatus = ownershipStatus;
+        if (description && description.trim()) mediaData.description = description;
+        if (relatedNotes && relatedNotes.trim()) mediaData.relatedNotes = relatedNotes;
+        if (thumbnail && thumbnail.trim()) mediaData.thumbnail = thumbnail;
 
         try {
             // Basic validation
@@ -227,24 +227,24 @@ function AddMediaForm() {
                     // For now, create as regular media until PodcastSeriesController exists
                     response = await addMedia(mediaData);
                 } else if (podcastType === 'Episode') {
-                    // Create podcast episode with additional fields - Pascal case for backend
+                    // Create podcast episode with additional fields - camelCase for backend
                     const episodeData = {
-                        Title: title,
-                        Link: link,
-                        Notes: notes,
-                        Description: description,
-                        Status: status,
-                        DateCompleted: status === 'Completed' && dateCompleted ? dateCompleted : null,
-                        Rating: status === 'Completed' && rating ? rating : null,
-                        OwnershipStatus: ownershipStatus || null,
-                        Topics: topics.length > 0 ? topics : [], // Ensure proper array format
-                        Genres: genres.length > 0 ? genres : [], // Ensure proper array format
-                        RelatedNotes: relatedNotes,
-                        Thumbnail: thumbnail,
-                        ParentPodcastId: selectedPodcastSeries?.id || selectedPodcastSeries?.Id || podcastSeriesId, // Capital P to match DTO
-                        AudioLink: audioLink || null,
-                        ReleaseDate: releaseDate || null,
-                        DurationInSeconds: durationInSeconds ? parseInt(durationInSeconds) : 0
+                        title: title,
+                        link: link,
+                        notes: notes,
+                        description: description,
+                        status: status,
+                        dateCompleted: status === 'Completed' && dateCompleted ? dateCompleted : null,
+                        rating: status === 'Completed' && rating ? rating : null,
+                        ownershipStatus: ownershipStatus || null,
+                        topics: topics.length > 0 ? topics : [], // Ensure proper array format
+                        genres: genres.length > 0 ? genres : [], // Ensure proper array format
+                        relatedNotes: relatedNotes,
+                        thumbnail: thumbnail,
+                        parentPodcastId: selectedPodcastSeries?.id || selectedPodcastSeries?.Id || podcastSeriesId,
+                        audioLink: audioLink || null,
+                        releaseDate: releaseDate || null,
+                        durationInSeconds: durationInSeconds ? parseInt(durationInSeconds) : 0
                     };
                     
                     response = await createPodcastEpisode(episodeData);
@@ -274,10 +274,10 @@ function AddMediaForm() {
             if (selectedMixlists.length > 0 && mediaId) {
                 for (const mixlist of selectedMixlists) {
                     try {
-                        await addMediaToMixlist(mixlist.Id, mediaId);
-                        console.log(`Added media to mixlist: ${mixlist.Name}`);
+                        await addMediaToMixlist(mixlist.Id || mixlist.id, mediaId);
+                        console.log(`Added media to mixlist: ${mixlist.Name || mixlist.name}`);
                     } catch (mixlistError) {
-                        console.error(`Failed to add media to mixlist ${mixlist.Name}:`, mixlistError);
+                        console.error(`Failed to add media to mixlist ${mixlist.Name || mixlist.name}:`, mixlistError);
                     }
                 }
             }
@@ -819,7 +819,7 @@ function AddMediaForm() {
                     <Autocomplete
                         multiple
                         freeSolo
-                        options={genreSuggestions.map((option) => option.name)}
+                        options={genreSuggestions.map((option) => option.name || option.Name)}
                         value={genres}
                         onChange={(event, newValue) => {
                             setGenres(newValue);
@@ -872,7 +872,7 @@ function AddMediaForm() {
                     <Autocomplete
                         multiple
                         freeSolo
-                        options={topicSuggestions.map((option) => option.name)}
+                        options={topicSuggestions.map((option) => option.name || option.Name)}
                         value={topics}
                         onChange={(event, newValue) => {
                             setTopics(newValue);

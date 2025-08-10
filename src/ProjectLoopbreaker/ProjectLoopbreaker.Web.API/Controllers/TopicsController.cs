@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure.Data;
+using ProjectLoopbreaker.Web.API.DTOs;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -18,17 +19,26 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/topics
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Topic>>> GetAllTopics()
+        public async Task<ActionResult<IEnumerable<TopicResponseDto>>> GetAllTopics()
         {
             var topics = await _context.Topics
+                .Include(t => t.MediaItems)
                 .OrderBy(t => t.Name)
                 .ToListAsync();
-            return Ok(topics);
+                
+            var response = topics.Select(t => new TopicResponseDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+                MediaItemIds = t.MediaItems.Select(m => m.Id).ToArray()
+            }).ToList();
+            
+            return Ok(response);
         }
 
         // GET: api/topics/search?query={query}
         [HttpGet("search")]
-        public async Task<ActionResult<IEnumerable<Topic>>> SearchTopics([FromQuery] string query)
+        public async Task<ActionResult<IEnumerable<TopicResponseDto>>> SearchTopics([FromQuery] string query)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -36,16 +46,24 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
 
             var topics = await _context.Topics
+                .Include(t => t.MediaItems)
                 .Where(t => t.Name.Contains(query))
                 .OrderBy(t => t.Name)
                 .ToListAsync();
+                
+            var response = topics.Select(t => new TopicResponseDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+                MediaItemIds = t.MediaItems.Select(m => m.Id).ToArray()
+            }).ToList();
             
-            return Ok(topics);
+            return Ok(response);
         }
 
         // GET: api/topics/{id}
         [HttpGet("{id}")]
-        public async Task<ActionResult<Topic>> GetTopic(Guid id)
+        public async Task<ActionResult<TopicResponseDto>> GetTopic(Guid id)
         {
             var topic = await _context.Topics
                 .Include(t => t.MediaItems)
@@ -56,12 +74,19 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return NotFound($"Topic with ID {id} not found.");
             }
 
-            return Ok(topic);
+            var response = new TopicResponseDto
+            {
+                Id = topic.Id,
+                Name = topic.Name,
+                MediaItemIds = topic.MediaItems.Select(m => m.Id).ToArray()
+            };
+
+            return Ok(response);
         }
 
         // POST: api/topics
         [HttpPost]
-        public async Task<ActionResult<Topic>> CreateTopic([FromBody] CreateTopicDto dto)
+        public async Task<ActionResult<TopicResponseDto>> CreateTopic([FromBody] CreateTopicDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Name))
             {
@@ -70,18 +95,32 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
             // Check if topic already exists
             var existingTopic = await _context.Topics
+                .Include(t => t.MediaItems)
                 .FirstOrDefaultAsync(t => t.Name == dto.Name);
 
             if (existingTopic != null)
             {
-                return Ok(existingTopic); // Return existing topic instead of error
+                var existingResponse = new TopicResponseDto
+                {
+                    Id = existingTopic.Id,
+                    Name = existingTopic.Name,
+                    MediaItemIds = existingTopic.MediaItems.Select(m => m.Id).ToArray()
+                };
+                return Ok(existingResponse);
             }
 
             var topic = new Topic { Name = dto.Name };
             _context.Topics.Add(topic);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetTopic), new { id = topic.Id }, topic);
+            var response = new TopicResponseDto
+            {
+                Id = topic.Id,
+                Name = topic.Name,
+                MediaItemIds = Array.Empty<Guid>()
+            };
+
+            return CreatedAtAction(nameof(GetTopic), new { id = topic.Id }, response);
         }
 
         // DELETE: api/topics/{id}
@@ -109,8 +148,5 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         }
     }
 
-    public class CreateTopicDto
-    {
-        public required string Name { get; set; }
-    }
+
 }

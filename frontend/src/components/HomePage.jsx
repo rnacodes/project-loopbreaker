@@ -4,7 +4,7 @@ import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedi
 import { 
     Search, Book, Movie, Tv, Article, LibraryMusic, Podcasts, SportsEsports, YouTube, Language, MenuBook, AutoAwesome, 
     AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos, Forest, 
-    PlaylistAdd, NoteAlt, ImportExport
+    PlaylistAdd, NoteAlt, ImportExport, Topic
 } from '@mui/icons-material';
 
 // MOCK DATA
@@ -193,6 +193,10 @@ export default function HomePage() {
     navigate('/import-media');
   };
 
+  const handleSearchByTopicOrGenre = () => {
+    navigate('/search-by-topic-or-genre');
+  };
+
   const handleAddMedia = () => {
     navigate('/add-media');
   };
@@ -213,7 +217,28 @@ export default function HomePage() {
             <Grid container spacing={2} justifyContent="center" sx={{ mt: 4, mb: 2, maxWidth: '900px', margin: 'auto' }}>
               {mainMediaIcons.map((item) => (
                   <Grid item xs={4} sm={3} md={2} key={item.key} sx={{ textAlign: 'center' }}>
-                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: 'text.secondary', '&:hover': { color: 'text.primary' } }}>
+                      <Box 
+                          onClick={() => {
+                              if (item.key === 'podcasts') {
+                                  navigate('/search-results?type=mediaType&value=Podcast');
+                              } else {
+                                  // For other media types, you can add navigation logic here
+                                  console.log(`Clicked on ${item.name}`);
+                              }
+                          }}
+                          sx={{ 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              alignItems: 'center', 
+                              cursor: 'pointer', 
+                              color: 'text.secondary', 
+                              '&:hover': { 
+                                  color: 'text.primary',
+                                  transform: 'scale(1.05)',
+                                  transition: 'transform 0.2s ease'
+                              } 
+                          }}
+                      >
                           {item.icon}
                           <Typography variant="caption" sx={{ mt: 0.5 }}>{item.name}</Typography>
                       </Box>
@@ -233,8 +258,8 @@ export default function HomePage() {
             </Grid>
 
             <Box sx={{ mt: 4, p: 3, backgroundColor: 'background.paper', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
-                <Grid container spacing={4} alignItems="center" justifyContent="center">
-                    <Grid item xs={12} sm={4} sx={{ textAlign: 'center' }}>
+                <Grid container spacing={3} alignItems="center" justifyContent="center">
+                    <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
                         <Box 
                             onClick={handleCreateMixlist}
                             sx={{ 
@@ -254,7 +279,7 @@ export default function HomePage() {
                             <Typography variant="h5" sx={{ mt: 1 }}>Create a Mixlist</Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={12} sm={4} sx={{ textAlign: 'center' }}>
+                    <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
                         <Box 
                             onClick={handleImportMedia}
                             sx={{ 
@@ -274,7 +299,27 @@ export default function HomePage() {
                             <Typography variant="h5" sx={{ mt: 1 }}>Import Media</Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={12} sm={4} sx={{ textAlign: 'center' }}>
+                    <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
+                        <Box 
+                            onClick={handleSearchByTopicOrGenre}
+                            sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center', 
+                                cursor: 'pointer', 
+                                color: 'text.primary', 
+                                p: 2,
+                                '&:hover': {
+                                    transform: 'scale(1.05)',
+                                    transition: 'transform 0.2s ease'
+                                }
+                            }}
+                        >
+                            <Topic sx={{ fontSize: 70, color: 'primary.main' }} />
+                            <Typography variant="h5" sx={{ mt: 1 }}>Browse Topics/Genres</Typography>
+                        </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
                         <Box 
                             onClick={handleAddMedia}
                             sx={{ 

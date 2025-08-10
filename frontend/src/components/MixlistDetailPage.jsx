@@ -106,14 +106,14 @@ function MixlistDetailPage() {
                         fontSize: '32px',
                         fontWeight: 'bold'
                     }}>
-                        {mixlist.Name}
+                        {mixlist.Name || mixlist.name}
                     </Typography>
                 </Box>
 
                 {/* Mixlist Information Card */}
                 <Card sx={{ mb: 4, overflow: 'hidden' }}>
                     {/* Thumbnail */}
-                    {mixlist.Thumbnail && (
+                    {(mixlist.Thumbnail || mixlist.thumbnail) && (
                         <CardMedia
                             component="img"
                             sx={{
@@ -121,8 +121,8 @@ function MixlistDetailPage() {
                                 height: 250,
                                 objectFit: 'cover'
                             }}
-                            image={mixlist.Thumbnail}
-                            alt={mixlist.Name}
+                            image={mixlist.Thumbnail || mixlist.thumbnail}
+                            alt={mixlist.Name || mixlist.name}
                         />
                     )}
                     
@@ -130,10 +130,10 @@ function MixlistDetailPage() {
                         {/* Mixlist Name and Item Count */}
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                             <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold' }}>
-                                {mixlist.Name}
+                                {mixlist.Name || mixlist.name}
                             </Typography>
                             <Chip 
-                                label={`${mixlist.MediaItems ? mixlist.MediaItems.length : 0} items`}
+                                label={`${(mixlist.MediaItems || mixlist.mediaItems || []).length} items`}
                                 sx={{ 
                                     backgroundColor: 'primary.main', 
                                     color: 'white',
@@ -144,9 +144,9 @@ function MixlistDetailPage() {
                         </Box>
 
                         {/* Description */}
-                        {mixlist.Description && (
+                        {(mixlist.Description || mixlist.description) && (
                             <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.6 }}>
-                                {mixlist.Description}
+                                {mixlist.Description || mixlist.description}
                             </Typography>
                         )}
 
@@ -162,14 +162,14 @@ function MixlistDetailPage() {
                                     mb: 2
                                 }}
                             >
-                                Media Items ({mixlist.MediaItems ? mixlist.MediaItems.length : 0})
+                                Media Items ({(mixlist.MediaItems || mixlist.mediaItems || []).length})
                             </Button>
                             
                             <Collapse in={mediaListExpanded}>
                                 <Box sx={{ pl: 2 }}>
-                                    {mixlist.MediaItems && mixlist.MediaItems.length > 0 ? (
-                                        mixlist.MediaItems.map((mediaItem, index) => (
-                                            <Paper key={mediaItem.id} sx={{ p: 2, mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    {(mixlist.MediaItems || mixlist.mediaItems || []).length > 0 ? (
+                                        (mixlist.MediaItems || mixlist.mediaItems || []).map((mediaItem, index) => (
+                                            <Paper key={mediaItem.id || mediaItem.Id} sx={{ p: 2, mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                                     <Typography variant="body2" color="text.secondary">
                                                         {index + 1}.
@@ -177,27 +177,27 @@ function MixlistDetailPage() {
                                                     <Link
                                                         component="button"
                                                         variant="body1"
-                                                        onClick={() => navigate(`/media/${mediaItem.id}`)}
+                                                        onClick={() => navigate(`/media/${mediaItem.id || mediaItem.Id}`)}
                                                         sx={{ 
                                                             textDecoration: 'none',
                                                             fontWeight: 'medium',
                                                             '&:hover': { textDecoration: 'underline' }
                                                         }}
                                                     >
-                                                        {mediaItem.title}
+                                                        {mediaItem.title || mediaItem.Title}
                                                     </Link>
                                                     <Chip
-                                                        label={mediaItem.mediaType}
+                                                        label={mediaItem.mediaType || mediaItem.MediaType}
                                                         size="small"
                                                         sx={{
-                                                            backgroundColor: getMediaTypeColor(mediaItem.mediaType),
+                                                            backgroundColor: getMediaTypeColor(mediaItem.mediaType || mediaItem.MediaType),
                                                             color: 'white',
                                                             fontSize: '0.75rem'
                                                         }}
                                                     />
                                                 </Box>
                                                 <IconButton
-                                                    onClick={() => handleRemoveMedia(mediaItem.id)}
+                                                    onClick={() => handleRemoveMedia(mediaItem.id || mediaItem.Id)}
                                                     size="small"
                                                     color="error"
                                                 >
@@ -218,12 +218,12 @@ function MixlistDetailPage() {
             </Box>
 
             {/* Media Carousel */}
-            {mixlist.MediaItems && mixlist.MediaItems.length > 0 && (
+            {(mixlist.MediaItems || mixlist.mediaItems || []).length > 0 && (
                 <Box sx={{ px: 3, mb: 4 }}>
                     <MediaCarousel
-                        mediaItems={mixlist.MediaItems.map(item => ({
+                        mediaItems={(mixlist.MediaItems || mixlist.mediaItems || []).map(item => ({
                             ...item,
-                            thumbnailUrl: item.thumbnail
+                            thumbnailUrl: item.thumbnail || item.Thumbnail
                         }))}
                         title="Browse Media"
                         subtitle="Click on any item to view details below"
@@ -241,7 +241,7 @@ function MixlistDetailPage() {
                 <Box sx={{ px: 3, mb: 4 }}>
                     <Divider sx={{ mb: 3 }} />
                     <Card sx={{ overflow: 'hidden' }}>
-                        {selectedMedia.thumbnail && (
+                        {(selectedMedia.thumbnail || selectedMedia.Thumbnail) && (
                             <CardMedia
                                 component="img"
                                 sx={{
@@ -249,19 +249,19 @@ function MixlistDetailPage() {
                                     height: 200,
                                     objectFit: 'cover'
                                 }}
-                                image={selectedMedia.thumbnail}
-                                alt={selectedMedia.title}
+                                image={selectedMedia.thumbnail || selectedMedia.Thumbnail}
+                                alt={selectedMedia.title || selectedMedia.Title}
                             />
                         )}
                         <CardContent sx={{ p: 3 }}>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                 <Typography variant="h4" component="h3" sx={{ fontWeight: 'bold', flex: 1 }}>
-                                    {selectedMedia.title}
+                                    {selectedMedia.title || selectedMedia.Title}
                                 </Typography>
                                 <Button
                                     variant="outlined"
                                     startIcon={<OpenInNew />}
-                                    onClick={() => navigate(`/media/${selectedMedia.id}`)}
+                                    onClick={() => navigate(`/media/${selectedMedia.id || selectedMedia.Id}`)}
                                     sx={{ ml: 2 }}
                                 >
                                     View Full Profile
@@ -270,18 +270,18 @@ function MixlistDetailPage() {
                             
                             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
                                 <Chip
-                                    label={selectedMedia.mediaType}
+                                    label={selectedMedia.mediaType || selectedMedia.MediaType}
                                     sx={{
-                                        backgroundColor: getMediaTypeColor(selectedMedia.mediaType),
+                                        backgroundColor: getMediaTypeColor(selectedMedia.mediaType || selectedMedia.MediaType),
                                         color: 'white',
                                         fontWeight: 'bold'
                                     }}
                                 />
-                                {selectedMedia.status && (
+                                {(selectedMedia.status || selectedMedia.Status) && (
                                     <Chip
-                                        label={selectedMedia.status}
+                                        label={selectedMedia.status || selectedMedia.Status}
                                         sx={{
-                                            backgroundColor: getStatusColor(selectedMedia.status),
+                                            backgroundColor: getStatusColor(selectedMedia.status || selectedMedia.Status),
                                             color: 'white',
                                             fontWeight: 'bold'
                                         }}

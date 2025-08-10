@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure.Data;
+using ProjectLoopbreaker.Web.API.DTOs;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -235,18 +236,5 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         }
     }
 
-    // DTO classes for Mixlist operations
-    public class CreateMixlistDto
-    {
-        public required string Name { get; set; }
-        public string? Description { get; set; }
-        public string? Thumbnail { get; set; }
-    }
 
-    public class UpdateMixlistDto
-    {
-        public string? Name { get; set; }
-        public string? Description { get; set; }
-        public string? Thumbnail { get; set; }
-    }
 }

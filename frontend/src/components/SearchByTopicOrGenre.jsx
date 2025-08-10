@@ -26,8 +26,8 @@ function SearchByTopicOrGenre() {
                     getAllGenres()
                 ]);
                 
-                setTopics(topicsResponse.data.sort((a, b) => a.name.localeCompare(b.name)));
-                setGenres(genresResponse.data.sort((a, b) => a.name.localeCompare(b.name)));
+                setTopics(topicsResponse.data.sort((a, b) => (a.name || a.Name).localeCompare(b.name || b.Name)));
+                setGenres(genresResponse.data.sort((a, b) => (a.name || a.Name).localeCompare(b.name || b.Name)));
             } catch (err) {
                 console.error('Error loading topics and genres:', err);
                 setError('Failed to load topics and genres');
@@ -45,12 +45,12 @@ function SearchByTopicOrGenre() {
 
     const handleTopicClick = (topic) => {
         // Navigate to media search page with topic filter
-        navigate(`/search-results?type=topic&value=${encodeURIComponent(topic.name)}&id=${topic.id}`);
+        navigate(`/search-results?type=topic&value=${encodeURIComponent(topic.name || topic.Name)}&id=${topic.id || topic.Id}`);
     };
 
     const handleGenreClick = (genre) => {
         // Navigate to media search page with genre filter
-        navigate(`/search-results?type=genre&value=${encodeURIComponent(genre.name)}&id=${genre.id}`);
+        navigate(`/search-results?type=genre&value=${encodeURIComponent(genre.name || genre.Name)}&id=${genre.id || genre.Id}`);
     };
 
     if (loading) {
@@ -83,14 +83,18 @@ function SearchByTopicOrGenre() {
                     sx={{ mb: 2 }}
                 >
                     <AccordionSummary
-                        expandIcon={<ExpandMore />}
+                        expandIcon={<ExpandMore sx={{ color: 'white' }} />}
                         aria-controls="topics-content"
                         id="topics-header"
                         sx={{
                             backgroundColor: 'primary.main',
-                            color: 'primary.contrastText',
+                            color: 'white',
                             '&:hover': {
                                 backgroundColor: 'primary.dark',
+                            },
+                            '& .MuiTypography-root': {
+                                color: 'white',
+                                fontWeight: 'bold'
                             }
                         }}
                     >
@@ -109,7 +113,7 @@ function SearchByTopicOrGenre() {
                         ) : (
                             <Grid container spacing={1}>
                                 {topics.map((topic) => (
-                                    <Grid item xs={12} sm={6} md={4} lg={3} key={topic.id}>
+                                    <Grid item xs={12} sm={6} md={4} lg={3} key={topic.id || topic.Id}>
                                         <Card 
                                             sx={{ 
                                                 cursor: 'pointer',
@@ -124,15 +128,23 @@ function SearchByTopicOrGenre() {
                                         >
                                             <CardContent sx={{ p: 2 }}>
                                                 <Chip
-                                                    label={topic.name}
+                                                    label={topic.name || topic.Name}
                                                     color="primary"
-                                                    variant="outlined"
+                                                    variant="filled"
                                                     sx={{ 
                                                         width: '100%',
+                                                        backgroundColor: 'primary.main',
+                                                        color: 'white',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '0.9rem',
                                                         '& .MuiChip-label': {
                                                             display: 'block',
                                                             whiteSpace: 'normal',
-                                                            textAlign: 'center'
+                                                            textAlign: 'center',
+                                                            color: 'white'
+                                                        },
+                                                        '&:hover': {
+                                                            backgroundColor: 'primary.dark'
                                                         }
                                                     }}
                                                 />
@@ -152,14 +164,18 @@ function SearchByTopicOrGenre() {
                     sx={{ mb: 2 }}
                 >
                     <AccordionSummary
-                        expandIcon={<ExpandMore />}
+                        expandIcon={<ExpandMore sx={{ color: 'white' }} />}
                         aria-controls="genres-content"
                         id="genres-header"
                         sx={{
-                            backgroundColor: 'secondary.main',
-                            color: 'secondary.contrastText',
+                            backgroundColor: '#470AB0',
+                            color: 'white',
                             '&:hover': {
-                                backgroundColor: 'secondary.dark',
+                                backgroundColor: '#3A0890',
+                            },
+                            '& .MuiTypography-root': {
+                                color: 'white',
+                                fontWeight: 'bold'
                             }
                         }}
                     >
@@ -178,7 +194,7 @@ function SearchByTopicOrGenre() {
                         ) : (
                             <Grid container spacing={1}>
                                 {genres.map((genre) => (
-                                    <Grid item xs={12} sm={6} md={4} lg={3} key={genre.id}>
+                                    <Grid item xs={12} sm={6} md={4} lg={3} key={genre.id || genre.Id}>
                                         <Card 
                                             sx={{ 
                                                 cursor: 'pointer',
@@ -193,15 +209,23 @@ function SearchByTopicOrGenre() {
                                         >
                                             <CardContent sx={{ p: 2 }}>
                                                 <Chip
-                                                    label={genre.name}
+                                                    label={genre.name || genre.Name}
                                                     color="secondary"
-                                                    variant="outlined"
+                                                    variant="filled"
                                                     sx={{ 
                                                         width: '100%',
+                                                        backgroundColor: '#470AB0',
+                                                        color: 'white',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '0.9rem',
                                                         '& .MuiChip-label': {
                                                             display: 'block',
                                                             whiteSpace: 'normal',
-                                                            textAlign: 'center'
+                                                            textAlign: 'center',
+                                                            color: 'white'
+                                                        },
+                                                        '&:hover': {
+                                                            backgroundColor: '#3A0890'
                                                         }
                                                     }}
                                                 />

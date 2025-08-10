@@ -80,39 +80,39 @@ function AllMedia() {
                 >
                   <CardContent sx={{ flexGrow: 1 }}>
                     <Typography variant="h6" component="div" gutterBottom>
-                      {item.title}
+                      {item.title || item.Title}
                     </Typography>
                     <Chip 
-                      label={item.mediaType} 
+                      label={item.mediaType || item.MediaType} 
                       size="small" 
                       sx={{ mb: 1 }}
                     />
-                    {item.rating && (
+                    {(item.rating || item.Rating) && (
                       <Typography variant="body2" sx={{ mb: 1 }}>
-                        Rating: {item.rating}
+                        Rating: {item.rating || item.Rating}
                       </Typography>
                     )}
                     <Typography variant="body2" color="text.secondary">
-                      {item.status || 'No status set'}
+                      {item.status || item.Status || 'No status set'}
                     </Typography>
                     
                     {/* Topics and Genres */}
-                    {(item.topics?.length > 0 || item.genres?.length > 0) && (
+                    {((item.topics?.length > 0) || (item.Topics?.length > 0) || (item.genres?.length > 0) || (item.Genres?.length > 0)) && (
                       <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                        {item.topics?.map((topic, index) => (
+                        {(item.topics || item.Topics || []).map((topic, index) => (
                           <Chip
                             key={`topic-${index}`}
-                            label={topic}
+                            label={typeof topic === 'string' ? topic : topic.name || topic.Name}
                             size="small"
                             color="primary"
                             variant="outlined"
                             sx={{ fontSize: '0.7rem', height: '20px' }}
                           />
                         ))}
-                        {item.genres?.map((genre, index) => (
+                        {(item.genres || item.Genres || []).map((genre, index) => (
                           <Chip
                             key={`genre-${index}`}
-                            label={genre}
+                            label={typeof genre === 'string' ? genre : genre.name || genre.Name}
                             size="small"
                             color="secondary"
                             variant="outlined"
@@ -122,7 +122,7 @@ function AllMedia() {
                       </Box>
                     )}
                     
-                    {item.notes && (
+                    {(item.notes || item.Notes) && (
                       <Typography 
                         variant="body2" 
                         sx={{ 
@@ -134,7 +134,7 @@ function AllMedia() {
                           WebkitBoxOrient: 'vertical',
                         }}
                       >
-                        {item.notes}
+                        {item.notes || item.Notes}
                       </Typography>
                     )}
                   </CardContent>

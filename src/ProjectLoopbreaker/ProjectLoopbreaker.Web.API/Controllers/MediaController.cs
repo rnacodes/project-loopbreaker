@@ -86,7 +86,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 Notes = dto.Notes,
                 Status = dto.Status,
                 DateAdded = DateTime.UtcNow,
-                DateCompleted = dto.DateCompleted,
+                DateCompleted = dto.DateCompleted?.ToUniversalTime(),
                 Rating = dto.Rating,
                 OwnershipStatus = dto.OwnershipStatus,
                 Description = dto.Description,

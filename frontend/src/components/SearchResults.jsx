@@ -19,7 +19,7 @@ function SearchResults() {
     
     // Parse URL parameters
     const searchParams = new URLSearchParams(location.search);
-    const searchType = searchParams.get('type'); // 'topic' or 'genre'
+    const searchType = searchParams.get('type'); // 'topic', 'genre', or 'mediaType'
     const searchValue = searchParams.get('value');
     const searchId = searchParams.get('id');
 
@@ -39,15 +39,19 @@ function SearchResults() {
                     
                     if (searchType === 'topic' && searchValue) {
                         response.data = response.data.filter(item => 
-                            item.topics && item.topics.some(topic => 
-                                topic.toLowerCase() === searchValue.toLowerCase()
+                            (item.topics || item.Topics) && (item.topics || item.Topics).some(topic => 
+                                (typeof topic === 'string' ? topic : topic.name || topic.Name).toLowerCase() === searchValue.toLowerCase()
                             )
                         );
                     } else if (searchType === 'genre' && searchValue) {
                         response.data = response.data.filter(item => 
-                            item.genres && item.genres.some(genre => 
-                                genre.toLowerCase() === searchValue.toLowerCase()
+                            (item.genres || item.Genres) && (item.genres || item.Genres).some(genre => 
+                                (typeof genre === 'string' ? genre : genre.name || genre.Name).toLowerCase() === searchValue.toLowerCase()
                             )
+                        );
+                    } else if (searchType === 'mediaType' && searchValue) {
+                        response.data = response.data.filter(item => 
+                            (item.mediaType || item.MediaType) && (item.mediaType || item.MediaType).toLowerCase() === searchValue.toLowerCase()
                         );
                     }
                 }
@@ -94,39 +98,39 @@ function SearchResults() {
                     >
                         <CardContent sx={{ flexGrow: 1 }}>
                             <Typography variant="h6" component="div" gutterBottom>
-                                {item.title}
+                                {item.title || item.Title}
                             </Typography>
                             <Chip 
-                                label={item.mediaType} 
+                                label={item.mediaType || item.MediaType} 
                                 size="small" 
                                 sx={{ mb: 1 }}
                             />
-                            {item.rating && (
+                            {(item.rating || item.Rating) && (
                                 <Typography variant="body2" sx={{ mb: 1 }}>
-                                    Rating: {item.rating}
+                                    Rating: {item.rating || item.Rating}
                                 </Typography>
                             )}
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                                {item.status || 'No status set'}
+                                {item.status || item.Status || 'No status set'}
                             </Typography>
                             
                             {/* Topics and Genres */}
-                            {(item.topics?.length > 0 || item.genres?.length > 0) && (
+                            {((item.topics?.length > 0) || (item.Topics?.length > 0) || (item.genres?.length > 0) || (item.Genres?.length > 0)) && (
                                 <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                    {item.topics?.map((topic, index) => (
+                                    {(item.topics || item.Topics || []).map((topic, index) => (
                                         <Chip
                                             key={`topic-${index}`}
-                                            label={topic}
+                                            label={typeof topic === 'string' ? topic : topic.name || topic.Name}
                                             size="small"
                                             color="primary"
                                             variant="outlined"
                                             sx={{ fontSize: '0.7rem', height: '20px' }}
                                         />
                                     ))}
-                                    {item.genres?.map((genre, index) => (
+                                    {(item.genres || item.Genres || []).map((genre, index) => (
                                         <Chip
                                             key={`genre-${index}`}
-                                            label={genre}
+                                            label={typeof genre === 'string' ? genre : genre.name || genre.Name}
                                             size="small"
                                             color="secondary"
                                             variant="outlined"
@@ -136,7 +140,7 @@ function SearchResults() {
                                 </Box>
                             )}
                             
-                            {item.notes && (
+                            {(item.notes || item.Notes) && (
                                 <Typography 
                                     variant="body2" 
                                     sx={{ 
@@ -148,7 +152,7 @@ function SearchResults() {
                                         WebkitBoxOrient: 'vertical',
                                     }}
                                 >
-                                    {item.notes}
+                                    {item.notes || item.Notes}
                                 </Typography>
                             )}
                         </CardContent>
@@ -177,16 +181,16 @@ function SearchResults() {
                             primary={
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Typography variant="h6" component="span">
-                                        {item.title}
+                                        {item.title || item.Title}
                                     </Typography>
                                     <Chip 
-                                        label={item.mediaType} 
+                                        label={item.mediaType || item.MediaType} 
                                         size="small" 
                                         variant="outlined"
                                     />
-                                    {item.rating && (
+                                    {(item.rating || item.Rating) && (
                                         <Chip 
-                                            label={`★ ${item.rating}`} 
+                                            label={`★ ${item.rating || item.Rating}`} 
                                             size="small" 
                                             color="warning"
                                             variant="outlined"
@@ -197,24 +201,24 @@ function SearchResults() {
                             secondary={
                                 <Box>
                                     <Typography variant="body2" color="text.secondary">
-                                        Status: {item.status || 'No status set'}
+                                        Status: {item.status || item.Status || 'No status set'}
                                     </Typography>
-                                    {(item.topics?.length > 0 || item.genres?.length > 0) && (
+                                    {((item.topics?.length > 0) || (item.Topics?.length > 0) || (item.genres?.length > 0) || (item.Genres?.length > 0)) && (
                                         <Box sx={{ mt: 0.5, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                            {item.topics?.map((topic, index) => (
+                                            {(item.topics || item.Topics || []).map((topic, index) => (
                                                 <Chip
                                                     key={`topic-${index}`}
-                                                    label={topic}
+                                                    label={typeof topic === 'string' ? topic : topic.name || topic.Name}
                                                     size="small"
                                                     color="primary"
                                                     variant="outlined"
                                                     sx={{ fontSize: '0.7rem', height: '18px' }}
                                                 />
                                             ))}
-                                            {item.genres?.map((genre, index) => (
+                                            {(item.genres || item.Genres || []).map((genre, index) => (
                                                 <Chip
                                                     key={`genre-${index}`}
-                                                    label={genre}
+                                                    label={typeof genre === 'string' ? genre : genre.name || genre.Name}
                                                     size="small"
                                                     color="secondary"
                                                     variant="outlined"
@@ -223,7 +227,7 @@ function SearchResults() {
                                             ))}
                                         </Box>
                                     )}
-                                    {item.notes && (
+                                    {(item.notes || item.Notes) && (
                                         <Typography 
                                             variant="body2" 
                                             sx={{ 
@@ -235,7 +239,7 @@ function SearchResults() {
                                                 WebkitBoxOrient: 'vertical',
                                             }}
                                         >
-                                            {item.notes}
+                                            {item.notes || item.Notes}
                                         </Typography>
                                     )}
                                 </Box>
@@ -280,7 +284,9 @@ function SearchResults() {
                 <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box>
                         <Typography variant="h4" component="h1" gutterBottom>
-                            {searchType === 'topic' ? 'Topic' : 'Genre'}: {searchValue}
+                            {searchType === 'topic' ? 'Topic' : 
+                             searchType === 'genre' ? 'Genre' : 
+                             searchType === 'mediaType' ? 'Media Type' : 'Search'}: {searchValue}
                         </Typography>
                         <Typography variant="body1" color="text.secondary">
                             Found {mediaItems.length} media item{mediaItems.length !== 1 ? 's' : ''}
