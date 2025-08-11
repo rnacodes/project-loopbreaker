@@ -201,6 +201,17 @@ export const uploadCsv = (file) => {
     });
 };
 
+export const uploadThumbnail = (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return apiClient.post('/upload/thumbnail', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+};
+
 // Open Library / Book Import API calls
 export const searchBooksFromOpenLibrary = async (searchParams) => {
     try {

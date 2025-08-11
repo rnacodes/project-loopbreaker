@@ -9,7 +9,8 @@ import {
 } from '@mui/material';
 import { 
     addMedia, getAllMixlists, addMediaToMixlist, createPodcastEpisode,
-    searchTopics, searchGenres, searchPodcastSeries, createBook 
+    searchTopics, searchGenres, searchPodcastSeries, createBook,
+    uploadThumbnail
 } from '../services/apiService';
 
 function AddMediaForm() {
@@ -174,13 +175,26 @@ function AddMediaForm() {
     };
 
     // Handle thumbnail file upload
-    const handleThumbnailUpload = (event) => {
+    const handleThumbnailUpload = async (event) => {
         const file = event.target.files[0];
         if (file) {
             setThumbnailFile(file);
-            // TODO: Upload to document storage and set thumbnail URL
-            // For now, we'll just show the filename
             console.log('Thumbnail file selected:', file.name);
+            
+            try {
+                // Upload thumbnail to DigitalOcean Spaces
+                console.log('Uploading thumbnail to DigitalOcean Spaces...');
+                const response = await uploadThumbnail(file);
+                const thumbnailUrl = response.data.url;
+                
+                // Set the thumbnail URL from the upload response
+                setThumbnail(thumbnailUrl);
+                console.log('Thumbnail uploaded successfully:', thumbnailUrl);
+            } catch (error) {
+                console.error('Error uploading thumbnail:', error);
+                alert('Failed to upload thumbnail. Please try again.');
+                setThumbnailFile(null);
+            }
         }
     };
 

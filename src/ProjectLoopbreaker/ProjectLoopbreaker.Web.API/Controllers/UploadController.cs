@@ -5,6 +5,8 @@ using ProjectLoopbreaker.Infrastructure.Data;
 using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration;
+using Amazon.S3;
+using Amazon.S3.Model;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -14,13 +16,99 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     {
         private readonly MediaLibraryDbContext _context;
         private readonly ILogger<UploadController> _logger;
+        private readonly IAmazonS3? _s3Client;
+        private readonly IConfiguration _configuration;
 
         public UploadController(
             MediaLibraryDbContext context,
-            ILogger<UploadController> logger)
+            ILogger<UploadController> logger,
+            IAmazonS3? s3Client,
+            IConfiguration configuration)
         {
             _context = context;
             _logger = logger;
+            _s3Client = s3Client;
+            _configuration = configuration;
+        }
+
+        // POST: api/upload/thumbnail
+        [HttpPost("thumbnail")]
+        public async Task<IActionResult> UploadThumbnail(IFormFile file)
+        {
+            try
+            {
+                // Check if S3 client is configured
+                if (_s3Client == null)
+                {
+                    return StatusCode(500, "DigitalOcean Spaces is not configured. Please configure DigitalOceanSpaces environment variables.");
+                }
+
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest("No file uploaded.");
+                }
+
+                // Validate file type (allow common image formats)
+                var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp" };
+                if (!allowedTypes.Contains(file.ContentType.ToLower()))
+                {
+                    return BadRequest("File must be an image (JPEG, PNG, GIF, or WebP).");
+                }
+
+                // Validate file size (max 5MB)
+                const int maxFileSize = 5 * 1024 * 1024; // 5MB
+                if (file.Length > maxFileSize)
+                {
+                    return BadRequest("File size must be less than 5MB.");
+                }
+
+                // Get DigitalOcean Spaces configuration
+                var spacesConfig = _configuration.GetSection("DigitalOceanSpaces");
+                var bucketName = spacesConfig["BucketName"];
+                var endpoint = spacesConfig["Endpoint"];
+
+                if (string.IsNullOrEmpty(bucketName) || string.IsNullOrEmpty(endpoint))
+                {
+                    return StatusCode(500, "DigitalOcean Spaces configuration is incomplete.");
+                }
+
+                // Generate a unique file name
+                var fileExtension = Path.GetExtension(file.FileName);
+                var uniqueFileName = $"thumbnails/{Guid.NewGuid()}{fileExtension}";
+
+                // Upload to DigitalOcean Spaces
+                using var memoryStream = new MemoryStream();
+                await file.CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
+
+                var uploadRequest = new PutObjectRequest
+                {
+                    BucketName = bucketName,
+                    Key = uniqueFileName,
+                    InputStream = memoryStream,
+                    ContentType = file.ContentType,
+                    CannedACL = S3CannedACL.PublicRead // Make the file publicly accessible
+                };
+
+                await _s3Client.PutObjectAsync(uploadRequest);
+
+                // Construct the public URL
+                var publicUrl = $"https://{bucketName}.{endpoint}/{uniqueFileName}";
+
+                _logger.LogInformation("Successfully uploaded thumbnail to DigitalOcean Spaces: {Url}", publicUrl);
+
+                return Ok(new { url = publicUrl, fileName = uniqueFileName });
+            }
+            catch (AmazonS3Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading thumbnail to DigitalOcean Spaces");
+                return StatusCode(500, $"Error uploading to DigitalOcean Spaces: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during thumbnail upload");
+                return StatusCode(500, new { error = "Failed to upload thumbnail", details = ex.Message });
+            }
         }
 
         // POST: api/upload/csv

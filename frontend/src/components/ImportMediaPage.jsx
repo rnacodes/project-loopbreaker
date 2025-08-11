@@ -6,7 +6,7 @@ import {
     Card, CardContent, CircularProgress, Alert,
     Divider, Chip, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
-import { Search, Download, Podcasts, MenuBook, ExpandMore } from '@mui/icons-material';
+import { Search, Download, Podcasts, MenuBook, ExpandMore, OpenInNew } from '@mui/icons-material';
 import { searchPodcasts, getPodcastById, importPodcastFromApi, searchBooksFromOpenLibrary, importBookFromOpenLibrary } from '../services/apiService';
 
 function ImportMediaPage() {
@@ -486,11 +486,33 @@ function ImportMediaPage() {
                     aria-controls="podcasts-content"
                     id="podcasts-header"
                 >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
                         <Podcasts />
                         <Typography variant="h6">
                             Podcasts
                         </Typography>
+                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Powered by
+                            </Typography>
+                            <Button
+                                variant="text"
+                                size="small"
+                                href="https://www.listennotes.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                endIcon={<OpenInNew fontSize="small" />}
+                                sx={{ 
+                                    minWidth: 'auto',
+                                    textTransform: 'none',
+                                    color: 'primary.main',
+                                    '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                ListenNotes
+                            </Button>
+                        </Box>
                     </Box>
                 </AccordionSummary>
                 <AccordionDetails>
@@ -516,11 +538,33 @@ function ImportMediaPage() {
                     aria-controls="books-content"
                     id="books-header"
                 >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
                         <MenuBook />
                         <Typography variant="h6">
                             Books
                         </Typography>
+                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Powered by
+                            </Typography>
+                            <Button
+                                variant="text"
+                                size="small"
+                                href="https://openlibrary.org"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                endIcon={<OpenInNew fontSize="small" />}
+                                sx={{ 
+                                    minWidth: 'auto',
+                                    textTransform: 'none',
+                                    color: 'primary.main',
+                                    '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                Open Library
+                            </Button>
+                        </Box>
                     </Box>
                 </AccordionSummary>
                 <AccordionDetails>

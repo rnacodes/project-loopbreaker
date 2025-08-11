@@ -3,6 +3,7 @@ using ProjectLoopbreaker.Infrastructure.Data;
 using ProjectLoopbreaker.Infrastructure.Clients;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Application.Services;
+using Amazon.S3;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -243,6 +244,43 @@ builder.Services.AddHttpClient<OpenLibraryApiClient>(client =>
 
 // Mock Listen Notes API client removed as per requirements to use only real API
 
+// Configure DigitalOcean Spaces S3 Client (optional - won't break app if not configured)
+builder.Services.AddSingleton<IAmazonS3>(sp =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    
+    // Get DigitalOcean Spaces configuration
+    var spacesConfig = configuration.GetSection("DigitalOceanSpaces");
+    var accessKey = spacesConfig["AccessKey"];
+    var secretKey = spacesConfig["SecretKey"];
+    var endpoint = spacesConfig["Endpoint"];
+    var region = spacesConfig["Region"];
+
+    // Check if any values are still placeholders or empty
+    var hasPlaceholders = accessKey == "SPACES_ACCESS_KEY" || secretKey == "SPACES_SECRET_KEY" || 
+                         endpoint == "SPACES_ENDPOINT" || region == "SPACES_REGION";
+
+    if (string.IsNullOrEmpty(accessKey) || string.IsNullOrEmpty(secretKey) || 
+        string.IsNullOrEmpty(endpoint) || string.IsNullOrEmpty(region) || hasPlaceholders)
+    {
+        Console.WriteLine("WARNING: DigitalOcean Spaces configuration is incomplete or contains placeholder values.");
+        Console.WriteLine("Thumbnail upload functionality will not be available until properly configured.");
+        Console.WriteLine("Please set the DigitalOceanSpaces__* environment variables with real values.");
+        
+        // Return a null client - the UploadController will handle this gracefully
+        return null!;
+    }
+
+    var config = new Amazon.S3.AmazonS3Config
+    {
+        ServiceURL = $"https://{endpoint}",
+        ForcePathStyle = false // DigitalOcean Spaces uses virtual-hosted-style requests
+    };
+
+    Console.WriteLine($"Configuring DigitalOcean Spaces client with endpoint: {endpoint}");
+    
+    return new Amazon.S3.AmazonS3Client(accessKey, secretKey, config);
+});
 
 // Add other services like Swagger if needed
 builder.Services.AddEndpointsApiExplorer();
