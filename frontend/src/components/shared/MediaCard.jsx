@@ -55,6 +55,7 @@ const MediaCard = ({
   const handleCardClick = (e) => {
     if (onClick) {
       e.preventDefault();
+      e.stopPropagation();
       onClick(media);
     }
   };

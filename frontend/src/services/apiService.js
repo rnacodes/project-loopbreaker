@@ -21,6 +21,10 @@ export const getAllMedia = () => {
     return apiClient.get('/media');
 };
 
+export const searchMedia = (query) => {
+    return apiClient.get(`/media/search?query=${encodeURIComponent(query)}`);
+};
+
 // Mixlist API calls
 export const getAllMixlists = () => {
     return apiClient.get('/mixlist');
@@ -38,8 +42,17 @@ export const getMixlistById = (id) => {
     return apiClient.get(`/mixlist/${id}`);
 };
 
+export const updateMixlist = (id, mixlistData) => {
+    return apiClient.put(`/mixlist/${id}`, mixlistData);
+};
+
 export const removeMediaFromMixlist = (mixlistId, mediaItemId) => {
     return apiClient.delete(`/mixlist/${mixlistId}/items/${mediaItemId}`);
+};
+
+// Media update functions
+export const updateMedia = (id, mediaData) => {
+    return apiClient.put(`/media/${id}`, mediaData);
 };
 
 // Legacy - Remove after migration

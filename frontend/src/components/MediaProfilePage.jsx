@@ -1,44 +1,109 @@
-// In: /frontend/src/components/MediaItemProfile.js
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Card, CardContent, Typography, Container, Box, CircularProgress, 
-  Link, CardMedia, Chip, IconButton, Divider, Paper
+  Link, CardMedia, Chip, IconButton, Divider, Paper, Button,
+  Collapse, Dialog, DialogTitle, DialogContent, DialogActions,
+  List, ListItem, ListItemText, Snackbar, Alert
 } from '@mui/material';
-import { ArrowBack, OpenInNew } from '@mui/icons-material';
-import { getMediaById } from '../services/apiService';
+import { 
+  ArrowBack, OpenInNew, Edit, ExpandMore, ExpandLess, PlaylistAdd
+} from '@mui/icons-material';
+import { 
+  getMediaById, getAllMixlists, addMediaToMixlist, removeMediaFromMixlist
+} from '../services/apiService';
 
-function MediaItemProfile() {
+function MediaProfilePage() {
   const [mediaItem, setMediaItem] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { id } = useParams(); // Gets the 'id' from the URL
+  const [mixlistsExpanded, setMixlistsExpanded] = useState(false);
+  const [mixlistDialogOpen, setMixlistDialogOpen] = useState(false);
+  const [availableMixlists, setAvailableMixlists] = useState([]);
+  const [currentMixlists, setCurrentMixlists] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  
+  const { id } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchMedia = async () => {
+    const fetchData = async () => {
       try {
-        console.log('Fetching media with ID:', id);
-        const response = await getMediaById(id);
-        console.log('API response:', response);
-        console.log('Response data:', response.data);
-        setMediaItem(response.data);
+        // Fetch media item
+        const mediaResponse = await getMediaById(id);
+        const media = mediaResponse.data;
+        setMediaItem(media);
+
+        // Find current mixlists
+        const currentMixlistsArray = media.mixlists || media.Mixlists || [];
+        setCurrentMixlists(currentMixlistsArray);
+
+        // Fetch available mixlists
+        const mixlistsResponse = await getAllMixlists();
+        setAvailableMixlists(mixlistsResponse.data || []);
+
       } catch (error) {
-        console.error('Failed to fetch media item:', error);
-        console.error('Error details:', error.response?.data);
-        console.error('Error status:', error.response?.status);
-        console.error('Full error:', error);
+        console.error('Failed to fetch data:', error);
+        setSnackbar({ open: true, message: 'Failed to load media item', severity: 'error' });
       } finally {
         setLoading(false);
       }
     };
 
     if (id) {
-      fetchMedia();
+      fetchData();
     } else {
-      console.error('No ID provided to MediaItemProfile');
       setLoading(false);
     }
   }, [id]);
+
+  const handleMixlistAdd = async (mixlistId) => {
+    try {
+      await addMediaToMixlist(mixlistId, id);
+      
+      // Update current mixlists display
+      const mixlist = availableMixlists.find(m => (m.id || m.Id) === mixlistId);
+      if (mixlist) {
+        setCurrentMixlists(prev => [...prev, mixlist]);
+      }
+      
+      setSnackbar({ open: true, message: 'Added to mixlist successfully!', severity: 'success' });
+    } catch (error) {
+      console.error('Failed to add to mixlist:', error);
+      setSnackbar({ open: true, message: 'Failed to add to mixlist', severity: 'error' });
+    }
+  };
+
+  const handleMixlistRemove = async (mixlistId) => {
+    try {
+      await removeMediaFromMixlist(mixlistId, id);
+      
+      // Update current mixlists display
+      setCurrentMixlists(prev => prev.filter(m => (m.id || m.Id) !== mixlistId));
+      
+      setSnackbar({ open: true, message: 'Removed from mixlist successfully!', severity: 'success' });
+    } catch (error) {
+      console.error('Failed to remove from mixlist:', error);
+      setSnackbar({ open: true, message: 'Failed to remove from mixlist', severity: 'error' });
+    }
+  };
+
+  const getMediaTypeColor = (mediaType) => {
+    const colors = {
+      'Podcast': '#9C27B0', 'Book': '#2196F3', 'Movie': '#FF5722',
+      'Article': '#4CAF50', 'Video': '#FF9800', 'Music': '#E91E63',
+      'VideoGame': '#673AB7', 'TVShow': '#795548', 'Website': '#607D8B',
+      'Document': '#3F51B5', 'Other': '#9E9E9E'
+    };
+    return colors[mediaType] || colors['Other'];
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      'Completed': '#4CAF50', 'ActivelyExploring': '#FF9800',
+      'Uncharted': '#9E9E9E', 'Abandoned': '#F44336'
+    };
+    return colors[status] || colors['Uncharted'];
+  };
 
   if (loading) {
     return (
@@ -58,58 +123,36 @@ function MediaItemProfile() {
     );
   }
 
-  const getMediaTypeColor = (mediaType) => {
-    const colors = {
-      'Podcast': '#9C27B0',
-      'Book': '#2196F3',
-      'Movie': '#FF5722',
-      'Article': '#4CAF50',
-      'Video': '#FF9800',
-      'Music': '#E91E63',
-      'VideoGame': '#673AB7',
-      'TVShow': '#795548',
-      'Website': '#607D8B',
-      'Document': '#3F51B5',
-      'Other': '#9E9E9E'
-    };
-    return colors[mediaType] || colors['Other'];
-  };
-
-  const getStatusColor = (status) => {
-    const colors = {
-      'Completed': '#4CAF50',
-      'ActivelyExploring': '#FF9800',
-      'Uncharted': '#9E9E9E',
-      'Abandoned': '#F44336'
-    };
-    return colors[status] || colors['Uncharted'];
-  };
-
   return (
     <Container maxWidth="md">
       <Box sx={{ mt: 4 }}>
-        {/* Header with back button */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
-            <ArrowBack />
-          </IconButton>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-            Media Profile
-          </Typography>
+        {/* Header with back button and edit button */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
+              <ArrowBack />
+            </IconButton>
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+              Media Profile
+            </Typography>
+          </Box>
+          
+          <Button
+            onClick={() => navigate(`/media/${id}/edit`)}
+            startIcon={<Edit />}
+            variant="contained"
+            size="large"
+          >
+            Edit Media
+          </Button>
         </Box>
 
         <Card sx={{ overflow: 'hidden', borderRadius: 2 }}>
-          {/* Thumbnail at the top */}
+          {/* Thumbnail */}
           {(mediaItem.thumbnail || mediaItem.Thumbnail) && (
             <CardMedia
               component="img"
-              sx={{
-                width: '100%',
-                height: 300,
-                objectFit: 'cover',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center'
-              }}
+              sx={{ width: '100%', height: 300, objectFit: 'cover' }}
               image={mediaItem.thumbnail || mediaItem.Thumbnail}
               alt={mediaItem.title || mediaItem.Title}
               onError={(e) => {
@@ -150,40 +193,37 @@ function MediaItemProfile() {
 
             <Divider sx={{ mb: 3 }} />
 
-            {/* Media Type Properties */}
+            {/* Properties */}
             <Box sx={{ mb: 4 }}>
               <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
                 Properties
               </Typography>
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 2 }}>
-                {/* Basic properties */}
+                
+                {/* Basic Information */}
                 <Paper sx={{ p: 2, backgroundColor: 'background.paper' }}>
                   <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                     Basic Information
                   </Typography>
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     <Box>
-                      <Typography variant="body2" color="text.secondary">Status</Typography>
+                      <Typography variant="body2" color="text.secondary">Rating</Typography>
                       <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                        {mediaItem.status || mediaItem.Status || 'N/A'}
+                        {mediaItem.rating || mediaItem.Rating || 'N/A'}
                       </Typography>
                     </Box>
-                    {(mediaItem.rating || mediaItem.Rating) && (
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">Rating</Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                          {mediaItem.rating || mediaItem.Rating}
-                        </Typography>
-                      </Box>
-                    )}
-                    {(mediaItem.ownershipStatus || mediaItem.OwnershipStatus) && (
-                      <Box>
-                        <Typography variant="body2" color="text.secondary">Ownership</Typography>
-                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                          {mediaItem.ownershipStatus || mediaItem.OwnershipStatus}
-                        </Typography>
-                      </Box>
-                    )}
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">Ownership</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                        {mediaItem.ownershipStatus || mediaItem.OwnershipStatus || 'N/A'}
+                      </Typography>
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">Genre</Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                        {mediaItem.genre || mediaItem.Genre || 'N/A'}
+                      </Typography>
+                    </Box>
                   </Box>
                 </Paper>
 
@@ -312,11 +352,106 @@ function MediaItemProfile() {
                 </Typography>
               </Box>
             )}
+
+            {/* Mixlists Section */}
+            <Box sx={{ mb: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                <Button
+                  onClick={() => setMixlistsExpanded(!mixlistsExpanded)}
+                  startIcon={mixlistsExpanded ? <ExpandLess /> : <ExpandMore />}
+                  sx={{ 
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    textTransform: 'none'
+                  }}
+                >
+                  Mixlists ({currentMixlists.length})
+                </Button>
+                <Button
+                  startIcon={<PlaylistAdd />}
+                  onClick={() => setMixlistDialogOpen(true)}
+                  variant="outlined"
+                  size="small"
+                >
+                  Add to Mixlist
+                </Button>
+              </Box>
+              
+              <Collapse in={mixlistsExpanded}>
+                <Box sx={{ pl: 2 }}>
+                  {currentMixlists.length > 0 ? (
+                    currentMixlists.map((mixlist) => (
+                      <Paper key={mixlist.id || mixlist.Id} sx={{ p: 2, mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                          {mixlist.name || mixlist.Name}
+                        </Typography>
+                        <Button
+                          onClick={() => handleMixlistRemove(mixlist.id || mixlist.Id)}
+                          size="small"
+                          color="error"
+                        >
+                          Remove
+                        </Button>
+                      </Paper>
+                    ))
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                      Not part of any mixlists yet.
+                    </Typography>
+                  )}
+                </Box>
+              </Collapse>
+            </Box>
           </CardContent>
         </Card>
       </Box>
+
+      {/* Mixlist Selection Dialog */}
+      <Dialog open={mixlistDialogOpen} onClose={() => setMixlistDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Add to Mixlist</DialogTitle>
+        <DialogContent>
+          <List>
+            {availableMixlists
+              .filter(mixlist => !currentMixlists.some(current => 
+                (current.id || current.Id) === (mixlist.id || mixlist.Id)
+              ))
+              .map((mixlist) => (
+                <ListItem 
+                  key={mixlist.id || mixlist.Id} 
+                  button
+                  onClick={() => {
+                    handleMixlistAdd(mixlist.id || mixlist.Id);
+                    setMixlistDialogOpen(false);
+                  }}
+                >
+                  <ListItemText 
+                    primary={mixlist.name || mixlist.Name}
+                    secondary={mixlist.description || mixlist.Description}
+                  />
+                </ListItem>
+              ))}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setMixlistDialogOpen(false)}>Cancel</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar for feedback */}
+      <Snackbar 
+        open={snackbar.open} 
+        autoHideDuration={6000} 
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
 
-export default MediaItemProfile;
+export default MediaProfilePage;

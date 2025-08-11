@@ -1,15 +1,18 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, AppBar, Toolbar, Typography, Button } from '@mui/material';
+import { ThemeProvider, CssBaseline, Typography, Button } from '@mui/material';
 
 // --- Import your page components ---
 import HomePage from './components/HomePage';
 import AddMediaForm from './components/AddMediaForm';
-import MediaItemProfile from './components/MediaItemProfile';
+
 import AllMedia from './components/AllMedia';
 import MixlistsPage from './components/MixlistsPage';
 import CreateMixlistForm from './components/CreateMixlistForm';
-import MixlistDetailPage from './components/MixlistDetailPage';
+import MixlistProfilePage from './components/MixlistProfilePage';
+import MediaProfilePage from './components/MediaProfilePage';
+import EditMediaForm from './components/EditMediaForm';
+import EditMixlistForm from './components/EditMixlistForm';
 import ImportMediaPage from './components/ImportMediaPage';
 import SearchByTopicOrGenre from './components/SearchByTopicOrGenre';
 import SearchResults from './components/SearchResults';
@@ -18,6 +21,7 @@ import UploadMediaPage from './components/UploadMediaPage';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
+import ResponsiveNavigation from './components/shared/ResponsiveNavigation';
 
 function App() {
   return (
@@ -25,24 +29,8 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        {/* The AppBar is now part of the main layout */}
-        <AppBar position="static" sx={{ backgroundColor: 'background.paper' }}>
-          <Toolbar>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              <Button color="inherit" component={Link} to="/">
-                Project Loopbreaker
-              </Button>
-            </Typography>
-            <Button color="inherit" component={Link} to="/all-media">All Media</Button>
-            <Button color="inherit" component={Link} to="/mixlists">Mixlists</Button>
-            <Button color="inherit" component={Link} to="/add-media">Add Media</Button>
-            <Button color="inherit" component={Link} to="/import-media">Import Media</Button>
-            <Button color="inherit" component={Link} to="/upload-media">Upload Media</Button>
-            <Button color="inherit" component={Link} to="/search-by-topic-genre">Search by Topic/Genre</Button>
-            <Button color="inherit" component={Link} to="/demo">Demo</Button>
-            {/* Add other navigation links here later */}
-          </Toolbar>
-        </AppBar>
+        {/* Responsive Navigation Component */}
+        <ResponsiveNavigation />
 
         {/* Routes without outer container - each component handles its own layout */}
         <Routes>
@@ -50,13 +38,15 @@ function App() {
           <Route path="/add-media" element={<AddMediaForm />} />
           <Route path="/all-media" element={<AllMedia />} />
           <Route path="/mixlists" element={<MixlistsPage />} />
-          <Route path="/mixlist/:id" element={<MixlistDetailPage />} />
+          <Route path="/mixlist/:id" element={<MixlistProfilePage />} />
+          <Route path="/mixlist/:id/edit" element={<EditMixlistForm />} />
           <Route path="/create-mixlist" element={<CreateMixlistForm />} />
           <Route path="/import-media" element={<ImportMediaPage />} />
           <Route path="/upload-media" element={<UploadMediaPage />} />
           <Route path="/search-by-topic-genre" element={<SearchByTopicOrGenre />} />
           <Route path="/search-results" element={<SearchResults />} />
-          <Route path="/media/:id" element={<MediaItemProfile />} />
+          <Route path="/media/:id" element={<MediaProfilePage />} />
+          <Route path="/media/:id/edit" element={<EditMediaForm />} />
           <Route path="/demo" element={<DemoPage />} />
           {/* Catch-all route for 404 */}
           <Route path="*" element={

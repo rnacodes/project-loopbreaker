@@ -160,6 +160,11 @@ const MediaCarousel = ({
           {...currentVariant}
           spaceBetween={spaceBetween}
           loop={loop}
+          allowTouchMove={true}
+          preventClicks={false}
+          preventClicksPropagation={false}
+          simulateTouch={true}
+          touchStartPreventDefault={false}
           autoplay={autoplay ? {
             delay: autoplayDelay,
             disableOnInteraction: false,
@@ -184,34 +189,76 @@ const MediaCarousel = ({
         >
           {mediaItems.map((media, index) => (
             <SwiperSlide key={media.id || index}>
-              <motionDiv
+              <Box
+                component={motionDiv}
                 whileHover={{ 
                   scale: 1.05,
                   transition: { duration: 0.3 }
                 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('Wrapper clicked for media:', media);
+                  handleMediaClick(media);
+                }}
+                sx={{ 
+                  cursor: 'pointer', 
+                  userSelect: 'none',
+                  '&:hover': {
+                    '& .media-card-overlay': {
+                      opacity: 1
+                    }
+                  }
+                }}
               >
                 <Box
                   sx={{
                     height: variant === 'coverflow' ? '400px' : '350px',
                     display: 'flex',
                     justifyContent: 'center',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    position: 'relative'
                   }}
                 >
+                  {/* Click overlay indicator */}
+                  <Box
+                    className="media-card-overlay"
+                    sx={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: 2,
+                      opacity: 0,
+                      transition: 'opacity 0.2s ease',
+                      zIndex: 10,
+                      pointerEvents: 'none'
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      Click to view details
+                    </Typography>
+                  </Box>
                   <MediaCard
                     media={media}
                     variant={variant === 'coverflow' ? 'featured' : 'default'}
-                    onClick={handleMediaClick}
+                    onClick={null}
                     showMediaTypeIcon={false}
                     sx={{
                       width: '100%',
                       maxWidth: variant === 'coverflow' ? '300px' : '280px',
-                      height: '100%'
+                      height: '100%',
+                      pointerEvents: 'none'
                     }}
                   />
                 </Box>
-              </motionDiv>
+              </Box>
             </SwiperSlide>
           ))}
         </Swiper>
