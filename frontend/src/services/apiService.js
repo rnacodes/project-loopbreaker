@@ -200,3 +200,30 @@ export const uploadCsv = (file) => {
         },
     });
 };
+
+// Open Library / Book Import API calls
+export const searchBooksFromOpenLibrary = async (searchParams) => {
+    try {
+        const params = new URLSearchParams({
+            query: searchParams.query,
+            searchType: searchParams.searchType || 'General',
+            ...(searchParams.offset && { offset: searchParams.offset }),
+            ...(searchParams.limit && { limit: searchParams.limit })
+        });
+        const response = await apiClient.get(`/book/search-openlibrary?${params}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error searching Open Library:', error);
+        throw error;
+    }
+};
+
+export const importBookFromOpenLibrary = async (importData) => {
+    try {
+        const response = await apiClient.post('/book/import-from-openlibrary', importData);
+        return response.data;
+    } catch (error) {
+        console.error('Error importing book from Open Library:', error);
+        throw error;
+    }
+};

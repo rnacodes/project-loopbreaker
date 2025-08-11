@@ -13,8 +13,17 @@ builder.Services.AddCors(options =>
     {
         if (builder.Environment.IsDevelopment())
         {
-            // Development: Allow localhost
-            policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
+            // Development: Allow localhost on common frontend ports
+            policy.WithOrigins(
+                      "http://localhost:3000",    // React default
+                      "https://localhost:3000",   // React HTTPS
+                      "http://localhost:5173",    // Vite default
+                      "https://localhost:5173",   // Vite HTTPS
+                      "http://localhost:5174",    // Vite alternate port
+                      "https://localhost:5174",   // Vite alternate port HTTPS
+                      "http://localhost:4200",    // Angular default
+                      "https://localhost:4200"    // Angular HTTPS
+                  )
                   .AllowAnyHeader()
                   .AllowAnyMethod();
         }
@@ -223,6 +232,13 @@ builder.Services.AddHttpClient<ListenNotesApiClient>(client =>
     }
 
     client.DefaultRequestHeaders.Add("X-ListenAPI-Key", apiKey);
+});
+
+// Configure Open Library API client
+builder.Services.AddHttpClient<OpenLibraryApiClient>(client =>
+{
+    client.BaseAddress = new Uri("https://openlibrary.org/");
+    client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0 (https://github.com/yourrepo/projectloopbreaker)");
 });
 
 // Mock Listen Notes API client removed as per requirements to use only real API

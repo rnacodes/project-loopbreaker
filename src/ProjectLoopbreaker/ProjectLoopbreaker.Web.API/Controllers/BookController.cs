@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure.Data;
 using ProjectLoopbreaker.Web.API.DTOs;
+using ProjectLoopbreaker.Infrastructure.Clients;
+using ProjectLoopbreaker.Shared.DTOs.OpenLibrary;
+using System.Text.Json;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -12,13 +15,16 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     {
         private readonly MediaLibraryDbContext _context;
         private readonly ILogger<BookController> _logger;
+        private readonly OpenLibraryApiClient _openLibraryClient;
 
         public BookController(
             MediaLibraryDbContext context,
-            ILogger<BookController> logger)
+            ILogger<BookController> logger,
+            OpenLibraryApiClient openLibraryClient)
         {
             _context = context;
             _logger = logger;
+            _openLibraryClient = openLibraryClient;
         }
 
         // GET: api/book
@@ -377,6 +383,225 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 _logger.LogError(ex, "Error occurred while deleting book with ID {Id}", id);
                 return StatusCode(500, new { error = "Failed to delete book", details = ex.Message });
             }
+        }
+
+        // GET: api/book/search-openlibrary
+        [HttpGet("search-openlibrary")]
+        public async Task<ActionResult<IEnumerable<BookSearchResultDto>>> SearchOpenLibrary([FromQuery] SearchBooksDto searchDto)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchDto.Query))
+                {
+                    return BadRequest("Search query is required");
+                }
+
+                string jsonResponse;
+
+                switch (searchDto.SearchType)
+                {
+                    case BookSearchType.Title:
+                        jsonResponse = await _openLibraryClient.SearchBooksByTitleAsync(searchDto.Query, searchDto.Offset, searchDto.Limit);
+                        break;
+                    case BookSearchType.Author:
+                        jsonResponse = await _openLibraryClient.SearchBooksByAuthorAsync(searchDto.Query, searchDto.Offset, searchDto.Limit);
+                        break;
+                    case BookSearchType.ISBN:
+                        jsonResponse = await _openLibraryClient.SearchBooksByISBNAsync(searchDto.Query);
+                        break;
+                    default:
+                        jsonResponse = await _openLibraryClient.SearchBooksAsync(searchDto.Query, searchDto.Offset, searchDto.Limit);
+                        break;
+                }
+
+                var searchResult = JsonSerializer.Deserialize<OpenLibrarySearchResultDto>(jsonResponse);
+                
+                if (searchResult?.Docs == null)
+                {
+                    return Ok(new List<BookSearchResultDto>());
+                }
+
+                var results = searchResult.Docs.Select(book => new BookSearchResultDto
+                {
+                    Key = book.Key,
+                    Title = book.Title,
+                    Authors = book.AuthorName,
+                    FirstPublishYear = book.FirstPublishYear,
+                    Isbn = book.Isbn,
+                    Subjects = book.Subject,
+                    CoverUrl = book.CoverId.HasValue 
+                        ? $"https://covers.openlibrary.org/b/id/{book.CoverId}-L.jpg" 
+                        : null,
+                    Publishers = book.Publisher,
+                    Languages = book.Language,
+                    PageCount = book.NumberOfPagesMedian,
+                    AverageRating = book.RatingAverage,
+                    RatingCount = book.RatingCount,
+                    HasFulltext = book.HasFulltext,
+                    EditionCount = book.EditionCount
+                }).ToList();
+
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while searching Open Library for query: {Query}", searchDto.Query);
+                return StatusCode(500, new { error = "Failed to search Open Library", details = ex.Message });
+            }
+        }
+
+        // POST: api/book/import-from-openlibrary
+        [HttpPost("import-from-openlibrary")]
+        public async Task<IActionResult> ImportFromOpenLibrary([FromBody] ImportBookFromOpenLibraryDto importDto)
+        {
+            try
+            {
+                if (importDto == null)
+                {
+                    return BadRequest("Import data is required");
+                }
+
+                OpenLibraryBookDto? bookData = null;
+                string? jsonResponse = null;
+
+                // Try to get book data from Open Library
+                if (!string.IsNullOrWhiteSpace(importDto.OpenLibraryKey))
+                {
+                    // Get book by Open Library key
+                    try
+                    {
+                        // Clean the Open Library key by removing the /works/ prefix if present
+                        var cleanKey = importDto.OpenLibraryKey.Replace("/works/", "");
+                        jsonResponse = await _openLibraryClient.GetBookByOpenLibraryIdAsync(cleanKey);
+                        var workData = JsonSerializer.Deserialize<OpenLibraryWorkDto>(jsonResponse);
+                        
+                        // Convert work data to book format for consistency
+                        bookData = new OpenLibraryBookDto
+                        {
+                            Key = workData?.Key,
+                            Title = workData?.Title,
+                            AuthorName = workData?.Authors?.Select(a => a.Author?.Key?.Replace("/authors/", "")).ToArray(),
+                            Subject = workData?.Subjects,
+                            CoverId = workData?.Covers?.FirstOrDefault()
+                        };
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to get book by Open Library key: {Key}", importDto.OpenLibraryKey);
+                    }
+                }
+                else if (!string.IsNullOrWhiteSpace(importDto.Isbn))
+                {
+                    // Search by ISBN
+                    jsonResponse = await _openLibraryClient.SearchBooksByISBNAsync(importDto.Isbn);
+                    var searchResult = JsonSerializer.Deserialize<OpenLibrarySearchResultDto>(jsonResponse);
+                    bookData = searchResult?.Docs?.FirstOrDefault();
+                }
+                else if (!string.IsNullOrWhiteSpace(importDto.Title) && !string.IsNullOrWhiteSpace(importDto.Author))
+                {
+                    // Search by title and author
+                    var query = $"title:{importDto.Title} author:{importDto.Author}";
+                    jsonResponse = await _openLibraryClient.SearchBooksAsync(query, limit: 1);
+                    var searchResult = JsonSerializer.Deserialize<OpenLibrarySearchResultDto>(jsonResponse);
+                    bookData = searchResult?.Docs?.FirstOrDefault();
+                }
+                else if (!string.IsNullOrWhiteSpace(importDto.Title))
+                {
+                    // Search by title only
+                    jsonResponse = await _openLibraryClient.SearchBooksByTitleAsync(importDto.Title, limit: 1);
+                    var searchResult = JsonSerializer.Deserialize<OpenLibrarySearchResultDto>(jsonResponse);
+                    bookData = searchResult?.Docs?.FirstOrDefault();
+                }
+                else
+                {
+                    return BadRequest("At least one of OpenLibraryKey, ISBN, or Title must be provided");
+                }
+
+                if (bookData == null)
+                {
+                    return NotFound("Book not found in Open Library");
+                }
+
+                // Create book entity from Open Library data
+                var book = new Book
+                {
+                    Title = bookData.Title ?? "Unknown Title",
+                    Author = bookData.AuthorName?.FirstOrDefault() ?? "Unknown Author",
+                    MediaType = MediaType.Book,
+                    Status = Status.Uncharted,
+                    DateAdded = DateTime.UtcNow,
+                    ISBN = bookData.Isbn?.FirstOrDefault(),
+                    Format = BookFormat.Digital, // Default to digital since it's from Open Library
+                    PartOfSeries = false,
+                    Thumbnail = bookData.CoverId.HasValue 
+                        ? $"https://covers.openlibrary.org/b/id/{bookData.CoverId}-L.jpg" 
+                        : null,
+                    Description = ExtractDescription(bookData),
+                    Link = !string.IsNullOrWhiteSpace(bookData.Key) 
+                        ? $"https://openlibrary.org{bookData.Key}" 
+                        : null
+                };
+
+                // Handle subjects as genres
+                if (bookData.Subject?.Length > 0)
+                {
+                    foreach (var subjectName in bookData.Subject.Take(5).Where(s => !string.IsNullOrWhiteSpace(s)))
+                    {
+                        var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == subjectName);
+                        if (existingGenre != null)
+                        {
+                            book.Genres.Add(existingGenre);
+                        }
+                        else
+                        {
+                            book.Genres.Add(new Genre { Name = subjectName });
+                        }
+                    }
+                }
+
+                _context.Books.Add(book);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Successfully imported book from Open Library: {Title} by {Author}", book.Title, book.Author);
+
+                return CreatedAtAction(nameof(GetBook), new { id = book.Id }, new BookResponseDto
+                {
+                    Id = book.Id,
+                    Title = book.Title,
+                    Author = book.Author,
+                    Description = book.Description,
+                    MediaType = book.MediaType,
+                    Status = book.Status,
+                    DateAdded = book.DateAdded,
+                    Link = book.Link,
+                    Thumbnail = book.Thumbnail,
+                    ISBN = book.ISBN,
+                    Format = book.Format,
+                    PartOfSeries = book.PartOfSeries,
+                    Rating = book.Rating,
+                    OwnershipStatus = book.OwnershipStatus,
+                    DateCompleted = book.DateCompleted,
+                    Notes = book.Notes,
+                    RelatedNotes = book.RelatedNotes,
+                    Genre = book.Genre
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while importing book from Open Library");
+                return StatusCode(500, new { error = "Failed to import book from Open Library", details = ex.Message });
+            }
+        }
+
+        private static string? ExtractDescription(OpenLibraryBookDto bookData)
+        {
+            // Open Library search results don't typically include descriptions
+            // This is a placeholder for future enhancement
+            if (bookData.Subject?.Length > 0)
+            {
+                return $"Subjects: {string.Join(", ", bookData.Subject.Take(3))}";
+            }
+            return null;
         }
     }
 }
