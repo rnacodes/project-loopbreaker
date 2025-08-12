@@ -31,6 +31,104 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             _configuration = configuration;
         }
 
+        // POST: api/upload/thumbnail-from-url
+        [HttpPost("thumbnail-from-url")]
+        public async Task<IActionResult> UploadThumbnailFromUrl([FromBody] UploadFromUrlRequest request)
+        {
+            try
+            {
+                // Check if S3 client is configured
+                if (_s3Client == null)
+                {
+                    return StatusCode(500, "DigitalOcean Spaces is not configured. Please configure DigitalOceanSpaces environment variables.");
+                }
+
+                if (string.IsNullOrEmpty(request.Url))
+                {
+                    return BadRequest("URL is required.");
+                }
+
+                // Download the image from the URL
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+                
+                var response = await httpClient.GetAsync(request.Url);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return BadRequest($"Failed to download image from URL: {response.StatusCode}");
+                }
+
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                
+                // Validate content type
+                var allowedTypes = new[] { "image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp" };
+                if (!allowedTypes.Contains(contentType.ToLower()))
+                {
+                    return BadRequest("URL must point to an image (JPEG, PNG, GIF, or WebP).");
+                }
+
+                // Get file extension from content type
+                var extension = contentType.ToLower() switch
+                {
+                    "image/jpeg" => ".jpg",
+                    "image/jpg" => ".jpg", 
+                    "image/png" => ".png",
+                    "image/gif" => ".gif",
+                    "image/webp" => ".webp",
+                    _ => ".jpg"
+                };
+
+                // Get DigitalOcean Spaces configuration
+                var spacesConfig = _configuration.GetSection("DigitalOceanSpaces");
+                var bucketName = spacesConfig["BucketName"];
+                var endpoint = spacesConfig["Endpoint"];
+
+                if (string.IsNullOrEmpty(bucketName) || string.IsNullOrEmpty(endpoint))
+                {
+                    return StatusCode(500, "DigitalOcean Spaces configuration is incomplete.");
+                }
+
+                // Generate a unique file name
+                var uniqueFileName = $"thumbnails/{Guid.NewGuid()}{extension}";
+
+                // Upload to DigitalOcean Spaces
+                using var imageStream = await response.Content.ReadAsStreamAsync();
+                
+                var uploadRequest = new PutObjectRequest
+                {
+                    BucketName = bucketName,
+                    Key = uniqueFileName,
+                    InputStream = imageStream,
+                    ContentType = contentType,
+                    CannedACL = S3CannedACL.PublicRead // Make the file publicly accessible
+                };
+
+                await _s3Client.PutObjectAsync(uploadRequest);
+
+                // Construct the public URL
+                var publicUrl = $"https://{bucketName}.{endpoint}/{uniqueFileName}";
+
+                _logger.LogInformation("Successfully uploaded thumbnail from URL to DigitalOcean Spaces: {Url} -> {PublicUrl}", request.Url, publicUrl);
+
+                return Ok(new { url = publicUrl, fileName = uniqueFileName, originalUrl = request.Url });
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Error downloading image from URL: {Url}", request.Url);
+                return StatusCode(500, $"Error downloading image from URL: {ex.Message}");
+            }
+            catch (AmazonS3Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading thumbnail to DigitalOcean Spaces");
+                return StatusCode(500, $"Error uploading to DigitalOcean Spaces: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during thumbnail upload from URL");
+                return StatusCode(500, new { error = "Failed to upload thumbnail from URL", details = ex.Message });
+            }
+        }
+
         // POST: api/upload/thumbnail
         [HttpPost("thumbnail")]
         public async Task<IActionResult> UploadThumbnail(IFormFile file)
@@ -402,6 +500,11 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
             return Enum.TryParse<Status>(statusStr, true, out Status status) ? status : null;
         }
+    }
+
+    public class UploadFromUrlRequest
+    {
+        public string Url { get; set; } = string.Empty;
     }
 }
 

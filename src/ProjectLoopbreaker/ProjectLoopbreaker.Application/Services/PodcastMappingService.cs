@@ -2,6 +2,10 @@
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Shared.DTOs.ListenNotes;
+using Amazon.S3;
+using Amazon.S3.Model;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace ProjectLoopbreaker.Application.Services
 {
@@ -11,6 +15,91 @@ namespace ProjectLoopbreaker.Application.Services
         {
             PropertyNameCaseInsensitive = true
         };
+        private readonly IAmazonS3? _s3Client;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<PodcastMappingService> _logger;
+
+        public PodcastMappingService(IAmazonS3? s3Client, IConfiguration configuration, ILogger<PodcastMappingService> logger)
+        {
+            _s3Client = s3Client;
+            _configuration = configuration;
+            _logger = logger;
+        }
+
+        private async Task<string?> UploadImageFromUrlAsync(string? imageUrl)
+        {
+            if (string.IsNullOrEmpty(imageUrl) || _s3Client == null)
+            {
+                return imageUrl; // Return original URL if S3 not configured or URL is empty
+            }
+
+            try
+            {
+                // Get DigitalOcean Spaces configuration
+                var spacesConfig = _configuration.GetSection("DigitalOceanSpaces");
+                var bucketName = spacesConfig["BucketName"];
+                var endpoint = spacesConfig["Endpoint"];
+
+                if (string.IsNullOrEmpty(bucketName) || string.IsNullOrEmpty(endpoint))
+                {
+                    _logger.LogWarning("DigitalOcean Spaces configuration incomplete, keeping original image URL");
+                    return imageUrl;
+                }
+
+                // Download the image from the URL
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+                
+                var response = await httpClient.GetAsync(imageUrl);
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Failed to download image from URL {ImageUrl}: {StatusCode}", imageUrl, response.StatusCode);
+                    return imageUrl;
+                }
+
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                
+                // Get file extension from content type
+                var extension = contentType.ToLower() switch
+                {
+                    "image/jpeg" => ".jpg",
+                    "image/jpg" => ".jpg", 
+                    "image/png" => ".png",
+                    "image/gif" => ".gif",
+                    "image/webp" => ".webp",
+                    _ => ".jpg"
+                };
+
+                // Generate a unique file name
+                var uniqueFileName = $"thumbnails/imported_{Guid.NewGuid()}{extension}";
+
+                // Upload to DigitalOcean Spaces
+                using var imageStream = await response.Content.ReadAsStreamAsync();
+                
+                var uploadRequest = new PutObjectRequest
+                {
+                    BucketName = bucketName,
+                    Key = uniqueFileName,
+                    InputStream = imageStream,
+                    ContentType = contentType,
+                    CannedACL = S3CannedACL.PublicRead // Make the file publicly accessible
+                };
+
+                await _s3Client.PutObjectAsync(uploadRequest);
+
+                // Construct the public URL
+                var publicUrl = $"https://{bucketName}.{endpoint}/{uniqueFileName}";
+
+                _logger.LogInformation("Successfully uploaded imported image to DigitalOcean Spaces: {OriginalUrl} -> {PublicUrl}", imageUrl, publicUrl);
+
+                return publicUrl;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading image from URL {ImageUrl}, keeping original URL", imageUrl);
+                return imageUrl; // Return original URL if upload fails
+            }
+        }
 
         public async Task<Podcast> MapToPodcastAsync(string jsonResponse)
         {
@@ -38,6 +127,10 @@ namespace ProjectLoopbreaker.Application.Services
                     }
                 }
 
+                // Upload thumbnail to DigitalOcean Spaces if available
+                var originalThumbnailUrl = podcastDto.Image ?? podcastDto.Thumbnail;
+                var uploadedThumbnailUrl = await UploadImageFromUrlAsync(originalThumbnailUrl);
+
                 var podcast = new Podcast
                 {
                     Title = podcastDto?.Title ?? string.Empty,
@@ -45,7 +138,7 @@ namespace ProjectLoopbreaker.Application.Services
                     PodcastType = PodcastType.Series, // Default to Series for API imports
                     //Link = podcastDto.Website,
                     Notes = podcastDto.Description,
-                    Thumbnail = podcastDto.Image ?? podcastDto.Thumbnail,
+                    Thumbnail = uploadedThumbnailUrl,
                     DateAdded = DateTime.UtcNow,
                     Status = Status.Uncharted,
                     Genre = genreInfo, // Keep the old Genre property for backward compatibility
@@ -94,6 +187,10 @@ namespace ProjectLoopbreaker.Application.Services
                     }
                 }
 
+                // Upload thumbnail to DigitalOcean Spaces if available
+                var originalThumbnailUrl = episodeDto.Image ?? episodeDto.Thumbnail;
+                var uploadedThumbnailUrl = await UploadImageFromUrlAsync(originalThumbnailUrl);
+
                 var podcastEpisode = new Podcast
                 {
                     Title = episodeDto.Title ?? string.Empty,
@@ -101,7 +198,7 @@ namespace ProjectLoopbreaker.Application.Services
                     PodcastType = PodcastType.Episode,
                     Link = episodeDto.Link,
                     Notes = episodeDto.Description,
-                    Thumbnail = episodeDto.Image ?? episodeDto.Thumbnail,
+                    Thumbnail = uploadedThumbnailUrl,
                     DateAdded = DateTime.UtcNow,
                     Status = Status.Uncharted,
                     ParentPodcastId = parentPodcastId,

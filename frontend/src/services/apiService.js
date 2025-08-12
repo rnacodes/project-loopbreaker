@@ -212,6 +212,10 @@ export const uploadThumbnail = (file) => {
     });
 };
 
+export const uploadThumbnailFromUrl = (url) => {
+    return apiClient.post('/upload/thumbnail-from-url', { url });
+};
+
 // Open Library / Book Import API calls
 export const searchBooksFromOpenLibrary = async (searchParams) => {
     try {

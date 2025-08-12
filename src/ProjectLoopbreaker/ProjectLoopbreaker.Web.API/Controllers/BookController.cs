@@ -6,6 +6,8 @@ using ProjectLoopbreaker.Web.API.DTOs;
 using ProjectLoopbreaker.Infrastructure.Clients;
 using ProjectLoopbreaker.Shared.DTOs.OpenLibrary;
 using System.Text.Json;
+using Amazon.S3;
+using Amazon.S3.Model;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -16,15 +18,96 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         private readonly MediaLibraryDbContext _context;
         private readonly ILogger<BookController> _logger;
         private readonly OpenLibraryApiClient _openLibraryClient;
+        private readonly IAmazonS3? _s3Client;
+        private readonly IConfiguration _configuration;
 
         public BookController(
             MediaLibraryDbContext context,
             ILogger<BookController> logger,
-            OpenLibraryApiClient openLibraryClient)
+            OpenLibraryApiClient openLibraryClient,
+            IAmazonS3? s3Client,
+            IConfiguration configuration)
         {
             _context = context;
             _logger = logger;
             _openLibraryClient = openLibraryClient;
+            _s3Client = s3Client;
+            _configuration = configuration;
+        }
+
+        private async Task<string?> UploadImageFromUrlAsync(string? imageUrl)
+        {
+            if (string.IsNullOrEmpty(imageUrl) || _s3Client == null)
+            {
+                return imageUrl; // Return original URL if S3 not configured or URL is empty
+            }
+
+            try
+            {
+                // Get DigitalOcean Spaces configuration
+                var spacesConfig = _configuration.GetSection("DigitalOceanSpaces");
+                var bucketName = spacesConfig["BucketName"];
+                var endpoint = spacesConfig["Endpoint"];
+
+                if (string.IsNullOrEmpty(bucketName) || string.IsNullOrEmpty(endpoint))
+                {
+                    _logger.LogWarning("DigitalOcean Spaces configuration incomplete, keeping original image URL");
+                    return imageUrl;
+                }
+
+                // Download the image from the URL
+                using var httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+                
+                var response = await httpClient.GetAsync(imageUrl);
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Failed to download image from URL {ImageUrl}: {StatusCode}", imageUrl, response.StatusCode);
+                    return imageUrl;
+                }
+
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "image/jpeg";
+                
+                // Get file extension from content type
+                var extension = contentType.ToLower() switch
+                {
+                    "image/jpeg" => ".jpg",
+                    "image/jpg" => ".jpg", 
+                    "image/png" => ".png",
+                    "image/gif" => ".gif",
+                    "image/webp" => ".webp",
+                    _ => ".jpg"
+                };
+
+                // Generate a unique file name
+                var uniqueFileName = $"thumbnails/books_{Guid.NewGuid()}{extension}";
+
+                // Upload to DigitalOcean Spaces
+                using var imageStream = await response.Content.ReadAsStreamAsync();
+                
+                var uploadRequest = new PutObjectRequest
+                {
+                    BucketName = bucketName,
+                    Key = uniqueFileName,
+                    InputStream = imageStream,
+                    ContentType = contentType,
+                    CannedACL = S3CannedACL.PublicRead // Make the file publicly accessible
+                };
+
+                await _s3Client.PutObjectAsync(uploadRequest);
+
+                // Construct the public URL
+                var publicUrl = $"https://{bucketName}.{endpoint}/{uniqueFileName}";
+
+                _logger.LogInformation("Successfully uploaded book cover to DigitalOcean Spaces: {OriginalUrl} -> {PublicUrl}", imageUrl, publicUrl);
+
+                return publicUrl;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error uploading book cover from URL {ImageUrl}, keeping original URL", imageUrl);
+                return imageUrl; // Return original URL if upload fails
+            }
         }
 
         // GET: api/book
@@ -522,6 +605,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return NotFound("Book not found in Open Library");
                 }
 
+                // Upload cover image to DigitalOcean Spaces if available
+                string? originalCoverUrl = bookData.CoverId.HasValue 
+                    ? $"https://covers.openlibrary.org/b/id/{bookData.CoverId}-L.jpg" 
+                    : null;
+                string? uploadedCoverUrl = await UploadImageFromUrlAsync(originalCoverUrl);
+
                 // Create book entity from Open Library data
                 var book = new Book
                 {
@@ -533,9 +622,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     ISBN = bookData.Isbn?.FirstOrDefault(),
                     Format = BookFormat.Digital, // Default to digital since it's from Open Library
                     PartOfSeries = false,
-                    Thumbnail = bookData.CoverId.HasValue 
-                        ? $"https://covers.openlibrary.org/b/id/{bookData.CoverId}-L.jpg" 
-                        : null,
+                    Thumbnail = uploadedCoverUrl,
                     Description = ExtractDescription(bookData),
                     Link = !string.IsNullOrWhiteSpace(bookData.Key) 
                         ? $"https://openlibrary.org{bookData.Key}" 

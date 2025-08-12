@@ -5,7 +5,7 @@ import {
     Card, CardContent, Snackbar, Alert, CircularProgress
 } from '@mui/material';
 import { Save, Cancel, ArrowBack } from '@mui/icons-material';
-import { getMediaById, updateMedia } from '../services/apiService';
+import { getMediaById, updateMedia, uploadThumbnail } from '../services/apiService';
 
 function EditMediaForm() {
     const { id } = useParams();
@@ -13,6 +13,7 @@ function EditMediaForm() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+    const [thumbnailFile, setThumbnailFile] = useState(null);
     
     const [formData, setFormData] = useState({
         title: '',
@@ -89,6 +90,40 @@ function EditMediaForm() {
             ...prev,
             [field]: value
         }));
+    };
+
+    // Handle thumbnail file upload
+    const handleThumbnailUpload = async (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            setThumbnailFile(file);
+            console.log('Thumbnail file selected:', file.name);
+            
+            try {
+                // Upload thumbnail to DigitalOcean Spaces
+                console.log('Uploading thumbnail to DigitalOcean Spaces...');
+                const response = await uploadThumbnail(file);
+                const thumbnailUrl = response.data.url;
+                
+                // Set the thumbnail URL from the upload response
+                handleInputChange('thumbnail', thumbnailUrl);
+                console.log('Thumbnail uploaded successfully:', thumbnailUrl);
+                
+                setSnackbar({ 
+                    open: true, 
+                    message: 'Thumbnail uploaded successfully!', 
+                    severity: 'success' 
+                });
+            } catch (error) {
+                console.error('Error uploading thumbnail:', error);
+                setSnackbar({ 
+                    open: true, 
+                    message: 'Failed to upload thumbnail. Please try again.', 
+                    severity: 'error' 
+                });
+                setThumbnailFile(null);
+            }
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -264,6 +299,47 @@ function EditMediaForm() {
                                     onChange={(e) => handleInputChange('thumbnail', e.target.value)}
                                     placeholder="https://example.com/image.jpg"
                                 />
+
+                                {/* Thumbnail Upload */}
+                                <Box sx={{ mt: 2 }}>
+                                    <Typography variant="body1" sx={{ 
+                                        mb: 2, 
+                                        fontSize: '16px',
+                                        fontWeight: 'bold'
+                                    }}>
+                                        Upload New Thumbnail
+                                    </Typography>
+                                    <Button
+                                        variant="contained"
+                                        color="secondary"
+                                        component="label"
+                                        sx={{ 
+                                            fontSize: '16px',
+                                            fontWeight: 'bold',
+                                            textTransform: 'none',
+                                            py: 1.5,
+                                            px: 3,
+                                            borderRadius: '8px'
+                                        }}
+                                    >
+                                        Choose File
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            hidden
+                                            onChange={handleThumbnailUpload}
+                                        />
+                                    </Button>
+                                    {thumbnailFile && (
+                                        <Typography variant="body2" sx={{ 
+                                            mt: 1, 
+                                            fontSize: '14px',
+                                            color: 'text.secondary'
+                                        }}>
+                                            Selected: {thumbnailFile.name}
+                                        </Typography>
+                                    )}
+                                </Box>
 
                                 {/* Date Completed */}
                                 <TextField

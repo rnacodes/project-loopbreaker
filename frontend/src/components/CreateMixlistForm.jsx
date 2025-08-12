@@ -3,23 +3,48 @@ import { useNavigate } from 'react-router-dom';
 import {
     TextField, Button, Box, Typography, Container
 } from '@mui/material';
-import { createMixlist } from '../services/apiService';
+import { createMixlist, uploadThumbnail } from '../services/apiService';
 
 function CreateMixlistForm() {
     const [name, setName] = useState('');
+    const [thumbnail, setThumbnail] = useState('');
+    const [thumbnailFile, setThumbnailFile] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
+
+    // Handle thumbnail file upload
+    const handleThumbnailUpload = async (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            setThumbnailFile(file);
+            console.log('Thumbnail file selected:', file.name);
+            
+            try {
+                // Upload thumbnail to DigitalOcean Spaces
+                console.log('Uploading thumbnail to DigitalOcean Spaces...');
+                const response = await uploadThumbnail(file);
+                const thumbnailUrl = response.data.url;
+                
+                // Set the thumbnail URL from the upload response
+                setThumbnail(thumbnailUrl);
+                console.log('Thumbnail uploaded successfully:', thumbnailUrl);
+            } catch (error) {
+                console.error('Error uploading thumbnail:', error);
+                alert('Failed to upload thumbnail. Please try again.');
+                setThumbnailFile(null);
+            }
+        }
+    };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
         setIsSubmitting(true);
         
         try {
-            // Create mixlist with AI-generated thumbnail placeholder
-            // TODO: Replace with actual LLM API call for thumbnail generation
+            // Create mixlist data
             const mixlistData = {
                 name: name.trim(),
-                thumbnail: `https://picsum.photos/400/400?random=${Date.now()}&blur=1`
+                thumbnail: thumbnail || `https://picsum.photos/400/400?random=${Date.now()}&blur=1`
             };
 
             console.log('Attempting to create mixlist with data:', mixlistData);
@@ -105,6 +130,85 @@ function CreateMixlistForm() {
                     }}
                 />
 
+                {/* Thumbnail URL */}
+                <TextField
+                    label="Thumbnail URL"
+                    placeholder="https://example.com/thumbnail.jpg"
+                    variant="outlined"
+                    fullWidth
+                    margin="normal"
+                    value={thumbnail}
+                    onChange={(e) => setThumbnail(e.target.value)}
+                    sx={{
+                        mb: 2,
+                        '& .MuiInputBase-input': {
+                            fontSize: '14px'
+                        },
+                        '& .MuiInputBase-input::placeholder': {
+                            color: '#ffffff',
+                            opacity: 1
+                        },
+                        '& .MuiInputLabel-root': {
+                            color: '#ffffff',
+                            fontSize: '14px'
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                            color: '#ffffff'
+                        }
+                    }}
+                />
+
+                {/* Thumbnail Upload */}
+                <Box sx={{ mb: 3 }}>
+                    <Typography variant="body1" sx={{ 
+                        mb: 2, 
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        color: '#ffffff'
+                    }}>
+                        Upload Thumbnail
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        color="secondary"
+                        component="label"
+                        sx={{ 
+                            fontSize: '16px',
+                            fontWeight: 'bold',
+                            textTransform: 'none',
+                            py: 1.5,
+                            px: 3,
+                            borderRadius: '8px'
+                        }}
+                    >
+                        Choose File
+                        <input
+                            type="file"
+                            accept="image/*"
+                            hidden
+                            onChange={handleThumbnailUpload}
+                        />
+                    </Button>
+                    {thumbnailFile && (
+                        <Typography variant="body2" sx={{ 
+                            mt: 1, 
+                            fontSize: '14px',
+                            color: '#ffffff'
+                        }}>
+                            Selected: {thumbnailFile.name}
+                        </Typography>
+                    )}
+                    {thumbnail && (
+                        <Typography variant="body2" sx={{ 
+                            mt: 1, 
+                            fontSize: '14px',
+                            color: '#22c55e'
+                        }}>
+                            ✓ Thumbnail uploaded successfully
+                        </Typography>
+                    )}
+                </Box>
+
                 {/* Info about thumbnail generation */}
                 <Box sx={{ mb: 3, p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}>
                     <Typography variant="body2" sx={{ 
@@ -112,7 +216,7 @@ function CreateMixlistForm() {
                         color: '#ffffff',
                         opacity: 0.8
                     }}>
-                        🎨 A custom thumbnail will be generated for this mixlist using AI based on the mixlist name. For now, a placeholder image will be used.
+                        🎨 Upload a custom thumbnail or leave empty for a placeholder image.
                     </Typography>
                 </Box>
 
