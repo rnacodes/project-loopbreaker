@@ -255,17 +255,33 @@ builder.Services.AddSingleton<IAmazonS3>(sp =>
     var secretKey = spacesConfig["SecretKey"];
     var endpoint = spacesConfig["Endpoint"];
     var region = spacesConfig["Region"];
+    var bucketName = spacesConfig["BucketName"];
+
+    // Enhanced debugging
+    Console.WriteLine("=== DigitalOcean Spaces Configuration Debug ===");
+    Console.WriteLine($"AccessKey: {(string.IsNullOrEmpty(accessKey) ? "MISSING" : "SET")}");
+    Console.WriteLine($"SecretKey: {(string.IsNullOrEmpty(secretKey) ? "MISSING" : "SET")}");
+    Console.WriteLine($"Endpoint: {(string.IsNullOrEmpty(endpoint) ? "MISSING" : endpoint)}");
+    Console.WriteLine($"Region: {(string.IsNullOrEmpty(region) ? "MISSING" : region)}");
+    Console.WriteLine($"BucketName: {(string.IsNullOrEmpty(bucketName) ? "MISSING" : bucketName)}");
 
     // Check if any values are still placeholders or empty
     var hasPlaceholders = accessKey == "SPACES_ACCESS_KEY" || secretKey == "SPACES_SECRET_KEY" || 
-                         endpoint == "SPACES_ENDPOINT" || region == "SPACES_REGION";
+                         endpoint == "SPACES_ENDPOINT" || region == "SPACES_REGION" ||
+                         bucketName == "SPACES_BUCKET_NAME";
 
     if (string.IsNullOrEmpty(accessKey) || string.IsNullOrEmpty(secretKey) || 
-        string.IsNullOrEmpty(endpoint) || string.IsNullOrEmpty(region) || hasPlaceholders)
+        string.IsNullOrEmpty(endpoint) || string.IsNullOrEmpty(region) || 
+        string.IsNullOrEmpty(bucketName) || hasPlaceholders)
     {
         Console.WriteLine("WARNING: DigitalOcean Spaces configuration is incomplete or contains placeholder values.");
         Console.WriteLine("Thumbnail upload functionality will not be available until properly configured.");
-        Console.WriteLine("Please set the DigitalOceanSpaces__* environment variables with real values.");
+        Console.WriteLine("Expected environment variables:");
+        Console.WriteLine("  DIGITALOCEANSPACES__ACCESSKEY");
+        Console.WriteLine("  DIGITALOCEANSPACES__SECRETKEY");
+        Console.WriteLine("  DIGITALOCEANSPACES__ENDPOINT");
+        Console.WriteLine("  DIGITALOCEANSPACES__REGION");
+        Console.WriteLine("  DIGITALOCEANSPACES__BUCKETNAME");
         
         // Return a null client - the UploadController will handle this gracefully
         return null!;

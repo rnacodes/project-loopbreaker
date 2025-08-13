@@ -28,10 +28,19 @@ namespace ProjectLoopbreaker.Application.Services
 
         private async Task<string?> UploadImageFromUrlAsync(string? imageUrl)
         {
-            if (string.IsNullOrEmpty(imageUrl) || _s3Client == null)
+            if (string.IsNullOrEmpty(imageUrl))
             {
-                return imageUrl; // Return original URL if S3 not configured or URL is empty
+                _logger.LogWarning("Image URL is null or empty, skipping upload");
+                return imageUrl;
             }
+
+            if (_s3Client == null)
+            {
+                _logger.LogWarning("S3 client is null - DigitalOcean Spaces not configured properly");
+                return imageUrl; // Return original URL if S3 not configured
+            }
+
+            _logger.LogInformation("Attempting to upload image from URL: {ImageUrl}", imageUrl);
 
             try
             {
