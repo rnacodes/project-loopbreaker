@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5033/api';
+// Use environment variable or fall back to localhost for development
+const API_URL = __API_URL__;
 
 const apiClient = axios.create({
     baseURL: API_URL,
