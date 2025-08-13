@@ -49,6 +49,8 @@ namespace ProjectLoopbreaker.Application.Services
                 var bucketName = spacesConfig["BucketName"];
                 var endpoint = spacesConfig["Endpoint"];
 
+                _logger.LogInformation("DigitalOcean Spaces config - Bucket: {BucketName}, Endpoint: {Endpoint}", bucketName, endpoint);
+
                 if (string.IsNullOrEmpty(bucketName) || string.IsNullOrEmpty(endpoint))
                 {
                     _logger.LogWarning("DigitalOcean Spaces configuration incomplete, keeping original image URL");
@@ -56,10 +58,13 @@ namespace ProjectLoopbreaker.Application.Services
                 }
 
                 // Download the image from the URL
+                _logger.LogInformation("Downloading image from URL: {ImageUrl}", imageUrl);
                 using var httpClient = new HttpClient();
                 httpClient.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
                 
                 var response = await httpClient.GetAsync(imageUrl);
+                _logger.LogInformation("Download response status: {StatusCode}", response.StatusCode);
+                
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogWarning("Failed to download image from URL {ImageUrl}: {StatusCode}", imageUrl, response.StatusCode);
@@ -83,6 +88,7 @@ namespace ProjectLoopbreaker.Application.Services
                 var uniqueFileName = $"thumbnails/imported_{Guid.NewGuid()}{extension}";
 
                 // Upload to DigitalOcean Spaces
+                _logger.LogInformation("Uploading image to DigitalOcean Spaces - Bucket: {BucketName}, Key: {Key}", bucketName, uniqueFileName);
                 using var imageStream = await response.Content.ReadAsStreamAsync();
                 
                 var uploadRequest = new PutObjectRequest
@@ -94,10 +100,13 @@ namespace ProjectLoopbreaker.Application.Services
                     CannedACL = S3CannedACL.PublicRead // Make the file publicly accessible
                 };
 
+                _logger.LogInformation("Starting S3 upload...");
                 await _s3Client.PutObjectAsync(uploadRequest);
+                _logger.LogInformation("S3 upload completed successfully");
 
                 // Construct the public URL
                 var publicUrl = $"https://{bucketName}.{endpoint}/{uniqueFileName}";
+                _logger.LogInformation("Constructed public URL: {PublicUrl}", publicUrl);
 
                 _logger.LogInformation("Successfully uploaded imported image to DigitalOcean Spaces: {OriginalUrl} -> {PublicUrl}", imageUrl, publicUrl);
 
@@ -138,7 +147,10 @@ namespace ProjectLoopbreaker.Application.Services
 
                 // Upload thumbnail to DigitalOcean Spaces if available
                 var originalThumbnailUrl = podcastDto.Image ?? podcastDto.Thumbnail;
+                _logger.LogInformation("Processing thumbnail - Original URL: {OriginalUrl}", originalThumbnailUrl);
+                
                 var uploadedThumbnailUrl = await UploadImageFromUrlAsync(originalThumbnailUrl);
+                _logger.LogInformation("Thumbnail processing result - Original: {OriginalUrl}, Uploaded: {UploadedUrl}", originalThumbnailUrl, uploadedThumbnailUrl);
 
                 var podcast = new Podcast
                 {
