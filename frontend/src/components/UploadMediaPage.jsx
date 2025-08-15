@@ -2,13 +2,15 @@ import React, { useState } from 'react';
 import {
     Container, Box, Typography, Button, Paper, Alert, AlertTitle,
     CircularProgress, List, ListItem, ListItemText, Divider,
-    Card, CardContent, Accordion, AccordionSummary, AccordionDetails
+    Card, CardContent, Accordion, AccordionSummary, AccordionDetails,
+    FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import { CloudUpload, FileUpload, CheckCircle, Error, ExpandMore } from '@mui/icons-material';
 import { uploadCsv } from '../services/apiService';
 
 function UploadMediaPage() {
     const [file, setFile] = useState(null);
+    const [mediaType, setMediaType] = useState('Book');
     const [uploading, setUploading] = useState(false);
     const [uploadResult, setUploadResult] = useState(null);
     const [error, setError] = useState('');
@@ -38,7 +40,8 @@ function UploadMediaPage() {
         setUploadResult(null);
 
         try {
-            const response = await uploadCsv(file);
+            const response = await uploadCsv(file, mediaType);
+            console.log('Upload response:', response.data); // Debug log
             setUploadResult(response.data);
         } catch (err) {
             console.error('Upload error:', err);
@@ -54,6 +57,7 @@ function UploadMediaPage() {
 
     const resetUpload = () => {
         setFile(null);
+        setMediaType('Book');
         setUploadResult(null);
         setError('');
         // Reset the file input
@@ -70,8 +74,7 @@ function UploadMediaPage() {
             </Typography>
             
             <Typography variant="body1" color="text.secondary" paragraph>
-                Upload a CSV file to import multiple media items at once. The system will automatically detect 
-                the media type based on the column headers.
+                Upload a CSV file to import multiple media items at once. Please select the media type you're uploading.
             </Typography>
 
             <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
@@ -83,6 +86,18 @@ function UploadMediaPage() {
                 </Box>
 
                 <Box sx={{ mb: 3 }}>
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                        <InputLabel>Media Type</InputLabel>
+                        <Select
+                            value={mediaType}
+                            label="Media Type"
+                            onChange={(e) => setMediaType(e.target.value)}
+                        >
+                            <MenuItem value="Book">Book</MenuItem>
+                            <MenuItem value="Podcast">Podcast</MenuItem>
+                        </Select>
+                    </FormControl>
+
                     <input
                         id="csv-file-input"
                         type="file"
@@ -162,7 +177,7 @@ function UploadMediaPage() {
                         <Card sx={{ flex: 1 }}>
                             <CardContent sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" color="success.main">
-                                    {uploadResult.SuccessCount}
+                                    {uploadResult.SuccessCount || 0}
                                 </Typography>
                                 <Typography variant="body2">
                                     Successful
@@ -173,7 +188,7 @@ function UploadMediaPage() {
                         <Card sx={{ flex: 1 }}>
                             <CardContent sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" color="error.main">
-                                    {uploadResult.ErrorCount}
+                                    {uploadResult.ErrorCount || 0}
                                 </Typography>
                                 <Typography variant="body2">
                                     Errors
@@ -181,6 +196,103 @@ function UploadMediaPage() {
                             </CardContent>
                         </Card>
                     </Box>
+
+                    {/* Debug info */}
+                    <Box sx={{ mb: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
+                        <Typography variant="caption" color="text.secondary">
+                            Debug: SuccessCount={uploadResult.SuccessCount}, ErrorCount={uploadResult.ErrorCount}, 
+                            ImportedItems={uploadResult.ImportedItems ? uploadResult.ImportedItems.length : 0}
+                        </Typography>
+                    </Box>
+
+                    {/* Display imported items with thumbnails */}
+                    {uploadResult.ImportedItems && uploadResult.ImportedItems.length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                            <Typography variant="h6" gutterBottom>
+                                Imported Items ({uploadResult.ImportedItems.length})
+                            </Typography>
+                            <Box sx={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', 
+                                gap: 2,
+                                maxHeight: '300px',
+                                overflowY: 'auto'
+                            }}>
+                                {uploadResult.ImportedItems.map((item, index) => (
+                                    <Card 
+                                        key={index} 
+                                        sx={{ 
+                                            cursor: 'pointer',
+                                            transition: 'transform 0.2s',
+                                            '&:hover': { transform: 'scale(1.05)' }
+                                        }}
+                                        onClick={() => {
+                                            // Navigate to the item's profile page
+                                            const route = item.MediaType === 'Book' ? `/media/${item.Id}` : `/media/${item.Id}`;
+                                            window.location.href = route;
+                                        }}
+                                    >
+                                        <CardContent sx={{ p: 1, textAlign: 'center' }}>
+                                            {item.Thumbnail ? (
+                                                <img 
+                                                    src={item.Thumbnail} 
+                                                    alt={item.Title}
+                                                    style={{ 
+                                                        width: '80px', 
+                                                        height: '80px', 
+                                                        objectFit: 'cover',
+                                                        borderRadius: '4px'
+                                                    }}
+                                                />
+                                            ) : (
+                                                <Box 
+                                                    sx={{ 
+                                                        width: '80px', 
+                                                        height: '80px', 
+                                                        bgcolor: 'grey.200',
+                                                        borderRadius: '4px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
+                                                    }}
+                                                >
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        No Image
+                                                    </Typography>
+                                                </Box>
+                                            )}
+                                            <Typography 
+                                                variant="caption" 
+                                                sx={{ 
+                                                    display: 'block', 
+                                                    mt: 1,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap'
+                                                }}
+                                            >
+                                                {item.Title}
+                                            </Typography>
+                                            {item.Author && (
+                                                <Typography 
+                                                    variant="caption" 
+                                                    color="text.secondary"
+                                                    sx={{ 
+                                                        display: 'block',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        whiteSpace: 'nowrap'
+                                                    }}
+                                                >
+                                                    {item.Author}
+                                                </Typography>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </Box>
+                        </Box>
+                    )}
 
                     {uploadResult.Errors && uploadResult.Errors.length > 0 && (
                         <Accordion>
@@ -219,8 +331,7 @@ function UploadMediaPage() {
                 </Typography>
                 
                 <Typography variant="body2" paragraph>
-                    Your CSV file should include a header row with column names. The system will automatically 
-                    detect the media type based on the headers:
+                    Your CSV file should include a header row with column names. Make sure to select the correct media type above before uploading.
                 </Typography>
 
                 <Accordion>

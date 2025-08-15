@@ -191,9 +191,10 @@ export const deleteBook = (id) => {
 };
 
 // Upload API calls
-export const uploadCsv = (file) => {
+export const uploadCsv = (file, mediaType) => {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('mediaType', mediaType);
     
     return apiClient.post('/upload/csv', formData, {
         headers: {
