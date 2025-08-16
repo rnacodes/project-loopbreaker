@@ -177,7 +177,7 @@ function UploadMediaPage() {
                         <Card sx={{ flex: 1 }}>
                             <CardContent sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" color="success.main">
-                                    {uploadResult.SuccessCount || 0}
+                                    {uploadResult.successCount || uploadResult.SuccessCount || 0}
                                 </Typography>
                                 <Typography variant="body2">
                                     Successful
@@ -188,7 +188,7 @@ function UploadMediaPage() {
                         <Card sx={{ flex: 1 }}>
                             <CardContent sx={{ textAlign: 'center' }}>
                                 <Typography variant="h4" color="error.main">
-                                    {uploadResult.ErrorCount || 0}
+                                    {uploadResult.errorCount || uploadResult.ErrorCount || 0}
                                 </Typography>
                                 <Typography variant="body2">
                                     Errors
@@ -197,100 +197,62 @@ function UploadMediaPage() {
                         </Card>
                     </Box>
 
-                    {/* Debug info */}
-                    <Box sx={{ mb: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
-                        <Typography variant="caption" color="text.secondary">
-                            Debug: SuccessCount={uploadResult.SuccessCount}, ErrorCount={uploadResult.ErrorCount}, 
-                            ImportedItems={uploadResult.ImportedItems ? uploadResult.ImportedItems.length : 0}
-                        </Typography>
-                    </Box>
+
 
                     {/* Display imported items with thumbnails */}
-                    {uploadResult.ImportedItems && uploadResult.ImportedItems.length > 0 && (
+
+                    
+
+                    
+                    {/* Display imported items as a simple list */}
+                    {uploadResult.importedItems && uploadResult.importedItems.length > 0 && (
                         <Box sx={{ mb: 2 }}>
                             <Typography variant="h6" gutterBottom>
-                                Imported Items ({uploadResult.ImportedItems.length})
+                                Successfully Imported ({uploadResult.importedItems.length} items)
                             </Typography>
-                            <Box sx={{ 
-                                display: 'grid', 
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', 
-                                gap: 2,
-                                maxHeight: '300px',
-                                overflowY: 'auto'
-                            }}>
-                                {uploadResult.ImportedItems.map((item, index) => (
-                                    <Card 
-                                        key={index} 
-                                        sx={{ 
-                                            cursor: 'pointer',
-                                            transition: 'transform 0.2s',
-                                            '&:hover': { transform: 'scale(1.05)' }
-                                        }}
-                                        onClick={() => {
-                                            // Navigate to the item's profile page
-                                            const route = item.MediaType === 'Book' ? `/media/${item.Id}` : `/media/${item.Id}`;
-                                            window.location.href = route;
-                                        }}
-                                    >
-                                        <CardContent sx={{ p: 1, textAlign: 'center' }}>
-                                            {item.Thumbnail ? (
-                                                <img 
-                                                    src={item.Thumbnail} 
-                                                    alt={item.Title}
-                                                    style={{ 
-                                                        width: '80px', 
-                                                        height: '80px', 
-                                                        objectFit: 'cover',
-                                                        borderRadius: '4px'
-                                                    }}
-                                                />
-                                            ) : (
-                                                <Box 
-                                                    sx={{ 
-                                                        width: '80px', 
-                                                        height: '80px', 
-                                                        bgcolor: 'grey.200',
-                                                        borderRadius: '4px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center'
-                                                    }}
-                                                >
-                                                    <Typography variant="caption" color="text.secondary">
-                                                        No Image
-                                                    </Typography>
-                                                </Box>
-                                            )}
-                                            <Typography 
-                                                variant="caption" 
+                            
+                            <Paper elevation={1} sx={{ p: 2 }}>
+                                <List>
+                                    {uploadResult.importedItems.map((item, index) => (
+                                        <React.Fragment key={item.id}>
+                                            <ListItem 
                                                 sx={{ 
-                                                    display: 'block', 
-                                                    mt: 1,
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap'
+                                                    cursor: 'pointer',
+                                                    borderRadius: 1,
+                                                    '&:hover': { 
+                                                        bgcolor: 'action.hover',
+                                                        transform: 'translateX(4px)',
+                                                        transition: 'all 0.2s'
+                                                    }
+                                                }}
+                                                onClick={() => {
+                                                    // Navigate to the item's profile page
+                                                    const route = `/media/${item.id}`;
+                                                    window.location.href = route;
                                                 }}
                                             >
-                                                {item.Title}
-                                            </Typography>
-                                            {item.Author && (
-                                                <Typography 
-                                                    variant="caption" 
-                                                    color="text.secondary"
-                                                    sx={{ 
-                                                        display: 'block',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        whiteSpace: 'nowrap'
+                                                <ListItemText
+                                                    primary={item.title}
+                                                    secondary={item.author ? `by ${item.author}` : item.mediaType}
+                                                    primaryTypographyProps={{ 
+                                                        variant: 'body1',
+                                                        fontWeight: 500
                                                     }}
-                                                >
-                                                    {item.Author}
-                                                </Typography>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                ))}
-                            </Box>
+                                                    secondaryTypographyProps={{ 
+                                                        variant: 'body2',
+                                                        color: 'text.secondary'
+                                                    }}
+                                                />
+                                            </ListItem>
+                                            {index < uploadResult.importedItems.length - 1 && <Divider />}
+                                        </React.Fragment>
+                                    ))}
+                                </List>
+                            </Paper>
+                            
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
+                                Click on any item to view its profile page
+                            </Typography>
                         </Box>
                     )}
 
