@@ -168,10 +168,10 @@ function SearchByTopicOrGenre() {
                         aria-controls="genres-content"
                         id="genres-header"
                         sx={{
-                            backgroundColor: '#470AB0',
+                            backgroundColor: '#4b6aa2',
                             color: 'white',
                             '&:hover': {
-                                backgroundColor: '#3A0890',
+                                backgroundColor: '#3d5a8a',
                             },
                             '& .MuiTypography-root': {
                                 color: 'white',
@@ -214,7 +214,7 @@ function SearchByTopicOrGenre() {
                                                     variant="filled"
                                                     sx={{ 
                                                         width: '100%',
-                                                        backgroundColor: '#470AB0',
+                                                        backgroundColor: '#4b6aa2',
                                                         color: 'white',
                                                         fontWeight: 'bold',
                                                         fontSize: '0.9rem',
@@ -225,7 +225,7 @@ function SearchByTopicOrGenre() {
                                                             color: 'white'
                                                         },
                                                         '&:hover': {
-                                                            backgroundColor: '#3A0890'
+                                                            backgroundColor: '#3d5a8a'
                                                         }
                                                     }}
                                                 />

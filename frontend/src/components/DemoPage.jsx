@@ -6,16 +6,29 @@ import {
   Grid,
   Button,
   Chip,
-  Paper
+  Paper,
+  Card,
+  CardContent,
+  CardMedia,
+  TextField,
+  CircularProgress,
+  Skeleton
 } from '@mui/material';
 import {
-  MediaCard,
-  SearchBar,
-  LoadingSpinner,
-  MediaCarousel,
-  commonStyles,
-  COLORS
-} from './shared';
+  Book,
+  Movie,
+  Tv,
+  Article,
+  LibraryMusic,
+  Podcasts,
+  SportsEsports,
+  YouTube,
+  Language,
+  MenuBook,
+  AutoAwesome,
+  Search
+} from '@mui/icons-material';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TRANSITIONS, SimpleMediaCarousel } from './shared';
 
 // Mock data for demonstration
 const mockMediaItems = [
@@ -90,6 +103,21 @@ const mockSuggestions = [
 const mockRecentSearches = ['podcasts', 'sci-fi movies', 'classic books'];
 const mockTrendingSearches = ['AI', 'cyberpunk', 'documentaries', 'comedy'];
 
+// Media type icons mapping
+const mediaTypeIcons = {
+  podcast: <Podcasts />,
+  book: <Book />,
+  movie: <Movie />,
+  tv: <Tv />,
+  article: <Article />,
+  music: <LibraryMusic />,
+  game: <SportsEsports />,
+  video: <YouTube />,
+  website: <Language />,
+  document: <MenuBook />,
+  default: <AutoAwesome />
+};
+
 const DemoPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -109,6 +137,26 @@ const DemoPage = () => {
     setLoading(!loading);
   };
 
+  const getMediaIcon = (mediaType) => {
+    const type = mediaType?.toLowerCase();
+    return mediaTypeIcons[type] || mediaTypeIcons.default;
+  };
+
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'uncharted':
+        return COLORS.status.uncharted;
+      case 'actively exploring':
+        return COLORS.status.activelyExploring;
+      case 'completed':
+        return COLORS.status.completed;
+      case 'abandoned':
+        return COLORS.status.abandoned;
+      default:
+        return COLORS.text.secondary;
+    }
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h1" gutterBottom>
@@ -123,13 +171,47 @@ const DemoPage = () => {
         <Typography variant="h4" gutterBottom>
           Search Bar Component
         </Typography>
-        <SearchBar
-          onSearch={handleSearch}
-          suggestions={mockSuggestions}
-          recentSearches={mockRecentSearches}
-          trendingSearches={mockTrendingSearches}
-          placeholder="Try searching for media..."
-        />
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          width: '100%', 
+          maxWidth: '700px', 
+          backgroundColor: 'background.paper', 
+          borderRadius: '30px', 
+          padding: '5px 15px',
+          border: '1px solid',
+          borderColor: 'primary.main'
+        }}>
+          <TextField
+            fullWidth
+            variant="standard"
+            placeholder="Try searching for media..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
+            InputProps={{
+              disableUnderline: true,
+              style: {
+                color: 'text.primary',
+                fontSize: '1.2rem',
+              },
+            }}
+            sx={{ 
+              ml: 1, 
+              flex: 1,
+              '& .MuiInputBase-input::placeholder': {
+                color: 'text.secondary',
+                opacity: 1
+              }
+            }}
+          />
+          <Button 
+            onClick={() => handleSearch(searchQuery)}
+            sx={{ p: '10px', color: 'primary.main' }}
+          >
+            <Search sx={{ fontSize: 30 }} />
+          </Button>
+        </Box>
         {searchQuery && (
           <Typography variant="body2" sx={{ mt: 2 }}>
             Search query: "{searchQuery}"
@@ -150,28 +232,71 @@ const DemoPage = () => {
         <Grid container spacing={2}>
           <Grid item xs={12} md={3}>
             <Box sx={{ textAlign: 'center' }}>
-              <LoadingSpinner size="small" message="Small spinner" />
+              <CircularProgress size={24} />
+              <Typography variant="body2" sx={{ mt: 1 }}>Small spinner</Typography>
             </Box>
           </Grid>
           <Grid item xs={12} md={3}>
             <Box sx={{ textAlign: 'center' }}>
-              <LoadingSpinner size="medium" message="Medium spinner" />
+              <CircularProgress size={40} />
+              <Typography variant="body2" sx={{ mt: 1 }}>Medium spinner</Typography>
             </Box>
           </Grid>
           <Grid item xs={12} md={3}>
             <Box sx={{ textAlign: 'center' }}>
-              <LoadingSpinner size="large" message="Large spinner" />
+              <CircularProgress size={60} />
+              <Typography variant="body2" sx={{ mt: 1 }}>Large spinner</Typography>
             </Box>
           </Grid>
           <Grid item xs={12} md={3}>
             <Box sx={{ textAlign: 'center' }}>
-              <LoadingSpinner variant="dots" message="Dots loader" />
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
+                {[...Array(3)].map((_, index) => (
+                  <Box
+                    key={index}
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor: COLORS.primary.main,
+                      animation: 'pulse 1.4s ease-in-out infinite both',
+                      animationDelay: `${index * 0.16}s`
+                    }}
+                  />
+                ))}
+              </Box>
+              <Typography variant="body2" sx={{ mt: 1 }}>Dots loader</Typography>
             </Box>
           </Grid>
         </Grid>
         {loading && (
           <Box sx={{ mt: 2 }}>
-            <LoadingSpinner variant="skeleton" message="Loading content..." />
+            <Grid container spacing={2}>
+              {[...Array(6)].map((_, index) => (
+                <Grid item xs={12} sm={6} md={4} key={index}>
+                  <Skeleton
+                    variant="rectangular"
+                    height={200}
+                    sx={{
+                      borderRadius: '16px',
+                      backgroundColor: COLORS.background.elevated
+                    }}
+                  />
+                  <Box sx={{ mt: 1 }}>
+                    <Skeleton
+                      variant="text"
+                      width="80%"
+                      sx={{ backgroundColor: COLORS.background.elevated }}
+                    />
+                    <Skeleton
+                      variant="text"
+                      width="60%"
+                      sx={{ backgroundColor: COLORS.background.elevated }}
+                    />
+                  </Box>
+                </Grid>
+              ))}
+            </Grid>
           </Box>
         )}
       </Paper>
@@ -184,10 +309,58 @@ const DemoPage = () => {
         <Grid container spacing={3}>
           {mockMediaItems.slice(0, 3).map((media) => (
             <Grid item xs={12} sm={6} md={4} key={media.id}>
-              <MediaCard
-                media={media}
-                onClick={handleMediaClick}
-              />
+              <Card
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transition: TRANSITIONS.normal,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    transform: 'translateY(-5px)',
+                    boxShadow: SHADOWS.lg
+                  }
+                }}
+                onClick={() => handleMediaClick(media)}
+              >
+                <CardMedia
+                  component="img"
+                  sx={{ height: 180, objectFit: 'cover' }}
+                  image={media.thumbnailUrl}
+                  alt={media.title}
+                />
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    {getMediaIcon(media.mediaType)}
+                    <Typography variant="h6" sx={{ ml: 1, fontWeight: 'bold' }}>
+                      {media.title}
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    {media.notes}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    <Chip
+                      label={media.mediaType}
+                      size="small"
+                      sx={{
+                        backgroundColor: COLORS.mediaTypes[media.mediaType] || COLORS.mediaTypes.document,
+                        color: 'white',
+                        fontWeight: 'bold'
+                      }}
+                    />
+                    <Chip
+                      label={media.status}
+                      size="small"
+                      sx={{
+                        backgroundColor: getStatusColor(media.status),
+                        color: 'white',
+                        fontWeight: 'bold'
+                      }}
+                    />
+                  </Box>
+                </CardContent>
+              </Card>
             </Grid>
           ))}
         </Grid>
@@ -203,13 +376,12 @@ const DemoPage = () => {
       {/* Carousel Demo */}
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h4" gutterBottom>
-          Media Carousel Component
+          Simple Media Carousel Component
         </Typography>
-        <MediaCarousel
+        <SimpleMediaCarousel
           mediaItems={mockMediaItems}
           title="Featured Media"
-          subtitle="Swipe through our featured content"
-          variant="coverflow"
+          subtitle="Simple carousel with navigation and pagination"
           onMediaClick={handleMediaClick}
         />
       </Paper>
@@ -248,7 +420,7 @@ const DemoPage = () => {
                   key={status}
                   label={status}
                   sx={{
-                    backgroundColor: COLORS.status[status === 'uncharted' ? 'uncharted' : status === 'actively exploring' ? 'activelyExploring' : status === 'completed' ? 'completed' : 'abandoned'],
+                    backgroundColor: getStatusColor(status),
                     color: 'white',
                     fontWeight: 'bold'
                   }}

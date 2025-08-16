@@ -61,7 +61,7 @@ function ImportMediaPage() {
                 title: podcast.title_original || podcast.title_highlighted || 'Unknown Title',
                 publisher: podcast.publisher_original || podcast.publisher_highlighted || 'Unknown Publisher',
                 description: podcast.description_original || podcast.description_highlighted || 'No description available',
-                image: podcast.image || 'https://placehold.co/300x300/695a8c/fcfafa?text=No+Image',
+                image: podcast.image || 'https://placehold.co/300x300/362759/fcfafa?text=No+Image',
                 total_episodes: podcast.total_episodes || 0
             })) || [];
             

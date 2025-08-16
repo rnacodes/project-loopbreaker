@@ -70,7 +70,7 @@ const MediaCard = ({
         }),
         ...(variant === 'featured' && {
           height: '400px',
-          background: 'linear-gradient(135deg, rgba(105, 90, 140, 0.1) 0%, rgba(71, 67, 80, 0.1) 100%)'
+          background: 'linear-gradient(135deg, rgba(54, 39, 89, 0.1) 0%, rgba(71, 67, 80, 0.1) 100%)'
         })
       }}
       className={className}

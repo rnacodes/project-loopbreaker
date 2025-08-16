@@ -153,44 +153,51 @@ function UploadMediaPage() {
             )}
 
             {uploadResult && (
-                <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Paper elevation={3} sx={{ p: 3, mb: 4, border: '2px solid', borderColor: uploadResult.ErrorCount === 0 ? 'success.main' : 'warning.main' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                         {uploadResult.ErrorCount === 0 ? (
-                            <CheckCircle sx={{ color: 'success.main', mr: 1 }} />
+                            <CheckCircle sx={{ color: 'success.main', mr: 2, fontSize: 32 }} />
                         ) : (
-                            <Error sx={{ color: 'warning.main', mr: 1 }} />
+                            <Error sx={{ color: 'warning.main', mr: 2, fontSize: 32 }} />
                         )}
-                        <Typography variant="h6">
-                            Upload Complete
-                        </Typography>
+                        <Box>
+                            <Typography variant="h5" sx={{ fontWeight: 600, color: uploadResult.ErrorCount === 0 ? 'success.main' : 'warning.main' }}>
+                                Upload Complete
+                            </Typography>
+                            <Typography variant="body1" color="text.secondary">
+                                {uploadResult.Message}
+                            </Typography>
+                        </Box>
                     </Box>
 
-                    <Alert 
-                        severity={uploadResult.ErrorCount === 0 ? 'success' : 'warning'} 
-                        sx={{ mb: 2 }}
-                    >
-                        <AlertTitle>Results</AlertTitle>
-                        {uploadResult.Message}
-                    </Alert>
-
-                    <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                        <Card sx={{ flex: 1 }}>
-                            <CardContent sx={{ textAlign: 'center' }}>
-                                <Typography variant="h4" color="success.main">
+                    <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                        <Card sx={{ 
+                            flex: 1, 
+                            border: '2px solid',
+                            borderColor: 'success.main',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)'
+                        }}>
+                            <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                                <Typography variant="h3" color="success.main" sx={{ fontWeight: 700, mb: 1 }}>
                                     {uploadResult.successCount || uploadResult.SuccessCount || 0}
                                 </Typography>
-                                <Typography variant="body2">
+                                <Typography variant="h6" sx={{ fontWeight: 500, color: 'success.main' }}>
                                     Successful
                                 </Typography>
                             </CardContent>
                         </Card>
                         
-                        <Card sx={{ flex: 1 }}>
-                            <CardContent sx={{ textAlign: 'center' }}>
-                                <Typography variant="h4" color="error.main">
+                        <Card sx={{ 
+                            flex: 1, 
+                            border: '2px solid',
+                            borderColor: uploadResult.ErrorCount === 0 ? 'transparent' : 'warning.main',
+                            backgroundColor: uploadResult.ErrorCount === 0 ? 'transparent' : 'rgba(255, 152, 0, 0.1)'
+                        }}>
+                            <CardContent sx={{ textAlign: 'center', py: 3 }}>
+                                <Typography variant="h3" color={uploadResult.ErrorCount === 0 ? 'text.secondary' : 'warning.main'} sx={{ fontWeight: 700, mb: 1 }}>
                                     {uploadResult.errorCount || uploadResult.ErrorCount || 0}
                                 </Typography>
-                                <Typography variant="body2">
+                                <Typography variant="h6" sx={{ fontWeight: 500, color: uploadResult.ErrorCount === 0 ? 'text.secondary' : 'warning.main' }}>
                                     Errors
                                 </Typography>
                             </CardContent>
@@ -206,12 +213,24 @@ function UploadMediaPage() {
                     
                     {/* Display imported items as a simple list */}
                     {uploadResult.importedItems && uploadResult.importedItems.length > 0 && (
-                        <Box sx={{ mb: 2 }}>
-                            <Typography variant="h6" gutterBottom>
+                        <Box sx={{ mb: 3 }}>
+                            <Typography variant="h6" gutterBottom sx={{ 
+                                color: 'success.main', 
+                                fontWeight: 600,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1
+                            }}>
+                                <CheckCircle sx={{ fontSize: 20 }} />
                                 Successfully Imported ({uploadResult.importedItems.length} items)
                             </Typography>
                             
-                            <Paper elevation={1} sx={{ p: 2 }}>
+                            <Paper elevation={1} sx={{ 
+                                p: 2, 
+                                border: '1px solid',
+                                borderColor: 'success.light',
+                                backgroundColor: 'rgba(76, 175, 80, 0.05)'
+                            }}>
                                 <List>
                                     {uploadResult.importedItems.map((item, index) => (
                                         <React.Fragment key={item.id}>
@@ -220,7 +239,7 @@ function UploadMediaPage() {
                                                     cursor: 'pointer',
                                                     borderRadius: 1,
                                                     '&:hover': { 
-                                                        bgcolor: 'action.hover',
+                                                        bgcolor: 'rgba(76, 175, 80, 0.1)',
                                                         transform: 'translateX(4px)',
                                                         transition: 'all 0.2s'
                                                     }
@@ -257,9 +276,20 @@ function UploadMediaPage() {
                     )}
 
                     {uploadResult.Errors && uploadResult.Errors.length > 0 && (
-                        <Accordion>
+                        <Accordion sx={{ 
+                            border: '1px solid',
+                            borderColor: 'warning.light',
+                            backgroundColor: 'rgba(255, 152, 0, 0.05)'
+                        }}>
                             <AccordionSummary expandIcon={<ExpandMore />}>
-                                <Typography variant="h6">
+                                <Typography variant="h6" sx={{ 
+                                    color: 'warning.main',
+                                    fontWeight: 600,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1
+                                }}>
+                                    <Error sx={{ fontSize: 20 }} />
                                     Error Details ({uploadResult.Errors.length})
                                 </Typography>
                             </AccordionSummary>

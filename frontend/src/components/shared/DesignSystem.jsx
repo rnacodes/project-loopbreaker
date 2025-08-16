@@ -4,9 +4,9 @@ import { createTheme } from '@mui/material/styles';
 export const COLORS = {
   // Primary Palette
   primary: {
-    main: '#695a8c', // ultra-violet
-    light: '#8a7ba8',
-    dark: '#4a3d6b',
+    main: '#362759', // ultra-violet (updated for better readability)
+    light: '#4f3a7a',
+    dark: '#1f1a35',
     contrastText: '#fcfafa'
   },
   secondary: {

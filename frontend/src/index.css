@@ -64,3 +64,15 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Custom animations */
+@keyframes pulse {
+  0%, 80%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  40% {
+    opacity: 0.7;
+    transform: scale(0.9);
+  }
+}

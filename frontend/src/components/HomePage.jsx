@@ -30,7 +30,7 @@ const specialMediaIcons = [
   {
     title: 'Cyberpunk Dystopia',
     description: 'Neon-drenched streets and high-tech, low-life stories.',
-    imageUrl: 'https://placehold.co/600x400/1B1B1B/695a8c.png',
+                imageUrl: 'https://placehold.co/600x400/1B1B1B/362759.png',
   },
   {
     title: 'Ancient Empires',
@@ -45,7 +45,7 @@ const specialMediaIcons = [
   {
     title: 'Mindful Moments',
     description: 'Podcasts and music for focus, meditation, and calm.',
-    imageUrl: 'https://placehold.co/600x400/695a8c/1B1B1B.png',
+                imageUrl: 'https://placehold.co/600x400/362759/1B1B1B.png',
   },
   {
     title: 'Fantasy Realms',
@@ -100,7 +100,7 @@ const SearchBar = () => {
           }
         }}
       />
-      <IconButton type="submit" sx={{ p: '10px', color: 'primary.main' }} aria-label="search">
+      <IconButton type="submit" sx={{ p: '10px', color: '#695a8c' }} aria-label="search">
         <Search sx={{ fontSize: 30 }} />
       </IconButton>
     </Box>
@@ -152,7 +152,7 @@ const UploadArea = () => {
             sx={{
                 border: `3px dashed ${isDragging ? theme.palette.primary.main : theme.palette.text.secondary}`,
                 borderRadius: '16px', p: 4, textAlign: 'center',
-                backgroundColor: isDragging ? 'rgba(105, 90, 140, 0.1)' : 'transparent',
+                backgroundColor: isDragging ? 'rgba(54, 39, 89, 0.1)' : 'transparent',
                 transition: 'border-color 0.3s ease, background-color 0.3s ease, transform 0.3s ease',
                 cursor: 'pointer', '&:hover': { transform: 'scale(1.02)', borderColor: theme.palette.primary.main }
             }}
@@ -275,7 +275,7 @@ export default function HomePage() {
                                 }
                             }}
                         >
-                            <AddCircleOutline sx={{ fontSize: 70, color: 'primary.main' }} />
+                            <AddCircleOutline sx={{ fontSize: 70, color: '#695a8c' }} />
                             <Typography variant="h5" sx={{ mt: 1 }}>Create a Mixlist</Typography>
                         </Box>
                     </Grid>
@@ -295,7 +295,7 @@ export default function HomePage() {
                                 }
                             }}
                         >
-                            <ImportExport sx={{ fontSize: 70, color: 'primary.main' }} />
+                            <ImportExport sx={{ fontSize: 70, color: '#695a8c' }} />
                             <Typography variant="h5" sx={{ mt: 1 }}>Import Media</Typography>
                         </Box>
                     </Grid>
@@ -315,7 +315,7 @@ export default function HomePage() {
                                 }
                             }}
                         >
-                            <Topic sx={{ fontSize: 70, color: 'primary.main' }} />
+                            <Topic sx={{ fontSize: 70, color: '#695a8c' }} />
                             <Typography variant="h5" sx={{ mt: 1 }}>Browse Topics/Genres</Typography>
                         </Box>
                     </Grid>
@@ -335,7 +335,7 @@ export default function HomePage() {
                                 }
                             }}
                         >
-                            <BookmarkAdd sx={{ fontSize: 70, color: 'primary.main' }} />
+                            <BookmarkAdd sx={{ fontSize: 70, color: '#695a8c' }} />
                             <Typography variant="h5" sx={{ mt: 1 }}>Add Media</Typography>
                         </Box>
                     </Grid>
