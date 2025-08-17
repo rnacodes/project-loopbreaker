@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedia, CardContent, Button, SpeedDial, SpeedDialIcon, SpeedDialAction, useTheme } from '@mui/material';
 import { 
@@ -6,10 +6,11 @@ import {
     AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos, Forest, 
     PlaylistAdd, NoteAlt, ImportExport, Topic
 } from '@mui/icons-material';
+import { getAllMixlists, seedMixlists } from '../services/apiService';
 
 // MOCK DATA
 const mainMediaIcons = [
-    { name: 'Articles & Docs', icon: <Article sx={{ fontSize: 40 }} />, key: 'articles' },
+    { name: 'Articles', icon: <Article sx={{ fontSize: 40 }} />, key: 'articles' },
     { name: 'Books', icon: <Book sx={{ fontSize: 40 }} />, key: 'books' },
     { name: 'Documents and Notes', icon: <NoteAlt sx={{ fontSize: 40 }} />, key: 'articles' },
     { name: 'Movies', icon: <Movie sx={{ fontSize: 40 }} />, key: 'movies' },
@@ -24,39 +25,6 @@ const mainMediaIcons = [
 const specialMediaIcons = [
     { name: 'Commonplace ZK', icon: <MenuBook sx={{ fontSize: 40 }} />, key: 'zk' },
     { name: 'Panorama', icon: <AutoAwesome sx={{ fontSize: 40 }} />, key: 'panorama' },
-];
-
-    const mixlists = [
-  {
-    title: 'Cyberpunk Dystopia',
-    description: 'Neon-drenched streets and high-tech, low-life stories.',
-                imageUrl: 'https://placehold.co/600x400/1B1B1B/362759.png',
-  },
-  {
-    title: 'Ancient Empires',
-    description: 'The rise and fall of civilizations, from Rome to the Nile.',
-    imageUrl: 'https://placehold.co/600x400/474350/fcfafa.png',
-  },
-  {
-    title: 'Cosmic Wonders',
-    description: 'Explore black holes, distant galaxies, and the mysteries of space.',
-    imageUrl: 'https://placehold.co/600x400/300a70/fcfafa.png',
-  },
-  {
-    title: 'Mindful Moments',
-    description: 'Podcasts and music for focus, meditation, and calm.',
-                imageUrl: 'https://placehold.co/600x400/362759/1B1B1B.png',
-  },
-  {
-    title: 'Fantasy Realms',
-    description: 'Epic quests, magical creatures, and worlds beyond imagination.',
-    imageUrl: 'https://placehold.co/600x400/1E1E1E/300a70.png',
-  },
-  {
-    title: 'Code & Coffee',
-            description: 'Deep work mixlists and tech podcasts to fuel your projects.',
-    imageUrl: 'https://placehold.co/600x400/fcfafa/474350.png',
-  },
 ];
 
 const smartSearches = [
@@ -107,21 +75,41 @@ const SearchBar = () => {
   );
 };
 
-    const MixlistCard = ({ mixlist }) => (
-  <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    const MixlistCard = ({ mixlist, onNavigate }) => (
+  <Card 
+    sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      cursor: 'pointer',
+      '&:hover': {
+        transform: 'translateY(-4px) scale(1.02)',
+        boxShadow: 8,
+        '& .MuiCardMedia-root': {
+          transform: 'scale(1.05)'
+        }
+      },
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+    }}
+    onClick={() => onNavigate(`/mixlist/${mixlist.id || mixlist.Id}`)}
+  >
     <CardMedia
       component="img"
-      sx={{ flexShrink: 0, height: 180 }}
-              image={mixlist.imageUrl}
-        alt={mixlist.title}
+      sx={{ 
+        flexShrink: 0, 
+        height: 180,
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+      }}
+              image={mixlist.thumbnail || mixlist.Thumbnail}
+        alt={mixlist.name || mixlist.Name}
       onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/600x400/1e1e1e/fcfafa?text=Image+Error'; }}
     />
     <CardContent sx={{ flexGrow: 1 }}>
       <Typography gutterBottom variant="h6" component="div" sx={{ fontWeight: 'bold' }}>
-        {mixlist.title}
+        {mixlist.name || mixlist.Name}
       </Typography>
       <Typography variant="body2" color="#ffffff">
-        {mixlist.description}
+        {mixlist.description || mixlist.Description}
       </Typography>
     </CardContent>
   </Card>
@@ -184,6 +172,23 @@ const FloatingMenu = () => (
 export default function HomePage() {
   const theme = useTheme();
   const navigate = useNavigate();
+  const [mixlists, setMixlists] = useState([]);
+  const [mixlistsLoading, setMixlistsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMixlists = async () => {
+      try {
+        setMixlistsLoading(true);
+        const response = await getAllMixlists();
+        setMixlists(response.data);
+      } catch (error) {
+        console.error("Error fetching mixlists:", error);
+      } finally {
+        setMixlistsLoading(false);
+      }
+    };
+    fetchMixlists();
+  }, []);
 
   const handleCreateMixlist = () => {
                             navigate('/create-mixlist');
@@ -199,6 +204,20 @@ export default function HomePage() {
 
   const handleAddMedia = () => {
     navigate('/add-media');
+  };
+
+  const handleSeedMixlists = async () => {
+    try {
+      setMixlistsLoading(true);
+      await seedMixlists();
+      // Refresh the mixlists after seeding
+      const response = await getAllMixlists();
+      setMixlists(response.data);
+    } catch (error) {
+      console.error("Error seeding mixlists:", error);
+    } finally {
+      setMixlistsLoading(false);
+    }
   };
   
   return (
@@ -220,7 +239,9 @@ export default function HomePage() {
                       <Box 
                           onClick={() => {
                               if (item.key === 'podcasts') {
-                                  navigate('/search-results?type=mediaType&value=Podcast');
+                                  navigate('/all-media?mediaType=Podcast');
+                              } else if (item.key === 'books') {
+                                  navigate('/all-media?mediaType=Book');
                               } else {
                                   // For other media types, you can add navigation logic here
                                   console.log(`Clicked on ${item.name}`);
@@ -344,22 +365,63 @@ export default function HomePage() {
         </Section>
 
         {/* Mixlists Section */}
-        <Section title="My Mixlists">
+        <Section title="Recent Mixlists">
+          {mixlistsLoading ? (
+            <Box sx={{ textAlign: 'center', py: 6 }}>
+              <Typography variant="h6" color="text.secondary">Loading mixlists...</Typography>
+            </Box>
+          ) : mixlists.length > 6 && (
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+              Showing 6 of {mixlists.length} mixlists
+            </Typography>
+          )}
           <Grid container spacing={4}>
-              {mixlists.map((item, index) => (
-                  <Grid item key={index} xs={12} sm={6} md={4}>
-                      <MixlistCard mixlist={item} />
+              {mixlists.length === 0 ? (
+                  <Grid item xs={12} sx={{ textAlign: 'center' }}>
+                      <Typography variant="h6" color="text.secondary">No mixlists found. Create one to get started!</Typography>
+                      <Button 
+                          variant="contained" 
+                          color="primary" 
+                          onClick={handleCreateMixlist}
+                          sx={{ mt: 2 }}
+                      >
+                          Create New Mixlist
+                      </Button>
+                      <Button 
+                          variant="outlined" 
+                          color="secondary" 
+                          onClick={handleSeedMixlists}
+                          sx={{ mt: 2 }}
+                      >
+                          Seed Mixlists (Development)
+                      </Button>
                   </Grid>
-              ))}
+              ) : (
+                  mixlists.slice(0, 6).map((item, index) => (
+                      <Grid item key={index} xs={12} sm={6} md={4}>
+                          <MixlistCard mixlist={item} onNavigate={navigate} />
+                      </Grid>
+                  ))
+              )}
           </Grid>
         </Section>
 
         {/* View More Button */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 6 }}>
             <Button 
-                variant="outlined" 
+                variant="contained" 
                 color="secondary" 
+                size="large"
                 endIcon={<ArrowForwardIos />}
+                onClick={() => navigate('/mixlists')}
+                sx={{ 
+                    fontSize: '1.2rem', 
+                    padding: '12px 30px', 
+                    mb: 4, 
+                    minWidth: '300px',
+                    color: theme.palette.background.default,
+                    backgroundColor: theme.palette.text.primary
+                }}
             >
                 View More Mixlists
             </Button>

@@ -26,6 +26,10 @@ export const searchMedia = (query) => {
     return apiClient.get(`/media/search?query=${encodeURIComponent(query)}`);
 };
 
+export const getMediaByType = (mediaType) => {
+    return apiClient.get(`/media/by-type/${encodeURIComponent(mediaType)}`);
+};
+
 // Mixlist API calls
 export const getAllMixlists = () => {
     return apiClient.get('/mixlist');
@@ -49,6 +53,10 @@ export const updateMixlist = (id, mixlistData) => {
 
 export const removeMediaFromMixlist = (mixlistId, mediaItemId) => {
     return apiClient.delete(`/mixlist/${mixlistId}/items/${mediaItemId}`);
+};
+
+export const seedMixlists = () => {
+    return apiClient.post('/dev/seed-mixlists');
 };
 
 // Media update functions

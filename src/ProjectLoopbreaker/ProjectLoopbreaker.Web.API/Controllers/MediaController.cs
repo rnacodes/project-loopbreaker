@@ -396,5 +396,52 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return StatusCode(500, new { error = "Failed to retrieve media by genre", details = ex.Message });
             }
         }
+
+        // GET: api/media/by-type/{mediaType}
+        [HttpGet("by-type/{mediaType}")]
+        public async Task<ActionResult<IEnumerable<MediaItemResponseDto>>> GetMediaByType(string mediaType)
+        {
+            try
+            {
+                if (!Enum.TryParse<MediaType>(mediaType, true, out var parsedMediaType))
+                {
+                    return BadRequest($"Invalid media type: {mediaType}");
+                }
+
+                var mediaItems = await _context.MediaItems
+                    .Where(m => m.MediaType == parsedMediaType)
+                    .Include(m => m.Mixlists)
+                    .Include(m => m.Topics)
+                    .Include(m => m.Genres)
+                    .ToListAsync();
+
+                var response = mediaItems.Select(item => new MediaItemResponseDto
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                    MediaType = item.MediaType,
+                    Link = item.Link,
+                    Notes = item.Notes,
+                    DateAdded = item.DateAdded,
+                    Status = item.Status,
+                    DateCompleted = item.DateCompleted,
+                    Rating = item.Rating,
+                    OwnershipStatus = item.OwnershipStatus,
+                    Description = item.Description,
+                    Genre = item.Genre,
+                    RelatedNotes = item.RelatedNotes,
+                    Thumbnail = item.Thumbnail,
+                    Topics = item.Topics.Select(t => t.Name).ToArray(),
+                    Genres = item.Genres.Select(g => g.Name).ToArray(),
+                    MixlistIds = item.Mixlists.Select(m => m.Id).ToArray()
+                }).ToList();
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to retrieve media by type", details = ex.Message });
+            }
+        }
     }
 }
