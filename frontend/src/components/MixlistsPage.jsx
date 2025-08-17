@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Box, Typography, Button, Card, CardContent, CardMedia,
-    Grid, Fab
+    Container, Typography, Button, Grid, Card, CardContent, CardMedia,
+    Box, CircularProgress, Chip, Fab
 } from '@mui/material';
-import { Add } from '@mui/icons-material';
+import { Add, FileDownload, Upload } from '@mui/icons-material';
 import { getAllMixlists } from '../services/apiService';
 
 function MixlistsPage() {
@@ -50,6 +50,26 @@ function MixlistsPage() {
             }}>
                 My Mixlists
             </Typography>
+
+            {/* Import/Export Actions */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 4 }}>
+                <Button 
+                    variant="outlined" 
+                    color="primary"
+                    onClick={() => navigate('/import-mixlist')}
+                    sx={{ px: 3, py: 1.5 }}
+                >
+                    Import Mixlist
+                </Button>
+                <Button 
+                    variant="outlined" 
+                    color="secondary"
+                    onClick={() => window.open('/api/mixlist/export', '_blank')}
+                    sx={{ px: 3, py: 1.5 }}
+                >
+                    Export All Mixlists
+                </Button>
+            </Box>
 
             {mixlists.length === 0 ? (
                 <Box sx={{ textAlign: 'center', mt: 8 }}>

@@ -14,6 +14,7 @@ import MediaProfilePage from './components/MediaProfilePage';
 import EditMediaForm from './components/EditMediaForm';
 import EditMixlistForm from './components/EditMixlistForm';
 import ImportMediaPage from './components/ImportMediaPage';
+import ImportMixlistPage from './components/ImportMixlistPage';
 import SearchByTopicOrGenre from './components/SearchByTopicOrGenre';
 import SearchResults from './components/SearchResults';
 import DemoPage from './components/DemoPage';
@@ -42,6 +43,7 @@ function App() {
           <Route path="/mixlist/:id/edit" element={<EditMixlistForm />} />
           <Route path="/create-mixlist" element={<CreateMixlistForm />} />
           <Route path="/import-media" element={<ImportMediaPage />} />
+          <Route path="/import-mixlist" element={<ImportMixlistPage />} />
           <Route path="/upload-media" element={<UploadMediaPage />} />
           <Route path="/search-by-topic-genre" element={<SearchByTopicOrGenre />} />
           <Route path="/search-results" element={<SearchResults />} />

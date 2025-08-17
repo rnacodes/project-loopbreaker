@@ -1,17 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  Card, CardContent, Typography, Container, Box, CircularProgress, 
-  Link, CardMedia, Chip, IconButton, Divider, Paper, Button,
-  Collapse, Dialog, DialogTitle, DialogContent, DialogActions,
-  List, ListItem, ListItemText, Snackbar, Alert
+import {
+    Box, Typography, Button, Card, CardContent, CardMedia,
+    Chip, Divider, Paper, Link
 } from '@mui/material';
-import { 
-  ArrowBack, OpenInNew, Edit, ExpandMore, ExpandLess, PlaylistAdd
-} from '@mui/icons-material';
-import { 
-  getMediaById, getAllMixlists, addMediaToMixlist, removeMediaFromMixlist
-} from '../services/apiService';
+import { ArrowBack, Edit, OpenInNew, FileDownload } from '@mui/icons-material';
+import { getMediaById } from '../services/apiService';
 
 function MediaProfilePage() {
   const [mediaItem, setMediaItem] = useState(null);
@@ -21,7 +15,7 @@ function MediaProfilePage() {
   const [availableMixlists, setAvailableMixlists] = useState([]);
   const [currentMixlists, setCurrentMixlists] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  
+
   const { id } = useParams();
   const navigate = useNavigate();
 
@@ -59,13 +53,13 @@ function MediaProfilePage() {
   const handleMixlistAdd = async (mixlistId) => {
     try {
       await addMediaToMixlist(mixlistId, id);
-      
+
       // Update current mixlists display
       const mixlist = availableMixlists.find(m => (m.id || m.Id) === mixlistId);
       if (mixlist) {
         setCurrentMixlists(prev => [...prev, mixlist]);
       }
-      
+
       setSnackbar({ open: true, message: 'Added to mixlist successfully!', severity: 'success' });
     } catch (error) {
       console.error('Failed to add to mixlist:', error);
@@ -76,10 +70,10 @@ function MediaProfilePage() {
   const handleMixlistRemove = async (mixlistId) => {
     try {
       await removeMediaFromMixlist(mixlistId, id);
-      
+
       // Update current mixlists display
       setCurrentMixlists(prev => prev.filter(m => (m.id || m.Id) !== mixlistId));
-      
+
       setSnackbar({ open: true, message: 'Removed from mixlist successfully!', severity: 'success' });
     } catch (error) {
       console.error('Failed to remove from mixlist:', error);
@@ -136,7 +130,7 @@ function MediaProfilePage() {
               Media Profile
             </Typography>
           </Box>
-          
+
           <Button
             onClick={() => navigate(`/media/${id}/edit`)}
             startIcon={<Edit />}
@@ -144,6 +138,19 @@ function MediaProfilePage() {
             size="large"
           >
             Edit Media
+          </Button>
+        </Box>
+
+        {/* Action Buttons */}
+        <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+          <Button
+            onClick={() => window.open(`/api/media/${id}/export`, '_blank')}
+            startIcon={<FileDownload />}
+            variant="outlined"
+            color="primary"
+            size="medium"
+          >
+            Export Media Item
           </Button>
         </Box>
 
@@ -199,7 +206,7 @@ function MediaProfilePage() {
                 Properties
               </Typography>
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 2 }}>
-                
+
                 {/* Basic Information */}
                 <Paper sx={{ p: 2, backgroundColor: 'background.paper' }}>
                   <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
@@ -262,11 +269,11 @@ function MediaProfilePage() {
                           <Typography variant="body2" color="text.secondary">Genres</Typography>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
                             {(mediaItem.genres || mediaItem.Genres).map((genre, index) => (
-                              <Chip 
-                                key={index} 
-                                label={genre.name || genre.Name || genre} 
-                                size="small" 
-                                variant="outlined" 
+                              <Chip
+                                key={index}
+                                label={genre.name || genre.Name || genre}
+                                size="small"
+                                variant="outlined"
                               />
                             ))}
                           </Box>
@@ -277,11 +284,11 @@ function MediaProfilePage() {
                           <Typography variant="body2" color="text.secondary">Topics</Typography>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
                             {(mediaItem.topics || mediaItem.Topics).map((topic, index) => (
-                              <Chip 
-                                key={index} 
-                                label={topic.name || topic.Name || topic} 
-                                size="small" 
-                                variant="outlined" 
+                              <Chip
+                                key={index}
+                                label={topic.name || topic.Name || topic}
+                                size="small"
+                                variant="outlined"
                               />
                             ))}
                           </Box>
@@ -299,13 +306,13 @@ function MediaProfilePage() {
                 <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
                   Source
                 </Typography>
-                <Link 
+                <Link
                   href={(mediaItem.link || mediaItem.Link).startsWith('http') ? (mediaItem.link || mediaItem.Link) : `https://${mediaItem.link || mediaItem.Link}`}
-                  target="_blank" 
+                  target="_blank"
                   rel="noopener"
-                  sx={{ 
-                    display: 'inline-flex', 
-                    alignItems: 'center', 
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
                     gap: 1,
                     color: 'primary.main',
                     textDecoration: 'none',
@@ -359,7 +366,7 @@ function MediaProfilePage() {
                 <Button
                   onClick={() => setMixlistsExpanded(!mixlistsExpanded)}
                   startIcon={mixlistsExpanded ? <ExpandLess /> : <ExpandMore />}
-                  sx={{ 
+                  sx={{
                     fontSize: '1.1rem',
                     fontWeight: 'bold',
                     textTransform: 'none'
@@ -376,7 +383,7 @@ function MediaProfilePage() {
                   Add to Mixlist
                 </Button>
               </Box>
-              
+
               <Collapse in={mixlistsExpanded}>
                 <Box sx={{ pl: 2 }}>
                   {currentMixlists.length > 0 ? (
@@ -412,19 +419,19 @@ function MediaProfilePage() {
         <DialogContent>
           <List>
             {availableMixlists
-              .filter(mixlist => !currentMixlists.some(current => 
+              .filter(mixlist => !currentMixlists.some(current =>
                 (current.id || current.Id) === (mixlist.id || mixlist.Id)
               ))
               .map((mixlist) => (
-                <ListItem 
-                  key={mixlist.id || mixlist.Id} 
+                <ListItem
+                  key={mixlist.id || mixlist.Id}
                   button
                   onClick={() => {
                     handleMixlistAdd(mixlist.id || mixlist.Id);
                     setMixlistDialogOpen(false);
                   }}
                 >
-                  <ListItemText 
+                  <ListItemText
                     primary={mixlist.name || mixlist.Name}
                     secondary={mixlist.description || mixlist.Description}
                   />
@@ -438,13 +445,13 @@ function MediaProfilePage() {
       </Dialog>
 
       {/* Snackbar for feedback */}
-      <Snackbar 
-        open={snackbar.open} 
-        autoHideDuration={6000} 
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
       >
-        <Alert 
-          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+        <Alert
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
           severity={snackbar.severity}
         >
           {snackbar.message}

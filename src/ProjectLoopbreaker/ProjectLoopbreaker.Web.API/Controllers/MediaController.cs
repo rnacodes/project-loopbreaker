@@ -3,6 +3,10 @@ using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure; // To access the DbContext
 using ProjectLoopbreaker.Web.API.DTOs;
 using Microsoft.EntityFrameworkCore; // For ToListAsync, etc.
+using System.Globalization; // For CultureInfo
+using System.Text; // For Encoding
+using System.IO; // For StringWriter
+using CsvHelper; // For CsvHelper
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -441,6 +445,112 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { error = "Failed to retrieve media by type", details = ex.Message });
+            }
+        }
+
+        // GET: api/media/{id}/export
+        [HttpGet("{id:guid}/export")]
+        public async Task<IActionResult> ExportMediaItem(Guid id)
+        {
+            try
+            {
+                var mediaItem = await _context.MediaItems
+                    .Include(m => m.Topics)
+                    .Include(m => m.Genres)
+                    .Include(m => m.Mixlists)
+                    .FirstOrDefaultAsync(m => m.Id == id);
+
+                if (mediaItem == null)
+                {
+                    return NotFound($"Media item with ID {id} not found.");
+                }
+
+                var csvData = new List<object>
+                {
+                    new
+                    {
+                        Id = mediaItem.Id,
+                        Title = mediaItem.Title,
+                        MediaType = mediaItem.MediaType.ToString(),
+                        Link = mediaItem.Link ?? "",
+                        Notes = mediaItem.Notes ?? "",
+                        DateAdded = mediaItem.DateAdded.ToString("yyyy-MM-dd"),
+                        Status = mediaItem.Status.ToString(),
+                        DateCompleted = mediaItem.DateCompleted?.ToString("yyyy-MM-dd") ?? "",
+                        Rating = mediaItem.Rating?.ToString() ?? "",
+                        OwnershipStatus = mediaItem.OwnershipStatus?.ToString() ?? "",
+                        Description = mediaItem.Description ?? "",
+                        Genre = mediaItem.Genre ?? "",
+                        RelatedNotes = mediaItem.RelatedNotes ?? "",
+                        Thumbnail = mediaItem.Thumbnail ?? "",
+                        Topics = string.Join(";", mediaItem.Topics.Select(t => t.Name)),
+                        Genres = string.Join(";", mediaItem.Genres.Select(g => g.Name)),
+                        MixlistIds = string.Join(";", mediaItem.Mixlists.Select(m => m.Id))
+                    }
+                };
+
+                using var writer = new StringWriter();
+                using var csv = new CsvHelper.CsvWriter(writer, CultureInfo.InvariantCulture);
+                
+                csv.WriteRecords(csvData);
+                
+                var csvContent = writer.ToString();
+                var fileName = $"media-item-{mediaItem.Title.Replace(" ", "-")}-{DateTime.Now:yyyyMMdd}.csv";
+                
+                return File(Encoding.UTF8.GetBytes(csvContent), "text/csv", fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to export media item", details = ex.Message });
+            }
+        }
+
+        // GET: api/media/export
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportAllMedia()
+        {
+            try
+            {
+                var mediaItems = await _context.MediaItems
+                    .Include(m => m.Topics)
+                    .Include(m => m.Genres)
+                    .Include(m => m.Mixlists)
+                    .ToListAsync();
+
+                var csvData = mediaItems.Select(item => new
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                    MediaType = item.MediaType.ToString(),
+                    Link = item.Link ?? "",
+                    Notes = item.Notes ?? "",
+                    DateAdded = item.DateAdded.ToString("yyyy-MM-dd"),
+                    Status = item.Status.ToString(),
+                    DateCompleted = item.DateCompleted?.ToString("yyyy-MM-dd") ?? "",
+                    Rating = item.Rating?.ToString() ?? "",
+                    OwnershipStatus = item.OwnershipStatus?.ToString() ?? "",
+                    Description = item.Description ?? "",
+                    Genre = item.Genre ?? "",
+                    RelatedNotes = item.RelatedNotes ?? "",
+                    Thumbnail = item.Thumbnail ?? "",
+                    Topics = string.Join(";", item.Topics.Select(t => t.Name)),
+                    Genres = string.Join(";", item.Genres.Select(g => g.Name)),
+                    MixlistIds = string.Join(";", item.Mixlists.Select(m => m.Id))
+                }).ToList();
+
+                using var writer = new StringWriter();
+                using var csv = new CsvHelper.CsvWriter(writer, CultureInfo.InvariantCulture);
+                
+                csv.WriteRecords(csvData);
+                
+                var csvContent = writer.ToString();
+                var fileName = $"all-media-{DateTime.Now:yyyyMMdd}.csv";
+                
+                return File(Encoding.UTF8.GetBytes(csvContent), "text/csv", fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to export media items", details = ex.Message });
             }
         }
     }

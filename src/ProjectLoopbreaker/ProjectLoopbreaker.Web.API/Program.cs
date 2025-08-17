@@ -91,7 +91,16 @@ Console.WriteLine($"Connection string source: {(Environment.GetEnvironmentVariab
 // Validate connection string before proceeding
 if (string.IsNullOrEmpty(connectionString))
 {
-    throw new InvalidOperationException("Database connection string is required but not configured. Please set DATABASE_URL environment variable or configure DefaultConnection in appsettings.json");
+    if (builder.Environment.IsDevelopment())
+    {
+        Console.WriteLine("WARNING: No database connection string configured for development.");
+        Console.WriteLine("Using placeholder connection string. Database operations will fail.");
+        connectionString = "Host=localhost;Database=projectloopbreaker;Username=postgres;Password=password";
+    }
+    else
+    {
+        throw new InvalidOperationException("Database connection string is required but not configured. Please set DATABASE_URL environment variable or configure DefaultConnection in appsettings.json");
+    }
 }
 
 // Debug connection string (safely)
@@ -211,28 +220,24 @@ builder.Services.AddScoped<IPodcastService, PodcastService>();
 // In Program.cs
 
 // Register both real and mock Listen Notes API clients
+// Configure ListenNotes API client
 builder.Services.AddHttpClient<ListenNotesApiClient>(client =>
 {
-    client.BaseAddress = new Uri("https://listen-api.listennotes.com/api/v2/");
-
-    // Try to get API key from various sources with priority:
-    // 1. Environment variable (Render.com)
-    // 2. Configuration (appsettings.json)
-    // 3. User secrets
-    var apiKey = builder.Configuration["LISTENNOTES_API_KEY"] ??
-                 builder.Configuration["ApiKeys:ListenNotes"] ??
-                 builder.Configuration["ListenNotes_ApiKey"];
-
-    Console.WriteLine($"API Key found: {(!string.IsNullOrEmpty(apiKey) ? "YES" : "NO")}");
+    var apiKey = Environment.GetEnvironmentVariable("LISTENNOTES_API_KEY") ?? 
+                 builder.Configuration["ApiKeys:ListenNotes"];
+    
     Console.WriteLine($"API Key value: {apiKey}");
 
     if (string.IsNullOrEmpty(apiKey) || apiKey == "LISTENNOTES_API_KEY")
     {
-        Console.WriteLine("WARNING: No valid ListenNotes API key found. Please set a valid API key.");
-        throw new InvalidOperationException("ListenNotes API key is required but not configured properly.");
+        Console.WriteLine("WARNING: No valid ListenNotes API key found. ListenNotes functionality will be limited.");
+        Console.WriteLine("Please set a valid API key in environment variable LISTENNOTES_API_KEY or configuration.");
+        // Don't throw exception, just log warning
     }
-
-    client.DefaultRequestHeaders.Add("X-ListenAPI-Key", apiKey);
+    else
+    {
+        client.DefaultRequestHeaders.Add("X-ListenAPI-Key", apiKey);
+    }
 });
 
 // Configure Open Library API client

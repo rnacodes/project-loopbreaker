@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedia, CardContent, Button, SpeedDial, SpeedDialIcon, SpeedDialAction, useTheme } from '@mui/material';
+import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedia, CardContent, Button, SpeedDial, SpeedDialIcon, SpeedDialAction, useTheme, CircularProgress } from '@mui/material';
 import { 
     Search, Book, Movie, Tv, Article, LibraryMusic, Podcasts, SportsEsports, YouTube, Language, MenuBook, AutoAwesome, 
     AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos, Forest, 
-    PlaylistAdd, NoteAlt, ImportExport, Topic
+    PlaylistAdd, NoteAlt, ImportExport, Topic, FileDownload
 } from '@mui/icons-material';
 import { getAllMixlists, seedMixlists } from '../services/apiService';
 
@@ -174,15 +174,26 @@ export default function HomePage() {
   const navigate = useNavigate();
   const [mixlists, setMixlists] = useState([]);
   const [mixlistsLoading, setMixlistsLoading] = useState(true);
+  const [mixlistsError, setMixlistsError] = useState(null);
 
   useEffect(() => {
     const fetchMixlists = async () => {
       try {
         setMixlistsLoading(true);
+        setMixlistsError(null);
+        
+        // Add a timeout to prevent infinite loading
+        const timeoutId = setTimeout(() => {
+          setMixlistsLoading(false);
+          setMixlistsError("Request timed out. Please check your connection.");
+        }, 10000); // 10 second timeout
+        
         const response = await getAllMixlists();
+        clearTimeout(timeoutId);
         setMixlists(response.data);
       } catch (error) {
         console.error("Error fetching mixlists:", error);
+        setMixlistsError("Failed to load mixlists");
       } finally {
         setMixlistsLoading(false);
       }
@@ -222,7 +233,24 @@ export default function HomePage() {
   
   return (
     <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: '100vh', width: '100%' }}>
-      <Container maxWidth="lg" sx={{ py: 4, mx: 'auto', px: { xs: 2, sm: 3 } }}>
+      {mixlistsLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <CircularProgress size={60} sx={{ mb: 2 }} />
+            <Typography variant="h6" color="text.secondary">Loading MediaVerse...</Typography>
+          </Box>
+        </Box>
+      ) : mixlistsError ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography variant="h6" color="error" sx={{ mb: 2 }}>{mixlistsError}</Typography>
+            <Button variant="contained" onClick={() => window.location.reload()}>
+              Retry
+            </Button>
+          </Box>
+        </Box>
+      ) : (
+        <Container maxWidth="lg" sx={{ py: 4, mx: 'auto', px: { xs: 2, sm: 3 } }}>
         
         {/* Header and Search Section */}
         <Box sx={{ textAlign: 'center', my: 4 }}>
@@ -360,6 +388,46 @@ export default function HomePage() {
                             <Typography variant="h5" sx={{ mt: 1 }}>Add Media</Typography>
                         </Box>
                     </Grid>
+                    <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
+                        <Box 
+                            onClick={() => window.open('/api/media/export', '_blank')}
+                            sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center', 
+                                cursor: 'pointer', 
+                                color: 'text.primary', 
+                                p: 2,
+                                '&:hover': {
+                                    transform: 'scale(1.05)',
+                                    transition: 'transform 0.2s ease'
+                                }
+                            }}
+                        >
+                            <FileDownload sx={{ fontSize: 70, color: '#695a8c' }} />
+                            <Typography variant="h5" sx={{ mt: 1 }}>Export All Media</Typography>
+                        </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
+                        <Box 
+                            onClick={() => window.open('/api/mixlist/export', '_blank')}
+                            sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center', 
+                                cursor: 'pointer', 
+                                color: 'text.primary', 
+                                p: 2,
+                                '&:hover': {
+                                    transform: 'scale(1.05)',
+                                    transition: 'transform 0.2s ease'
+                                }
+                            }}
+                        >
+                            <FileDownload sx={{ fontSize: 70, color: '#695a8c' }} />
+                            <Typography variant="h5" sx={{ mt: 1 }}>Export All Mixlists</Typography>
+                        </Box>
+                    </Grid>
                 </Grid>
             </Box>
         </Section>
@@ -489,6 +557,7 @@ export default function HomePage() {
         </Box>
 
       </Container>
+      )}
       <FloatingMenu />
     </Box>
   );

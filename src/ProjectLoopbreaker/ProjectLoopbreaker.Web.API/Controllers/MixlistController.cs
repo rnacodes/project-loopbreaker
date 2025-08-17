@@ -4,8 +4,13 @@ using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure.Data;
 using ProjectLoopbreaker.Web.API.DTOs;
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
+using CsvHelper;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -260,6 +265,174 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { error = "Failed to delete mixlist", details = ex.Message });
+            }
+        }
+
+        // POST: api/mixlist/import
+        [HttpPost("import")]
+        public async Task<IActionResult> ImportMixlists([FromBody] List<ImportMixlistDto> importDtos)
+        {
+            try
+            {
+                if (importDtos == null || !importDtos.Any())
+                {
+                    return BadRequest("No mixlist data provided.");
+                }
+
+                var importedMixlists = new List<object>();
+                var errors = new List<string>();
+
+                foreach (var dto in importDtos)
+                {
+                    try
+                    {
+                        // Parse media item IDs from semicolon-separated string
+                        var mediaItemIds = !string.IsNullOrEmpty(dto.MediaItemIds) 
+                            ? dto.MediaItemIds.Split(';', StringSplitOptions.RemoveEmptyEntries)
+                                .Where(id => Guid.TryParse(id.Trim(), out _))
+                                .Select(id => Guid.Parse(id.Trim()))
+                                .ToArray()
+                            : Array.Empty<Guid>();
+
+                        // Create the mixlist
+                        var mixlist = new Mixlist
+                        {
+                            Name = dto.Name,
+                            Description = dto.Description,
+                            Thumbnail = dto.Thumbnail,
+                            DateCreated = DateTime.UtcNow
+                        };
+
+                        _context.Mixlists.Add(mixlist);
+                        await _context.SaveChangesAsync();
+
+                        // Add media items to the mixlist if IDs were provided
+                        if (mediaItemIds.Any())
+                        {
+                            var mediaItems = await _context.MediaItems
+                                .Where(m => mediaItemIds.Contains(m.Id))
+                                .ToListAsync();
+
+                            foreach (var mediaItem in mediaItems)
+                            {
+                                mixlist.MediaItems.Add(mediaItem);
+                            }
+                            
+                            await _context.SaveChangesAsync();
+                        }
+
+                        importedMixlists.Add(new
+                        {
+                            Id = mixlist.Id,
+                            Name = mixlist.Name,
+                            MediaItemCount = mixlist.MediaItems.Count,
+                            Message = "Mixlist imported successfully"
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add($"Failed to import mixlist '{dto.Name}': {ex.Message}");
+                    }
+                }
+
+                var successCount = importedMixlists.Count;
+                var errorCount = errors.Count;
+
+                return Ok(new
+                {
+                    SuccessCount = successCount,
+                    ErrorCount = errorCount,
+                    ImportedMixlists = importedMixlists,
+                    Errors = errors
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to import mixlists", details = ex.Message });
+            }
+        }
+
+        // GET: api/mixlist/{id}/export
+        [HttpGet("{id:guid}/export")]
+        public async Task<IActionResult> ExportMixlist(Guid id)
+        {
+            try
+            {
+                var mixlist = await _context.Mixlists
+                    .Include(m => m.MediaItems)
+                    .FirstOrDefaultAsync(m => m.Id == id);
+
+                if (mixlist == null)
+                {
+                    return NotFound($"Mixlist with ID {id} not found.");
+                }
+
+                var csvData = new List<object>
+                {
+                    new
+                    {
+                        Id = mixlist.Id,
+                        Name = mixlist.Name,
+                        Description = mixlist.Description ?? "",
+                        DateCreated = mixlist.DateCreated.ToString("yyyy-MM-dd"),
+                        Thumbnail = mixlist.Thumbnail ?? "",
+                        MediaItemIds = string.Join(";", mixlist.MediaItems.Select(mi => mi.Id)),
+                        MediaItemTitles = string.Join(";", mixlist.MediaItems.Select(mi => mi.Title)),
+                        MediaItemTypes = string.Join(";", mixlist.MediaItems.Select(mi => mi.MediaType.ToString()))
+                    }
+                };
+
+                using var writer = new StringWriter();
+                using var csv = new CsvHelper.CsvWriter(writer, CultureInfo.InvariantCulture);
+                
+                csv.WriteRecords(csvData);
+                
+                var csvContent = writer.ToString();
+                var fileName = $"mixlist-{mixlist.Name.Replace(" ", "-")}-{DateTime.Now:yyyyMMdd}.csv";
+                
+                return File(Encoding.UTF8.GetBytes(csvContent), "text/csv", fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to export mixlist", details = ex.Message });
+            }
+        }
+
+        // GET: api/mixlist/export
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportAllMixlists()
+        {
+            try
+            {
+                var mixlists = await _context.Mixlists
+                    .Include(m => m.MediaItems)
+                    .ToListAsync();
+
+                var csvData = mixlists.Select(mixlist => new
+                {
+                    Id = mixlist.Id,
+                    Name = mixlist.Name,
+                    Description = mixlist.Description ?? "",
+                    DateCreated = mixlist.DateCreated.ToString("yyyy-MM-dd"),
+                    Thumbnail = mixlist.Thumbnail ?? "",
+                    MediaItemIds = string.Join(";", mixlist.MediaItems.Select(mi => mi.Id)),
+                    MediaItemTitles = string.Join(";", mixlist.MediaItems.Select(mi => mi.Title)),
+                    MediaItemTypes = string.Join(";", mixlist.MediaItems.Select(mi => mi.MediaType.ToString()))
+                }).ToList();
+
+                using var writer = new StringWriter();
+                using var csv = new CsvHelper.CsvWriter(writer, CultureInfo.InvariantCulture);
+                
+                csv.WriteRecords(csvData);
+                
+                var csvContent = writer.ToString();
+                var fileName = $"all-mixlists-{DateTime.Now:yyyyMMdd}.csv";
+                
+                return File(Encoding.UTF8.GetBytes(csvContent), "text/csv", fileName);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to export mixlists", details = ex.Message });
             }
         }
     }

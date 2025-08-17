@@ -169,9 +169,23 @@ function MixlistProfilePage() {
                         onClick={() => navigate(`/mixlist/${id}/edit`)}
                         startIcon={<Edit />}
                         variant="contained"
+                        color="primary"
                         size="large"
                     >
                         Edit Mixlist
+                    </Button>
+                </Box>
+
+                {/* Action Buttons */}
+                <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                    <Button
+                        onClick={() => window.open(`/api/mixlist/${id}/export`, '_blank')}
+                        startIcon={<FileDownload />}
+                        variant="contained"
+                        color="primary"
+                        size="large"
+                    >
+                        Export Mixlist
                     </Button>
                 </Box>
 
@@ -220,6 +234,8 @@ function MixlistProfilePage() {
                             <Button
                                 onClick={() => setMediaListExpanded(!mediaListExpanded)}
                                 startIcon={mediaListExpanded ? <ExpandLess /> : <ExpandMore />}
+                                variant="contained"
+                                color="primary"
                                 sx={{ 
                                     fontSize: '1.1rem',
                                     fontWeight: 'bold',
@@ -317,14 +333,16 @@ function MixlistProfilePage() {
                                 </Typography>
                                 <Box sx={{ display: 'flex', gap: 1 }}>
                                     <Button
-                                        variant="outlined"
+                                        variant="contained"
+                                        color="primary"
                                         startIcon={<Edit />}
                                         onClick={() => navigate(`/media/${selectedMedia.id || selectedMedia.Id}/edit`)}
                                     >
                                         Edit
                                     </Button>
                                     <Button
-                                        variant="outlined"
+                                        variant="contained"
+                                        color="primary"
                                         startIcon={<OpenInNew />}
                                         onClick={() => navigate(`/media/${selectedMedia.id || selectedMedia.Id}`)}
                                     >
@@ -406,7 +424,7 @@ function MixlistProfilePage() {
                         Add Existing Media
                     </Button>
                     <Button 
-                        variant="outlined" 
+                        variant="contained" 
                         size="large"
                         startIcon={<Upload />}
                         onClick={() => navigate('/upload-media')}
@@ -415,7 +433,7 @@ function MixlistProfilePage() {
                         Upload Media
                     </Button>
                     <Button 
-                        variant="outlined" 
+                        variant="contained" 
                         size="large"
                         startIcon={<FileDownload />}
                         onClick={() => navigate('/import-media')}
@@ -515,7 +533,13 @@ function MixlistProfilePage() {
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setAddMediaDialogOpen(false)}>Cancel</Button>
+                    <Button 
+                        variant="contained" 
+                        color="primary"
+                        onClick={() => setAddMediaDialogOpen(false)}
+                    >
+                        Cancel
+                    </Button>
                 </DialogActions>
             </Dialog>
 

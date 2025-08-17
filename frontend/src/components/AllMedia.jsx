@@ -1,25 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Card, 
-  CardContent, 
-  Grid, 
-  CircularProgress,
-  Chip,
-  Button,
-  ButtonGroup,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
-  IconButton,
-  Divider
+import { useSearchParams, Link } from 'react-router-dom';
+import {
+    Container, Typography, Box, Grid, Card, CardContent, CardMedia,
+    Chip, Button, ButtonGroup, List, ListItem, ListItemText,
+    ListItemSecondaryAction, IconButton, Divider, CircularProgress
 } from '@mui/material';
-import { ViewModule, ViewList, OpenInNew } from '@mui/icons-material';
-import { getAllMedia, getMediaByType } from '../services/apiService';
+import { ViewModule, ViewList, OpenInNew, FileDownload } from '@mui/icons-material';
+import { getAllMedia } from '../services/apiService';
 
 function AllMedia() {
   const [mediaItems, setMediaItems] = useState([]);
@@ -288,6 +275,19 @@ function AllMedia() {
               List
             </Button>
           </ButtonGroup>
+        </Box>
+
+        {/* Export Button */}
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            onClick={() => window.open('/api/media/export', '_blank')}
+            startIcon={<FileDownload />}
+            variant="outlined"
+            color="primary"
+            sx={{ px: 3, py: 1.5 }}
+          >
+            Export All Media
+          </Button>
         </Box>
         
         {mediaItems.length === 0 ? (
