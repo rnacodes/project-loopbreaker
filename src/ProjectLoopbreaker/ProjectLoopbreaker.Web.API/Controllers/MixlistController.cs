@@ -100,6 +100,51 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
+        // GET: api/mixlist/search
+        [HttpGet("search")]
+        public async Task<ActionResult<IEnumerable<MixlistResponseDto>>> SearchMixlists([FromQuery] string query)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(query))
+                {
+                    return BadRequest("Search query is required.");
+                }
+
+                var searchQuery = query.ToLower();
+                var mixlists = await _context.Mixlists
+                    .Include(m => m.MediaItems)
+                    .Where(m => 
+                        m.Name.ToLower().Contains(searchQuery) ||
+                        (m.Description != null && m.Description.ToLower().Contains(searchQuery))
+                    )
+                    .ToListAsync();
+
+                var response = mixlists.Select(mixlist => new MixlistResponseDto
+                {
+                    Id = mixlist.Id,
+                    Name = mixlist.Name,
+                    Description = mixlist.Description,
+                    DateCreated = mixlist.DateCreated,
+                    Thumbnail = mixlist.Thumbnail,
+                    MediaItemIds = mixlist.MediaItems.Select(mi => mi.Id).ToArray(),
+                    MediaItems = mixlist.MediaItems.Select(mi => new MediaItemSummary
+                    {
+                        Id = mi.Id,
+                        Title = mi.Title,
+                        MediaType = mi.MediaType,
+                        Thumbnail = mi.Thumbnail
+                    }).ToArray()
+                }).ToList();
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Internal server error", details = ex.Message });
+            }
+        }
+
         // POST: api/mixlist
         [HttpPost]
         public async Task<ActionResult<MixlistResponseDto>> CreateMixlist([FromBody] CreateMixlistDto dto)

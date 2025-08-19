@@ -278,7 +278,7 @@ function AllMedia() {
         </Box>
 
         {/* Export Button */}
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+        {/* <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
           <Button
             onClick={() => window.open('/api/media/export', '_blank')}
             startIcon={<FileDownload />}
@@ -288,7 +288,7 @@ function AllMedia() {
           >
             Export All Media
           </Button>
-        </Box>
+        </Box> */}
         
         {mediaItems.length === 0 ? (
           <Typography variant="body1" sx={{ mt: 4 }}>

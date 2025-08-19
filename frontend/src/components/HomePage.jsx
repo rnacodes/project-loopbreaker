@@ -43,37 +43,7 @@ const speedDialActions = [
 ];
 
 // COMPONENTS
-const SearchBar = () => {
-  const theme = useTheme();
-  
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', maxWidth: '700px', margin: 'auto', backgroundColor: 'background.paper', borderRadius: '30px', padding: '5px 15px' }}>
-      <TextField
-        fullWidth
-        variant="standard"
-        placeholder="Your next adventure awaits..."
-        InputProps={{
-          disableUnderline: true,
-          style: {
-            color: theme.palette.text.primary,
-            fontSize: '1.2rem',
-          },
-        }}
-        sx={{ 
-          ml: 1, 
-          flex: 1,
-          '& .MuiInputBase-input::placeholder': {
-            color: '#ffffff',
-            opacity: 1
-          }
-        }}
-      />
-      <IconButton type="submit" sx={{ p: '10px', color: '#695a8c' }} aria-label="search">
-        <Search sx={{ fontSize: 30 }} />
-      </IconButton>
-    </Box>
-  );
-};
+import SearchBar from './shared/SearchBar';
 
     const MixlistCard = ({ mixlist, onNavigate }) => (
   <Card 
@@ -255,7 +225,14 @@ export default function HomePage() {
         {/* Header and Search Section */}
         <Box sx={{ textAlign: 'center', my: 4 }}>
           <Typography variant="h1">MediaVerse</Typography>
-          <SearchBar />
+          <SearchBar 
+            placeholder="Your next adventure awaits..."
+            onSearch={(query, results) => {
+              console.log('Search results:', results);
+              // You can add navigation logic here based on results
+            }}
+            showSuggestions={true}
+          />
         </Box>
 
         {/* Media Icons and Actions Section */}

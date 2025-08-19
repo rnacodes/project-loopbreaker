@@ -108,6 +108,7 @@ function MixlistProfilePage() {
     };
 
     const handleMediaCarouselClick = (media) => {
+        // The media parameter now contains the full media item data directly
         setSelectedMedia(media);
     };
 
@@ -176,8 +177,8 @@ function MixlistProfilePage() {
                     </Button>
                 </Box>
 
-                {/* Action Buttons */}
-                <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                                {/* Action Buttons */}
+                {/* <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
                     <Button
                         onClick={() => window.open(`/api/mixlist/${id}/export`, '_blank')}
                         startIcon={<FileDownload />}
@@ -187,260 +188,271 @@ function MixlistProfilePage() {
                     >
                         Export Mixlist
                     </Button>
-                </Box>
-
-                {/* Mixlist Information Card */}
-                <Card sx={{ mb: 4, overflow: 'hidden' }}>
-                    {/* Thumbnail */}
-                    {(mixlist.Thumbnail || mixlist.thumbnail) && (
-                        <CardMedia
-                            component="img"
-                            sx={{ width: '100%', height: 250, objectFit: 'cover' }}
-                            image={mixlist.Thumbnail || mixlist.thumbnail}
-                            alt={mixlist.Name || mixlist.name}
-                        />
-                    )}
-                    
-                    <CardContent sx={{ p: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                            <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold' }}>
-                                {mixlist.Name || mixlist.name}
-                            </Typography>
-                            <Chip 
-                                label={`${currentMediaItems.length} items`}
-                                sx={{ 
-                                    backgroundColor: 'primary.main', 
-                                    color: 'white',
-                                    fontSize: '1rem',
-                                    fontWeight: 'bold'
-                                }}
-                            />
-                        </Box>
-
-                        {/* Description */}
-                        {(mixlist.Description || mixlist.description) && (
-                            <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.6 }}>
-                                {mixlist.Description || mixlist.description}
-                            </Typography>
-                        )}
-
-                        {/* Date Created */}
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                            Created on: {new Date(mixlist.DateCreated || mixlist.dateCreated).toLocaleDateString()}
-                        </Typography>
-
-                        {/* Collapsible Media List */}
-                        <Box>
-                            <Button
-                                onClick={() => setMediaListExpanded(!mediaListExpanded)}
-                                startIcon={mediaListExpanded ? <ExpandLess /> : <ExpandMore />}
-                                variant="contained"
-                                color="primary"
-                                sx={{ 
-                                    fontSize: '1.1rem',
-                                    fontWeight: 'bold',
-                                    textTransform: 'none',
-                                    mb: 2
-                                }}
-                            >
-                                Media Items ({currentMediaItems.length})
-                            </Button>
-                            
-                            <Collapse in={mediaListExpanded}>
-                                <Box sx={{ pl: 2 }}>
-                                    {hasMediaItems ? (
-                                        currentMediaItems.map((mediaItem, index) => (
-                                            <Paper key={mediaItem.id || mediaItem.Id} sx={{ p: 2, mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                    <Typography variant="body2" color="text.secondary">
-                                                        {index + 1}.
-                                                    </Typography>
-                                                    <Link
-                                                        component="button"
-                                                        variant="body1"
-                                                        onClick={() => navigate(`/media/${mediaItem.id || mediaItem.Id}`)}
-                                                        sx={{ 
-                                                            textDecoration: 'none',
-                                                            fontWeight: 'medium',
-                                                            '&:hover': { textDecoration: 'underline' }
-                                                        }}
-                                                    >
-                                                        {mediaItem.title || mediaItem.Title}
-                                                    </Link>
-                                                    <Chip
-                                                        label={mediaItem.mediaType || mediaItem.MediaType}
-                                                        size="small"
-                                                        sx={{
-                                                            backgroundColor: getMediaTypeColor(mediaItem.mediaType || mediaItem.MediaType),
-                                                            color: 'white',
-                                                            fontSize: '0.75rem'
-                                                        }}
-                                                    />
-                                                </Box>
-                                                <IconButton
-                                                    onClick={() => handleRemoveMedia(mediaItem.id || mediaItem.Id)}
-                                                    size="small"
-                                                    color="error"
-                                                >
-                                                    <Delete />
-                                                </IconButton>
-                                            </Paper>
-                                        ))
-                                    ) : (
-                                        <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-                                            No media items in this mixlist yet.
-                                        </Typography>
-                                    )}
-                                </Box>
-                            </Collapse>
-                        </Box>
-                    </CardContent>
-                </Card>
+                </Box> */}
             </Box>
 
-            {/* Simple Media Carousel */}
-            {hasMediaItems && (
-                <Box sx={{ px: 3, mb: 4 }}>
-                    <SimpleMediaCarousel
-                        mediaItems={currentMediaItems.map(item => ({
-                            ...item,
-                            thumbnailUrl: item.thumbnail || item.Thumbnail
-                        }))}
-                        title="Browse Media"
-                        subtitle="Click on any item to view details below"
-                        onMediaClick={handleMediaCarouselClick}
-                    />
-                </Box>
-            )}
-
-            {/* Selected Media Profile */}
-            {selectedMedia && (
-                <Box sx={{ px: 3, mb: 4 }}>
-                    <Divider sx={{ mb: 3 }} />
-                    <Card sx={{ overflow: 'hidden' }}>
-                        {(selectedMedia.thumbnail || selectedMedia.Thumbnail) && (
+            {/* Main Content Container */}
+            <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'flex-start',
+                px: 2
+            }}>
+                <Box sx={{ 
+                    width: '100%',
+                    maxWidth: '700px' // Slightly larger than AddMediaForm's 600px
+                }}>
+                    {/* Mixlist Information Card */}
+                    <Card sx={{ mb: 4, overflow: 'hidden' }}>
+                        {/* Thumbnail */}
+                        {(mixlist.Thumbnail || mixlist.thumbnail) && (
                             <CardMedia
                                 component="img"
-                                sx={{ width: '100%', height: 200, objectFit: 'cover' }}
-                                image={selectedMedia.thumbnail || selectedMedia.Thumbnail}
-                                alt={selectedMedia.title || selectedMedia.Title}
+                                sx={{ width: '100%', height: 250, objectFit: 'cover' }}
+                                image={mixlist.Thumbnail || mixlist.thumbnail}
+                                alt={mixlist.Name || mixlist.name}
                             />
                         )}
+                        
                         <CardContent sx={{ p: 3 }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                                <Typography variant="h4" component="h3" sx={{ fontWeight: 'bold', flex: 1 }}>
-                                    {selectedMedia.title || selectedMedia.Title}
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold' }}>
+                                    {mixlist.Name || mixlist.name}
                                 </Typography>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        startIcon={<Edit />}
-                                        onClick={() => navigate(`/media/${selectedMedia.id || selectedMedia.Id}/edit`)}
-                                    >
-                                        Edit
-                                    </Button>
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        startIcon={<OpenInNew />}
-                                        onClick={() => navigate(`/media/${selectedMedia.id || selectedMedia.Id}`)}
-                                    >
-                                        View Full Profile
-                                    </Button>
-                                </Box>
-                            </Box>
-                            
-                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
-                                <Chip
-                                    label={selectedMedia.mediaType || selectedMedia.MediaType}
-                                    sx={{
-                                        backgroundColor: getMediaTypeColor(selectedMedia.mediaType || selectedMedia.MediaType),
+                                <Chip 
+                                    label={`${currentMediaItems.length} items`}
+                                    sx={{ 
+                                        backgroundColor: 'primary.main', 
                                         color: 'white',
+                                        fontSize: '1rem',
                                         fontWeight: 'bold'
                                     }}
                                 />
-                                {(selectedMedia.status || selectedMedia.Status) && (
-                                    <Chip
-                                        label={selectedMedia.status || selectedMedia.Status}
-                                        sx={{
-                                            backgroundColor: getStatusColor(selectedMedia.status || selectedMedia.Status),
-                                            color: 'white',
-                                            fontWeight: 'bold'
-                                        }}
-                                    />
-                                )}
                             </Box>
 
-                            {selectedMedia.description && (
-                                <Typography variant="body1" sx={{ mb: 2, lineHeight: 1.6 }}>
-                                    {selectedMedia.description}
+                            {/* Description */}
+                            {(mixlist.Description || mixlist.description) && (
+                                <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.6 }}>
+                                    {mixlist.Description || mixlist.description}
                                 </Typography>
                             )}
 
-                            {selectedMedia.notes && (
-                                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                                    <strong>Notes:</strong> {selectedMedia.notes}
-                                </Typography>
-                            )}
+                            {/* Date Created */}
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                                Created on: {new Date(mixlist.DateCreated || mixlist.dateCreated).toLocaleDateString()}
+                            </Typography>
 
-                            {selectedMedia.link && (
-                                <Box sx={{ mt: 2 }}>
-                                    <Link 
-                                        href={selectedMedia.link.startsWith('http') ? selectedMedia.link : `https://${selectedMedia.link}`}
-                                        target="_blank" 
-                                        rel="noopener"
-                                        sx={{ 
-                                            display: 'inline-flex', 
-                                            alignItems: 'center', 
-                                            gap: 1,
-                                            color: 'primary.main',
-                                            textDecoration: 'none',
-                                            '&:hover': { textDecoration: 'underline' }
-                                        }}
-                                    >
-                                        View Source <OpenInNew fontSize="small" />
-                                    </Link>
-                                </Box>
-                            )}
+                            {/* Collapsible Media List */}
+                            <Box>
+                                <Button
+                                    onClick={() => setMediaListExpanded(!mediaListExpanded)}
+                                    startIcon={mediaListExpanded ? <ExpandLess /> : <ExpandMore />}
+                                    variant="contained"
+                                    color="primary"
+                                    sx={{ 
+                                        fontSize: '1.1rem',
+                                        fontWeight: 'bold',
+                                        textTransform: 'none',
+                                        mb: 2
+                                    }}
+                                >
+                                    Media Items ({currentMediaItems.length})
+                                </Button>
+                                
+                                <Collapse in={mediaListExpanded}>
+                                    <Box sx={{ pl: 2 }}>
+                                        {hasMediaItems ? (
+                                            currentMediaItems.map((mediaItem, index) => (
+                                                <Paper key={mediaItem.id || mediaItem.Id} sx={{ p: 2, mb: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                        <Typography variant="body2" color="text.secondary">
+                                                            {index + 1}.
+                                                        </Typography>
+                                                        <Link
+                                                            component="button"
+                                                            variant="body1"
+                                                            onClick={() => navigate(`/media/${mediaItem.id || mediaItem.Id}`)}
+                                                            sx={{ 
+                                                                textDecoration: 'none',
+                                                                fontWeight: 'medium',
+                                                                color: 'white',
+                                                                '&:hover': { textDecoration: 'underline' }
+                                                            }}
+                                                        >
+                                                            {mediaItem.title || mediaItem.Title}
+                                                        </Link>
+                                                        <Chip
+                                                            label={mediaItem.mediaType || mediaItem.MediaType}
+                                                            size="small"
+                                                            sx={{
+                                                                backgroundColor: getMediaTypeColor(mediaItem.mediaType || mediaItem.MediaType),
+                                                                color: 'white',
+                                                                fontSize: '0.75rem'
+                                                            }}
+                                                        />
+                                                    </Box>
+                                                    <IconButton
+                                                        onClick={() => handleRemoveMedia(mediaItem.id || mediaItem.Id)}
+                                                        size="small"
+                                                        color="error"
+                                                    >
+                                                        <Delete />
+                                                    </IconButton>
+                                                </Paper>
+                                            ))
+                                        ) : (
+                                            <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                                                No media items in this mixlist yet.
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </Collapse>
+                            </Box>
                         </CardContent>
                     </Card>
-                </Box>
-            )}
 
-            {/* Action Buttons Section */}
-            <Box sx={{ textAlign: 'center', mt: 4, px: 3, pb: 4 }}>
-                <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
-                    Add Content to This Mixlist
-                </Typography>
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
-                    <Button 
-                        variant="contained" 
-                        size="large"
-                        startIcon={<AddCircle />}
-                        onClick={() => setAddMediaDialogOpen(true)}
-                        sx={{ fontSize: '16px', px: 4, py: 1.5 }}
-                    >
-                        Add Existing Media
-                    </Button>
-                    <Button 
-                        variant="contained" 
-                        size="large"
-                        startIcon={<Upload />}
-                        onClick={() => navigate('/upload-media')}
-                        sx={{ fontSize: '16px', px: 4, py: 1.5 }}
-                    >
-                        Upload Media
-                    </Button>
-                    <Button 
-                        variant="contained" 
-                        size="large"
-                        startIcon={<FileDownload />}
-                        onClick={() => navigate('/import-media')}
-                        sx={{ fontSize: '16px', px: 4, py: 1.5 }}
-                    >
-                        Import Media
-                    </Button>
+                    {/* Simple Media Carousel */}
+                    {hasMediaItems && (
+                        <Box sx={{ mb: 4 }}>
+                            <SimpleMediaCarousel
+                                mediaItems={currentMediaItems}
+                                title="Browse Media"
+                                subtitle="Click on any item to view details below"
+                                onMediaClick={handleMediaCarouselClick}
+                            />
+                        </Box>
+                    )}
+
+                    {/* Selected Media Profile */}
+                    {selectedMedia && (
+                        <Box sx={{ mb: 4 }}>
+                            <Box sx={{ 
+                                display: 'flex', 
+                                justifyContent: 'center', 
+                                alignItems: 'flex-start',
+                                px: 2
+                            }}>
+                                <Box sx={{ 
+                                    width: '100%',
+                                    maxWidth: '400px' // Made about 100px narrower (was 500px)
+                                }}>
+                                    <Card sx={{ overflow: 'hidden' }}>
+                                        {(selectedMedia.thumbnail || selectedMedia.Thumbnail) && (
+                                            <CardMedia
+                                                component="img"
+                                                sx={{ width: '100%', height: 200, objectFit: 'cover' }}
+                                                image={selectedMedia.thumbnail || selectedMedia.Thumbnail}
+                                                alt={selectedMedia.title || selectedMedia.Title}
+                                            />
+                                        )}
+                                        <CardContent sx={{ p: 3 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                                <Typography variant="h4" component="h3" sx={{ fontWeight: 'bold', flex: 1 }}>
+                                                    {selectedMedia.title || selectedMedia.Title}
+                                                </Typography>
+                                                <Button
+                                                    variant="contained"
+                                                    color="primary"
+                                                    startIcon={<OpenInNew />}
+                                                    onClick={() => navigate(`/media/${selectedMedia.id || selectedMedia.Id}`)}
+                                                >
+                                                    View Full Profile
+                                                </Button>
+                                            </Box>
+                                            
+                                            {/* Description beneath title */}
+                                            <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.6, color: 'text.secondary' }}>
+                                                {selectedMedia.description || selectedMedia.Description || selectedMedia.desc || selectedMedia.Desc || 'No description available'}
+                                            </Typography>
+                                            
+                                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
+                                                <Chip
+                                                    label={selectedMedia.mediaType || selectedMedia.MediaType}
+                                                    sx={{
+                                                        backgroundColor: getMediaTypeColor(selectedMedia.mediaType || selectedMedia.MediaType),
+                                                        color: 'white',
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                />
+                                                {(selectedMedia.status || selectedMedia.Status) && (
+                                                    <Chip
+                                                        label={selectedMedia.status || selectedMedia.Status}
+                                                        sx={{
+                                                            backgroundColor: getStatusColor(selectedMedia.status || selectedMedia.Status),
+                                                            color: 'white',
+                                                            fontWeight: 'bold'
+                                                        }}
+                                                    />
+                                                )}
+                                            </Box>
+
+                                            {selectedMedia.notes && (
+                                                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                                                    <strong>Notes:</strong> {selectedMedia.notes}
+                                                </Typography>
+                                            )}
+
+                                            {selectedMedia.link && (
+                                                <Box sx={{ mt: 2 }}>
+                                                    <Link 
+                                                        href={selectedMedia.link.startsWith('http') ? selectedMedia.link : `https://${selectedMedia.link}`}
+                                                        target="_blank" 
+                                                        rel="noopener"
+                                                        sx={{ 
+                                                            display: 'inline-flex', 
+                                                            alignItems: 'center', 
+                                                            gap: 1,
+                                                            color: 'primary.main',
+                                                            textDecoration: 'none',
+                                                            '&:hover': { textDecoration: 'underline' }
+                                                        }}
+                                                    >
+                                                        View Source <OpenInNew fontSize="small" />
+                                                    </Link>
+                                                </Box>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </Box>
+                            </Box>
+                        </Box>
+                    )}
+
+                    {/* Action Buttons Section */}
+                    <Box sx={{ textAlign: 'center', mt: 4, pb: 4 }}>
+                        <Typography variant="h5" sx={{ mb: 3, fontWeight: 'bold' }}>
+                            Add Content to This Mixlist
+                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
+                            <Button 
+                                variant="contained" 
+                                size="large"
+                                startIcon={<AddCircle />}
+                                onClick={() => setAddMediaDialogOpen(true)}
+                                sx={{ fontSize: '16px', px: 4, py: 1.5 }}
+                            >
+                                Add Existing Media
+                            </Button>
+                            <Button 
+                                variant="contained" 
+                                size="large"
+                                startIcon={<Upload />}
+                                onClick={() => navigate('/upload-media')}
+                                sx={{ fontSize: '16px', px: 4, py: 1.5 }}
+                            >
+                                Upload Media
+                            </Button>
+                            <Button 
+                                variant="contained" 
+                                size="large"
+                                startIcon={<FileDownload />}
+                                onClick={() => navigate('/import-media')}
+                                sx={{ fontSize: '16px', px: 4, py: 1.5 }}
+                            >
+                                Import Media
+                            </Button>
+                        </Box>
+                    </Box>
                 </Box>
             </Box>
 

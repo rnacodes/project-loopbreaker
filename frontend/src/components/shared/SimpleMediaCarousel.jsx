@@ -68,11 +68,11 @@ const SimpleMediaCarousel = ({
     <Box sx={{ width: '100%', ...sx }} {...props}>
       {/* Header */}
       <Box sx={{ mb: 3, textAlign: 'center' }}>
-        <Typography variant="h4" component="h2" gutterBottom>
+        <Typography variant="h4" component="h2" gutterBottom sx={{ fontSize: '1.8rem', fontWeight: 'bold' }}>
           {title}
         </Typography>
         {subtitle && (
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.1rem' }}>
             {subtitle}
           </Typography>
         )}
@@ -115,8 +115,8 @@ const SimpleMediaCarousel = ({
               <Card
                 key={`${media.id || media.Id}-${index}`}
                 sx={{
-                  minWidth: 200,
-                  maxWidth: 250,
+                  minWidth: 280, // Increased from 220
+                  maxWidth: 350, // Increased from 280
                   transform: `scale(${scale})`,
                   opacity: opacity,
                   transition: 'all 0.3s ease',
@@ -131,18 +131,18 @@ const SimpleMediaCarousel = ({
                 {(media.thumbnailUrl || media.thumbnail || media.Thumbnail) && (
                   <CardMedia
                     component="img"
-                    height="150"
+                    height="200" // Increased from 170
                     image={media.thumbnailUrl || media.thumbnail || media.Thumbnail}
                     alt={media.title || media.Title}
                     sx={{ objectFit: 'cover' }}
                   />
                 )}
-                <CardContent sx={{ p: 2 }}>
+                <CardContent sx={{ p: 3 }}> {/* Increased padding from 2 to 3 */}
                   <Typography 
                     variant="body2" 
                     sx={{ 
                       fontWeight: 'bold',
-                      fontSize: isCenter ? '0.9rem' : '0.8rem',
+                      fontSize: isCenter ? '1.3rem' : '1.1rem', // Increased from 1.1rem/1rem
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       display: '-webkit-box',
@@ -158,8 +158,8 @@ const SimpleMediaCarousel = ({
                     sx={{
                       backgroundColor: getMediaTypeColor(media.mediaType || media.MediaType),
                       color: 'white',
-                      fontSize: '0.7rem',
-                      mt: 1
+                      fontSize: '0.9rem', // Increased from 0.8rem
+                      mt: 1.5
                     }}
                   />
                 </CardContent>

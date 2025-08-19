@@ -61,6 +61,8 @@ function MixlistsPage() {
                 >
                     Import Mixlist
                 </Button>
+
+                {/*}
                 <Button 
                     variant="outlined" 
                     color="secondary"
@@ -68,7 +70,7 @@ function MixlistsPage() {
                     sx={{ px: 3, py: 1.5 }}
                 >
                     Export All Mixlists
-                </Button>
+                </Button> */}
             </Box>
 
             {mixlists.length === 0 ? (

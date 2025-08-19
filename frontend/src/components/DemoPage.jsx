@@ -29,6 +29,7 @@ import {
   Search
 } from '@mui/icons-material';
 import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TRANSITIONS, SimpleMediaCarousel } from './shared';
+import SearchBar from './shared/SearchBar';
 
 // Mock data for demonstration
 const mockMediaItems = [
@@ -169,48 +170,20 @@ const DemoPage = () => {
       {/* Search Bar Demo */}
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h4" gutterBottom>
-          Search Bar Component
+          Functional Search Bar Component
         </Typography>
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          width: '100%', 
-          maxWidth: '700px', 
-          backgroundColor: 'background.paper', 
-          borderRadius: '30px', 
-          padding: '5px 15px',
-          border: '1px solid',
-          borderColor: 'primary.main'
-        }}>
-          <TextField
-            fullWidth
-            variant="standard"
-            placeholder="Try searching for media..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-            InputProps={{
-              disableUnderline: true,
-              style: {
-                color: 'text.primary',
-                fontSize: '1.2rem',
-              },
+        <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary' }}>
+          Search through your media library and mixlists. Try searching for titles, descriptions, or media types.
+        </Typography>
+        <Box sx={{ maxWidth: '700px' }}>
+          <SearchBar
+            placeholder="Search media and mixlists..."
+            onSearch={(query, results) => {
+              console.log('Search results:', results);
+              setSearchQuery(query);
             }}
-            sx={{ 
-              ml: 1, 
-              flex: 1,
-              '& .MuiInputBase-input::placeholder': {
-                color: 'text.secondary',
-                opacity: 1
-              }
-            }}
+            showSuggestions={true}
           />
-          <Button 
-            onClick={() => handleSearch(searchQuery)}
-            sx={{ p: '10px', color: 'primary.main' }}
-          >
-            <Search sx={{ fontSize: 30 }} />
-          </Button>
         </Box>
         {searchQuery && (
           <Typography variant="body2" sx={{ mt: 2 }}>

@@ -12,7 +12,8 @@ import {
   ListItemIcon,
   Typography,
   CircularProgress,
-  Chip
+  Chip,
+  Button
 } from '@mui/material';
 import {
   Search,
@@ -27,17 +28,17 @@ import {
   Podcasts,
   SportsEsports,
   YouTube,
-  Language
+  Language,
+  PlaylistPlay
 } from '@mui/icons-material';
 import { commonStyles, COLORS } from './DesignSystem';
+import { searchAll } from '../../services/searchService';
 
 const SearchBar = ({
   onSearch,
   placeholder = "Search your media library...",
-  suggestions = [],
   recentSearches = [],
   trendingSearches = [],
-  loading = false,
   showSuggestions = true,
   fullWidth = true,
   size = 'medium',
@@ -48,7 +49,19 @@ const SearchBar = ({
   const [query, setQuery] = useState('');
   const [showSuggestionsPanel, setShowSuggestionsPanel] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [searchResults, setSearchResults] = useState({ media: [], mixlists: [] });
+  const [searching, setSearching] = useState(false);
   const anchorEl = useRef(null);
+  const searchTimeoutRef = useRef(null);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Media type icons for suggestions
   const mediaTypeIcons = {
@@ -63,9 +76,40 @@ const SearchBar = ({
     website: <Language />
   };
 
-  const handleSearch = (searchQuery = query) => {
+  const handleSearch = async (searchQuery = query) => {
     if (searchQuery.trim()) {
-      onSearch?.(searchQuery.trim());
+      setSearching(true);
+      try {
+        console.log('Searching for:', searchQuery.trim());
+        const results = await searchAll(searchQuery.trim());
+        console.log('Search results:', results);
+        setSearchResults(results);
+        setShowSuggestionsPanel(true);
+        onSearch?.(searchQuery.trim(), results);
+      } catch (error) {
+        console.error('Search error:', error);
+        setSearchResults({ media: [], mixlists: [] });
+      } finally {
+        setSearching(false);
+      }
+    }
+  };
+
+  const handleQueryChange = (newQuery) => {
+    setQuery(newQuery);
+    
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Debounced search after 300ms of no typing
+    if (newQuery.trim()) {
+      searchTimeoutRef.current = setTimeout(() => {
+        handleSearch(newQuery);
+      }, 300);
+    } else {
+      setSearchResults({ media: [], mixlists: [] });
       setShowSuggestionsPanel(false);
     }
   };
@@ -82,14 +126,11 @@ const SearchBar = ({
     onSearch?.('');
   };
 
-  const handleSuggestionClick = (suggestion) => {
-    setQuery(suggestion.title || suggestion);
-    handleSearch(suggestion.title || suggestion);
-  };
+
 
   const handleFocus = () => {
     setFocused(true);
-    if (showSuggestions && (suggestions.length > 0 || recentSearches.length > 0 || trendingSearches.length > 0)) {
+    if (showSuggestions && (searchResults.media.length > 0 || searchResults.mixlists.length > 0 || recentSearches.length > 0 || trendingSearches.length > 0)) {
       setShowSuggestionsPanel(true);
     }
   };
@@ -100,18 +141,27 @@ const SearchBar = ({
     setTimeout(() => setShowSuggestionsPanel(false), 200);
   };
 
-  // Filter suggestions based on query
-  const filteredSuggestions = suggestions.filter(item =>
-    item.title?.toLowerCase().includes(query.toLowerCase()) ||
-    item.mediaType?.toLowerCase().includes(query.toLowerCase())
-  );
+  // Handle navigation to media or mixlist
+  const handleSuggestionClick = (item) => {
+    if (item.id || item.Id) {
+      // Check if it's a mixlist (has mediaItems property) or media item
+      if (item.mediaItems || item.MediaItems) {
+        // It's a mixlist
+        window.location.href = `/mixlist/${item.id || item.Id}`;
+      } else {
+        // It's a media item
+        window.location.href = `/media/${item.id || item.Id}`;
+      }
+    }
+    setShowSuggestionsPanel(false);
+  };
 
   return (
-    <Box sx={{ position: 'relative', width: fullWidth ? '100%' : 'auto', ...sx }}>
+    <Box sx={{ position: 'relative', width: fullWidth ? '100%' : 'auto', maxWidth: '700px', margin: 'auto', ...sx }}>
       <TextField
         ref={anchorEl}
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => handleQueryChange(e.target.value)}
         onKeyPress={handleKeyPress}
         onFocus={handleFocus}
         onBlur={handleBlur}
@@ -123,7 +173,8 @@ const SearchBar = ({
           ...commonStyles.searchBar,
           '& .MuiOutlinedInput-root': {
             backgroundColor: COLORS.background.elevated,
-            borderRadius: '24px',
+            borderRadius: '30px',
+            padding: '5px 15px',
             '&:hover .MuiOutlinedInput-notchedOutline': {
               borderColor: COLORS.primary.light
             },
@@ -133,7 +184,7 @@ const SearchBar = ({
             }
           },
           '& .MuiInputBase-input': {
-            fontSize: '1.1rem',
+            fontSize: '1.2rem',
             padding: '12px 16px'
           }
         }}
@@ -143,9 +194,9 @@ const SearchBar = ({
               <IconButton
                 onClick={() => handleSearch()}
                 edge="start"
-                sx={{ color: COLORS.primary.main }}
+                sx={{ p: '10px', color: COLORS.primary.main }}
               >
-                {loading ? <CircularProgress size={20} /> : <Search />}
+                {searching ? <CircularProgress size={20} /> : <Search sx={{ fontSize: 30 }} />}
               </IconButton>
             </InputAdornment>
           ),
@@ -186,8 +237,8 @@ const SearchBar = ({
               border: `1px solid ${COLORS.primary.main}20`
             }}
           >
-            {/* Search Suggestions */}
-            {filteredSuggestions.length > 0 && (
+            {/* Media Search Results */}
+            {searchResults.media.length > 0 && (
               <Box>
                 <Typography
                   variant="subtitle2"
@@ -198,12 +249,12 @@ const SearchBar = ({
                     borderBottom: `1px solid ${COLORS.background.elevated}`
                   }}
                 >
-                  Search Results
+                  Media Items
                 </Typography>
                 <List dense>
-                  {filteredSuggestions.slice(0, 5).map((item, index) => (
+                  {searchResults.media.slice(0, 5).map((item, index) => (
                     <ListItem
-                      key={index}
+                      key={item.id || item.Id}
                       button
                       onClick={() => handleSuggestionClick(item)}
                       sx={{
@@ -213,11 +264,58 @@ const SearchBar = ({
                       }}
                     >
                       <ListItemIcon sx={{ color: COLORS.primary.dark }}>
-                        {mediaTypeIcons[item.mediaType?.toLowerCase()] || <Search />}
+                        {mediaTypeIcons[item.mediaType?.toLowerCase() || item.MediaType?.toLowerCase()] || <Search />}
                       </ListItemIcon>
                       <ListItemText
-                        primary={item.title}
-                        secondary={item.mediaType}
+                        primary={item.title || item.Title}
+                        secondary={item.mediaType || item.MediaType}
+                        primaryTypographyProps={{
+                          variant: 'body2',
+                          color: COLORS.text.primary
+                        }}
+                        secondaryTypographyProps={{
+                          variant: 'caption',
+                          color: COLORS.text.secondary
+                        }}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
+
+            {/* Mixlist Search Results */}
+            {searchResults.mixlists.length > 0 && (
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    px: 2,
+                    py: 1,
+                    color: COLORS.text.secondary,
+                    borderBottom: `1px solid ${COLORS.background.elevated}`
+                  }}
+                >
+                  Mixlists
+                </Typography>
+                <List dense>
+                  {searchResults.mixlists.slice(0, 3).map((mixlist, index) => (
+                    <ListItem
+                      key={mixlist.id || mixlist.Id}
+                      button
+                      onClick={() => handleSuggestionClick(mixlist)}
+                      sx={{
+                        '&:hover': {
+                          backgroundColor: COLORS.background.elevated
+                        }
+                      }}
+                    >
+                      <ListItemIcon sx={{ color: COLORS.primary.dark }}>
+                        <PlaylistPlay />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={mixlist.name || mixlist.Name}
+                        secondary={`${(mixlist.mediaItems || mixlist.MediaItems || []).length} items`}
                         primaryTypographyProps={{
                           variant: 'body2',
                           color: COLORS.text.primary
@@ -311,10 +409,10 @@ const SearchBar = ({
             )}
 
             {/* No results message */}
-            {filteredSuggestions.length === 0 && recentSearches.length === 0 && trendingSearches.length === 0 && (
+            {searchResults.media.length === 0 && searchResults.mixlists.length === 0 && recentSearches.length === 0 && trendingSearches.length === 0 && (
               <Box sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="body2" color={COLORS.text.hint}>
-                  No suggestions available
+                  {query ? 'No results found' : 'No suggestions available'}
                 </Typography>
               </Box>
             )}
