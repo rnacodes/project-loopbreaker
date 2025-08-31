@@ -8,15 +8,15 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
-    <PackageReference Include="AWSSDK.S3" Version="3.7.310" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
+    <PackageReference Include="AWSSDK.S3" Version="4.0.6.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.7" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.7" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ProjectLoopbreaker.Domain\ProjectLoopbreaker.Domain.csproj" />
     <ProjectReference Include="..\ProjectLoopbreaker.Shared\ProjectLoopbreaker.Shared.csproj" />
-
+    <ProjectReference Include="..\ProjectLoopbreaker.DTOs\ProjectLoopbreaker.DTOs.csproj" />
   </ItemGroup>
 
 </Project>

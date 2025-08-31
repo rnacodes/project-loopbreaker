@@ -2,7 +2,7 @@ using ProjectLoopbreaker.Domain.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace ProjectLoopbreaker.Web.API.DTOs
+namespace ProjectLoopbreaker.DTOs
 {
     public class CreateBookDto
     {
@@ -80,5 +80,3 @@ namespace ProjectLoopbreaker.Web.API.DTOs
         public bool PartOfSeries { get; set; } = false;
     }
 }
-
-

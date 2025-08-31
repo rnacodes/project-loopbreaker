@@ -25,7 +25,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ProjectLoopbreaker.Application\ProjectLoopbreaker.Application.csproj" />
     <ProjectReference Include="..\ProjectLoopbreaker.Domain\ProjectLoopbreaker.Domain.csproj" />
   </ItemGroup>
 

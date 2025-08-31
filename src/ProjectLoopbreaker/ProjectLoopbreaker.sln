@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectLoopbreaker.Domain",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectLoopbreaker.Application", "ProjectLoopbreaker.Application\ProjectLoopbreaker.Application.csproj", "{AFF30FC9-692C-4DAE-AF3A-D4EFFE86FBDB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectLoopbreaker.DTOs", "ProjectLoopbreaker.DTOs\ProjectLoopbreaker.DTOs.csproj", "{B3C7D8E9-4F5A-4B2C-9D1E-8F7A6B5C4D3E}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectLoopbreaker.Infrastructure", "ProjectLoopbreaker.Infrastructure\ProjectLoopbreaker.Infrastructure.csproj", "{015158C1-AAD9-4622-AAAC-9E11CA72C0BC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectLoopbreaker.Web.API", "ProjectLoopbreaker.Web.API\ProjectLoopbreaker.Web.API.csproj", "{B2DB826C-7352-4020-B30F-2618AFF2442F}"
@@ -31,6 +33,10 @@ Global
 		{AFF30FC9-692C-4DAE-AF3A-D4EFFE86FBDB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AFF30FC9-692C-4DAE-AF3A-D4EFFE86FBDB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AFF30FC9-692C-4DAE-AF3A-D4EFFE86FBDB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B3C7D8E9-4F5A-4B2C-9D1E-8F7A6B5C4D3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B3C7D8E9-4F5A-4B2C-9D1E-8F7A6B5C4D3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B3C7D8E9-4F5A-4B2C-9D1E-8F7A6B5C4D3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B3C7D8E9-4F5A-4B2C-9D1E-8F7A6B5C4D3E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{015158C1-AAD9-4622-AAAC-9E11CA72C0BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{015158C1-AAD9-4622-AAAC-9E11CA72C0BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{015158C1-AAD9-4622-AAAC-9E11CA72C0BC}.Release|Any CPU.ActiveCfg = Release|Any CPU

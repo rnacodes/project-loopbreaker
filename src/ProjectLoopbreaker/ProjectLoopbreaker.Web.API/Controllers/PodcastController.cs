@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure.Data;
+using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Infrastructure.Clients;
 using ProjectLoopbreaker.Web.API.DTOs;

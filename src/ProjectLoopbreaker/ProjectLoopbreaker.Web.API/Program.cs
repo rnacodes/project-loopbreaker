@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Infrastructure.Data;
 using ProjectLoopbreaker.Infrastructure.Clients;
+using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Application.Services;
 using Amazon.S3;
@@ -216,6 +217,8 @@ builder.Services.AddScoped<IApplicationDbContext>(provider =>
 // Register Application Services
 builder.Services.AddScoped<IPodcastMappingService, PodcastMappingService>();
 builder.Services.AddScoped<IPodcastService, PodcastService>();
+builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<IBookMappingService, BookMappingService>();
 
 // In Program.cs
 
@@ -223,6 +226,8 @@ builder.Services.AddScoped<IPodcastService, PodcastService>();
 // Configure ListenNotes API client
 builder.Services.AddHttpClient<ListenNotesApiClient>(client =>
 {
+    client.BaseAddress = new Uri("https://listen-api.listennotes.com/api/v2/");
+    
     var apiKey = Environment.GetEnvironmentVariable("LISTENNOTES_API_KEY") ?? 
                  builder.Configuration["ApiKeys:ListenNotes"];
     
@@ -246,8 +251,6 @@ builder.Services.AddHttpClient<OpenLibraryApiClient>(client =>
     client.BaseAddress = new Uri("https://openlibrary.org/");
     client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0 (https://github.com/yourrepo/projectloopbreaker)");
 });
-
-// Mock Listen Notes API client removed as per requirements to use only real API
 
 // Configure DigitalOcean Spaces S3 Client (optional - won't break app if not configured)
 builder.Services.AddSingleton<IAmazonS3>(sp =>

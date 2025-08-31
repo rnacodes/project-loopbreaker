@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Domain.Entities;
-using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Domain.Interfaces;
 using System.Collections.Generic;
 
 namespace ProjectLoopbreaker.Infrastructure.Data
@@ -8,12 +8,21 @@ namespace ProjectLoopbreaker.Infrastructure.Data
 {
     public class MediaLibraryDbContext : DbContext, IApplicationDbContext
     {
+        // Entity Framework DbSet properties
         public DbSet<BaseMediaItem> MediaItems { get; set; }
         public DbSet<Mixlist> Mixlists { get; set; }
         public DbSet<Podcast> Podcasts { get; set; }
         public DbSet<Book> Books { get; set; }
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Genre> Genres { get; set; }
+
+        // IApplicationDbContext interface implementations
+        IQueryable<BaseMediaItem> IApplicationDbContext.MediaItems => MediaItems;
+        IQueryable<Mixlist> IApplicationDbContext.Mixlists => Mixlists;
+        IQueryable<Podcast> IApplicationDbContext.Podcasts => Podcasts;
+        IQueryable<Book> IApplicationDbContext.Books => Books;
+        IQueryable<Topic> IApplicationDbContext.Topics => Topics;
+        IQueryable<Genre> IApplicationDbContext.Genres => Genres;
 
 
         public MediaLibraryDbContext(DbContextOptions<MediaLibraryDbContext> options) : base(options) { }
@@ -253,6 +262,30 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             });
         }
 
+        // IApplicationDbContext interface method implementations
+        public void Add<TEntity>(TEntity entity) where TEntity : class
+        {
+            base.Add(entity);
+        }
 
+        public void Update<TEntity>(TEntity entity) where TEntity : class
+        {
+            base.Update(entity);
+        }
+
+        public void Remove<TEntity>(TEntity entity) where TEntity : class
+        {
+            base.Remove(entity);
+        }
+
+        public async Task<TEntity?> FindAsync<TEntity>(params object[] keyValues) where TEntity : class
+        {
+            return await base.FindAsync<TEntity>(keyValues);
+        }
+
+        public object Entry<TEntity>(TEntity entity) where TEntity : class
+        {
+            return base.Entry(entity);
+        }
     }
 }

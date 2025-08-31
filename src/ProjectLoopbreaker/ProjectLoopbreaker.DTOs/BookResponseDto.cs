@@ -1,7 +1,7 @@
 using ProjectLoopbreaker.Domain.Entities;
 using System.Text.Json.Serialization;
 
-namespace ProjectLoopbreaker.Web.API.DTOs
+namespace ProjectLoopbreaker.DTOs
 {
     public class BookResponseDto
     {
@@ -63,5 +63,3 @@ namespace ProjectLoopbreaker.Web.API.DTOs
         public string? Genre { get; set; }
     }
 }
-
-

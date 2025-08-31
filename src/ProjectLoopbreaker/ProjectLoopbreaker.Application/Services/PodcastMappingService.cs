@@ -1,7 +1,8 @@
 ﻿using System.Text.Json;
-using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Shared.DTOs.ListenNotes;
+using ProjectLoopbreaker.Application.Interfaces;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Configuration;

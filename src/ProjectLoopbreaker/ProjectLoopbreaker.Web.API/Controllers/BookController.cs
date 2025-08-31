@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using ProjectLoopbreaker.Domain.Entities;
-using ProjectLoopbreaker.Infrastructure.Data;
-using ProjectLoopbreaker.Web.API.DTOs;
+using ProjectLoopbreaker.Domain.Interfaces;
+using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Infrastructure.Clients;
 using ProjectLoopbreaker.Shared.DTOs.OpenLibrary;
+using ProjectLoopbreaker.DTOs;
 using System.Text.Json;
 using Amazon.S3;
 using Amazon.S3.Model;
+using System.Linq;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -15,20 +15,23 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     [Route("api/[controller]")]
     public class BookController : ControllerBase
     {
-        private readonly MediaLibraryDbContext _context;
+        private readonly IBookService _bookService;
+        private readonly IBookMappingService _bookMappingService;
         private readonly ILogger<BookController> _logger;
         private readonly OpenLibraryApiClient _openLibraryClient;
         private readonly IAmazonS3? _s3Client;
         private readonly IConfiguration _configuration;
 
         public BookController(
-            MediaLibraryDbContext context,
+            IBookService bookService,
+            IBookMappingService bookMappingService,
             ILogger<BookController> logger,
             OpenLibraryApiClient openLibraryClient,
             IAmazonS3? s3Client,
             IConfiguration configuration)
         {
-            _context = context;
+            _bookService = bookService;
+            _bookMappingService = bookMappingService;
             _logger = logger;
             _openLibraryClient = openLibraryClient;
             _s3Client = s3Client;
@@ -116,31 +119,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var books = await _context.Books.ToListAsync();
-                
-                var response = books.Select(b => new BookResponseDto
-                {
-                    Id = b.Id,
-                    Title = b.Title,
-                    Description = b.Description,
-                    MediaType = b.MediaType,
-                    Status = b.Status,
-                    DateAdded = b.DateAdded,
-                    Link = b.Link,
-                    Thumbnail = b.Thumbnail,
-                    Author = b.Author,
-                    ISBN = b.ISBN,
-                    ASIN = b.ASIN,
-                    Format = b.Format,
-                    PartOfSeries = b.PartOfSeries,
-                    Rating = b.Rating,
-                    OwnershipStatus = b.OwnershipStatus,
-                    DateCompleted = b.DateCompleted,
-                    Notes = b.Notes,
-                    RelatedNotes = b.RelatedNotes,
-                    Genre = b.Genre
-                }).ToList();
-
+                var books = await _bookService.GetAllBooksAsync();
+                var response = await Task.WhenAll(books.Select(b => _bookMappingService.MapToResponseDtoAsync(b)));
                 return Ok(response);
             }
             catch (Exception ex)
@@ -156,39 +136,13 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var book = await _context.Books
-                    .Include(b => b.Topics)
-                    .Include(b => b.Genres)
-                    .FirstOrDefaultAsync(b => b.Id == id);
-
+                var book = await _bookService.GetBookByIdAsync(id);
                 if (book == null)
                 {
                     return NotFound($"Book with ID {id} not found.");
                 }
 
-                var response = new BookResponseDto
-                {
-                    Id = book.Id,
-                    Title = book.Title,
-                    Description = book.Description,
-                    MediaType = book.MediaType,
-                    Status = book.Status,
-                    DateAdded = book.DateAdded,
-                    Link = book.Link,
-                    Thumbnail = book.Thumbnail,
-                    Author = book.Author,
-                    ISBN = book.ISBN,
-                    ASIN = book.ASIN,
-                    Format = book.Format,
-                    PartOfSeries = book.PartOfSeries,
-                    Rating = book.Rating,
-                    OwnershipStatus = book.OwnershipStatus,
-                    DateCompleted = book.DateCompleted,
-                    Notes = book.Notes,
-                    RelatedNotes = book.RelatedNotes,
-                    Genre = book.Genre
-                };
-
+                var response = await _bookMappingService.MapToResponseDtoAsync(book);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -204,33 +158,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var books = await _context.Books
-                    .Where(b => b.Author.ToLower().Contains(author.ToLower()))
-                    .ToListAsync();
-
-                var response = books.Select(b => new BookResponseDto
-                {
-                    Id = b.Id,
-                    Title = b.Title,
-                    Description = b.Description,
-                    MediaType = b.MediaType,
-                    Status = b.Status,
-                    DateAdded = b.DateAdded,
-                    Link = b.Link,
-                    Thumbnail = b.Thumbnail,
-                    Author = b.Author,
-                    ISBN = b.ISBN,
-                    ASIN = b.ASIN,
-                    Format = b.Format,
-                    PartOfSeries = b.PartOfSeries,
-                    Rating = b.Rating,
-                    OwnershipStatus = b.OwnershipStatus,
-                    DateCompleted = b.DateCompleted,
-                    Notes = b.Notes,
-                    RelatedNotes = b.RelatedNotes,
-                    Genre = b.Genre
-                }).ToList();
-
+                var books = await _bookService.GetBooksByAuthorAsync(author);
+                var response = await Task.WhenAll(books.Select(b => _bookMappingService.MapToResponseDtoAsync(b)));
                 return Ok(response);
             }
             catch (Exception ex)
@@ -246,33 +175,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var seriesBooks = await _context.Books
-                    .Where(b => b.PartOfSeries == true)
-                    .ToListAsync();
-
-                var response = seriesBooks.Select(b => new BookResponseDto
-                {
-                    Id = b.Id,
-                    Title = b.Title,
-                    Description = b.Description,
-                    MediaType = b.MediaType,
-                    Status = b.Status,
-                    DateAdded = b.DateAdded,
-                    Link = b.Link,
-                    Thumbnail = b.Thumbnail,
-                    Author = b.Author,
-                    ISBN = b.ISBN,
-                    ASIN = b.ASIN,
-                    Format = b.Format,
-                    PartOfSeries = b.PartOfSeries,
-                    Rating = b.Rating,
-                    OwnershipStatus = b.OwnershipStatus,
-                    DateCompleted = b.DateCompleted,
-                    Notes = b.Notes,
-                    RelatedNotes = b.RelatedNotes,
-                    Genre = b.Genre
-                }).ToList();
-
+                var seriesBooks = await _bookService.GetBookSeriesAsync();
+                var response = await Task.WhenAll(seriesBooks.Select(b => _bookMappingService.MapToResponseDtoAsync(b)));
                 return Ok(response);
             }
             catch (Exception ex)
@@ -293,66 +197,10 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return BadRequest("Book data is required");
                 }
 
-                var book = new Book
-                {
-                    Title = dto.Title,
-                    MediaType = MediaType.Book,
-                    Link = dto.Link,
-                    Notes = dto.Notes,
-                    Status = dto.Status,
-                    DateAdded = DateTime.UtcNow,
-                    DateCompleted = dto.DateCompleted,
-                    Rating = dto.Rating,
-                    OwnershipStatus = dto.OwnershipStatus,
-                    Description = dto.Description,
-                    Genre = dto.Genre,
-                    RelatedNotes = dto.RelatedNotes,
-                    Thumbnail = dto.Thumbnail,
-                    Author = dto.Author,
-                    ISBN = dto.ISBN,
-                    ASIN = dto.ASIN,
-                    Format = dto.Format,
-                    PartOfSeries = dto.PartOfSeries
-                };
+                var book = await _bookService.CreateBookAsync(dto);
+                var response = await _bookMappingService.MapToResponseDtoAsync(book);
 
-                // Handle Topics array conversion - check if they exist or create new ones
-                if (dto.Topics?.Length > 0)
-                {
-                    foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
-                    {
-                        var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == topicName);
-                        if (existingTopic != null)
-                        {
-                            book.Topics.Add(existingTopic);
-                        }
-                        else
-                        {
-                            book.Topics.Add(new Topic { Name = topicName });
-                        }
-                    }
-                }
-
-                // Handle Genres array conversion - check if they exist or create new ones
-                if (dto.Genres?.Length > 0)
-                {
-                    foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
-                    {
-                        var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == genreName);
-                        if (existingGenre != null)
-                        {
-                            book.Genres.Add(existingGenre);
-                        }
-                        else
-                        {
-                            book.Genres.Add(new Genre { Name = genreName });
-                        }
-                    }
-                }
-
-                _context.Books.Add(book);
-                await _context.SaveChangesAsync();
-
-                return CreatedAtAction(nameof(GetBook), new { id = book.Id }, book);
+                return CreatedAtAction(nameof(GetBook), new { id = book.Id }, response);
             }
             catch (Exception ex)
             {
@@ -367,75 +215,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var book = await _context.Books
-                    .Include(b => b.Topics)
-                    .Include(b => b.Genres)
-                    .FirstOrDefaultAsync(b => b.Id == id);
-
-                if (book == null)
-                {
-                    return NotFound($"Book with ID {id} not found.");
-                }
-
-                // Update book properties
-                book.Title = dto.Title;
-                book.Link = dto.Link;
-                book.Notes = dto.Notes;
-                book.Status = dto.Status;
-                book.DateCompleted = dto.DateCompleted;
-                book.Rating = dto.Rating;
-                book.OwnershipStatus = dto.OwnershipStatus;
-                book.Description = dto.Description;
-                book.Genre = dto.Genre;
-                book.RelatedNotes = dto.RelatedNotes;
-                book.Thumbnail = dto.Thumbnail;
-                book.Author = dto.Author;
-                book.ISBN = dto.ISBN;
-                book.ASIN = dto.ASIN;
-                book.Format = dto.Format;
-                book.PartOfSeries = dto.PartOfSeries;
-
-                // Clear existing topics and genres
-                book.Topics.Clear();
-                book.Genres.Clear();
-
-                // Handle Topics array conversion
-                if (dto.Topics?.Length > 0)
-                {
-                    foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
-                    {
-                        var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == topicName);
-                        if (existingTopic != null)
-                        {
-                            book.Topics.Add(existingTopic);
-                        }
-                        else
-                        {
-                            book.Topics.Add(new Topic { Name = topicName });
-                        }
-                    }
-                }
-
-                // Handle Genres array conversion
-                if (dto.Genres?.Length > 0)
-                {
-                    foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
-                    {
-                        var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == genreName);
-                        if (existingGenre != null)
-                        {
-                            book.Genres.Add(existingGenre);
-                        }
-                        else
-                        {
-                            book.Genres.Add(new Genre { Name = genreName });
-                        }
-                    }
-                }
-
-                await _context.SaveChangesAsync();
-
+                var book = await _bookService.UpdateBookAsync(id, dto);
                 return NoContent();
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("not found"))
+            {
+                return NotFound($"Book with ID {id} not found.");
             }
             catch (Exception ex)
             {
@@ -450,14 +235,11 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var book = await _context.Books.FindAsync(id);
-                if (book == null)
+                var deleted = await _bookService.DeleteBookAsync(id);
+                if (!deleted)
                 {
                     return NotFound($"Book with ID {id} not found.");
                 }
-
-                _context.Books.Remove(book);
-                await _context.SaveChangesAsync();
 
                 return NoContent();
             }
@@ -504,25 +286,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return Ok(new List<BookSearchResultDto>());
                 }
 
-                var results = searchResult.Docs.Select(book => new BookSearchResultDto
-                {
-                    Key = book.Key,
-                    Title = book.Title,
-                    Authors = book.AuthorName,
-                    FirstPublishYear = book.FirstPublishYear,
-                    Isbn = book.Isbn,
-                    Subjects = book.Subject,
-                    CoverUrl = book.CoverId.HasValue 
-                        ? $"https://covers.openlibrary.org/b/id/{book.CoverId}-L.jpg" 
-                        : null,
-                    Publishers = book.Publisher,
-                    Languages = book.Language,
-                    PageCount = book.NumberOfPagesMedian,
-                    AverageRating = book.RatingAverage,
-                    RatingCount = book.RatingCount,
-                    HasFulltext = book.HasFulltext,
-                    EditionCount = book.EditionCount
-                }).ToList();
+                var results = await Task.WhenAll(searchResult.Docs.Select(book => _bookMappingService.MapToSearchResultDtoAsync(book)));
 
                 return Ok(results);
             }
@@ -611,67 +375,38 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     : null;
                 string? uploadedCoverUrl = await UploadImageFromUrlAsync(originalCoverUrl);
 
-                // Create book entity from Open Library data
-                var book = new Book
+                // Create book entity from Open Library data using mapping service
+                var book = await _bookMappingService.MapFromOpenLibraryAsync(bookData);
+                
+                // Update thumbnail with uploaded version if available
+                if (!string.IsNullOrEmpty(uploadedCoverUrl))
                 {
-                    Title = bookData.Title ?? "Unknown Title",
-                    Author = bookData.AuthorName?.FirstOrDefault() ?? "Unknown Author",
-                    MediaType = MediaType.Book,
-                    Status = Status.Uncharted,
-                    DateAdded = DateTime.UtcNow,
-                    ISBN = bookData.Isbn?.FirstOrDefault(),
-                    Format = BookFormat.Digital, // Default to digital since it's from Open Library
-                    PartOfSeries = false,
-                    Thumbnail = uploadedCoverUrl,
-                    Description = ExtractDescription(bookData),
-                    Link = !string.IsNullOrWhiteSpace(bookData.Key) 
-                        ? $"https://openlibrary.org{bookData.Key}" 
-                        : null
-                };
-
-                // Handle subjects as genres
-                if (bookData.Subject?.Length > 0)
-                {
-                    foreach (var subjectName in bookData.Subject.Take(5).Where(s => !string.IsNullOrWhiteSpace(s)))
-                    {
-                        var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == subjectName);
-                        if (existingGenre != null)
-                        {
-                            book.Genres.Add(existingGenre);
-                        }
-                        else
-                        {
-                            book.Genres.Add(new Genre { Name = subjectName });
-                        }
-                    }
+                    book.Thumbnail = uploadedCoverUrl;
                 }
 
-                _context.Books.Add(book);
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation("Successfully imported book from Open Library: {Title} by {Author}", book.Title, book.Author);
-
-                return CreatedAtAction(nameof(GetBook), new { id = book.Id }, new BookResponseDto
+                // Use the book service to create the book
+                var createdBook = await _bookService.CreateBookAsync(new CreateBookDto
                 {
-                    Id = book.Id,
                     Title = book.Title,
                     Author = book.Author,
                     Description = book.Description,
-                    MediaType = book.MediaType,
-                    Status = book.Status,
-                    DateAdded = book.DateAdded,
                     Link = book.Link,
                     Thumbnail = book.Thumbnail,
                     ISBN = book.ISBN,
                     Format = book.Format,
                     PartOfSeries = book.PartOfSeries,
+                    Status = book.Status,
                     Rating = book.Rating,
                     OwnershipStatus = book.OwnershipStatus,
-                    DateCompleted = book.DateCompleted,
                     Notes = book.Notes,
                     RelatedNotes = book.RelatedNotes,
-                    Genre = book.Genre
+                    Genres = book.Genres?.Select(g => g.Name).ToArray() ?? Array.Empty<string>()
                 });
+
+                _logger.LogInformation("Successfully imported book from Open Library: {Title} by {Author}", book.Title, book.Author);
+
+                var responseDto = await _bookMappingService.MapToResponseDtoAsync(createdBook);
+                return CreatedAtAction(nameof(GetBook), new { id = createdBook.Id }, responseDto);
             }
             catch (Exception ex)
             {
@@ -680,15 +415,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        private static string? ExtractDescription(OpenLibraryBookDto bookData)
-        {
-            // Open Library search results don't typically include descriptions
-            // This is a placeholder for future enhancement
-            if (bookData.Subject?.Length > 0)
-            {
-                return $"Subjects: {string.Join(", ", bookData.Subject.Take(3))}";
-            }
-            return null;
-        }
+
     }
 }
