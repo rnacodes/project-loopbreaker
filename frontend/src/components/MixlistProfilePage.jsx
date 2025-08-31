@@ -334,66 +334,72 @@ function MixlistProfilePage() {
                             }}>
                                 <Box sx={{ 
                                     width: '100%',
-                                    maxWidth: '400px' // Made about 100px narrower (was 500px)
+                                    maxWidth: '300px' // Made slimmer for better proportions
                                 }}>
                                     <Card sx={{ overflow: 'hidden' }}>
                                         {(selectedMedia.thumbnail || selectedMedia.Thumbnail) && (
                                             <CardMedia
                                                 component="img"
-                                                sx={{ width: '100%', height: 200, objectFit: 'cover' }}
+                                                sx={{ width: '100%', height: 225, objectFit: 'cover' }} // 300 * 0.75 = 225 for 4:3 ratio
                                                 image={selectedMedia.thumbnail || selectedMedia.Thumbnail}
                                                 alt={selectedMedia.title || selectedMedia.Title}
                                             />
                                         )}
-                                        <CardContent sx={{ p: 3 }}>
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                                                <Typography variant="h4" component="h3" sx={{ fontWeight: 'bold', flex: 1 }}>
+                                        <CardContent sx={{ p: 2.5 }}>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                                                <Typography variant="h5" component="h3" sx={{ fontWeight: 'bold', fontSize: '1.2rem' }}>
                                                     {selectedMedia.title || selectedMedia.Title}
                                                 </Typography>
                                                 <Button
                                                     variant="contained"
                                                     color="primary"
+                                                    size="small"
                                                     startIcon={<OpenInNew />}
                                                     onClick={() => navigate(`/media/${selectedMedia.id || selectedMedia.Id}`)}
+                                                    sx={{ alignSelf: 'flex-start' }}
                                                 >
                                                     View Full Profile
                                                 </Button>
                                             </Box>
                                             
                                             {/* Description beneath title */}
-                                            <Typography variant="body1" sx={{ mb: 3, lineHeight: 1.6, color: 'text.secondary' }}>
+                                            <Typography variant="body2" sx={{ mb: 2, lineHeight: 1.4, color: 'text.secondary' }}>
                                                 {selectedMedia.description || selectedMedia.Description || selectedMedia.desc || selectedMedia.Desc || 'No description available'}
                                             </Typography>
                                             
-                                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 3 }}>
+                                            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                                                 <Chip
                                                     label={selectedMedia.mediaType || selectedMedia.MediaType}
+                                                    size="small"
                                                     sx={{
                                                         backgroundColor: getMediaTypeColor(selectedMedia.mediaType || selectedMedia.MediaType),
                                                         color: 'white',
-                                                        fontWeight: 'bold'
+                                                        fontWeight: 'bold',
+                                                        fontSize: '0.7rem'
                                                     }}
                                                 />
                                                 {(selectedMedia.status || selectedMedia.Status) && (
                                                     <Chip
                                                         label={selectedMedia.status || selectedMedia.Status}
+                                                        size="small"
                                                         sx={{
                                                             backgroundColor: getStatusColor(selectedMedia.status || selectedMedia.Status),
                                                             color: 'white',
-                                                            fontWeight: 'bold'
+                                                            fontWeight: 'bold',
+                                                            fontSize: '0.7rem'
                                                         }}
                                                     />
                                                 )}
                                             </Box>
 
                                             {selectedMedia.notes && (
-                                                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                                                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.4, fontSize: '0.8rem' }}>
                                                     <strong>Notes:</strong> {selectedMedia.notes}
                                                 </Typography>
                                             )}
 
                                             {selectedMedia.link && (
-                                                <Box sx={{ mt: 2 }}>
+                                                <Box sx={{ mt: 1.5 }}>
                                                     <Link 
                                                         href={selectedMedia.link.startsWith('http') ? selectedMedia.link : `https://${selectedMedia.link}`}
                                                         target="_blank" 
@@ -401,9 +407,10 @@ function MixlistProfilePage() {
                                                         sx={{ 
                                                             display: 'inline-flex', 
                                                             alignItems: 'center', 
-                                                            gap: 1,
+                                                            gap: 0.5,
                                                             color: 'primary.main',
                                                             textDecoration: 'none',
+                                                            fontSize: '0.8rem',
                                                             '&:hover': { textDecoration: 'underline' }
                                                         }}
                                                     >

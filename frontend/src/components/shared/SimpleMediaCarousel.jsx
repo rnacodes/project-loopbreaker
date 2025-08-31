@@ -102,7 +102,7 @@ const SimpleMediaCarousel = ({
           display: 'flex', 
           justifyContent: 'center', 
           alignItems: 'center',
-          gap: 2,
+          gap: 1, // Reduced from 2 to 1 for tighter spacing
           overflow: 'hidden',
           px: 6
         }}>
@@ -115,8 +115,8 @@ const SimpleMediaCarousel = ({
               <Card
                 key={`${media.id || media.Id}-${index}`}
                 sx={{
-                  minWidth: 280, // Increased from 220
-                  maxWidth: 350, // Increased from 280
+                  minWidth: 250, // Increased to 250px as requested
+                  maxWidth: 250,
                   transform: `scale(${scale})`,
                   opacity: opacity,
                   transition: 'all 0.3s ease',
@@ -131,23 +131,24 @@ const SimpleMediaCarousel = ({
                 {(media.thumbnailUrl || media.thumbnail || media.Thumbnail) && (
                   <CardMedia
                     component="img"
-                    height="200" // Increased from 170
+                    height="375" // Height for 2:3 aspect ratio (250 * 1.5)
                     image={media.thumbnailUrl || media.thumbnail || media.Thumbnail}
                     alt={media.title || media.Title}
                     sx={{ objectFit: 'cover' }}
                   />
                 )}
-                <CardContent sx={{ p: 3 }}> {/* Increased padding from 2 to 3 */}
+                <CardContent sx={{ p: 2.5, textAlign: 'center' }}>
                   <Typography 
                     variant="body2" 
                     sx={{ 
                       fontWeight: 'bold',
-                      fontSize: isCenter ? '1.3rem' : '1.1rem', // Increased from 1.1rem/1rem
+                      fontSize: isCenter ? '1rem' : '0.9rem',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       display: '-webkit-box',
                       WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical'
+                      WebkitBoxOrient: 'vertical',
+                      lineHeight: 1.3
                     }}
                   >
                     {media.title || media.Title}
@@ -158,8 +159,9 @@ const SimpleMediaCarousel = ({
                     sx={{
                       backgroundColor: getMediaTypeColor(media.mediaType || media.MediaType),
                       color: 'white',
-                      fontSize: '0.9rem', // Increased from 0.8rem
-                      mt: 1.5
+                      fontSize: '0.8rem',
+                      mt: 1.5,
+                      height: '24px'
                     }}
                   />
                 </CardContent>

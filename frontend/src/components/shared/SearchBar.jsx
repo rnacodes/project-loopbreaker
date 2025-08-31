@@ -198,7 +198,7 @@ const SearchBar = ({
               <IconButton
                 onClick={() => handleSearch()}
                 edge="start"
-                sx={{ p: '10px', color: COLORS.primary.main }}
+                sx={{ p: '10px', color: COLORS.text.secondary }}
               >
                 {searching ? <CircularProgress size={20} /> : <Search sx={{ fontSize: 30 }} />}
               </IconButton>

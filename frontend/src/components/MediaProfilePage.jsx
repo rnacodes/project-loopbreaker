@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Box, Typography, Button, Card, CardContent, CardMedia,
-    Chip, Divider, Paper, Link, Container, IconButton,
+    Chip, Divider, Paper, Link, IconButton,
     Dialog, DialogTitle, DialogContent, DialogActions,
     List, ListItem, ListItemText, Collapse, Snackbar, Alert,
     CircularProgress
 } from '@mui/material';
 import { 
     ArrowBack, Edit, OpenInNew, FileDownload, 
-    ExpandLess, ExpandMore, PlaylistAdd 
+    ExpandLess, ExpandMore, PlaylistAdd, 
+    ChevronLeft, ChevronRight 
 } from '@mui/icons-material';
 import { 
     getMediaById, getAllMixlists, addMediaToMixlist, 
@@ -39,10 +40,25 @@ function MediaProfilePage() {
         console.log('Media data:', media);
         setMediaItem(media);
 
-        // Find current mixlists
-        const currentMixlistsArray = media.mixlists || media.Mixlists || [];
-        console.log('Current mixlists:', currentMixlistsArray);
-        setCurrentMixlists(currentMixlistsArray);
+        // Find current mixlists - backend returns MixlistIds, so we need to fetch the actual mixlist data
+        const mixlistIds = media.mixlistIds || media.MixlistIds || [];
+        console.log('Mixlist IDs:', mixlistIds);
+        
+        if (mixlistIds.length > 0) {
+          // Fetch the actual mixlist data for each ID
+          const mixlistPromises = mixlistIds.map(id => 
+            getAllMixlists().then(response => 
+              response.data.find(mixlist => (mixlist.id || mixlist.Id) === id)
+            ).catch(() => null)
+          );
+          
+          const mixlists = await Promise.all(mixlistPromises);
+          const validMixlists = mixlists.filter(mixlist => mixlist !== null);
+          console.log('Fetched mixlists:', validMixlists);
+          setCurrentMixlists(validMixlists);
+        } else {
+          setCurrentMixlists([]);
+        }
 
         // Fetch available mixlists
         console.log('Fetching available mixlists...');
@@ -118,20 +134,50 @@ function MediaProfilePage() {
 
   if (loading) {
     return (
-      <Container maxWidth="md">
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh', flexDirection: 'column' }}>
+      <Box sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        py: 4,
+        px: 2
+      }}>
+        <Box sx={{ 
+          width: '100%',
+          maxWidth: '600px',
+          backgroundColor: 'background.paper',
+          borderRadius: '16px',
+          p: 4,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          textAlign: 'center'
+        }}>
           <CircularProgress sx={{ mb: 2 }} />
           <Typography variant="h6">Loading media item...</Typography>
           <Typography variant="body2" color="text.secondary">ID: {id}</Typography>
         </Box>
-      </Container>
+      </Box>
     );
   }
 
   if (!mediaItem) {
     return (
-      <Container maxWidth="md">
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
+      <Box sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'flex-start',
+        py: 4,
+        px: 2
+      }}>
+        <Box sx={{ 
+          width: '100%',
+          maxWidth: '600px',
+          backgroundColor: 'background.paper',
+          borderRadius: '16px',
+          p: 4,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          textAlign: 'center'
+        }}>
           <Typography variant="h6">Media item not found.</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             The media item you're looking for doesn't exist or couldn't be loaded.
@@ -144,18 +190,36 @@ function MediaProfilePage() {
             Back to All Media
           </Button>
         </Box>
-      </Container>
+      </Box>
     );
   }
 
-  // Debug: Log the media item structure
+
+
+  // Debug logging
   console.log('Rendering media item:', mediaItem);
   console.log('Media item keys:', Object.keys(mediaItem));
+  console.log('Mixlist IDs:', mediaItem?.mixlistIds || mediaItem?.MixlistIds);
+  console.log('Current mixlists state:', currentMixlists);
 
   try {
     return (
-      <Container maxWidth="md">
-        <Box sx={{ mt: 4 }}>
+      <Box sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'flex-start',
+        py: 4,
+        px: 2
+      }}>
+        <Box sx={{ 
+          width: '100%',
+          maxWidth: '600px',
+          backgroundColor: 'background.paper',
+          borderRadius: '16px',
+          p: 4,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+        }}>
           {/* Header with back button and edit button */}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -177,116 +241,257 @@ function MediaProfilePage() {
             </Button>
           </Box>
 
-
-          {/* Action Buttons */}
-          {/* <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-            <Button
-              onClick={() => window.open(`/api/media/${id}/export`, '_blank')}
-              startIcon={<FileDownload />}
-              variant="outlined"
-              color="primary"
-              size="medium"
-            >
-              Export Media Item
-            </Button>
-          </Box> */}
-
           <Card sx={{ overflow: 'hidden', borderRadius: 2 }}>
-            {/* Debug Info - Remove this after fixing */}
-            <Box sx={{ p: 2, backgroundColor: 'grey.100', borderBottom: 1, borderColor: 'divider' }}>
-              <Typography variant="body2" color="text.secondary">
-                Debug: Media ID: {id} | Has data: {mediaItem ? 'Yes' : 'No'} | 
-                Keys: {mediaItem ? Object.keys(mediaItem).join(', ') : 'None'}
-              </Typography>
-            </Box>
-
-            {/* Thumbnail */}
-            {(mediaItem.thumbnail || mediaItem.Thumbnail) && (
-              <CardMedia
-                component="img"
-                sx={{ width: '100%', height: 300, objectFit: 'cover' }}
-                image={mediaItem.thumbnail || mediaItem.Thumbnail}
-                alt={mediaItem.title || mediaItem.Title}
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            )}
-
             <CardContent sx={{ p: 4 }}>
-              {/* Title and Type */}
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="h3" component="h2" gutterBottom sx={{ fontWeight: 'bold', fontSize: '2.5rem' }}>
-                  {mediaItem.title || mediaItem.Title || 'Untitled Media'}
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                  <Chip
-                    label={mediaItem.mediaType || mediaItem.MediaType || 'Unknown'}
-                    sx={{
-                      backgroundColor: getMediaTypeColor(mediaItem.mediaType || mediaItem.MediaType),
-                      color: 'white',
-                      fontWeight: 'bold',
-                      fontSize: '1rem'
-                    }}
-                  />
-                  {(mediaItem.status || mediaItem.Status) && (
-                    <Chip
-                      label={mediaItem.status || mediaItem.Status}
-                      sx={{
-                        backgroundColor: getStatusColor(mediaItem.status || mediaItem.Status),
-                        color: 'white',
-                        fontWeight: 'bold',
-                        fontSize: '1rem'
+              {/* Main content with thumbnail on the right */}
+              <Box sx={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
+                {/* Left side - Media information */}
+                <Box sx={{ flex: 1 }}>
+                  {/* Title and Type */}
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="h3" component="h2" gutterBottom sx={{ fontWeight: 'bold', fontSize: '2.5rem' }}>
+                      {mediaItem.title || mediaItem.Title || 'Untitled Media'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                      <Chip
+                        label={mediaItem.mediaType || mediaItem.MediaType || 'Unknown'}
+                        sx={{
+                          backgroundColor: getMediaTypeColor(mediaItem.mediaType || mediaItem.MediaType),
+                          color: 'white',
+                          fontWeight: 'bold',
+                          fontSize: '1rem'
+                        }}
+                      />
+                      {(mediaItem.status || mediaItem.Status) && (
+                        <Chip
+                          label={mediaItem.status || mediaItem.Status}
+                          sx={{
+                            backgroundColor: getStatusColor(mediaItem.status || mediaItem.Status),
+                            color: 'white',
+                            fontWeight: 'bold',
+                            fontSize: '1rem'
+                          }}
+                        />
+                      )}
+                    </Box>
+                  </Box>
+
+                  <Divider sx={{ mb: 3 }} />
+
+                  {/* Basic Info Display */}
+                  <Box sx={{ mb: 4 }}>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      <strong>Title:</strong> {mediaItem.title || mediaItem.Title || 'N/A'}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      <strong>Type:</strong> {mediaItem.mediaType || mediaItem.MediaType || 'N/A'}
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      <strong>Status:</strong> {mediaItem.status || mediaItem.Status || 'N/A'}
+                    </Typography>
+                    {(mediaItem.description || mediaItem.Description) && (
+                      <Typography variant="body1" sx={{ mb: 2 }}>
+                        <strong>Description:</strong> {mediaItem.description || mediaItem.Description}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {/* Debug Info */}
+                  <Box sx={{ mb: 4 }}>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                      Debug Info
+                    </Typography>
+                    <Paper sx={{ p: 2, backgroundColor: 'grey.50', maxHeight: 150, overflow: 'auto' }}>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        <strong>Mixlist IDs:</strong> {JSON.stringify(mediaItem.mixlistIds || mediaItem.MixlistIds || [])}
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        <strong>Current Mixlists:</strong> {currentMixlists.length} items
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        <strong>Available Mixlists:</strong> {availableMixlists.length} items
+                      </Typography>
+                    </Paper>
+                  </Box>
+                </Box>
+
+                {/* Right side - Thumbnail */}
+                {(mediaItem.thumbnail || mediaItem.Thumbnail) && (
+                  <Box sx={{ flexShrink: 0 }}>
+                    <CardMedia
+                      component="img"
+                      sx={{ 
+                        width: 180, 
+                        height: 270, 
+                        objectFit: 'cover',
+                        borderRadius: 1,
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                      }}
+                      image={mediaItem.thumbnail || mediaItem.Thumbnail}
+                      alt={mediaItem.title || mediaItem.Title}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
                       }}
                     />
-                  )}
-                </Box>
-              </Box>
-
-              <Divider sx={{ mb: 3 }} />
-
-              {/* Basic Info Display */}
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 2 }}>
-                  Basic Information
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 2 }}>
-                  <strong>Title:</strong> {mediaItem.title || mediaItem.Title || 'N/A'}
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 2 }}>
-                  <strong>Type:</strong> {mediaItem.mediaType || mediaItem.MediaType || 'N/A'}
-                </Typography>
-                <Typography variant="body1" sx={{ mb: 2 }}>
-                  <strong>Status:</strong> {mediaItem.status || mediaItem.Status || 'N/A'}
-                </Typography>
-                {(mediaItem.description || mediaItem.Description) && (
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Description:</strong> {mediaItem.description || mediaItem.Description}
-                  </Typography>
+                  </Box>
                 )}
-              </Box>
-
-              {/* Raw Data Display for Debugging */}
-              <Box sx={{ mb: 4 }}>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                  Raw Data (Debug)
-                </Typography>
-                <Paper sx={{ p: 2, backgroundColor: 'grey.50', maxHeight: 200, overflow: 'auto' }}>
-                  <pre style={{ fontSize: '12px', margin: 0 }}>
-                    {JSON.stringify(mediaItem, null, 2)}
-                  </pre>
-                </Paper>
               </Box>
             </CardContent>
           </Card>
+
+          {/* Mixlists Section */}
+          <Card sx={{ mt: 3, overflow: 'hidden', borderRadius: 2 }}>
+            <CardContent sx={{ p: 4 }}>
+              <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
+                Part of Mixlists
+              </Typography>
+              
+              {currentMixlists.length > 0 ? (
+                <Box sx={{ position: 'relative' }}>
+                  {/* Carousel Container */}
+                  <Box 
+                    className="mixlist-carousel"
+                    sx={{ 
+                      display: 'flex', 
+                      gap: 2, 
+                      overflow: 'hidden',
+                      scrollBehavior: 'smooth'
+                    }}
+                  >
+                    {currentMixlists.map((mixlist, index) => (
+                      <Card 
+                        key={mixlist.id || mixlist.Id} 
+                        sx={{ 
+                          minWidth: 280,
+                          flexShrink: 0,
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s ease-in-out',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
+                          }
+                        }}
+                        onClick={() => navigate(`/mixlist/${mixlist.id || mixlist.Id}`)}
+                      >
+                        <CardContent sx={{ p: 3 }}>
+                          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+                            {mixlist.name || mixlist.Name || `Mixlist ${mixlist.id || mixlist.Id}`}
+                          </Typography>
+                          {mixlist.description && (
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                              {mixlist.description}
+                            </Typography>
+                          )}
+                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            <Chip 
+                              label={`${mixlist.mediaItems?.length || 0} items`} 
+                              size="small" 
+                              variant="outlined"
+                            />
+                            {mixlist.genre && (
+                              <Chip 
+                                label={mixlist.genre} 
+                                size="small" 
+                                variant="outlined"
+                              />
+                            )}
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Box>
+
+                  {/* Navigation Arrows */}
+                  {currentMixlists.length > 2 && (
+                    <>
+                      <IconButton
+                        sx={{
+                          position: 'absolute',
+                          left: -20,
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          backgroundColor: 'background.paper',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                          '&:hover': {
+                            backgroundColor: 'background.paper',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
+                          }
+                        }}
+                        onClick={() => {
+                          const container = document.querySelector('.mixlist-carousel');
+                          if (container) {
+                            container.scrollLeft -= 300;
+                          }
+                        }}
+                      >
+                        <ChevronLeft />
+                      </IconButton>
+                      
+                      <IconButton
+                        sx={{
+                          position: 'absolute',
+                          right: -20,
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          backgroundColor: 'background.paper',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                          '&:hover': {
+                            backgroundColor: 'background.paper',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
+                          }
+                        }}
+                        onClick={() => {
+                          const container = document.querySelector('.mixlist-carousel');
+                          if (container) {
+                            container.scrollLeft += 300;
+                          }
+                        }}
+                      >
+                        <ChevronRight />
+                      </IconButton>
+                    </>
+                  )}
+                </Box>
+              ) : (
+                /* Empty State */
+                <Box sx={{ textAlign: 'center', py: 3 }}>
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                    This media item is not part of any mixlists yet.
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<PlaylistAdd />}
+                    onClick={() => navigate('/create-mixlist')}
+                  >
+                    Create Mixlist
+                  </Button>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
         </Box>
-      </Container>
+      </Box>
     );
   } catch (error) {
     console.error('Error rendering MediaProfilePage:', error);
     return (
-      <Container maxWidth="md">
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
+      <Box sx={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'flex-start',
+        py: 4,
+        px: 2
+      }}>
+        <Box sx={{ 
+          width: '100%',
+          maxWidth: '600px',
+          backgroundColor: 'background.paper',
+          borderRadius: '16px',
+          p: 4,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+          textAlign: 'center'
+        }}>
           <Typography variant="h6" color="error">Error rendering media profile</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             {error.message}
@@ -299,7 +504,7 @@ function MediaProfilePage() {
             Back to All Media
           </Button>
         </Box>
-      </Container>
+      </Box>
     );
   }
 }
