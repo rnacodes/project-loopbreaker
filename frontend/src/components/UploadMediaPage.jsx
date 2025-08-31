@@ -390,6 +390,22 @@ function UploadMediaPage() {
                     </Button>
                 </Box>
             </Paper>
+
+            {/* Go Back Button */}
+            <Box sx={{ textAlign: 'center', mt: 4 }}>
+                <Button 
+                    variant="outlined" 
+                    onClick={() => window.history.back()}
+                    sx={{ 
+                        px: 4, 
+                        py: 1.5,
+                        fontSize: '16px',
+                        fontWeight: 'bold'
+                    }}
+                >
+                    Go Back
+                </Button>
+            </Box>
         </Container>
     );
 }

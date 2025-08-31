@@ -80,14 +80,18 @@ const SearchBar = ({
     if (searchQuery.trim()) {
       setSearching(true);
       try {
-        console.log('Searching for:', searchQuery.trim());
+        console.log('🔍 SearchBar: Searching for:', searchQuery.trim());
         const results = await searchAll(searchQuery.trim());
-        console.log('Search results:', results);
+        console.log('🔍 SearchBar: Raw results:', results);
+        console.log('🔍 SearchBar: Media count:', results.media?.length || 0);
+        console.log('🔍 SearchBar: Mixlists count:', results.mixlists?.length || 0);
+        
         setSearchResults(results);
         setShowSuggestionsPanel(true);
         onSearch?.(searchQuery.trim(), results);
       } catch (error) {
-        console.error('Search error:', error);
+        console.error('❌ SearchBar: Search error:', error);
+        console.error('❌ SearchBar: Error details:', error.response?.data || error.message);
         setSearchResults({ media: [], mixlists: [] });
       } finally {
         setSearching(false);
@@ -412,8 +416,21 @@ const SearchBar = ({
             {searchResults.media.length === 0 && searchResults.mixlists.length === 0 && recentSearches.length === 0 && trendingSearches.length === 0 && (
               <Box sx={{ p: 2, textAlign: 'center' }}>
                 <Typography variant="body2" color={COLORS.text.hint}>
-                  {query ? 'No results found' : 'No suggestions available'}
+                  {query ? `No results found for "${query}"` : 'No suggestions available'}
                 </Typography>
+                {query && (
+                  <Typography variant="caption" color={COLORS.text.hint} sx={{ display: 'block', mt: 1 }}>
+                    Try different keywords or check your spelling
+                  </Typography>
+                )}
+                {/* Debug info - remove in production */}
+                {process.env.NODE_ENV === 'development' && query && (
+                  <Box sx={{ mt: 2, p: 1, backgroundColor: COLORS.background.elevated, borderRadius: 1 }}>
+                    <Typography variant="caption" color={COLORS.text.hint}>
+                      Debug: Searched for "{query}" in titles, descriptions, genres, topics, and media types
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             )}
           </Paper>

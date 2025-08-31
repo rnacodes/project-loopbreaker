@@ -505,7 +505,7 @@ function ImportMediaPage() {
                                 sx={{ 
                                     minWidth: 'auto',
                                     textTransform: 'none',
-                                    color: 'primary.main',
+                                    color: '#ffffff',
                                     '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
                                 }}
                                 onClick={(e) => e.stopPropagation()}
@@ -557,7 +557,7 @@ function ImportMediaPage() {
                                 sx={{ 
                                     minWidth: 'auto',
                                     textTransform: 'none',
-                                    color: 'primary.main',
+                                    color: '#ffffff',
                                     '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
                                 }}
                                 onClick={(e) => e.stopPropagation()}

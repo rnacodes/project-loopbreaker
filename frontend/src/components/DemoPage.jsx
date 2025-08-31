@@ -12,7 +12,11 @@ import {
   CardMedia,
   TextField,
   CircularProgress,
-  Skeleton
+  Skeleton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import {
   Book,
@@ -364,12 +368,12 @@ const DemoPage = () => {
         <Typography variant="h4" gutterBottom>
           Design System Colors
         </Typography>
-        <Grid container spacing={2}>
+        <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Typography variant="h6" gutterBottom>
               Media Type Colors
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
               {Object.entries(COLORS.mediaTypes).map(([type, color]) => (
                 <Chip
                   key={type}
@@ -377,17 +381,22 @@ const DemoPage = () => {
                   sx={{
                     backgroundColor: color,
                     color: 'white',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    minWidth: '80px',
+                    textAlign: 'center'
                   }}
                 />
               ))}
             </Box>
+            <Typography variant="body2" color="text.secondary">
+              Each media type has a distinct color for easy identification
+            </Typography>
           </Grid>
           <Grid item xs={12} md={6}>
             <Typography variant="h6" gutterBottom>
               Status Colors
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
               {['uncharted', 'actively exploring', 'completed', 'abandoned'].map((status) => (
                 <Chip
                   key={status}
@@ -395,39 +404,182 @@ const DemoPage = () => {
                   sx={{
                     backgroundColor: getStatusColor(status),
                     color: 'white',
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    minWidth: '120px',
+                    textAlign: 'center'
                   }}
                 />
               ))}
             </Box>
+            <Typography variant="body2" color="text.secondary">
+              Status colors help track progress through your media
+            </Typography>
+          </Grid>
+          <Grid item xs={12}>
+            <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+              Color Palette
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ textAlign: 'center', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                  <Box sx={{ width: '100%', height: 60, backgroundColor: COLORS.primary.main, borderRadius: 1, mb: 1 }} />
+                  <Typography variant="body2" fontWeight="bold">Primary</Typography>
+                  <Typography variant="caption" color="text.secondary">{COLORS.primary.main}</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ textAlign: 'center', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                  <Box sx={{ width: '100%', height: 60, backgroundColor: COLORS.secondary.main, borderRadius: 1, mb: 1 }} />
+                  <Typography variant="body2" fontWeight="bold">Secondary</Typography>
+                  <Typography variant="caption" color="text.secondary">{COLORS.secondary.main}</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ textAlign: 'center', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                  <Box sx={{ width: '100%', height: 60, backgroundColor: COLORS.background.elevated, borderRadius: 1, mb: 1 }} />
+                  <Typography variant="body2" fontWeight="bold">Background</Typography>
+                  <Typography variant="caption" color="text.secondary">Elevated</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ textAlign: 'center', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                  <Box sx={{ width: '100%', height: 60, backgroundColor: COLORS.text.primary, borderRadius: 1, mb: 1 }} />
+                  <Typography variant="body2" fontWeight="bold">Text</Typography>
+                  <Typography variant="caption" color="text.secondary">Primary</Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* Interactive Components Demo */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h4" gutterBottom>
+          Interactive Components
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Typography variant="h6" gutterBottom>
+              Button Variants
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+              <Button variant="contained" color="primary">Primary</Button>
+              <Button variant="contained" color="secondary">Secondary</Button>
+              <Button variant="outlined">Outlined</Button>
+              <Button variant="text">Text</Button>
+            </Box>
+            <Typography variant="body2" color="text.secondary">
+              Different button styles for various use cases
+            </Typography>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography variant="h6" gutterBottom>
+              Form Controls
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
+              <TextField label="Sample Input" variant="outlined" size="small" />
+              <FormControl size="small">
+                <InputLabel>Sample Select</InputLabel>
+                <Select label="Sample Select" value="">
+                  <MenuItem value="">Option 1</MenuItem>
+                  <MenuItem value="">Option 2</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+            <Typography variant="body2" color="text.secondary">
+              Form components with consistent styling
+            </Typography>
           </Grid>
         </Grid>
       </Paper>
 
       {/* Spacing and Typography Demo */}
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h4" gutterBottom>
           Typography & Spacing
         </Typography>
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="h1">Heading 1</Typography>
-          <Typography variant="h2">Heading 2</Typography>
-          <Typography variant="h3">Heading 3</Typography>
-          <Typography variant="h4">Heading 4</Typography>
-          <Typography variant="h5">Heading 5</Typography>
-          <Typography variant="h6">Heading 6</Typography>
-        </Box>
-        <Box>
-          <Typography variant="body1">
-            Body 1 text with normal line height and spacing.
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Body 2 text with secondary color for less emphasis.
-          </Typography>
-          <Typography variant="caption" color="text.hint">
-            Caption text for small details and metadata.
-          </Typography>
-        </Box>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Typography variant="h6" gutterBottom>
+              Heading Hierarchy
+            </Typography>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="h1" sx={{ fontSize: '2rem' }}>Heading 1</Typography>
+              <Typography variant="h2" sx={{ fontSize: '1.75rem' }}>Heading 2</Typography>
+              <Typography variant="h3" sx={{ fontSize: '1.5rem' }}>Heading 3</Typography>
+              <Typography variant="h4" sx={{ fontSize: '1.25rem' }}>Heading 4</Typography>
+              <Typography variant="h5" sx={{ fontSize: '1.125rem' }}>Heading 5</Typography>
+              <Typography variant="h6" sx={{ fontSize: '1rem' }}>Heading 6</Typography>
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography variant="h6" gutterBottom>
+              Text Variants
+            </Typography>
+            <Box>
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                Body 1 text with normal line height and spacing.
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Body 2 text with secondary color for less emphasis.
+              </Typography>
+              <Typography variant="caption" color="text.hint" sx={{ mb: 1 }}>
+                Caption text for small details and metadata.
+              </Typography>
+              <Typography variant="overline" color="text.secondary">
+                Overline text for labels and categories
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* Spacing and Shadows Demo */}
+      <Paper sx={{ p: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          Spacing & Shadows
+        </Typography>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Typography variant="h6" gutterBottom>
+              Spacing Scale
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ p: 1, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                <Typography variant="body2">Padding: 8px (1)</Typography>
+              </Box>
+              <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                <Typography variant="body2">Padding: 16px (2)</Typography>
+              </Box>
+              <Box sx={{ p: 3, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                <Typography variant="body2">Padding: 24px (3)</Typography>
+              </Box>
+              <Box sx={{ p: 4, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                <Typography variant="body2">Padding: 32px (4)</Typography>
+              </Box>
+            </Box>
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Typography variant="h6" gutterBottom>
+              Shadow Variants
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ p: 2, boxShadow: SHADOWS.sm, borderRadius: 1 }}>
+                <Typography variant="body2">Small Shadow</Typography>
+              </Box>
+              <Box sx={{ p: 2, boxShadow: SHADOWS.md, borderRadius: 1 }}>
+                <Typography variant="body2">Medium Shadow</Typography>
+              </Box>
+              <Box sx={{ p: 2, boxShadow: SHADOWS.lg, borderRadius: 1 }}>
+                <Typography variant="body2">Large Shadow</Typography>
+              </Box>
+              <Box sx={{ p: 2, boxShadow: SHADOWS.xl, borderRadius: 1 }}>
+                <Typography variant="body2">Extra Large Shadow</Typography>
+              </Box>
+            </Box>
+          </Grid>
+        </Grid>
       </Paper>
     </Container>
   );

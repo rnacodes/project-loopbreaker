@@ -298,12 +298,14 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
             try
             {
+                var searchQuery = query.ToLower();
                 var results = await _context.MediaItems
-                    .Where(m => m.Title.Contains(query) || 
-                               (m.Description != null && m.Description.Contains(query)) ||
-                               (m.Genre != null && m.Genre.Contains(query)) ||
-                               (m.Topics.Any(t => t.Name.Contains(query))) ||
-                               (m.Genres.Any(g => g.Name.Contains(query))))
+                    .Where(m => m.Title.ToLower().Contains(searchQuery) || 
+                               (m.Description != null && m.Description.ToLower().Contains(searchQuery)) ||
+                               (m.Genre != null && m.Genre.ToLower().Contains(searchQuery)) ||
+                               (m.Topics.Any(t => t.Name.ToLower().Contains(searchQuery))) ||
+                               (m.Genres.Any(g => g.Name.ToLower().Contains(searchQuery))) ||
+                               m.MediaType.ToString().ToLower().Contains(searchQuery))
                     .Include(m => m.Mixlists)
                     .Include(m => m.Topics)
                     .Include(m => m.Genres)

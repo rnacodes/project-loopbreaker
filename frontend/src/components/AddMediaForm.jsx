@@ -972,7 +972,8 @@ function AddMediaForm() {
                             textTransform: 'none',
                             py: 1.5,
                             px: 3,
-                            borderRadius: '8px'
+                            borderRadius: '8px',
+                            color: '#ffffff'
                         }}
                     >
                         Choose File
@@ -1150,7 +1151,8 @@ function AddMediaForm() {
                                 textTransform: 'none',
                                 py: 1.5,
                                 px: 3,
-                                borderRadius: '8px'
+                                borderRadius: '8px',
+                                color: '#ffffff'
                             }}
                         >
                             + New Mixlist

@@ -6,7 +6,7 @@ import {
     ListItemSecondaryAction, IconButton, Divider, CircularProgress
 } from '@mui/material';
 import { ViewModule, ViewList, OpenInNew, FileDownload } from '@mui/icons-material';
-import { getAllMedia } from '../services/apiService';
+import { getAllMedia, getMediaByType } from '../services/apiService';
 
 function AllMedia() {
   const [mediaItems, setMediaItems] = useState([]);
@@ -19,19 +19,31 @@ function AllMedia() {
     const fetchMedia = async () => {
       try {
         setLoading(true);
+        setError(null);
         const mediaType = searchParams.get('mediaType');
+        
+        console.log('Fetching media with type:', mediaType);
         
         let response;
         if (mediaType) {
           response = await getMediaByType(mediaType);
+          console.log(`Media by type ${mediaType}:`, response);
         } else {
           response = await getAllMedia();
+          console.log('All media:', response);
         }
         
-        setMediaItems(response.data);
+        if (response && response.data) {
+          setMediaItems(response.data);
+          console.log(`Loaded ${response.data.length} media items`);
+        } else {
+          console.warn('No data in response:', response);
+          setMediaItems([]);
+        }
       } catch (error) {
         console.error('Failed to fetch media items:', error);
-        setError('Failed to load media items');
+        console.error('Error details:', error.response?.data || error.message);
+        setError(`Failed to load media items: ${error.response?.data?.error || error.message}`);
       } finally {
         setLoading(false);
       }
@@ -234,8 +246,13 @@ function AllMedia() {
   if (error) {
     return (
       <Container maxWidth="lg">
-        <Box sx={{ mt: 4 }}>
-          <Typography color="error">{error}</Typography>
+        <Box sx={{ mt: 4, textAlign: 'center' }}>
+          <Typography variant="h6" color="error" gutterBottom>
+            {error}
+          </Typography>
+          <Button variant="contained" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
         </Box>
       </Container>
     );
@@ -291,9 +308,31 @@ function AllMedia() {
         </Box> */}
         
         {mediaItems.length === 0 ? (
-          <Typography variant="body1" sx={{ mt: 4 }}>
-            {mediaType ? `No ${mediaType.toLowerCase()} items found.` : 'No media items found.'} <Link to="/add-media">Add your first media item!</Link>
-          </Typography>
+          <Box sx={{ textAlign: 'center', py: 4 }}>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              {mediaType ? `No ${mediaType} items found` : 'No media items found'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              {mediaType 
+                ? `Try adding some ${mediaType} items to your library` 
+                : 'Try adding some media items to your library'}
+            </Typography>
+            <Button 
+              variant="contained" 
+              component={Link} 
+              to="/add-media"
+              sx={{ mr: 1 }}
+            >
+              Add Media
+            </Button>
+            <Button 
+              variant="outlined" 
+              component={Link} 
+              to="/import-media"
+            >
+              Import Media
+            </Button>
+          </Box>
         ) : (
           viewMode === 'card' ? renderCardView() : renderListView()
         )}

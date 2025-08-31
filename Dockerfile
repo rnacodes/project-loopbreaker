@@ -10,6 +10,7 @@ COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Application/*.csproj src/ProjectL
 COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Domain/*.csproj src/ProjectLoopbreaker/ProjectLoopbreaker.Domain/
 COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Infrastructure/*.csproj src/ProjectLoopbreaker/ProjectLoopbreaker.Infrastructure/
 COPY src/ProjectLoopbreaker/ProjectLoopbreaker.Shared/*.csproj src/ProjectLoopbreaker/ProjectLoopbreaker.Shared/
+COPY src/ProjectLoopbreaker/ProjectLoopbreaker.DTOs/*.csproj src/ProjectLoopbreaker/ProjectLoopbreaker.DTOs/
 COPY tests/ProjectLoopbreaker.UnitTests/*.csproj tests/ProjectLoopbreaker.UnitTests/
 COPY tests/ProjectLoopbreaker.IntegrationTests/*.csproj tests/ProjectLoopbreaker.IntegrationTests/
 # If you have ProjectLoopbreaker.Core.Shared, and it's also under src/ProjectLoopbreaker/, uncomment this:

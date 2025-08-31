@@ -365,46 +365,6 @@ export default function HomePage() {
                             <Typography variant="h5" sx={{ mt: 1 }}>Add Media</Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
-                        <Box 
-                            onClick={() => window.open('/api/media/export', '_blank')}
-                            sx={{ 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                alignItems: 'center', 
-                                cursor: 'pointer', 
-                                color: 'text.primary', 
-                                p: 2,
-                                '&:hover': {
-                                    transform: 'scale(1.05)',
-                                    transition: 'transform 0.2s ease'
-                                }
-                            }}
-                        >
-                            <FileDownload sx={{ fontSize: 70, color: '#695a8c' }} />
-                            <Typography variant="h5" sx={{ mt: 1 }}>Export All Media</Typography>
-                        </Box>
-                    </Grid>
-                    <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
-                        <Box 
-                            onClick={() => window.open('/api/mixlist/export', '_blank')}
-                            sx={{ 
-                                display: 'flex', 
-                                flexDirection: 'column', 
-                                alignItems: 'center', 
-                                cursor: 'pointer', 
-                                color: 'text.primary', 
-                                p: 2,
-                                '&:hover': {
-                                    transform: 'scale(1.05)',
-                                    transition: 'transform 0.2s ease'
-                                }
-                            }}
-                        >
-                            <FileDownload sx={{ fontSize: 70, color: '#695a8c' }} />
-                            <Typography variant="h5" sx={{ mt: 1 }}>Export All Mixlists</Typography>
-                        </Box>
-                    </Grid>
                 </Grid>
             </Box>
         </Section>
