@@ -319,6 +319,9 @@ function MixlistProfilePage() {
                                 title="Browse Media"
                                 subtitle="Click on any item to view details below"
                                 onMediaClick={handleMediaCarouselClick}
+                                cardWidth={250}
+                                cardHeight={350}
+                                showCardContent={false}
                             />
                         </Box>
                     )}

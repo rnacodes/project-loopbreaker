@@ -9,6 +9,9 @@ const SimpleMediaCarousel = ({
   title = 'Featured Media',
   subtitle,
   onMediaClick,
+  cardWidth = 250,
+  cardHeight = 350,
+  showCardContent = true,
   sx = {},
   ...props
 }) => {
@@ -115,8 +118,9 @@ const SimpleMediaCarousel = ({
               <Card
                 key={`${media.id || media.Id}-${index}`}
                 sx={{
-                  minWidth: 250, // Increased to 250px as requested
-                  maxWidth: 250,
+                  minWidth: cardWidth,
+                  maxWidth: cardWidth,
+                  height: cardHeight,
                   transform: `scale(${scale})`,
                   opacity: opacity,
                   transition: 'all 0.3s ease',
@@ -131,40 +135,42 @@ const SimpleMediaCarousel = ({
                 {(media.thumbnailUrl || media.thumbnail || media.Thumbnail) && (
                   <CardMedia
                     component="img"
-                    height="375" // Height for 2:3 aspect ratio (250 * 1.5)
+                    height={cardHeight}
                     image={media.thumbnailUrl || media.thumbnail || media.Thumbnail}
                     alt={media.title || media.Title}
                     sx={{ objectFit: 'cover' }}
                   />
                 )}
-                <CardContent sx={{ p: 2.5, textAlign: 'center' }}>
-                  <Typography 
-                    variant="body2" 
-                    sx={{ 
-                      fontWeight: 'bold',
-                      fontSize: isCenter ? '1rem' : '0.9rem',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      lineHeight: 1.3
-                    }}
-                  >
-                    {media.title || media.Title}
-                  </Typography>
-                  <Chip
-                    label={media.mediaType || media.MediaType}
-                    size="small"
-                    sx={{
-                      backgroundColor: getMediaTypeColor(media.mediaType || media.MediaType),
-                      color: 'white',
-                      fontSize: '0.8rem',
-                      mt: 1.5,
-                      height: '24px'
-                    }}
-                  />
-                </CardContent>
+                {showCardContent && (
+                  <CardContent sx={{ p: 2.5, textAlign: 'center' }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontWeight: 'bold',
+                        fontSize: isCenter ? '1rem' : '0.9rem',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        lineHeight: 1.3
+                      }}
+                    >
+                      {media.title || media.Title}
+                    </Typography>
+                    <Chip
+                      label={media.mediaType || media.MediaType}
+                      size="small"
+                      sx={{
+                        backgroundColor: getMediaTypeColor(media.mediaType || media.MediaType),
+                        color: 'white',
+                        fontSize: '0.8rem',
+                        mt: 1.5,
+                        height: '24px'
+                      }}
+                    />
+                  </CardContent>
+                )}
               </Card>
             );
           })}

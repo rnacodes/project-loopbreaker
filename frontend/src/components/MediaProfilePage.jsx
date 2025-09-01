@@ -14,14 +14,12 @@ import {
 } from '@mui/icons-material';
 import { 
     getMediaById, getAllMixlists, addMediaToMixlist, 
-    removeMediaFromMixlist 
+    removeMediaFromMixlist
 } from '../services/apiService';
 
 function MediaProfilePage() {
   const [mediaItem, setMediaItem] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [mixlistsExpanded, setMixlistsExpanded] = useState(false);
-  const [mixlistDialogOpen, setMixlistDialogOpen] = useState(false);
   const [availableMixlists, setAvailableMixlists] = useState([]);
   const [currentMixlists, setCurrentMixlists] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -33,19 +31,16 @@ function MediaProfilePage() {
     const fetchData = async () => {
       try {
         console.log('Fetching media item with ID:', id);
-        // Fetch media item
         const mediaResponse = await getMediaById(id);
         console.log('Media response:', mediaResponse);
         const media = mediaResponse.data;
         console.log('Media data:', media);
         setMediaItem(media);
 
-        // Find current mixlists - backend returns MixlistIds, so we need to fetch the actual mixlist data
         const mixlistIds = media.mixlistIds || media.MixlistIds || [];
         console.log('Mixlist IDs:', mixlistIds);
         
         if (mixlistIds.length > 0) {
-          // Fetch the actual mixlist data for each ID
           const mixlistPromises = mixlistIds.map(id => 
             getAllMixlists().then(response => 
               response.data.find(mixlist => (mixlist.id || mixlist.Id) === id)
@@ -60,16 +55,12 @@ function MediaProfilePage() {
           setCurrentMixlists([]);
         }
 
-        // Fetch available mixlists
-        console.log('Fetching available mixlists...');
         const mixlistsResponse = await getAllMixlists();
         console.log('Mixlists response:', mixlistsResponse);
         setAvailableMixlists(mixlistsResponse.data || []);
 
       } catch (error) {
         console.error('Failed to fetch data:', error);
-        console.error('Error details:', error.response?.data);
-        console.error('Error status:', error.response?.status);
         setSnackbar({ open: true, message: 'Failed to load media item', severity: 'error' });
       } finally {
         setLoading(false);
@@ -82,37 +73,6 @@ function MediaProfilePage() {
       setLoading(false);
     }
   }, [id]);
-
-  const handleMixlistAdd = async (mixlistId) => {
-    try {
-      await addMediaToMixlist(mixlistId, id);
-
-      // Update current mixlists display
-      const mixlist = availableMixlists.find(m => (m.id || m.Id) === mixlistId);
-      if (mixlist) {
-        setCurrentMixlists(prev => [...prev, mixlist]);
-      }
-
-      setSnackbar({ open: true, message: 'Added to mixlist successfully!', severity: 'success' });
-    } catch (error) {
-      console.error('Failed to add to mixlist:', error);
-      setSnackbar({ open: true, message: 'Failed to add to mixlist', severity: 'error' });
-    }
-  };
-
-  const handleMixlistRemove = async (mixlistId) => {
-    try {
-      await removeMediaFromMixlist(mixlistId, id);
-
-      // Update current mixlists display
-      setCurrentMixlists(prev => prev.filter(m => (m.id || m.Id) !== mixlistId));
-
-      setSnackbar({ open: true, message: 'Removed from mixlist successfully!', severity: 'success' });
-    } catch (error) {
-      console.error('Failed to remove from mixlist:', error);
-      setSnackbar({ open: true, message: 'Failed to remove from mixlist', severity: 'error' });
-    }
-  };
 
   const getMediaTypeColor = (mediaType) => {
     const colors = {
@@ -130,6 +90,11 @@ function MediaProfilePage() {
       'Uncharted': '#9E9E9E', 'Abandoned': '#F44336'
     };
     return colors[status] || colors['Uncharted'];
+  };
+
+  const getStatusDisplayText = (status) => {
+    if (status === 'ActivelyExploring') return 'Actively Exploring';
+    return status;
   };
 
   if (loading) {
@@ -194,319 +159,206 @@ function MediaProfilePage() {
     );
   }
 
-
-
-  // Debug logging
-  console.log('Rendering media item:', mediaItem);
-  console.log('Media item keys:', Object.keys(mediaItem));
-  console.log('Mixlist IDs:', mediaItem?.mixlistIds || mediaItem?.MixlistIds);
-  console.log('Current mixlists state:', currentMixlists);
-
-  try {
-    return (
+  return (
+    <Box sx={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'flex-start',
+      py: 4,
+      px: 2
+    }}>
       <Box sx={{ 
-        minHeight: '100vh', 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'flex-start',
-        py: 4,
-        px: 2
+        width: '100%',
+        maxWidth: '600px',
+        backgroundColor: 'background.paper',
+        borderRadius: '16px',
+        p: 4,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
       }}>
-        <Box sx={{ 
-          width: '100%',
-          maxWidth: '600px',
-          backgroundColor: 'background.paper',
-          borderRadius: '16px',
-          p: 4,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
-        }}>
-          {/* Header with back button and edit button */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
-                <ArrowBack />
-              </IconButton>
-              <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-                Media Profile
-              </Typography>
-            </Box>
-
-            <Button
-              onClick={() => navigate(`/media/${id}/edit`)}
-              startIcon={<Edit />}
-              variant="contained"
-              size="large"
-            >
-              Edit Media
-            </Button>
+        {/* Header with back button and edit button */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
+              <ArrowBack />
+            </IconButton>
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+              Media Profile
+            </Typography>
           </Box>
 
-          <Card sx={{ overflow: 'hidden', borderRadius: 2 }}>
-            <CardContent sx={{ p: 4 }}>
-              {/* Main content with thumbnail on the right */}
-              <Box sx={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
-                {/* Left side - Media information */}
-                <Box sx={{ flex: 1 }}>
-                  {/* Title and Type */}
-                  <Box sx={{ mb: 3 }}>
-                    <Typography variant="h3" component="h2" gutterBottom sx={{ fontWeight: 'bold', fontSize: '2.5rem' }}>
-                      {mediaItem.title || mediaItem.Title || 'Untitled Media'}
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+          <Button
+            onClick={() => navigate(`/media/${id}/edit`)}
+            startIcon={<Edit />}
+            variant="contained"
+            size="large"
+          >
+            Edit Media
+          </Button>
+        </Box>
+
+        <Card sx={{ overflow: 'hidden', borderRadius: 2 }}>
+          <CardContent sx={{ p: 4 }}>
+            {/* Main content with thumbnail on the right */}
+            <Box sx={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
+              {/* Left side - Media information */}
+              <Box sx={{ flex: 1 }}>
+                {/* Title and Type */}
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h3" component="h2" gutterBottom sx={{ fontWeight: 'bold', fontSize: '2.5rem' }}>
+                    {mediaItem.title || mediaItem.Title || 'Untitled Media'}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                    <Chip
+                      label={mediaItem.mediaType || mediaItem.MediaType || 'Unknown'}
+                      sx={{
+                        backgroundColor: getMediaTypeColor(mediaItem.mediaType || mediaItem.MediaType),
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '1rem'
+                      }}
+                    />
+                    {(mediaItem.status || mediaItem.Status) && (
                       <Chip
-                        label={mediaItem.mediaType || mediaItem.MediaType || 'Unknown'}
+                        label={getStatusDisplayText(mediaItem.status || mediaItem.Status)}
                         sx={{
-                          backgroundColor: getMediaTypeColor(mediaItem.mediaType || mediaItem.MediaType),
+                          backgroundColor: getStatusColor(mediaItem.status || mediaItem.Status),
                           color: 'white',
                           fontWeight: 'bold',
                           fontSize: '1rem'
                         }}
                       />
-                      {(mediaItem.status || mediaItem.Status) && (
-                        <Chip
-                          label={mediaItem.status || mediaItem.Status}
-                          sx={{
-                            backgroundColor: getStatusColor(mediaItem.status || mediaItem.Status),
-                            color: 'white',
-                            fontWeight: 'bold',
-                            fontSize: '1rem'
-                          }}
-                        />
-                      )}
-                    </Box>
-                  </Box>
-
-                  <Divider sx={{ mb: 3 }} />
-
-                  {/* Basic Info Display */}
-                  <Box sx={{ mb: 4 }}>
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                      <strong>Title:</strong> {mediaItem.title || mediaItem.Title || 'N/A'}
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                      <strong>Type:</strong> {mediaItem.mediaType || mediaItem.MediaType || 'N/A'}
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                      <strong>Status:</strong> {mediaItem.status || mediaItem.Status || 'N/A'}
-                    </Typography>
-                    {(mediaItem.description || mediaItem.Description) && (
-                      <Typography variant="body1" sx={{ mb: 2 }}>
-                        <strong>Description:</strong> {mediaItem.description || mediaItem.Description}
-                      </Typography>
                     )}
                   </Box>
-
-                  {/* Debug Info */}
-                  <Box sx={{ mb: 4 }}>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                      Debug Info
-                    </Typography>
-                    <Paper sx={{ p: 2, backgroundColor: 'grey.50', maxHeight: 150, overflow: 'auto' }}>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        <strong>Mixlist IDs:</strong> {JSON.stringify(mediaItem.mixlistIds || mediaItem.MixlistIds || [])}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        <strong>Current Mixlists:</strong> {currentMixlists.length} items
-                      </Typography>
-                      <Typography variant="body2" sx={{ mb: 1 }}>
-                        <strong>Available Mixlists:</strong> {availableMixlists.length} items
-                      </Typography>
-                    </Paper>
-                  </Box>
                 </Box>
 
-                {/* Right side - Thumbnail */}
-                {(mediaItem.thumbnail || mediaItem.Thumbnail) && (
-                  <Box sx={{ flexShrink: 0 }}>
-                    <CardMedia
-                      component="img"
-                      sx={{ 
-                        width: 180, 
-                        height: 270, 
-                        objectFit: 'cover',
-                        borderRadius: 1,
-                        boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
-                      }}
-                      image={mediaItem.thumbnail || mediaItem.Thumbnail}
-                      alt={mediaItem.title || mediaItem.Title}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  </Box>
-                )}
-              </Box>
-            </CardContent>
-          </Card>
+                <Divider sx={{ mb: 3 }} />
 
-          {/* Mixlists Section */}
-          <Card sx={{ mt: 3, overflow: 'hidden', borderRadius: 2 }}>
-            <CardContent sx={{ p: 4 }}>
-              <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-                Part of Mixlists
-              </Typography>
-              
-              {currentMixlists.length > 0 ? (
-                <Box sx={{ position: 'relative' }}>
-                  {/* Carousel Container */}
-                  <Box 
-                    className="mixlist-carousel"
-                    sx={{ 
-                      display: 'flex', 
-                      gap: 2, 
-                      overflow: 'hidden',
-                      scrollBehavior: 'smooth'
-                    }}
-                  >
-                    {currentMixlists.map((mixlist, index) => (
-                      <Card 
-                        key={mixlist.id || mixlist.Id} 
-                        sx={{ 
-                          minWidth: 280,
-                          flexShrink: 0,
-                          cursor: 'pointer',
-                          transition: 'transform 0.2s ease-in-out',
-                          '&:hover': {
-                            transform: 'translateY(-4px)',
-                            boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
-                          }
-                        }}
-                        onClick={() => navigate(`/mixlist/${mixlist.id || mixlist.Id}`)}
-                      >
-                        <CardContent sx={{ p: 3 }}>
-                          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-                            {mixlist.name || mixlist.Name || `Mixlist ${mixlist.id || mixlist.Id}`}
-                          </Typography>
-                          {mixlist.description && (
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                              {mixlist.description}
-                            </Typography>
-                          )}
-                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                            <Chip 
-                              label={`${mixlist.mediaItems?.length || 0} items`} 
-                              size="small" 
-                              variant="outlined"
-                            />
-                            {mixlist.genre && (
-                              <Chip 
-                                label={mixlist.genre} 
-                                size="small" 
-                                variant="outlined"
-                              />
-                            )}
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </Box>
-
-                  {/* Navigation Arrows */}
-                  {currentMixlists.length > 2 && (
-                    <>
-                      <IconButton
-                        sx={{
-                          position: 'absolute',
-                          left: -20,
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          backgroundColor: 'background.paper',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                          '&:hover': {
-                            backgroundColor: 'background.paper',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
-                          }
-                        }}
-                        onClick={() => {
-                          const container = document.querySelector('.mixlist-carousel');
-                          if (container) {
-                            container.scrollLeft -= 300;
-                          }
-                        }}
-                      >
-                        <ChevronLeft />
-                      </IconButton>
-                      
-                      <IconButton
-                        sx={{
-                          position: 'absolute',
-                          right: -20,
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          backgroundColor: 'background.paper',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                          '&:hover': {
-                            backgroundColor: 'background.paper',
-                            boxShadow: '0 4px 12px rgba(0,0,0,0.25)'
-                          }
-                        }}
-                        onClick={() => {
-                          const container = document.querySelector('.mixlist-carousel');
-                          if (container) {
-                            container.scrollLeft += 300;
-                          }
-                        }}
-                      >
-                        <ChevronRight />
-                      </IconButton>
-                    </>
+                {/* Basic Info Display */}
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    <strong>Title:</strong> {mediaItem.title || mediaItem.Title || 'N/A'}
+                  </Typography>
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    <strong>Type:</strong> {mediaItem.mediaType || mediaItem.MediaType || 'N/A'}
+                  </Typography>
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    <strong>Status:</strong> {getStatusDisplayText(mediaItem.status || mediaItem.Status) || 'N/A'}
+                  </Typography>
+                  {(mediaItem.description || mediaItem.Description) && (
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      <strong>Description:</strong> {mediaItem.description || mediaItem.Description}
+                    </Typography>
                   )}
                 </Box>
-              ) : (
-                /* Empty State */
-                <Box sx={{ textAlign: 'center', py: 3 }}>
-                  <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                    This media item is not part of any mixlists yet.
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<PlaylistAdd />}
-                    onClick={() => navigate('/create-mixlist')}
-                  >
-                    Create Mixlist
-                  </Button>
+              </Box>
+
+              {/* Right side - Thumbnail */}
+              {(mediaItem.thumbnail || mediaItem.Thumbnail) && (
+                <Box sx={{ flexShrink: 0 }}>
+                  <CardMedia
+                    component="img"
+                    sx={{ 
+                      width: 180, 
+                      height: 270, 
+                      objectFit: 'cover',
+                      borderRadius: 1,
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                    }}
+                    image={mediaItem.thumbnail || mediaItem.Thumbnail}
+                    alt={mediaItem.title || mediaItem.Title}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
                 </Box>
               )}
-            </CardContent>
-          </Card>
-        </Box>
+            </Box>
+          </CardContent>
+        </Card>
+
+        {/* Mixlists Section */}
+        <Card sx={{ mt: 3, overflow: 'hidden', borderRadius: 2 }}>
+          <CardContent sx={{ p: 4 }}>
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
+              Mixlists
+            </Typography>
+            
+            {currentMixlists.length > 0 ? (
+              <Box sx={{ position: 'relative' }}>
+                {/* Carousel Container */}
+                <Box 
+                  className="mixlist-carousel"
+                  sx={{ 
+                    display: 'flex', 
+                    gap: 2, 
+                    overflow: 'hidden',
+                    scrollBehavior: 'smooth'
+                  }}
+                >
+                  {currentMixlists.map((mixlist, index) => (
+                    <Card 
+                      key={mixlist.id || mixlist.Id} 
+                      sx={{ 
+                        minWidth: 280,
+                        flexShrink: 0,
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s ease-in-out',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
+                        }
+                      }}
+                      onClick={() => navigate(`/mixlist/${mixlist.id || mixlist.Id}`)}
+                    >
+                      <CardContent sx={{ p: 3 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+                          {mixlist.name || mixlist.Name || `Mixlist ${mixlist.id || mixlist.Id}`}
+                        </Typography>
+                        {mixlist.description && (
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                            {mixlist.description}
+                          </Typography>
+                        )}
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                          <Chip 
+                            label={`${mixlist.mediaItems?.length || 0} items`} 
+                            size="small" 
+                            variant="outlined"
+                          />
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </Box>
+              </Box>
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 3 }}>
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                  This media item is not part of any mixlists yet.
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<PlaylistAdd />}
+                  onClick={() => navigate('/create-mixlist')}
+                  sx={{ 
+                    borderColor: 'white',
+                    color: 'white',
+                    '&:hover': {
+                      borderColor: 'white',
+                      backgroundColor: 'rgba(255,255,255,0.1)'
+                    }
+                  }}
+                >
+                  Create Mixlist
+                </Button>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
       </Box>
-    );
-  } catch (error) {
-    console.error('Error rendering MediaProfilePage:', error);
-    return (
-      <Box sx={{ 
-        minHeight: '100vh', 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'flex-start',
-        py: 4,
-        px: 2
-      }}>
-        <Box sx={{ 
-          width: '100%',
-          maxWidth: '600px',
-          backgroundColor: 'background.paper',
-          borderRadius: '16px',
-          p: 4,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-          textAlign: 'center'
-        }}>
-          <Typography variant="h6" color="error">Error rendering media profile</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {error.message}
-          </Typography>
-          <Button 
-            onClick={() => navigate('/all-media')} 
-            variant="contained" 
-            sx={{ mt: 2 }}
-          >
-            Back to All Media
-          </Button>
-        </Box>
-      </Box>
-    );
-  }
+    </Box>
+  );
 }
 
 export default MediaProfilePage;
