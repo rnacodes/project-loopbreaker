@@ -10,7 +10,8 @@ import {
 import { 
     ArrowBack, Edit, OpenInNew, FileDownload, 
     ExpandLess, ExpandMore, PlaylistAdd, 
-    ChevronLeft, ChevronRight 
+    ChevronLeft, ChevronRight, ThumbDown, 
+    ThumbUp, Help, Star 
 } from '@mui/icons-material';
 import { 
     getMediaById, getAllMixlists, addMediaToMixlist, 
@@ -23,6 +24,7 @@ function MediaProfilePage() {
   const [availableMixlists, setAvailableMixlists] = useState([]);
   const [currentMixlists, setCurrentMixlists] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [addToMixlistDialog, setAddToMixlistDialog] = useState(false);
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -37,13 +39,13 @@ function MediaProfilePage() {
         console.log('Media data:', media);
         setMediaItem(media);
 
-        const mixlistIds = media.mixlistIds || media.MixlistIds || [];
+        const mixlistIds = media.mixlistIds || [];
         console.log('Mixlist IDs:', mixlistIds);
         
         if (mixlistIds.length > 0) {
           const mixlistPromises = mixlistIds.map(id => 
             getAllMixlists().then(response => 
-              response.data.find(mixlist => (mixlist.id || mixlist.Id) === id)
+              response.data.find(mixlist => mixlist.id === id)
             ).catch(() => null)
           );
           
@@ -95,6 +97,58 @@ function MediaProfilePage() {
   const getStatusDisplayText = (status) => {
     if (status === 'ActivelyExploring') return 'Actively Exploring';
     return status;
+  };
+
+  const getRatingIcon = (rating) => {
+    switch (rating?.toLowerCase()) {
+      case 'dislike':
+        return <ThumbDown sx={{ color: '#F44336' }} />;
+      case 'like':
+        return <ThumbUp sx={{ color: '#4CAF50' }} />;
+      case 'neutral':
+        return <Help sx={{ color: '#FF9800' }} />;
+      case 'superlike':
+        return <Star sx={{ color: '#9C27B0' }} />;
+      default:
+        return null;
+    }
+  };
+
+  const getRatingText = (rating) => {
+    if (!rating) return 'No rating available';
+    return rating.charAt(0).toUpperCase() + rating.slice(1).toLowerCase();
+  };
+
+  const handleAddToMixlist = async (mixlistId) => {
+    try {
+      await addMediaToMixlist(mixlistId, id);
+      setSnackbar({ open: true, message: 'Media added to mixlist successfully!', severity: 'success' });
+      setAddToMixlistDialog(false);
+      
+      // Refresh the current mixlists
+      const updatedMediaResponse = await getMediaById(id);
+      const updatedMedia = updatedMediaResponse.data;
+      const mixlistIds = updatedMedia.mixlistIds || [];
+      
+      if (mixlistIds.length > 0) {
+        const mixlistPromises = mixlistIds.map(id => 
+          getAllMixlists().then(response => 
+            response.data.find(mixlist => mixlist.id === id)
+          ).catch(() => null)
+        );
+        
+        const mixlists = await Promise.all(mixlistPromises);
+        const validMixlists = mixlists.filter(mixlist => mixlist !== null);
+        setCurrentMixlists(validMixlists);
+      }
+    } catch (error) {
+      console.error('Failed to add media to mixlist:', error);
+      setSnackbar({ open: true, message: 'Failed to add media to mixlist', severity: 'error' });
+    }
+  };
+
+  const handleCreateNewMixlist = () => {
+    navigate('/create-mixlist');
   };
 
   if (loading) {
@@ -206,23 +260,23 @@ function MediaProfilePage() {
                 {/* Title and Type */}
                 <Box sx={{ mb: 3 }}>
                   <Typography variant="h3" component="h2" gutterBottom sx={{ fontWeight: 'bold', fontSize: '2.5rem' }}>
-                    {mediaItem.title || mediaItem.Title || 'Untitled Media'}
+                    {mediaItem.title || 'Untitled Media'}
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                     <Chip
-                      label={mediaItem.mediaType || mediaItem.MediaType || 'Unknown'}
+                      label={mediaItem.mediaType || 'Unknown'}
                       sx={{
-                        backgroundColor: getMediaTypeColor(mediaItem.mediaType || mediaItem.MediaType),
+                        backgroundColor: getMediaTypeColor(mediaItem.mediaType),
                         color: 'white',
                         fontWeight: 'bold',
                         fontSize: '1rem'
                       }}
                     />
-                    {(mediaItem.status || mediaItem.Status) && (
+                    {mediaItem.status && (
                       <Chip
-                        label={getStatusDisplayText(mediaItem.status || mediaItem.Status)}
+                        label={getStatusDisplayText(mediaItem.status)}
                         sx={{
-                          backgroundColor: getStatusColor(mediaItem.status || mediaItem.Status),
+                          backgroundColor: getStatusColor(mediaItem.status),
                           color: 'white',
                           fontWeight: 'bold',
                           fontSize: '1rem'
@@ -237,24 +291,63 @@ function MediaProfilePage() {
                 {/* Basic Info Display */}
                 <Box sx={{ mb: 4 }}>
                   <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Title:</strong> {mediaItem.title || mediaItem.Title || 'N/A'}
+                    <strong>Title:</strong> {mediaItem.title || 'N/A'}
                   </Typography>
                   <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Type:</strong> {mediaItem.mediaType || mediaItem.MediaType || 'N/A'}
+                    <strong>Type:</strong> {mediaItem.mediaType || 'N/A'}
                   </Typography>
                   <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Status:</strong> {getStatusDisplayText(mediaItem.status || mediaItem.Status) || 'N/A'}
+                    <strong>Status:</strong> {getStatusDisplayText(mediaItem.status) || 'N/A'}
                   </Typography>
-                  {(mediaItem.description || mediaItem.Description) && (
+                  
+                  {/* Rating Display */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="body1" sx={{ mr: 1 }}>
+                      <strong>Rating:</strong>
+                    </Typography>
+                    {getRatingIcon(mediaItem.rating)}
+                    <Typography variant="body1" sx={{ ml: 1 }}>
+                      {getRatingText(mediaItem.rating)}
+                    </Typography>
+                  </Box>
+
+                  {/* Ownership Status Display */}
+                  <Typography variant="body1" sx={{ mb: 2 }}>
+                    <strong>Ownership Status:</strong> {mediaItem.ownershipStatus || 'N/A'}
+                  </Typography>
+
+                  {/* Visit Link */}
+                  {mediaItem.link && (
+                    <Box sx={{ mb: 2 }}>
+                      <Button
+                        variant="text"
+                        size="small"
+                        href={mediaItem.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        endIcon={<OpenInNew fontSize="small" />}
+                        sx={{ 
+                          minWidth: 'auto',
+                          textTransform: 'none',
+                          color: '#ffffff',
+                          '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
+                        }}
+                      >
+                        Visit Link
+                      </Button>
+                    </Box>
+                  )}
+
+                  {mediaItem.description && (
                     <Typography variant="body1" sx={{ mb: 2 }}>
-                      <strong>Description:</strong> {mediaItem.description || mediaItem.Description}
+                      <strong>Description:</strong> {mediaItem.description}
                     </Typography>
                   )}
                 </Box>
               </Box>
 
               {/* Right side - Thumbnail */}
-              {(mediaItem.thumbnail || mediaItem.Thumbnail) && (
+              {mediaItem.thumbnail && (
                 <Box sx={{ flexShrink: 0 }}>
                   <CardMedia
                     component="img"
@@ -265,8 +358,8 @@ function MediaProfilePage() {
                       borderRadius: 1,
                       boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
                     }}
-                    image={mediaItem.thumbnail || mediaItem.Thumbnail}
-                    alt={mediaItem.title || mediaItem.Title}
+                    image={mediaItem.thumbnail}
+                    alt={mediaItem.title}
                     onError={(e) => {
                       e.target.style.display = 'none';
                     }}
@@ -280,9 +373,43 @@ function MediaProfilePage() {
         {/* Mixlists Section */}
         <Card sx={{ mt: 3, overflow: 'hidden', borderRadius: 2 }}>
           <CardContent sx={{ p: 4 }}>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
-              Mixlists
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                Mixlists
+              </Typography>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<PlaylistAdd />}
+                  onClick={() => setAddToMixlistDialog(true)}
+                  sx={{ 
+                    borderColor: 'white',
+                    color: 'white',
+                    '&:hover': {
+                      borderColor: 'white',
+                      backgroundColor: 'rgba(255,255,255,0.1)'
+                    }
+                  }}
+                >
+                  Add to Mixlist
+                </Button>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleCreateNewMixlist}
+                  sx={{ 
+                    backgroundColor: 'white',
+                    color: 'black',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255,255,255,0.9)'
+                    }
+                  }}
+                >
+                  Create New
+                </Button>
+              </Box>
+            </Box>
             
             {currentMixlists.length > 0 ? (
               <Box sx={{ position: 'relative' }}>
@@ -298,7 +425,7 @@ function MediaProfilePage() {
                 >
                   {currentMixlists.map((mixlist, index) => (
                     <Card 
-                      key={mixlist.id || mixlist.Id} 
+                      key={mixlist.id} 
                       sx={{ 
                         minWidth: 280,
                         flexShrink: 0,
@@ -309,11 +436,11 @@ function MediaProfilePage() {
                           boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
                         }
                       }}
-                      onClick={() => navigate(`/mixlist/${mixlist.id || mixlist.Id}`)}
+                      onClick={() => navigate(`/mixlist/${mixlist.id}`)}
                     >
                       <CardContent sx={{ p: 3 }}>
                         <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
-                          {mixlist.name || mixlist.Name || `Mixlist ${mixlist.id || mixlist.Id}`}
+                          {mixlist.name || `Mixlist ${mixlist.id}`}
                         </Typography>
                         {mixlist.description && (
                           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -334,28 +461,76 @@ function MediaProfilePage() {
               </Box>
             ) : (
               <Box sx={{ textAlign: 'center', py: 3 }}>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                  This media item is not part of any mixlists yet.
+                <Typography variant="body1" color="text.secondary">
+                  This media item is not part of any mixlists yet. Use the buttons above to add it to an existing mixlist or create a new one.
                 </Typography>
-                <Button
-                  variant="outlined"
-                  startIcon={<PlaylistAdd />}
-                  onClick={() => navigate('/create-mixlist')}
-                  sx={{ 
-                    borderColor: 'white',
-                    color: 'white',
-                    '&:hover': {
-                      borderColor: 'white',
-                      backgroundColor: 'rgba(255,255,255,0.1)'
-                    }
-                  }}
-                >
-                  Create Mixlist
-                </Button>
               </Box>
             )}
           </CardContent>
         </Card>
+
+        {/* Add to Mixlist Dialog */}
+        <Dialog 
+          open={addToMixlistDialog} 
+          onClose={() => setAddToMixlistDialog(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Add to Mixlist</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Select a mixlist to add "{mediaItem?.title}" to:
+            </Typography>
+            <List>
+              {availableMixlists
+                .filter(mixlist => !currentMixlists.some(current => current.id === mixlist.id))
+                .map((mixlist) => (
+                  <ListItem 
+                    key={mixlist.id}
+                    button
+                    onClick={() => handleAddToMixlist(mixlist.id)}
+                    sx={{
+                      borderRadius: 1,
+                      mb: 1,
+                      '&:hover': {
+                        backgroundColor: 'action.hover'
+                      }
+                    }}
+                  >
+                    <ListItemText
+                      primary={mixlist.name}
+                      secondary={mixlist.description || `${mixlist.mediaItems?.length || 0} items`}
+                    />
+                  </ListItem>
+                ))}
+            </List>
+            {availableMixlists.filter(mixlist => !currentMixlists.some(current => current.id === mixlist.id)).length === 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                No available mixlists to add to. Create a new mixlist first.
+              </Typography>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setAddToMixlistDialog(false)}>
+              Cancel
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Snackbar for notifications */}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          <Alert 
+            onClose={() => setSnackbar({ ...snackbar, open: false })} 
+            severity={snackbar.severity}
+            sx={{ width: '100%' }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Box>
     </Box>
   );
