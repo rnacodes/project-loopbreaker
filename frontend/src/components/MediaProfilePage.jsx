@@ -318,23 +318,87 @@ function MediaProfilePage() {
 
                   {/* Visit Link */}
                   {mediaItem.link && (
-                    <Box sx={{ mb: 2 }}>
-                      <Button
-                        variant="text"
-                        size="small"
+                    <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+                      <Typography variant="body1" sx={{ mr: 1 }}>
+                        <strong>Visit Item:</strong>
+                      </Typography>
+                      <Link
                         href={mediaItem.link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        endIcon={<OpenInNew fontSize="small" />}
                         sx={{ 
-                          minWidth: 'auto',
-                          textTransform: 'none',
                           color: '#ffffff',
-                          '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
+                          textDecoration: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          '&:hover': { 
+                            textDecoration: 'underline',
+                            color: '#e3f2fd'
+                          }
                         }}
                       >
-                        Visit Link
-                      </Button>
+                        <OpenInNew sx={{ fontSize: 16, mr: 0.5 }} />
+                        Link
+                      </Link>
+                    </Box>
+                  )}
+
+                  {/* Genre Section */}
+                  {(mediaItem.genre || (mediaItem.genres && mediaItem.genres.length > 0)) && (
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body1" sx={{ mb: 1 }}>
+                        <strong>Genre{mediaItem.genres && mediaItem.genres.length > 1 ? 's' : ''}:</strong>
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {mediaItem.genres && mediaItem.genres.length > 0 ? (
+                          mediaItem.genres.map((genre, index) => (
+                            <Link
+                              key={index}
+                              component="button"
+                              onClick={() => navigate(`/search-results?genre=${encodeURIComponent(genre)}`)}
+                              sx={{
+                                color: '#ffffff',
+                                textDecoration: 'none',
+                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                border: '1px solid rgba(255, 255, 255, 0.3)',
+                                borderRadius: 1,
+                                px: 1.5,
+                                py: 0.5,
+                                fontSize: '0.875rem',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                  textDecoration: 'underline'
+                                }
+                              }}
+                            >
+                              {genre}
+                            </Link>
+                          ))
+                        ) : (
+                          mediaItem.genre && (
+                            <Link
+                              component="button"
+                              onClick={() => navigate(`/search-results?genre=${encodeURIComponent(mediaItem.genre)}`)}
+                              sx={{
+                                color: '#ffffff',
+                                textDecoration: 'none',
+                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                border: '1px solid rgba(255, 255, 255, 0.3)',
+                                borderRadius: 1,
+                                px: 1.5,
+                                py: 0.5,
+                                fontSize: '0.875rem',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                  textDecoration: 'underline'
+                                }
+                              }}
+                            >
+                              {mediaItem.genre}
+                            </Link>
+                          )
+                        )}
+                      </Box>
                     </Box>
                   )}
 
@@ -346,9 +410,9 @@ function MediaProfilePage() {
                 </Box>
               </Box>
 
-              {/* Right side - Thumbnail */}
-              {mediaItem.thumbnail && (
-                <Box sx={{ flexShrink: 0 }}>
+              {/* Right side - Thumbnail and dates */}
+              <Box sx={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                {mediaItem.thumbnail && (
                   <CardMedia
                     component="img"
                     sx={{ 
@@ -356,7 +420,8 @@ function MediaProfilePage() {
                       height: 270, 
                       objectFit: 'cover',
                       borderRadius: 1,
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                      mb: 2
                     }}
                     image={mediaItem.thumbnail}
                     alt={mediaItem.title}
@@ -364,8 +429,30 @@ function MediaProfilePage() {
                       e.target.style.display = 'none';
                     }}
                   />
+                )}
+                
+                {/* Date Information */}
+                <Box sx={{ textAlign: 'center', minWidth: 180 }}>
+                  {mediaItem.dateAdded && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                      <strong>Added:</strong> {new Date(mediaItem.dateAdded).toLocaleDateString('en-US', { 
+                        month: '2-digit', 
+                        day: '2-digit', 
+                        year: '2-digit' 
+                      })}
+                    </Typography>
+                  )}
+                  {mediaItem.dateCompleted && (
+                    <Typography variant="body2" color="text.secondary">
+                      <strong>Completed:</strong> {new Date(mediaItem.dateCompleted).toLocaleDateString('en-US', { 
+                        month: '2-digit', 
+                        day: '2-digit', 
+                        year: '2-digit' 
+                      })}
+                    </Typography>
+                  )}
                 </Box>
-              )}
+              </Box>
             </Box>
           </CardContent>
         </Card>
