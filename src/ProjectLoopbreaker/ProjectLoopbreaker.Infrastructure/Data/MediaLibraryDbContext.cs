@@ -66,9 +66,6 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.Property(e => e.Link)
                     .HasMaxLength(2000);
                     
-                entity.Property(e => e.Genre)
-                    .HasMaxLength(200);
-                    
                 // Topics and Genres are now navigation properties, no column configuration needed
                     
                 entity.Property(e => e.Thumbnail)

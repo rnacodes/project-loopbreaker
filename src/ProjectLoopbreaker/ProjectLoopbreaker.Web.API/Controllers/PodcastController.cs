@@ -227,7 +227,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     Rating = dto.Rating,
                     OwnershipStatus = dto.OwnershipStatus,
                     Description = dto.Description,
-                    Genre = dto.Genre,
                     RelatedNotes = dto.RelatedNotes,
                     Thumbnail = dto.Thumbnail,
                     PodcastType = dto.PodcastType,

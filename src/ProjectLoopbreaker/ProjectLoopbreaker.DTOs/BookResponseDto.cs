@@ -59,7 +59,10 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("relatedNotes")]
         public string? RelatedNotes { get; set; }
         
-        [JsonPropertyName("genre")]
-        public string? Genre { get; set; }
+        [JsonPropertyName("topics")]
+        public string[] Topics { get; set; } = Array.Empty<string>();
+        
+        [JsonPropertyName("genres")]
+        public string[] Genres { get; set; } = Array.Empty<string>();
     }
 }

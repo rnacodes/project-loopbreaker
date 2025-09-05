@@ -47,10 +47,6 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("thumbnail")]
         public string? Thumbnail { get; set; }
         
-        [StringLength(200)]
-        [JsonPropertyName("genre")]
-        public string? Genre { get; set; }
-        
         // JSON arrays for better query performance
         [JsonPropertyName("topics")]
         public string[] Topics { get; set; } = Array.Empty<string>();

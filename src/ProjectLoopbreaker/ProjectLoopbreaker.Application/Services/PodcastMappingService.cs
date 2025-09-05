@@ -163,7 +163,6 @@ namespace ProjectLoopbreaker.Application.Services
                     Thumbnail = uploadedThumbnailUrl,
                     DateAdded = DateTime.UtcNow,
                     Status = Status.Uncharted,
-                    Genre = genreInfo, // Keep the old Genre property for backward compatibility
                     ExternalId = podcastDto.Id,
                     Publisher = podcastDto.Publisher
                 };
@@ -269,8 +268,7 @@ namespace ProjectLoopbreaker.Application.Services
                             Publisher = firstResult.PublisherOriginal ?? firstResult.PublisherHighlighted ?? "Unknown Publisher",
                             Description = firstResult.DescriptionOriginal ?? firstResult.DescriptionHighlighted ?? "No description available",
                             Image = firstResult.Image,
-                            Thumbnail = firstResult.Thumbnail,
-                            Genres = firstResult.Genres?.Select(g => g.Name).ToList()
+                            Thumbnail = firstResult.Thumbnail
                         };
 
                         var mappingJson = JsonSerializer.Serialize(podcastForMapping, _jsonOptions);

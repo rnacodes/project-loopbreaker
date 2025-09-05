@@ -116,7 +116,6 @@ namespace ProjectLoopbreaker.Application.Services
                     Rating = dto.Rating,
                     OwnershipStatus = dto.OwnershipStatus,
                     Description = dto.Description,
-                    Genre = dto.Genre,
                     RelatedNotes = dto.RelatedNotes,
                     Thumbnail = dto.Thumbnail,
                     Author = dto.Author,
@@ -164,7 +163,6 @@ namespace ProjectLoopbreaker.Application.Services
                 book.Rating = dto.Rating;
                 book.OwnershipStatus = dto.OwnershipStatus;
                 book.Description = dto.Description;
-                book.Genre = dto.Genre;
                 book.RelatedNotes = dto.RelatedNotes;
                 book.Thumbnail = dto.Thumbnail;
                 book.Author = dto.Author;

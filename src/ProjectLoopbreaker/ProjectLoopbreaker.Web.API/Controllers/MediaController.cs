@@ -44,7 +44,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 Rating = item.Rating,
                 OwnershipStatus = item.OwnershipStatus,
                 Description = item.Description,
-                Genre = item.Genre,
                 RelatedNotes = item.RelatedNotes,
                 Thumbnail = item.Thumbnail,
                 Topics = item.Topics.Select(t => t.Name).ToArray(),
@@ -94,7 +93,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 Rating = dto.Rating,
                 OwnershipStatus = dto.OwnershipStatus,
                 Description = dto.Description,
-                Genre = dto.Genre,
                 RelatedNotes = dto.RelatedNotes,
                 Thumbnail = dto.Thumbnail,
                 PodcastType = PodcastType.Series // Default to Series for now
@@ -167,7 +165,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     Rating = mediaItem.Rating,
                     OwnershipStatus = mediaItem.OwnershipStatus,
                     Description = mediaItem.Description,
-                    Genre = mediaItem.Genre,
                     RelatedNotes = mediaItem.RelatedNotes,
                     Thumbnail = mediaItem.Thumbnail,
                     Topics = mediaItem.Topics.Select(t => t.Name).ToArray(),
@@ -213,7 +210,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 existingItem.Rating = dto.Rating;
                 existingItem.OwnershipStatus = dto.OwnershipStatus;
                 existingItem.Description = dto.Description;
-                existingItem.Genre = dto.Genre;
                 existingItem.RelatedNotes = dto.RelatedNotes;
                 existingItem.Thumbnail = dto.Thumbnail;
 
@@ -302,7 +298,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 var results = await _context.MediaItems
                     .Where(m => m.Title.ToLower().Contains(searchQuery) || 
                                (m.Description != null && m.Description.ToLower().Contains(searchQuery)) ||
-                               (m.Genre != null && m.Genre.ToLower().Contains(searchQuery)) ||
                                (m.Topics.Any(t => t.Name.ToLower().Contains(searchQuery))) ||
                                (m.Genres.Any(g => g.Name.ToLower().Contains(searchQuery))) ||
                                m.MediaType.ToString().ToLower().Contains(searchQuery))
@@ -345,7 +340,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     Rating = item.Rating,
                     OwnershipStatus = item.OwnershipStatus,
                     Description = item.Description,
-                    Genre = item.Genre,
                     RelatedNotes = item.RelatedNotes,
                     Thumbnail = item.Thumbnail,
                     Topics = item.Topics.Select(t => t.Name).ToArray(),
@@ -387,7 +381,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     Rating = item.Rating,
                     OwnershipStatus = item.OwnershipStatus,
                     Description = item.Description,
-                    Genre = item.Genre,
                     RelatedNotes = item.RelatedNotes,
                     Thumbnail = item.Thumbnail,
                     Topics = item.Topics.Select(t => t.Name).ToArray(),
@@ -434,7 +427,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     Rating = item.Rating,
                     OwnershipStatus = item.OwnershipStatus,
                     Description = item.Description,
-                    Genre = item.Genre,
                     RelatedNotes = item.RelatedNotes,
                     Thumbnail = item.Thumbnail,
                     Topics = item.Topics.Select(t => t.Name).ToArray(),
@@ -482,7 +474,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                         Rating = mediaItem.Rating?.ToString() ?? "",
                         OwnershipStatus = mediaItem.OwnershipStatus?.ToString() ?? "",
                         Description = mediaItem.Description ?? "",
-                        Genre = mediaItem.Genre ?? "",
                         RelatedNotes = mediaItem.RelatedNotes ?? "",
                         Thumbnail = mediaItem.Thumbnail ?? "",
                         Topics = string.Join(";", mediaItem.Topics.Select(t => t.Name)),
@@ -532,7 +523,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     Rating = item.Rating?.ToString() ?? "",
                     OwnershipStatus = item.OwnershipStatus?.ToString() ?? "",
                     Description = item.Description ?? "",
-                    Genre = item.Genre ?? "",
                     RelatedNotes = item.RelatedNotes ?? "",
                     Thumbnail = item.Thumbnail ?? "",
                     Topics = string.Join(";", item.Topics.Select(t => t.Name)),

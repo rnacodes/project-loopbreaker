@@ -38,10 +38,7 @@ namespace ProjectLoopbreaker.Web.API.DTOs
         
         [JsonPropertyName("description")]
         public string? Description { get; set; }
-        
-        [StringLength(200)]
-        [JsonPropertyName("genre")]
-        public string? Genre { get; set; }
+
         
         // JSON arrays for better query performance
         [JsonPropertyName("topics")]

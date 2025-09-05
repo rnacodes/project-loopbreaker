@@ -32,9 +32,6 @@ namespace ProjectLoopbreaker.Domain.Entities
         
         public string? Description { get; set; }
         
-        [StringLength(200)]
-        public string? Genre { get; set; }
-        
         // Navigation properties for many-to-many relationships
         public ICollection<Topic> Topics { get; set; } = new List<Topic>();
         public ICollection<Genre> Genres { get; set; } = new List<Genre>();

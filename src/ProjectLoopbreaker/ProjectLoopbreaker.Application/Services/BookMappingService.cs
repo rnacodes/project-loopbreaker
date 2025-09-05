@@ -33,7 +33,6 @@ namespace ProjectLoopbreaker.Application.Services
                 Rating = dto.Rating,
                 OwnershipStatus = dto.OwnershipStatus,
                 Description = dto.Description,
-                Genre = dto.Genre,
                 RelatedNotes = dto.RelatedNotes,
                 Thumbnail = dto.Thumbnail,
                 Author = dto.Author,
@@ -102,7 +101,8 @@ namespace ProjectLoopbreaker.Application.Services
                 DateCompleted = book.DateCompleted,
                 Notes = book.Notes,
                 RelatedNotes = book.RelatedNotes,
-                Genre = book.Genres.FirstOrDefault()?.Name
+                Topics = book.Topics.Select(t => t.Name).ToArray(),
+                Genres = book.Genres.Select(g => g.Name).ToArray()
             };
         }
 
