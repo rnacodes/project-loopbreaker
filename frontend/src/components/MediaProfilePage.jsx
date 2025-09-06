@@ -5,17 +5,17 @@ import {
     Chip, Divider, Paper, Link, IconButton,
     Dialog, DialogTitle, DialogContent, DialogActions,
     List, ListItem, ListItemText, Collapse, Snackbar, Alert,
-    CircularProgress
+    CircularProgress, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import { 
     ArrowBack, Edit, OpenInNew, FileDownload, 
     ExpandLess, ExpandMore, PlaylistAdd, 
     ChevronLeft, ChevronRight, ThumbDown, 
-    ThumbUp, Help, Star 
+    ThumbUp, Help, Star, Notes
 } from '@mui/icons-material';
 import { 
     getMediaById, getAllMixlists, addMediaToMixlist, 
-    removeMediaFromMixlist
+    removeMediaFromMixlist, getBookById, getPodcastById
 } from '../services/apiService';
 
 function MediaProfilePage() {
@@ -33,13 +33,61 @@ function MediaProfilePage() {
     const fetchData = async () => {
       try {
         console.log('Fetching media item with ID:', id);
+        
+        // First get the basic media info to determine the type
         const mediaResponse = await getMediaById(id);
         console.log('Media response:', mediaResponse);
-        const media = mediaResponse.data;
-        console.log('Media data:', media);
-        setMediaItem(media);
+        const basicMedia = mediaResponse.data;
+        console.log('Basic media data:', basicMedia);
+        
+        let detailedMedia = basicMedia;
+        
+        // If it's a book or podcast, fetch the detailed information
+        if (basicMedia.mediaType === 'Book') {
+          try {
+            const bookResponse = await getBookById(id);
+            detailedMedia = { ...basicMedia, ...bookResponse.data };
+            console.log('Detailed book data:', detailedMedia);
+          } catch (bookError) {
+            console.warn('Could not fetch detailed book data, using basic data:', bookError);
+          }
+        } else if (basicMedia.mediaType === 'Podcast') {
+          try {
+            const podcastResponse = await getPodcastById(id);
+            detailedMedia = { ...basicMedia, ...podcastResponse.data };
+            console.log('Detailed podcast data:', detailedMedia);
+          } catch (podcastError) {
+            console.warn('Could not fetch detailed podcast data, using basic data:', podcastError);
+          }
+        }
+        
+        setMediaItem(detailedMedia);
+        
+        // Debug: Log all available fields
+        console.log('Final media item fields:', Object.keys(detailedMedia));
+        console.log('Book specific fields:', {
+          author: detailedMedia.author,
+          isbn: detailedMedia.isbn,
+          asin: detailedMedia.asin,
+          format: detailedMedia.format,
+          partOfSeries: detailedMedia.partOfSeries
+        });
+        console.log('Podcast specific fields:', {
+          podcastType: detailedMedia.podcastType,
+          podcastTypeValue: detailedMedia.podcastType,
+          durationInSeconds: detailedMedia.durationInSeconds,
+          publisher: detailedMedia.publisher,
+          audioLink: detailedMedia.audioLink,
+          releaseDate: detailedMedia.releaseDate
+        });
+        console.log('Podcast type check:', {
+          exists: !!detailedMedia.podcastType,
+          value: detailedMedia.podcastType,
+          isSeries: detailedMedia.podcastType === 'Series',
+          isEpisode: detailedMedia.podcastType === 'Episode'
+        });
 
-        const mixlistIds = media.mixlistIds || [];
+        const mixlistIds = detailedMedia.mixlistIds || [];
         console.log('Mixlist IDs:', mixlistIds);
         
         if (mixlistIds.length > 0) {
@@ -262,6 +310,14 @@ function MediaProfilePage() {
                   <Typography variant="h3" component="h2" gutterBottom sx={{ fontWeight: 'bold', fontSize: '2.5rem' }}>
                     {mediaItem.title || 'Untitled Media'}
                   </Typography>
+                  
+                  {/* Author for books */}
+                  {mediaItem.mediaType === 'Book' && mediaItem.author && (
+                    <Typography variant="h5" component="h3" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'normal' }}>
+                      by {mediaItem.author}
+                    </Typography>
+                  )}
+                  
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                     <Chip
                       label={mediaItem.mediaType || 'Unknown'}
@@ -272,6 +328,18 @@ function MediaProfilePage() {
                         fontSize: '1rem'
                       }}
                     />
+                    {/* Podcast Type Display */}
+                    {mediaItem.mediaType === 'Podcast' && mediaItem.podcastType && (
+                      <Chip
+                        label={mediaItem.podcastType === 'Series' || mediaItem.podcastType === 0 ? 'Series' : 'Episode'}
+                        sx={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                          color: 'white',
+                          fontWeight: 'bold',
+                          fontSize: '1rem'
+                        }}
+                      />
+                    )}
                     {mediaItem.status && (
                       <Chip
                         label={getStatusDisplayText(mediaItem.status)}
@@ -493,6 +561,187 @@ function MediaProfilePage() {
               </Box>
             </Box>
           </CardContent>
+        </Card>
+
+        {/* Media Type Specific Properties Section */}
+        <Card sx={{ mt: 3, overflow: 'hidden', borderRadius: 2 }}>
+          <CardContent sx={{ p: 4 }}>
+            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
+              {mediaItem.mediaType} Details
+            </Typography>
+            
+            {/* Podcast-specific properties */}
+            {mediaItem.mediaType === 'Podcast' && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {mediaItem.podcastType && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Type:</strong>
+                    </Typography>
+                    <Typography variant="body1">
+                      {mediaItem.podcastType === 'Series' || mediaItem.podcastType === 0 ? 'Podcast Series' : 'Podcast Episode'}
+                    </Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.durationInSeconds !== undefined && mediaItem.durationInSeconds !== null && mediaItem.durationInSeconds > 0 && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Duration:</strong>
+                    </Typography>
+                    <Typography variant="body1">
+                      {Math.floor(mediaItem.durationInSeconds / 60)}:{(mediaItem.durationInSeconds % 60).toString().padStart(2, '0')}
+                    </Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.publisher && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Publisher:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.publisher}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.audioLink && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Audio Link:</strong>
+                    </Typography>
+                    <Link
+                      href={mediaItem.audioLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{ 
+                        color: '#ffffff',
+                        textDecoration: 'none',
+                        '&:hover': { 
+                          textDecoration: 'underline',
+                          color: '#e3f2fd'
+                        }
+                      }}
+                    >
+                      <OpenInNew sx={{ fontSize: 16, mr: 0.5 }} />
+                      Listen
+                    </Link>
+                  </Box>
+                )}
+                
+                {mediaItem.releaseDate && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Release Date:</strong>
+                    </Typography>
+                    <Typography variant="body1">
+                      {new Date(mediaItem.releaseDate).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+            
+            {/* Book-specific properties */}
+            {mediaItem.mediaType === 'Book' && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {mediaItem.isbn && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>ISBN:</strong>
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.isbn}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.asin && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>ASIN:</strong>
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.asin}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.format && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Format:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.format}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.partOfSeries !== undefined && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Part of Series:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.partOfSeries ? 'Yes' : 'No'}</Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+            
+            {/* Show message if no specific properties are available */}
+            {((mediaItem.mediaType === 'Podcast' && !mediaItem.podcastType && !mediaItem.durationInSeconds && !mediaItem.publisher && !mediaItem.audioLink && !mediaItem.releaseDate) ||
+              (mediaItem.mediaType === 'Book' && !mediaItem.isbn && !mediaItem.asin && !mediaItem.format && mediaItem.partOfSeries === undefined)) && (
+              <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                No specific {mediaItem.mediaType.toLowerCase()} details available
+              </Typography>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Related Notes Section */}
+        <Card sx={{ mt: 3, overflow: 'hidden', borderRadius: 2 }}>
+          <Accordion sx={{ boxShadow: 'none', '&:before': { display: 'none' } }}>
+            <AccordionSummary
+              expandIcon={<ExpandMore />}
+              aria-controls="related-notes-content"
+              id="related-notes-header"
+              sx={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                }
+              }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Notes sx={{ mr: 1, color: '#ffffff' }} />
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#ffffff' }}>
+                  Related Notes
+                </Typography>
+              </Box>
+            </AccordionSummary>
+            <AccordionDetails sx={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+              {mediaItem.relatedNotes && mediaItem.relatedNotes.trim() ? (
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    color: '#ffffff',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word'
+                  }}
+                >
+                  {mediaItem.relatedNotes}
+                </Typography>
+              ) : (
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: 'text.secondary',
+                    fontStyle: 'italic'
+                  }}
+                >
+                  No notes added
+                </Typography>
+              )}
+            </AccordionDetails>
+          </Accordion>
         </Card>
 
         {/* Mixlists Section */}
