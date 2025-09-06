@@ -254,14 +254,15 @@ namespace ProjectLoopbreaker.Application.Services
             {
                 foreach (var topicName in topics.Where(t => !string.IsNullOrWhiteSpace(t)))
                 {
-                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == topicName);
+                    var normalizedTopicName = topicName.Trim().ToLowerInvariant();
+                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
                     if (existingTopic != null)
                     {
                         book.Topics.Add(existingTopic);
                     }
                     else
                     {
-                        book.Topics.Add(new Topic { Name = topicName });
+                        book.Topics.Add(new Topic { Name = normalizedTopicName });
                     }
                 }
             }
@@ -273,14 +274,15 @@ namespace ProjectLoopbreaker.Application.Services
             {
                 foreach (var genreName in genres.Where(g => !string.IsNullOrWhiteSpace(g)))
                 {
-                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == genreName);
+                    var normalizedGenreName = genreName.Trim().ToLowerInvariant();
+                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
                     if (existingGenre != null)
                     {
                         book.Genres.Add(existingGenre);
                     }
                     else
                     {
-                        book.Genres.Add(new Genre { Name = genreName });
+                        book.Genres.Add(new Genre { Name = normalizedGenreName });
                     }
                 }
             }

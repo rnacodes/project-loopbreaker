@@ -105,8 +105,9 @@ function AddMediaForm() {
     const handleGenreKeyPress = (event) => {
         if (event.key === 'Enter' && genreInput.trim()) {
             event.preventDefault();
-            if (!genres.includes(genreInput.trim())) {
-                setGenres([...genres, genreInput.trim()]);
+            const normalizedGenre = genreInput.trim().toLowerCase();
+            if (!genres.includes(normalizedGenre)) {
+                setGenres([...genres, normalizedGenre]);
             }
             setGenreInput('');
         }
@@ -120,8 +121,9 @@ function AddMediaForm() {
     const handleTopicKeyPress = (event) => {
         if (event.key === 'Enter' && topicInput.trim()) {
             event.preventDefault();
-            if (!topics.includes(topicInput.trim())) {
-                setTopics([...topics, topicInput.trim()]);
+            const normalizedTopic = topicInput.trim().toLowerCase();
+            if (!topics.includes(normalizedTopic)) {
+                setTopics([...topics, normalizedTopic]);
             }
             setTopicInput('');
         }
@@ -1003,7 +1005,9 @@ function AddMediaForm() {
                         options={genreSuggestions.map((option) => option.name || option.Name)}
                         value={genres}
                         onChange={(event, newValue) => {
-                            setGenres(newValue);
+                            // Convert all values to lowercase
+                            const normalizedGenres = newValue.map(genre => genre.toLowerCase());
+                            setGenres(normalizedGenres);
                         }}
                         onInputChange={(event, newInputValue) => {
                             setGenreInput(newInputValue);
@@ -1056,7 +1060,9 @@ function AddMediaForm() {
                         options={topicSuggestions.map((option) => option.name || option.Name)}
                         value={topics}
                         onChange={(event, newValue) => {
-                            setTopics(newValue);
+                            // Convert all values to lowercase
+                            const normalizedTopics = newValue.map(topic => topic.toLowerCase());
+                            setTopics(normalizedTopics);
                         }}
                         onInputChange={(event, newInputValue) => {
                             setTopicInput(newInputValue);

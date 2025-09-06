@@ -103,14 +103,15 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             {
                 foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
                 {
-                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == topicName);
+                    var normalizedTopicName = topicName.Trim().ToLowerInvariant();
+                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
                     if (existingTopic != null)
                     {
                         podcast.Topics.Add(existingTopic);
                     }
                     else
                     {
-                        podcast.Topics.Add(new Topic { Name = topicName });
+                        podcast.Topics.Add(new Topic { Name = normalizedTopicName });
                     }
                 }
             }
@@ -120,14 +121,15 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             {
                 foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
                 {
-                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == genreName);
+                    var normalizedGenreName = genreName.Trim().ToLowerInvariant();
+                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
                     if (existingGenre != null)
                     {
                         podcast.Genres.Add(existingGenre);
                     }
                     else
                     {
-                        podcast.Genres.Add(new Genre { Name = genreName });
+                        podcast.Genres.Add(new Genre { Name = normalizedGenreName });
                     }
                 }
             }
@@ -222,14 +224,15 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 {
                     foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
                     {
-                        var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == topicName);
+                        var normalizedTopicName = topicName.Trim().ToLowerInvariant();
+                        var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
                         if (existingTopic != null)
                         {
                             existingItem.Topics.Add(existingTopic);
                         }
                         else
                         {
-                            existingItem.Topics.Add(new Topic { Name = topicName });
+                            existingItem.Topics.Add(new Topic { Name = normalizedTopicName });
                         }
                     }
                 }
@@ -239,14 +242,15 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 {
                     foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
                     {
-                        var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == genreName);
+                        var normalizedGenreName = genreName.Trim().ToLowerInvariant();
+                        var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
                         if (existingGenre != null)
                         {
                             existingItem.Genres.Add(existingGenre);
                         }
                         else
                         {
-                            existingItem.Genres.Add(new Genre { Name = genreName });
+                            existingItem.Genres.Add(new Genre { Name = normalizedGenreName });
                         }
                     }
                 }

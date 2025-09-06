@@ -355,7 +355,7 @@ function MediaProfilePage() {
                             <Link
                               key={index}
                               component="button"
-                              onClick={() => navigate(`/search-results?genre=${encodeURIComponent(genre)}`)}
+                              onClick={() => navigate(`/search-results?type=genre&value=${encodeURIComponent(genre)}`)}
                               sx={{
                                 color: '#ffffff',
                                 textDecoration: 'none',
@@ -378,7 +378,7 @@ function MediaProfilePage() {
                           mediaItem.genre && (
                             <Link
                               component="button"
-                              onClick={() => navigate(`/search-results?genre=${encodeURIComponent(mediaItem.genre)}`)}
+                              onClick={() => navigate(`/search-results?type=genre&value=${encodeURIComponent(mediaItem.genre)}`)}
                               sx={{
                                 color: '#ffffff',
                                 textDecoration: 'none',
@@ -401,6 +401,44 @@ function MediaProfilePage() {
                       </Box>
                     </Box>
                   )}
+
+                  {/* Topics Section */}
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>Topic{(mediaItem.topics && mediaItem.topics.length > 1) ? 's' : ''}:</strong>
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                      {mediaItem.topics && mediaItem.topics.length > 0 ? (
+                        mediaItem.topics.map((topic, index) => (
+                          <Link
+                            key={index}
+                            component="button"
+                            onClick={() => navigate(`/search-results?type=topic&value=${encodeURIComponent(topic)}`)}
+                            sx={{
+                              color: '#ffffff',
+                              textDecoration: 'none',
+                              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                              border: '1px solid rgba(255, 255, 255, 0.3)',
+                              borderRadius: 1,
+                              px: 1.5,
+                              py: 0.5,
+                              fontSize: '0.875rem',
+                              '&:hover': {
+                                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                textDecoration: 'underline'
+                              }
+                            }}
+                          >
+                            {topic}
+                          </Link>
+                        ))
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          N/A
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
 
                   {mediaItem.description && (
                     <Typography variant="body1" sx={{ mb: 2 }}>

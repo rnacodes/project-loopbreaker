@@ -26,5 +26,8 @@ namespace ProjectLoopbreaker.Shared.DTOs.ListenNotes
 
         [JsonPropertyName("episodes")]
         public List<PodcastEpisodeDto> Episodes { get; set; }
+
+        [JsonPropertyName("website")]
+        public string? Website { get; set; }
     }
 }

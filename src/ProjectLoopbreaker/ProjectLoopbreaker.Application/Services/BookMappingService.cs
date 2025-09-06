@@ -47,14 +47,15 @@ namespace ProjectLoopbreaker.Application.Services
             {
                 foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
                 {
-                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == topicName);
+                    var normalizedTopicName = topicName.Trim().ToLowerInvariant();
+                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
                     if (existingTopic != null)
                     {
                         book.Topics.Add(existingTopic);
                     }
                     else
                     {
-                        book.Topics.Add(new Topic { Name = topicName });
+                        book.Topics.Add(new Topic { Name = normalizedTopicName });
                     }
                 }
             }
@@ -64,14 +65,15 @@ namespace ProjectLoopbreaker.Application.Services
             {
                 foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
                 {
-                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == genreName);
+                    var normalizedGenreName = genreName.Trim().ToLowerInvariant();
+                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
                     if (existingGenre != null)
                     {
                         book.Genres.Add(existingGenre);
                     }
                     else
                     {
-                        book.Genres.Add(new Genre { Name = genreName });
+                        book.Genres.Add(new Genre { Name = normalizedGenreName });
                     }
                 }
             }
@@ -132,14 +134,15 @@ namespace ProjectLoopbreaker.Application.Services
             {
                 foreach (var subjectName in openLibraryBook.Subject.Take(5).Where(s => !string.IsNullOrWhiteSpace(s)))
                 {
-                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == subjectName);
+                    var normalizedSubjectName = subjectName.Trim().ToLowerInvariant();
+                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedSubjectName);
                     if (existingGenre != null)
                     {
                         book.Genres.Add(existingGenre);
                     }
                     else
                     {
-                        book.Genres.Add(new Genre { Name = subjectName });
+                        book.Genres.Add(new Genre { Name = normalizedSubjectName });
                     }
                 }
             }

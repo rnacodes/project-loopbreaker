@@ -93,10 +93,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return BadRequest("Topic name is required.");
             }
 
+            var normalizedTopicName = dto.Name.Trim().ToLowerInvariant();
+
             // Check if topic already exists
             var existingTopic = await _context.Topics
                 .Include(t => t.MediaItems)
-                .FirstOrDefaultAsync(t => t.Name == dto.Name);
+                .FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
 
             if (existingTopic != null)
             {
@@ -109,7 +111,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return Ok(existingResponse);
             }
 
-            var topic = new Topic { Name = dto.Name };
+            var topic = new Topic { Name = normalizedTopicName };
             _context.Topics.Add(topic);
             await _context.SaveChangesAsync();
 

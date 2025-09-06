@@ -93,10 +93,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return BadRequest("Genre name is required.");
             }
 
+            var normalizedGenreName = dto.Name.Trim().ToLowerInvariant();
+
             // Check if genre already exists
             var existingGenre = await _context.Genres
                 .Include(g => g.MediaItems)
-                .FirstOrDefaultAsync(g => g.Name == dto.Name);
+                .FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
 
             if (existingGenre != null)
             {
@@ -109,7 +111,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return Ok(existingResponse);
             }
 
-            var genre = new Genre { Name = dto.Name };
+            var genre = new Genre { Name = normalizedGenreName };
             _context.Genres.Add(genre);
             await _context.SaveChangesAsync();
 

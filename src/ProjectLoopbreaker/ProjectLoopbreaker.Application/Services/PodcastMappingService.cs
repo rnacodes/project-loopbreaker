@@ -158,7 +158,7 @@ namespace ProjectLoopbreaker.Application.Services
                     Title = podcastDto?.Title ?? string.Empty,
                     MediaType = MediaType.Podcast,
                     PodcastType = PodcastType.Series, // Default to Series for API imports
-                    //Link = podcastDto.Website,
+                    Link = podcastDto.Website,
                     Notes = podcastDto.Description,
                     Thumbnail = uploadedThumbnailUrl,
                     DateAdded = DateTime.UtcNow,
@@ -170,7 +170,7 @@ namespace ProjectLoopbreaker.Application.Services
                 // Add genres to the new Genres collection
                 if (!string.IsNullOrEmpty(genreInfo))
                 {
-                    var genreNames = genreInfo.Split(',').Select(g => g.Trim()).Where(g => !string.IsNullOrEmpty(g));
+                    var genreNames = genreInfo.Split(',').Select(g => g.Trim().ToLowerInvariant()).Where(g => !string.IsNullOrEmpty(g));
                     foreach (var genreName in genreNames)
                     {
                         podcast.Genres.Add(new Genre { Name = genreName });
@@ -232,7 +232,7 @@ namespace ProjectLoopbreaker.Application.Services
                 // Add topics to the new Topics collection
                 if (!string.IsNullOrEmpty(topicsInfo))
                 {
-                    var topicNames = topicsInfo.Split(',').Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t));
+                    var topicNames = topicsInfo.Split(',').Select(t => t.Trim().ToLowerInvariant()).Where(t => !string.IsNullOrEmpty(t));
                     foreach (var topicName in topicNames)
                     {
                         podcastEpisode.Topics.Add(new Topic { Name = topicName });
@@ -337,7 +337,7 @@ namespace ProjectLoopbreaker.Application.Services
                 {
                     foreach (var genre in firstResult.Genres)
                     {
-                        podcast.Genres.Add(new Genre { Name = genre.Name });
+                        podcast.Genres.Add(new Genre { Name = genre.Name?.ToLowerInvariant() ?? string.Empty });
                     }
                 }
 
