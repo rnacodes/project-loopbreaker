@@ -11,6 +11,8 @@ namespace ProjectLoopbreaker.Domain.Interfaces
         IQueryable<Mixlist> Mixlists { get; }
         IQueryable<Podcast> Podcasts { get; }
         IQueryable<Book> Books { get; }
+        IQueryable<Movie> Movies { get; }
+        IQueryable<TvShow> TvShows { get; }
         IQueryable<Topic> Topics { get; }
         IQueryable<Genre> Genres { get; }
 

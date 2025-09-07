@@ -252,6 +252,29 @@ builder.Services.AddHttpClient<OpenLibraryApiClient>(client =>
     client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0 (https://github.com/yourrepo/projectloopbreaker)");
 });
 
+// Configure TMDB API client
+builder.Services.AddHttpClient<TmdbApiClient>(client =>
+{
+    client.BaseAddress = new Uri("https://api.themoviedb.org/3/");
+    
+    var apiKey = Environment.GetEnvironmentVariable("TMDB_API_KEY") ?? 
+                 builder.Configuration["ApiKeys:TMDB"];
+    
+    Console.WriteLine($"TMDB API Key value: {apiKey}");
+
+    if (string.IsNullOrEmpty(apiKey) || apiKey == "TMDB_API_KEY")
+    {
+        Console.WriteLine("WARNING: No valid TMDB API key found. TMDB functionality will be limited.");
+        Console.WriteLine("Please set a valid API key in environment variable TMDB_API_KEY or configuration.");
+        // Don't throw exception, just log warning
+    }
+    else
+    {
+        // TMDB uses query parameter for API key
+        client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0 (https://github.com/yourrepo/projectloopbreaker)");
+    }
+});
+
 // Configure DigitalOcean Spaces S3 Client (optional - won't break app if not configured)
 builder.Services.AddSingleton<IAmazonS3>(sp =>
 {

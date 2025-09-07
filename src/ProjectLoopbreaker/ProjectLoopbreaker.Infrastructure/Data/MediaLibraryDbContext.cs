@@ -13,6 +13,8 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<Mixlist> Mixlists { get; set; }
         public DbSet<Podcast> Podcasts { get; set; }
         public DbSet<Book> Books { get; set; }
+        public DbSet<Movie> Movies { get; set; }
+        public DbSet<TvShow> TvShows { get; set; }
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Genre> Genres { get; set; }
 
@@ -21,6 +23,8 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         IQueryable<Mixlist> IApplicationDbContext.Mixlists => Mixlists;
         IQueryable<Podcast> IApplicationDbContext.Podcasts => Podcasts;
         IQueryable<Book> IApplicationDbContext.Books => Books;
+        IQueryable<Movie> IApplicationDbContext.Movies => Movies;
+        IQueryable<TvShow> IApplicationDbContext.TvShows => TvShows;
         IQueryable<Topic> IApplicationDbContext.Topics => Topics;
         IQueryable<Genre> IApplicationDbContext.Genres => Genres;
 
@@ -189,8 +193,9 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             modelBuilder.Entity<BaseMediaItem>().ToTable("MediaItems");
             modelBuilder.Entity<Podcast>().ToTable("Podcasts");
             modelBuilder.Entity<Book>().ToTable("Books");
+            modelBuilder.Entity<Movie>().ToTable("Movies");
+            modelBuilder.Entity<TvShow>().ToTable("TvShows");
             // TODO: Add configurations for other media types as they're implemented:
-            // modelBuilder.Entity<Movie>().ToTable("Movies");
             // modelBuilder.Entity<Article>().ToTable("Articles");
             // etc.
 
@@ -256,6 +261,87 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 
                 // Create index on ASIN for better query performance
                 entity.HasIndex(e => e.ASIN);
+            });
+
+            // Configure Movie specific properties
+            modelBuilder.Entity<Movie>(entity =>
+            {
+                entity.Property(e => e.Director)
+                    .HasMaxLength(100);
+                    
+                entity.Property(e => e.Cast)
+                    .HasMaxLength(500);
+                    
+                entity.Property(e => e.MpaaRating)
+                    .HasMaxLength(50);
+                    
+                entity.Property(e => e.ImdbId)
+                    .HasMaxLength(20);
+                    
+                entity.Property(e => e.TmdbId)
+                    .HasMaxLength(20);
+                    
+                entity.Property(e => e.TmdbBackdropPath)
+                    .HasMaxLength(2000);
+                    
+                entity.Property(e => e.Tagline)
+                    .HasMaxLength(1000);
+                    
+                entity.Property(e => e.Homepage)
+                    .HasMaxLength(2000);
+                    
+                entity.Property(e => e.OriginalLanguage)
+                    .HasMaxLength(10);
+                    
+                entity.Property(e => e.OriginalTitle)
+                    .HasMaxLength(500);
+                
+                // Create indexes for better query performance
+                entity.HasIndex(e => e.ReleaseYear);
+                entity.HasIndex(e => e.ImdbId);
+                entity.HasIndex(e => e.TmdbId);
+                entity.HasIndex(e => e.Director);
+            });
+
+            // Configure TvShow specific properties
+            modelBuilder.Entity<TvShow>(entity =>
+            {
+                entity.Property(e => e.Creator)
+                    .HasMaxLength(100);
+                    
+                entity.Property(e => e.Cast)
+                    .HasMaxLength(500);
+                    
+                entity.Property(e => e.ContentRating)
+                    .HasMaxLength(50);
+                    
+                entity.Property(e => e.Network)
+                    .HasMaxLength(200);
+                    
+                entity.Property(e => e.TmdbId)
+                    .HasMaxLength(20);
+                    
+                entity.Property(e => e.TmdbPosterPath)
+                    .HasMaxLength(2000);
+                    
+                entity.Property(e => e.Tagline)
+                    .HasMaxLength(1000);
+                    
+                entity.Property(e => e.Homepage)
+                    .HasMaxLength(2000);
+                    
+                entity.Property(e => e.OriginalLanguage)
+                    .HasMaxLength(10);
+                    
+                entity.Property(e => e.OriginalName)
+                    .HasMaxLength(500);
+                
+                // Create indexes for better query performance
+                entity.HasIndex(e => e.FirstAirYear);
+                entity.HasIndex(e => e.LastAirYear);
+                entity.HasIndex(e => e.TmdbId);
+                entity.HasIndex(e => e.Creator);
+                entity.HasIndex(e => e.Network);
             });
         }
 

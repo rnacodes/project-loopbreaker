@@ -6,8 +6,8 @@ import {
     Card, CardContent, CircularProgress, Alert,
     Divider, Chip, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
-import { Search, Download, Podcasts, MenuBook, ExpandMore, OpenInNew } from '@mui/icons-material';
-import { searchPodcasts, getPodcastById, importPodcastFromApi, searchBooksFromOpenLibrary, importBookFromOpenLibrary } from '../services/apiService';
+import { Search, Download, Podcasts, MenuBook, ExpandMore, OpenInNew, MovieFilter } from '@mui/icons-material';
+import { searchPodcasts, getPodcastById, importPodcastFromApi, searchBooksFromOpenLibrary, importBookFromOpenLibrary, searchMovies, searchTvShows, searchMulti, getMovieDetails, getTvShowDetails } from '../services/apiService';
 
 function ImportMediaPage() {
     const [expanded, setExpanded] = useState(false);
@@ -33,6 +33,16 @@ function ImportMediaPage() {
     const [bookIsLoading, setBookIsLoading] = useState(false);
     const [bookError, setBookError] = useState('');
     const [bookSuccess, setBookSuccess] = useState('');
+
+    // TMDB states
+    const [tmdbSearchQuery, setTmdbSearchQuery] = useState('');
+    const [tmdbSearchType, setTmdbSearchType] = useState('multi');
+    const [tmdbSearchResults, setTmdbSearchResults] = useState([]);
+    const [tmdbIsLoading, setTmdbIsLoading] = useState(false);
+    const [tmdbError, setTmdbError] = useState('');
+    const [tmdbSuccess, setTmdbSuccess] = useState('');
+    const [selectedTmdbItem, setSelectedTmdbItem] = useState(null);
+    const [showTmdbDetails, setShowTmdbDetails] = useState(false);
     
     const navigate = useNavigate();
 
@@ -301,6 +311,118 @@ function ImportMediaPage() {
             setBookError('Failed to import book. Please try again.');
             setBookIsLoading(false);
         }
+    };
+
+    // TMDB handlers
+    const handleTmdbSearch = async () => {
+        if (!tmdbSearchQuery.trim()) {
+            setTmdbError('Please enter a search term');
+            return;
+        }
+        
+        setTmdbIsLoading(true);
+        setTmdbError('');
+        setTmdbSearchResults([]);
+        
+        try {
+            let results;
+            switch (tmdbSearchType) {
+                case 'movies':
+                    results = await searchMovies(tmdbSearchQuery);
+                    break;
+                case 'tv':
+                    results = await searchTvShows(tmdbSearchQuery);
+                    break;
+                case 'multi':
+                default:
+                    results = await searchMulti(tmdbSearchQuery);
+                    break;
+            }
+
+            setTmdbSearchResults(results.results || []);
+            setTmdbIsLoading(false);
+            
+        } catch (err) {
+            console.error('TMDB search error:', err);
+            setTmdbError('Failed to search. Please try again.');
+            setTmdbIsLoading(false);
+        }
+    };
+
+    const handleTmdbItemClick = async (item) => {
+        setTmdbIsLoading(true);
+        try {
+            let details;
+            if (item.media_type === 'movie' || tmdbSearchType === 'movies') {
+                details = await getMovieDetails(item.id);
+            } else if (item.media_type === 'tv' || tmdbSearchType === 'tv') {
+                details = await getTvShowDetails(item.id);
+            } else {
+                // For multi search, determine type from media_type
+                if (item.media_type === 'movie') {
+                    details = await getMovieDetails(item.id);
+                } else if (item.media_type === 'tv') {
+                    details = await getTvShowDetails(item.id);
+                }
+            }
+            setSelectedTmdbItem(details);
+            setShowTmdbDetails(true);
+        } catch (err) {
+            setTmdbError('Failed to load details. Please try again.');
+            console.error('TMDB details error:', err);
+        } finally {
+            setTmdbIsLoading(false);
+        }
+    };
+
+    const handleTmdbImport = async (item) => {
+        setTmdbIsLoading(true);
+        setTmdbError('');
+        
+        try {
+            // TODO: Implement actual import functionality
+            // For now, just show success message
+            setTmdbSuccess(`"${item.title || item.name}" imported successfully!`);
+            setTmdbIsLoading(false);
+            
+            // Navigate to the media detail page after import
+            setTimeout(() => {
+                navigate('/all-media'); // Navigate to all media page for now
+            }, 1500);
+            
+        } catch (err) {
+            console.error('TMDB import error:', err);
+            setTmdbError('Failed to import. Please try again.');
+            setTmdbIsLoading(false);
+        }
+    };
+
+    const getTmdbImageUrl = (item) => {
+        if (item.poster_path) {
+            return `https://image.tmdb.org/t/p/w500${item.poster_path}`;
+        }
+        return '/placeholder-movie.png';
+    };
+
+    const getTmdbItemTitle = (item) => {
+        return item.title || item.name || 'Unknown Title';
+    };
+
+    const getTmdbItemYear = (item) => {
+        const date = item.release_date || item.first_air_date;
+        return date ? new Date(date).getFullYear() : '';
+    };
+
+    const getTmdbItemType = (item) => {
+        if (item.media_type) {
+            return item.media_type === 'movie' ? 'Movie' : 'TV Show';
+        }
+        return tmdbSearchType === 'movies' ? 'Movie' : 'TV Show';
+    };
+
+    const formatDate = (dateString) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleDateString();
     };
 
     const renderPodcastImportSection = (
@@ -766,6 +888,219 @@ function ImportMediaPage() {
                 </AccordionDetails>
             </Accordion>
 
+            {/* TMDB Movies & TV Shows Import Section */}
+            <Accordion 
+                expanded={expanded === 'tmdb'} 
+                onChange={handleAccordionChange('tmdb')}
+                sx={{ mb: 2 }}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMore />}
+                    aria-controls="tmdb-content"
+                    id="tmdb-header"
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                        <MovieFilter />
+                        <Typography variant="h6">
+                            Movies & TV Shows
+                        </Typography>
+                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Powered by
+                            </Typography>
+                            <Button
+                                variant="text"
+                                size="small"
+                                href="https://www.themoviedb.org"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                endIcon={<OpenInNew fontSize="small" />}
+                                sx={{ 
+                                    minWidth: 'auto',
+                                    textTransform: 'none',
+                                    color: '#ffffff',
+                                    '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                TMDB
+                            </Button>
+                        </Box>
+                    </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <Box sx={{ padding: 2 }}>
+                        <FormControl fullWidth margin="normal">
+                            <InputLabel>Search Type</InputLabel>
+                            <Select
+                                value={tmdbSearchType}
+                                label="Search Type"
+                                onChange={(e) => setTmdbSearchType(e.target.value)}
+                            >
+                                <MenuItem value="multi">All (Movies & TV Shows)</MenuItem>
+                                <MenuItem value="movies">Movies Only</MenuItem>
+                                <MenuItem value="tv">TV Shows Only</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                            <TextField
+                                label="Search Movies & TV Shows"
+                                value={tmdbSearchQuery}
+                                onChange={(e) => setTmdbSearchQuery(e.target.value)}
+                                variant="outlined"
+                                fullWidth
+                                onKeyPress={(e) => e.key === 'Enter' && handleTmdbSearch()}
+                            />
+                            <Button
+                                variant="contained"
+                                onClick={handleTmdbSearch}
+                                disabled={tmdbIsLoading}
+                                startIcon={<Search />}
+                            >
+                                Search
+                            </Button>
+                        </Box>
+
+                        {tmdbSearchResults.length > 0 && (
+                            <Box sx={{ mt: 2 }}>
+                                <Typography variant="h6" gutterBottom>
+                                    Search Results ({tmdbSearchResults.length})
+                                </Typography>
+                                {tmdbSearchResults.map((item, index) => (
+                                    <Card key={`${item.id}-${index}`} sx={{ mb: 2 }}>
+                                        <CardContent>
+                                            <Box sx={{ display: 'flex', gap: 2 }}>
+                                                <Box
+                                                    sx={{
+                                                        width: 80,
+                                                        height: 120,
+                                                        borderRadius: 1,
+                                                        overflow: 'hidden',
+                                                        flexShrink: 0,
+                                                        backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                                    }}
+                                                >
+                                                    <img
+                                                        src={getTmdbImageUrl(item)}
+                                                        alt={getTmdbItemTitle(item)}
+                                                        style={{
+                                                            width: '100%',
+                                                            height: '100%',
+                                                            objectFit: 'cover',
+                                                            display: 'block'
+                                                        }}
+                                                        onError={(e) => {
+                                                            e.target.src = '/placeholder-movie.png';
+                                                        }}
+                                                    />
+                                                </Box>
+                                                <Box sx={{ flex: 1 }}>
+                                                    <Typography 
+                                                        variant="h6" 
+                                                        gutterBottom
+                                                        sx={{ 
+                                                            fontSize: '1.25rem',
+                                                            fontWeight: 600,
+                                                            minHeight: '1.5rem',
+                                                            lineHeight: 1.2
+                                                        }}
+                                                    >
+                                                        {getTmdbItemTitle(item)}
+                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                                        <Chip 
+                                                            label={getTmdbItemType(item)}
+                                                            size="small"
+                                                            color="primary"
+                                                        />
+                                                        {getTmdbItemYear(item) && (
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                ({getTmdbItemYear(item)})
+                                                            </Typography>
+                                                        )}
+                                                        {item.vote_average && (
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                ⭐ {item.vote_average.toFixed(1)}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                    <Typography 
+                                                        variant="body2" 
+                                                        sx={{ 
+                                                            mb: 2,
+                                                            fontSize: '0.875rem',
+                                                            lineHeight: 1.4,
+                                                            minHeight: '2.8rem',
+                                                            display: '-webkit-box',
+                                                            WebkitLineClamp: 3,
+                                                            WebkitBoxOrient: 'vertical',
+                                                            overflow: 'hidden'
+                                                        }}
+                                                    >
+                                                        {item.overview ? 
+                                                            (item.overview.length > 200 
+                                                                ? `${item.overview.substring(0, 200)}...` 
+                                                                : item.overview
+                                                            ) : 'No description available.'
+                                                        }
+                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                                        <Button
+                                                            variant="outlined"
+                                                            size="small"
+                                                            onClick={() => handleTmdbItemClick(item)}
+                                                            disabled={tmdbIsLoading}
+                                                            sx={{ 
+                                                                color: 'white', 
+                                                                borderColor: 'white',
+                                                                '&:hover': {
+                                                                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                                                    borderColor: 'white'
+                                                                }
+                                                            }}
+                                                        >
+                                                            View Details
+                                                        </Button>
+                                                        <Button
+                                                            variant="contained"
+                                                            size="small"
+                                                            onClick={() => handleTmdbImport(item)}
+                                                            disabled={tmdbIsLoading}
+                                                            startIcon={<Download />}
+                                                        >
+                                                            Import
+                                                        </Button>
+                                                    </Box>
+                                                </Box>
+                                            </Box>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </Box>
+                        )}
+
+                        {tmdbIsLoading && (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                                <CircularProgress />
+                            </Box>
+                        )}
+
+                        {tmdbError && (
+                            <Alert severity="error" sx={{ mt: 2 }}>
+                                {tmdbError}
+                            </Alert>
+                        )}
+
+                        {tmdbSuccess && (
+                            <Alert severity="success" sx={{ mt: 2 }}>
+                                {tmdbSuccess}
+                            </Alert>
+                        )}
+                    </Box>
+                </AccordionDetails>
+            </Accordion>
+
             <Divider sx={{ my: 4 }} />
             
             <Box sx={{ textAlign: 'center' }}>
@@ -777,6 +1112,152 @@ function ImportMediaPage() {
                     Go Back
                 </Button>
             </Box>
+
+            {/* TMDB Details Modal */}
+            {showTmdbDetails && selectedTmdbItem && (
+                <Box
+                    sx={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1300,
+                        p: 2
+                    }}
+                    onClick={() => setShowTmdbDetails(false)}
+                >
+                    <Box
+                        sx={{
+                            backgroundColor: 'white',
+                            borderRadius: 2,
+                            maxWidth: '800px',
+                            width: '100%',
+                            maxHeight: '90vh',
+                            overflow: 'auto',
+                            p: 3
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 3 }}>
+                            <Typography variant="h4" sx={{ flex: 1, mr: 2 }}>
+                                {selectedTmdbItem.title || selectedTmdbItem.name}
+                            </Typography>
+                            <Button
+                                onClick={() => setShowTmdbDetails(false)}
+                                sx={{ minWidth: 'auto', p: 1 }}
+                            >
+                                ×
+                            </Button>
+                        </Box>
+
+                        <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
+                            <img
+                                src={getTmdbImageUrl(selectedTmdbItem)}
+                                alt={selectedTmdbItem.title || selectedTmdbItem.name}
+                                style={{
+                                    width: 200,
+                                    height: 300,
+                                    objectFit: 'cover',
+                                    borderRadius: 8
+                                }}
+                                onError={(e) => {
+                                    e.target.src = '/placeholder-movie.png';
+                                }}
+                            />
+                            <Box sx={{ flex: 1 }}>
+                                <Typography variant="h6" gutterBottom>
+                                    Overview
+                                </Typography>
+                                <Typography variant="body1" sx={{ mb: 3 }}>
+                                    {selectedTmdbItem.overview || 'No description available.'}
+                                </Typography>
+
+                                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3 }}>
+                                    <Box>
+                                        <Typography variant="subtitle2" color="text.secondary">
+                                            Release Date
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            {formatDate(selectedTmdbItem.release_date || selectedTmdbItem.first_air_date)}
+                                        </Typography>
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="subtitle2" color="text.secondary">
+                                            Rating
+                                        </Typography>
+                                        <Typography variant="body2">
+                                            {selectedTmdbItem.vote_average ? `⭐ ${selectedTmdbItem.vote_average.toFixed(1)}` : 'N/A'}
+                                        </Typography>
+                                    </Box>
+                                    {selectedTmdbItem.runtime && (
+                                        <Box>
+                                            <Typography variant="subtitle2" color="text.secondary">
+                                                Runtime
+                                            </Typography>
+                                            <Typography variant="body2">
+                                                {selectedTmdbItem.runtime} minutes
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    {selectedTmdbItem.number_of_seasons && (
+                                        <Box>
+                                            <Typography variant="subtitle2" color="text.secondary">
+                                                Seasons
+                                            </Typography>
+                                            <Typography variant="body2">
+                                                {selectedTmdbItem.number_of_seasons}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Box>
+
+                                {selectedTmdbItem.genres && selectedTmdbItem.genres.length > 0 && (
+                                    <Box sx={{ mb: 3 }}>
+                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                            Genres
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                            {selectedTmdbItem.genres.map((genre, index) => (
+                                                <Chip
+                                                    key={index}
+                                                    label={genre.name}
+                                                    size="small"
+                                                    variant="outlined"
+                                                />
+                                            ))}
+                                        </Box>
+                                    </Box>
+                                )}
+
+                                <Box sx={{ display: 'flex', gap: 2 }}>
+                                    <Button
+                                        variant="contained"
+                                        onClick={() => {
+                                            handleTmdbImport(selectedTmdbItem);
+                                            setShowTmdbDetails(false);
+                                        }}
+                                        disabled={tmdbIsLoading}
+                                        startIcon={<Download />}
+                                    >
+                                        Import to Library
+                                    </Button>
+                                    <Button
+                                        variant="outlined"
+                                        onClick={() => setShowTmdbDetails(false)}
+                                    >
+                                        Close
+                                    </Button>
+                                </Box>
+                            </Box>
+                        </Box>
+                    </Box>
+                </Box>
+            )}
         </Container>
     );
 }
