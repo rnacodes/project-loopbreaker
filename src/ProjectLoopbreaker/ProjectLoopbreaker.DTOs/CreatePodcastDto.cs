@@ -1,4 +1,5 @@
 using ProjectLoopbreaker.Domain.Entities;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -8,7 +9,6 @@ namespace ProjectLoopbreaker.DTOs
     {
         // Base media item properties
         [Required]
-        [StringLength(500)]
         [JsonPropertyName("title")]
         public required string Title { get; set; }
 
@@ -54,31 +54,31 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("genres")]
         public string[] Genres { get; set; } = Array.Empty<string>();
 
-        // Podcast-specific properties
+        // Unified Podcast properties
         [Required]
         [JsonPropertyName("podcastType")]
         public PodcastType PodcastType { get; set; } = PodcastType.Series;
+
+        // For episodes: Foreign Key to parent series
+        [JsonPropertyName("parentPodcastId")]
+        public Guid? ParentPodcastId { get; set; }
+
+        [JsonPropertyName("externalId")]
+        public string? ExternalId { get; set; }
         
-        [StringLength(300)]
         [JsonPropertyName("publisher")]
         public string? Publisher { get; set; }
-        
+
         [Url]
         [StringLength(2000)]
         [JsonPropertyName("audioLink")]
         public string? AudioLink { get; set; }
         
-        [StringLength(50)]
-        [JsonPropertyName("externalId")]
-        public string? ExternalId { get; set; }
-        
         [JsonPropertyName("releaseDate")]
         public DateTime? ReleaseDate { get; set; }
-        
+
+        [Range(0, int.MaxValue, ErrorMessage = "Duration must be a positive number")]
         [JsonPropertyName("durationInSeconds")]
-        public int? DurationInSeconds { get; set; }
-        
-        [JsonPropertyName("parentPodcastId")]
-        public Guid? ParentPodcastId { get; set; }
+        public int DurationInSeconds { get; set; }
     }
 }

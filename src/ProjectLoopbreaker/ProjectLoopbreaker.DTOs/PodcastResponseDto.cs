@@ -29,50 +29,25 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("thumbnail")]
         public string? Thumbnail { get; set; }
         
-        [JsonPropertyName("notes")]
-        public string? Notes { get; set; }
-        
-        [JsonPropertyName("relatedNotes")]
-        public string? RelatedNotes { get; set; }
-        
-        [JsonPropertyName("genre")]
-        public string? Genre { get; set; }
-        
-        [JsonPropertyName("rating")]
-        public Rating? Rating { get; set; }
-        
-        [JsonPropertyName("ownershipStatus")]
-        public OwnershipStatus? OwnershipStatus { get; set; }
-        
-        [JsonPropertyName("dateCompleted")]
-        public DateTime? DateCompleted { get; set; }
-        
-        // Podcast-specific properties
         [JsonPropertyName("podcastType")]
         public PodcastType PodcastType { get; set; }
+        
+        [JsonPropertyName("parentPodcastId")]
+        public Guid? ParentPodcastId { get; set; }
         
         [JsonPropertyName("publisher")]
         public string? Publisher { get; set; }
         
-        [JsonPropertyName("audioLink")]
-        public string? AudioLink { get; set; }
-        
         [JsonPropertyName("externalId")]
         public string? ExternalId { get; set; }
+        
+        [JsonPropertyName("audioLink")]
+        public string? AudioLink { get; set; }
         
         [JsonPropertyName("releaseDate")]
         public DateTime? ReleaseDate { get; set; }
         
         [JsonPropertyName("durationInSeconds")]
-        public int? DurationInSeconds { get; set; }
-        
-        [JsonPropertyName("parentPodcastId")]
-        public Guid? ParentPodcastId { get; set; }
-        
-        [JsonPropertyName("topics")]
-        public string[] Topics { get; set; } = Array.Empty<string>();
-        
-        [JsonPropertyName("genres")]
-        public string[] Genres { get; set; } = Array.Empty<string>();
+        public int DurationInSeconds { get; set; }
     }
 }

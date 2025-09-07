@@ -4,17 +4,17 @@ using System.Text.Json.Serialization;
 
 namespace ProjectLoopbreaker.DTOs
 {
-    public class CreatePodcastEpisodeDto
+    public class CreateMediaItemDto
     {
-        // Base media item properties
         [Required]
         [StringLength(500)]
         [JsonPropertyName("title")]
         public required string Title { get; set; }
-
+        
+        [Required]
         [JsonPropertyName("mediaType")]
-        public MediaType MediaType { get; set; } = MediaType.Podcast;
-
+        public MediaType MediaType { get; set; }
+        
         [Url]
         [StringLength(2000)]
         [JsonPropertyName("link")]
@@ -38,6 +38,14 @@ namespace ProjectLoopbreaker.DTOs
         
         [JsonPropertyName("description")]
         public string? Description { get; set; }
+
+        
+        // JSON arrays for better query performance
+        [JsonPropertyName("topics")]
+        public string[] Topics { get; set; } = Array.Empty<string>();
+        
+        [JsonPropertyName("genres")]
+        public string[] Genres { get; set; } = Array.Empty<string>();
         
         [JsonPropertyName("relatedNotes")]
         public string? RelatedNotes { get; set; }
@@ -46,40 +54,6 @@ namespace ProjectLoopbreaker.DTOs
         [StringLength(2000)]
         [JsonPropertyName("thumbnail")]
         public string? Thumbnail { get; set; }
-        
-        [StringLength(200)]
-        [JsonPropertyName("genre")]
-        public string? Genre { get; set; }
-        
-        // JSON arrays for better query performance
-        [JsonPropertyName("topics")]
-        public string[] Topics { get; set; } = Array.Empty<string>();
-        
-        [JsonPropertyName("genres")]
-        public string[] Genres { get; set; } = Array.Empty<string>();
-
-        // Episode-specific properties
-        [Required]
-        [JsonPropertyName("podcastType")]
-        public PodcastType PodcastType { get; set; } = PodcastType.Episode;
-        
-        [Required]
-        [JsonPropertyName("parentPodcastId")]
-        public Guid ParentPodcastId { get; set; }
-        
-        [Url]
-        [StringLength(2000)]
-        [JsonPropertyName("audioLink")]
-        public string? AudioLink { get; set; }
-        
-        [JsonPropertyName("releaseDate")]
-        public DateTime? ReleaseDate { get; set; }
-        
-        [JsonPropertyName("durationInSeconds")]
-        public int? DurationInSeconds { get; set; }
-        
-        [StringLength(50)]
-        [JsonPropertyName("externalId")]
-        public string? ExternalId { get; set; }
     }
 }
+

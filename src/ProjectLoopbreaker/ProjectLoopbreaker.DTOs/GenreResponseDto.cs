@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 
-namespace ProjectLoopbreaker.Web.API.DTOs
+namespace ProjectLoopbreaker.DTOs
 {
-    public class TopicResponseDto
+    public class GenreResponseDto
     {
         [JsonPropertyName("id")]
         public Guid Id { get; set; }

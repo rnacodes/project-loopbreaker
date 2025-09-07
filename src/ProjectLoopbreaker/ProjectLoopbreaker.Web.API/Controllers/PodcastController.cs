@@ -5,7 +5,7 @@ using ProjectLoopbreaker.Infrastructure.Data;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Infrastructure.Clients;
-using ProjectLoopbreaker.Web.API.DTOs;
+using ProjectLoopbreaker.DTOs;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {

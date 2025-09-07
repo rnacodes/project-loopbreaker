@@ -1,13 +1,11 @@
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace ProjectLoopbreaker.Web.API.DTOs
+namespace ProjectLoopbreaker.DTOs
 {
-    public class CreateMixlistDto
+    public class UpdateMixlistDto
     {
-        [Required]
         [JsonPropertyName("name")]
-        public required string Name { get; set; }
+        public string? Name { get; set; }
         
         [JsonPropertyName("description")]
         public string? Description { get; set; }

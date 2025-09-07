@@ -1,58 +1,47 @@
 using ProjectLoopbreaker.Domain.Entities;
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace ProjectLoopbreaker.Web.API.DTOs
+namespace ProjectLoopbreaker.DTOs
 {
-    public class CreateMediaItemDto
+    public class MediaItemResponseDto
     {
-        [Required]
-        [StringLength(500)]
+        [JsonPropertyName("id")]
+        public Guid Id { get; set; }
         [JsonPropertyName("title")]
-        public required string Title { get; set; }
-        
-        [Required]
+        public string Title { get; set; } = string.Empty;
         [JsonPropertyName("mediaType")]
         public MediaType MediaType { get; set; }
-        
-        [Url]
-        [StringLength(2000)]
         [JsonPropertyName("link")]
         public string? Link { get; set; }
-        
         [JsonPropertyName("notes")]
         public string? Notes { get; set; }
-        
-        [Required]
+        [JsonPropertyName("dateAdded")]
+        public DateTime DateAdded { get; set; }
         [JsonPropertyName("status")]
-        public Status Status { get; set; } = Status.Uncharted;
-        
+        public Status Status { get; set; }
         [JsonPropertyName("dateCompleted")]
         public DateTime? DateCompleted { get; set; }
-        
         [JsonPropertyName("rating")]
         public Rating? Rating { get; set; }
-        
         [JsonPropertyName("ownershipStatus")]
         public OwnershipStatus? OwnershipStatus { get; set; }
-        
         [JsonPropertyName("description")]
         public string? Description { get; set; }
-
+        [JsonPropertyName("genre")]
+        public string? Genre { get; set; }
+        [JsonPropertyName("relatedNotes")]
+        public string? RelatedNotes { get; set; }
+        [JsonPropertyName("thumbnail")]
+        public string? Thumbnail { get; set; }
         
-        // JSON arrays for better query performance
+        // Simple string arrays instead of navigation properties to avoid circular references
         [JsonPropertyName("topics")]
         public string[] Topics { get; set; } = Array.Empty<string>();
-        
         [JsonPropertyName("genres")]
         public string[] Genres { get; set; } = Array.Empty<string>();
         
-        [JsonPropertyName("relatedNotes")]
-        public string? RelatedNotes { get; set; }
-        
-        [Url]
-        [StringLength(2000)]
-        [JsonPropertyName("thumbnail")]
-        public string? Thumbnail { get; set; }
+        // Simple list of mixlist names/IDs instead of full mixlist objects
+        [JsonPropertyName("mixlistIds")]
+        public Guid[] MixlistIds { get; set; } = Array.Empty<Guid>();
     }
 }

@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace ProjectLoopbreaker.Web.API.DTOs
+namespace ProjectLoopbreaker.DTOs
 {
     public class ImportMixlistDto
     {
@@ -25,4 +25,3 @@ namespace ProjectLoopbreaker.Web.API.DTOs
         public string MediaItemTypes { get; set; } = ""; // Semicolon-separated list of media types
     }
 }
-

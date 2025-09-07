@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure.Data;
-using ProjectLoopbreaker.Web.API.DTOs;
+using ProjectLoopbreaker.DTOs;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {

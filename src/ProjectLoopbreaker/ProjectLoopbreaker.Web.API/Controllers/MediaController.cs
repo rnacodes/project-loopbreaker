@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure; // To access the DbContext
-using ProjectLoopbreaker.Web.API.DTOs;
+using ProjectLoopbreaker.DTOs;
 using Microsoft.EntityFrameworkCore; // For ToListAsync, etc.
 using System.Globalization; // For CultureInfo
 using System.Text; // For Encoding

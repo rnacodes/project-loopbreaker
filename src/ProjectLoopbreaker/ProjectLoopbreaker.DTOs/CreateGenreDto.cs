@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace ProjectLoopbreaker.Web.API.DTOs
+namespace ProjectLoopbreaker.DTOs
 {
     public class CreateGenreDto
     {
@@ -10,3 +10,4 @@ namespace ProjectLoopbreaker.Web.API.DTOs
         public required string Name { get; set; }
     }
 }
+

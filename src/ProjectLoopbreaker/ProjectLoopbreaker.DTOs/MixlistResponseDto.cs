@@ -1,7 +1,7 @@
 using ProjectLoopbreaker.Domain.Entities;
 using System.Text.Json.Serialization;
 
-namespace ProjectLoopbreaker.Web.API.DTOs
+namespace ProjectLoopbreaker.DTOs
 {
     public class MixlistResponseDto
     {
@@ -37,3 +37,4 @@ namespace ProjectLoopbreaker.Web.API.DTOs
         public string? Thumbnail { get; set; }
     }
 }
+
