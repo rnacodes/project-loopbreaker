@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import { Search, Download, Podcasts, MenuBook, ExpandMore, OpenInNew, MovieFilter } from '@mui/icons-material';
 import { searchPodcasts, getPodcastById, importPodcastFromApi, searchBooksFromOpenLibrary, importBookFromOpenLibrary, searchMovies, searchTvShows, searchMulti, getMovieDetails, getTvShowDetails } from '../services/apiService';
+import WhiteOutlineButton from './shared/WhiteOutlineButton';
 
 function ImportMediaPage() {
     const [expanded, setExpanded] = useState(false);
@@ -962,6 +963,34 @@ function ImportMediaPage() {
                             </Button>
                         </Box>
 
+                        {/* TMDB Credit */}
+                        <Box sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: 1, 
+                            mb: 2,
+                            justifyContent: 'center',
+                            py: 1
+                        }}>
+                            <img 
+                                src="/tmdb-primary-short-logo.svg" 
+                                alt="TMDB" 
+                                style={{ 
+                                    height: '20px',
+                                    width: 'auto'
+                                }}
+                            />
+                            <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                    color: 'text.secondary',
+                                    fontSize: '0.75rem'
+                                }}
+                            >
+                                This product uses the TMDB API but is not endorsed or certified by TMDB
+                            </Typography>
+                        </Box>
+
                         {tmdbSearchResults.length > 0 && (
                             <Box sx={{ mt: 2 }}>
                                 <Typography variant="h6" gutterBottom>
@@ -983,12 +1012,13 @@ function ImportMediaPage() {
                                                 >
                                                     <img
                                                         src={getTmdbImageUrl(item)}
-                                                        alt={getTmdbItemTitle(item)}
+                                                        alt=""
                                                         style={{
                                                             width: '100%',
                                                             height: '100%',
                                                             objectFit: 'cover',
-                                                            display: 'block'
+                                                            display: 'block',
+                                                            fontSize: '12px'
                                                         }}
                                                         onError={(e) => {
                                                             e.target.src = '/placeholder-movie.png';
@@ -1046,22 +1076,13 @@ function ImportMediaPage() {
                                                         }
                                                     </Typography>
                                                     <Box sx={{ display: 'flex', gap: 1 }}>
-                                                        <Button
-                                                            variant="outlined"
+                                                        <WhiteOutlineButton
                                                             size="small"
                                                             onClick={() => handleTmdbItemClick(item)}
                                                             disabled={tmdbIsLoading}
-                                                            sx={{ 
-                                                                color: 'white', 
-                                                                borderColor: 'white',
-                                                                '&:hover': {
-                                                                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                                                    borderColor: 'white'
-                                                                }
-                                                            }}
                                                         >
                                                             View Details
-                                                        </Button>
+                                                        </WhiteOutlineButton>
                                                         <Button
                                                             variant="contained"
                                                             size="small"
@@ -1104,13 +1125,12 @@ function ImportMediaPage() {
             <Divider sx={{ my: 4 }} />
             
             <Box sx={{ textAlign: 'center' }}>
-                <Button 
-                    variant="outlined" 
+                <WhiteOutlineButton 
                     onClick={() => navigate(-1)}
                     sx={{ mr: 2 }}
                 >
                     Go Back
-                </Button>
+                </WhiteOutlineButton>
             </Box>
 
             {/* TMDB Details Modal */}

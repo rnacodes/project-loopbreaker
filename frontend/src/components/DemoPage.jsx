@@ -18,6 +18,7 @@ import {
   Select,
   MenuItem
 } from '@mui/material';
+import WhiteOutlineButton from './shared/WhiteOutlineButton';
 import {
   Book,
   Movie,
@@ -580,6 +581,71 @@ const DemoPage = () => {
             </Box>
           </Grid>
         </Grid>
+
+        {/* Button Components Section */}
+        <Paper elevation={2} sx={{ p: 4, mb: 4, backgroundColor: COLORS.background.primary }}>
+          <Typography variant="h4" gutterBottom sx={{ color: COLORS.text.primary, mb: 3 }}>
+            Button Components
+          </Typography>
+          
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Box sx={{ p: 3, backgroundColor: COLORS.background.secondary, borderRadius: BORDER_RADIUS.medium }}>
+                <Typography variant="h6" gutterBottom sx={{ color: COLORS.text.primary, mb: 2 }}>
+                  White Outline Button
+                </Typography>
+                <Typography variant="body2" sx={{ color: COLORS.text.secondary, mb: 3 }}>
+                  A reusable button component with white outline styling, perfect for dark backgrounds.
+                </Typography>
+                
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <WhiteOutlineButton size="small">
+                    Small Button
+                  </WhiteOutlineButton>
+                  <WhiteOutlineButton>
+                    Medium Button
+                  </WhiteOutlineButton>
+                  <WhiteOutlineButton size="large">
+                    Large Button
+                  </WhiteOutlineButton>
+                </Box>
+                
+                <Box sx={{ mt: 2 }}>
+                  <WhiteOutlineButton disabled>
+                    Disabled Button
+                  </WhiteOutlineButton>
+                </Box>
+              </Box>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <Box sx={{ p: 3, backgroundColor: COLORS.background.secondary, borderRadius: BORDER_RADIUS.medium }}>
+                <Typography variant="h6" gutterBottom sx={{ color: COLORS.text.primary, mb: 2 }}>
+                  Usage Example
+                </Typography>
+                <Box sx={{ 
+                  backgroundColor: COLORS.background.primary, 
+                  p: 2, 
+                  borderRadius: BORDER_RADIUS.small,
+                  fontFamily: 'monospace',
+                  fontSize: '0.875rem',
+                  color: COLORS.text.secondary,
+                  overflow: 'auto'
+                }}>
+                  <pre>{`import WhiteOutlineButton from './shared/WhiteOutlineButton';
+
+<WhiteOutlineButton 
+  onClick={handleClick}
+  size="small"
+  disabled={isLoading}
+>
+  Click Me
+</WhiteOutlineButton>`}</pre>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+        </Paper>
       </Paper>
     </Container>
   );
