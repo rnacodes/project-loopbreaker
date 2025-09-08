@@ -14,10 +14,20 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.0" />
+    <PackageReference Include="Testcontainers.PostgreSql" Version="3.6.0" />
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+    <PackageReference Include="AutoFixture" Version="4.18.1" />
+    <PackageReference Include="AutoFixture.Xunit2" Version="4.18.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ProjectLoopbreaker.UnitTests\ProjectLoopbreaker.UnitTests.csproj" />
+    <ProjectReference Include="..\..\src\ProjectLoopbreaker\ProjectLoopbreaker.Web.API\ProjectLoopbreaker.Web.API.csproj" />
+    <ProjectReference Include="..\..\src\ProjectLoopbreaker\ProjectLoopbreaker.Infrastructure\ProjectLoopbreaker.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\ProjectLoopbreaker\ProjectLoopbreaker.Domain\ProjectLoopbreaker.Domain.csproj" />
+    <ProjectReference Include="..\..\src\ProjectLoopbreaker\ProjectLoopbreaker.Application\ProjectLoopbreaker.Application.csproj" />
+    <ProjectReference Include="..\..\src\ProjectLoopbreaker\ProjectLoopbreaker.DTOs\ProjectLoopbreaker.DTOs.csproj" />
   </ItemGroup>
 
   <ItemGroup>

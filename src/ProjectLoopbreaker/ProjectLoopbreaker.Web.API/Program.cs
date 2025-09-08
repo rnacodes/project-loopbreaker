@@ -259,8 +259,6 @@ builder.Services.AddHttpClient<TmdbApiClient>(client =>
     
     var apiKey = Environment.GetEnvironmentVariable("TMDB_API_KEY") ?? 
                  builder.Configuration["ApiKeys:TMDB"];
-    
-    Console.WriteLine($"TMDB API Key value: {apiKey}");
 
     if (string.IsNullOrEmpty(apiKey) || apiKey == "TMDB_API_KEY")
     {
