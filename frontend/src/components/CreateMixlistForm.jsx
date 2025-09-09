@@ -238,7 +238,7 @@ function CreateMixlistForm() {
                         type="submit" 
                         variant="contained" 
                         color="primary" 
-                        disabled={!name.trim() || isSubmitting}
+                        disabled={isSubmitting}
                         sx={{ 
                             flex: 2,
                             fontSize: '16px',

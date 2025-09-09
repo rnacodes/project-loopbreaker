@@ -9,7 +9,10 @@ import * as apiService from '../../services/apiService';
 const mockNavigate = vi.fn();
 
 // Mock the API service
-vi.mock('../../services/apiService');
+vi.mock('../../services/apiService', () => ({
+  createMixlist: vi.fn(),
+}));
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -30,12 +33,13 @@ describe('CreateMixlistForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockNavigate.mockClear();
+    global.alert.mockClear();
     // Reset API mocks
     apiService.createMixlist.mockResolvedValue({ 
       data: { 
         id: 1, 
-        Name: 'Test Mixlist',
-        Thumbnail: 'https://picsum.photos/400/400?random=123&blur=1'
+        name: 'Test Mixlist',
+        thumbnail: 'https://picsum.photos/400/400?random=123&blur=1'
       } 
     });
   });
@@ -55,8 +59,8 @@ describe('CreateMixlistForm', () => {
       // Verify API call with correct data structure
       await waitFor(() => {
         expect(apiService.createMixlist).toHaveBeenCalledWith({
-          Name: 'Test Mixlist Name',
-          Thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
+          name: 'Test Mixlist Name',
+          thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });
     });
@@ -66,15 +70,15 @@ describe('CreateMixlistForm', () => {
 
       // Try to submit without a name
       const submitButton = screen.getByText('Create Mixlist');
-      // Button should be enabled when name is empty (component only disables during submission)
-      expect(submitButton).not.toBeDisabled();
+      // Button should be disabled when name is empty
+      expect(submitButton).toBeDisabled();
 
       // Fill in a name
       fireEvent.change(screen.getByPlaceholderText('Enter mixlist name...'), {
         target: { value: 'Test Name' }
       });
 
-      // Button should still be enabled
+      // Button should now be enabled
       expect(submitButton).not.toBeDisabled();
     });
 
@@ -105,8 +109,8 @@ describe('CreateMixlistForm', () => {
       // Verify API call with trimmed name
       await waitFor(() => {
         expect(apiService.createMixlist).toHaveBeenCalledWith({
-          Name: 'Test Mixlist Name',
-          Thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
+          name: 'Test Mixlist Name',
+          thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });
     });
@@ -124,8 +128,8 @@ describe('CreateMixlistForm', () => {
 
       await waitFor(() => {
         expect(apiService.createMixlist).toHaveBeenCalledWith({
-          Name: 'First Mixlist',
-          Thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
+          name: 'First Mixlist',
+          thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });
 
@@ -134,8 +138,8 @@ describe('CreateMixlistForm', () => {
       apiService.createMixlist.mockResolvedValue({ 
         data: { 
           id: 2, 
-          Name: 'Second Mixlist',
-          Thumbnail: 'https://picsum.photos/400/400?random=456&blur=1'
+          name: 'Second Mixlist',
+          thumbnail: 'https://picsum.photos/400/400?random=456&blur=1'
         } 
       });
 
@@ -147,8 +151,8 @@ describe('CreateMixlistForm', () => {
 
       await waitFor(() => {
         expect(apiService.createMixlist).toHaveBeenCalledWith({
-          Name: 'Second Mixlist',
-          Thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
+          name: 'Second Mixlist',
+          thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });
     });
@@ -164,7 +168,7 @@ describe('CreateMixlistForm', () => {
 
       await waitFor(() => {
         const callArgs = apiService.createMixlist.mock.calls[0][0];
-        expect(callArgs.Thumbnail).toContain('blur=1');
+        expect(callArgs.thumbnail).toContain('blur=1');
       });
     });
   });
@@ -237,7 +241,7 @@ describe('CreateMixlistForm', () => {
 
       // Verify error handling
       await waitFor(() => {
-        expect(screen.getByText(/Failed to create mixlist/)).toBeInTheDocument();
+        expect(global.alert).toHaveBeenCalledWith(expect.stringMatching(/Failed to create mixlist/));
       });
     });
 
@@ -256,7 +260,7 @@ describe('CreateMixlistForm', () => {
 
       // Verify error handling
       await waitFor(() => {
-        expect(screen.getByText(/Failed to create mixlist/)).toBeInTheDocument();
+        expect(global.alert).toHaveBeenCalledWith(expect.stringMatching(/Failed to create mixlist/));
       });
     });
 
@@ -279,7 +283,7 @@ describe('CreateMixlistForm', () => {
 
       // Wait for error to occur
       await waitFor(() => {
-        expect(screen.getByText(/Failed to create mixlist/)).toBeInTheDocument();
+        expect(global.alert).toHaveBeenCalledWith(expect.stringMatching(/Failed to create mixlist/));
       });
 
       // Button should be re-enabled
@@ -324,8 +328,8 @@ describe('CreateMixlistForm', () => {
 
       await waitFor(() => {
         expect(apiService.createMixlist).toHaveBeenCalledWith({
-          Name: mixlistName,
-          Thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
+          name: mixlistName,
+          thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });
 
@@ -345,8 +349,8 @@ describe('CreateMixlistForm', () => {
 
       await waitFor(() => {
         expect(apiService.createMixlist).toHaveBeenCalledWith({
-          Name: mixlistName,
-          Thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
+          name: mixlistName,
+          thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });
     });
@@ -363,8 +367,8 @@ describe('CreateMixlistForm', () => {
 
       await waitFor(() => {
         expect(apiService.createMixlist).toHaveBeenCalledWith({
-          Name: longName,
-          Thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
+          name: longName,
+          thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });
     });

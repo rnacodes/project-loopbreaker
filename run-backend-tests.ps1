@@ -1,7 +1,13 @@
 # PowerShell script to run all backend tests with detailed logging
 $ErrorActionPreference = "Continue"
 $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
-$logFile = "test-results-backend-$timestamp.log"
+$rootPath = Get-Location
+$logFile = "$rootPath\logs\test-results-backend-$timestamp.log"
+
+# Create logs directory if it doesn't exist
+if (!(Test-Path "logs")) {
+    New-Item -ItemType Directory -Path "logs" -Force | Out-Null
+}
 
 Write-Host "Running ProjectLoopbreaker Backend Tests..." -ForegroundColor Green
 Write-Host "Log file: $logFile" -ForegroundColor Cyan
@@ -94,7 +100,7 @@ Write-TestResult "=========================================" "Green"
 $unitTestResult = Invoke-TestRun -TestProject "ProjectLoopbreaker.UnitTests" -TestType "Unit Tests"
 
 if ($unitTestResult -ne 0) {
-    Write-TestResult "`n❌ Unit tests failed!" "Red"
+    Write-TestResult "`nUnit tests failed!" "Red"
     Write-TestResult "Check the log file for details: $logFile" "Yellow"
     Set-Location ".."
     exit 1
@@ -104,7 +110,7 @@ if ($unitTestResult -ne 0) {
 $integrationTestResult = Invoke-TestRun -TestProject "ProjectLoopbreaker.IntegrationTests" -TestType "Integration Tests"
 
 if ($integrationTestResult -ne 0) {
-    Write-TestResult "`n❌ Integration tests failed!" "Red"
+    Write-TestResult "`nIntegration tests failed!" "Red"
     Write-TestResult "Check the log file for details: $logFile" "Yellow"
     Set-Location ".."
     exit 1
@@ -119,14 +125,14 @@ Write-TestResult "`n=========================================" "Green"
 Write-TestResult "Backend Test Run Completed at $(Get-Date)" "Green"
 
 if ($unitTestResult -eq 0 -and $integrationTestResult -eq 0) {
-    Write-TestResult "✅ All backend tests completed successfully!" "Green"
-    Write-TestResult "📊 Coverage report generated in ./TestResults/" "Cyan"
+    Write-TestResult "All backend tests completed successfully!" "Green"
+    Write-TestResult "Coverage report generated in ./TestResults/" "Cyan"
 } else {
-    Write-TestResult "❌ Some tests failed!" "Red"
+    Write-TestResult "Some tests failed!" "Red"
 }
 
-Write-TestResult "📝 Detailed log saved to: $logFile" "Cyan"
-Write-TestResult "📋 Test result files (.trx) saved in current directory" "Cyan"
+Write-TestResult "Detailed log saved to: $logFile" "Cyan"
+Write-TestResult "Test result files (.trx) saved in current directory" "Cyan"
 
 # Return to root directory
 Set-Location ".."

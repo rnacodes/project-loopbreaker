@@ -56,6 +56,9 @@ function AddMediaForm() {
     const [podcastSeriesSuggestions, setPodcastSeriesSuggestions] = useState([]);
     const [selectedPodcastSeries, setSelectedPodcastSeries] = useState(null);
     
+    // Validation errors
+    const [validationErrors, setValidationErrors] = useState({});
+    
     const navigate = useNavigate();
 
     // Load available mixlists on component mount
@@ -223,13 +226,20 @@ function AddMediaForm() {
         if (thumbnail && thumbnail.trim()) mediaData.thumbnail = thumbnail;
 
         try {
+            // Clear previous validation errors
+            setValidationErrors({});
+            
             // Basic validation
+            const errors = {};
             if (!title.trim()) {
-                alert('Title is required');
-                return;
+                errors.title = 'Title is required';
             }
             if (!mediaType) {
-                alert('Media Type is required');
+                errors.mediaType = 'Media Type is required';
+            }
+            
+            if (Object.keys(errors).length > 0) {
+                setValidationErrors(errors);
                 return;
             }
             
@@ -693,6 +703,11 @@ function AddMediaForm() {
                         }
                     }}
                 />
+                {validationErrors.title && (
+                    <Typography color="error" variant="body2" sx={{ mt: 1, mb: 2 }}>
+                        {validationErrors.title}
+                    </Typography>
+                )}
 
                 {/* Media Type */}
                 <FormControl fullWidth margin="normal" required sx={{
@@ -730,6 +745,11 @@ function AddMediaForm() {
                         <MenuItem value="Website">Website</MenuItem>
                     </Select>
                 </FormControl>
+                {validationErrors.mediaType && (
+                    <Typography color="error" variant="body2" sx={{ mt: 1, mb: 2 }}>
+                        {validationErrors.mediaType}
+                    </Typography>
+                )}
 
                 {/* Link */}
                 <TextField

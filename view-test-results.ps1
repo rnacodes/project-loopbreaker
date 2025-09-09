@@ -14,7 +14,7 @@ function Show-LogFile {
         [string]$Description
     )
     
-    $logFiles = Get-ChildItem -Path "." -Filter $Pattern | Sort-Object LastWriteTime -Descending
+    $logFiles = Get-ChildItem -Path "logs" -Filter $Pattern | Sort-Object LastWriteTime -Descending
     
     if ($logFiles.Count -eq 0) {
         Write-Host "No $Description log files found." -ForegroundColor Yellow
@@ -51,16 +51,16 @@ function Show-TestSummary {
     Write-Host "`n--- Test Summary ---" -ForegroundColor Cyan
     
     # Count log files
-    $backendLogs = (Get-ChildItem -Path "." -Filter "test-results-backend-*.log").Count
-    $frontendLogs = (Get-ChildItem -Path "." -Filter "test-results-frontend-*.log").Count
-    $masterLogs = (Get-ChildItem -Path "." -Filter "test-results-master-*.log").Count
+    $backendLogs = (Get-ChildItem -Path "logs" -Filter "test-results-backend-*.log").Count
+    $frontendLogs = (Get-ChildItem -Path "logs" -Filter "test-results-frontend-*.log").Count
+    $masterLogs = (Get-ChildItem -Path "logs" -Filter "test-results-master-*.log").Count
     
     Write-Host "Backend test runs: $backendLogs" -ForegroundColor White
     Write-Host "Frontend test runs: $frontendLogs" -ForegroundColor White
     Write-Host "Master test runs: $masterLogs" -ForegroundColor White
     
     # Show latest test results
-    $latestMaster = Get-ChildItem -Path "." -Filter "test-results-master-*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    $latestMaster = Get-ChildItem -Path "logs" -Filter "test-results-master-*.log" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
     
     if ($latestMaster) {
         Write-Host "`nLatest test run: $($latestMaster.Name)" -ForegroundColor Cyan

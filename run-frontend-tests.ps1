@@ -1,7 +1,12 @@
 # PowerShell script to run frontend tests with detailed logging
+param(
+    [string]$LogDirectory = "logs"
+)
+
 $ErrorActionPreference = "Continue"
 $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
-$logFile = "test-results-frontend-$timestamp.log"
+$rootPath = Get-Location
+$logFile = "$rootPath\$LogDirectory\test-results-frontend-$timestamp.log"
 
 Write-Host "Running ProjectLoopbreaker Frontend Tests..." -ForegroundColor Green
 Write-Host "Log file: $logFile" -ForegroundColor Cyan
@@ -31,15 +36,22 @@ function Invoke-NpmTest {
     Write-TestResult "`n=== $TestType ===" "Yellow"
     Write-TestResult "Command: npm $Command" "Gray"
     
-    $output = & npm $Command.Split(' ') 2>&1
+    # Execute npm command properly
+    if ($Command -eq "run test:run") {
+        $output = & npm run test:run 2>&1
+    } elseif ($Command -eq "run test:coverage") {
+        $output = & npm run test:coverage 2>&1
+    } else {
+        $output = & npm $Command 2>&1
+    }
     $exitCode = $LASTEXITCODE
     
     # Log all output
     $output | ForEach-Object { Add-Content -Path $logFile -Value $_ }
     
     # Parse test results for Vitest output
-    $passedTests = ($output | Select-String "✓|PASS").Count
-    $failedTests = ($output | Select-String "✗|FAIL|Error").Count
+    $passedTests = ($output | Select-String "PASS").Count
+    $failedTests = ($output | Select-String "FAIL|Error").Count
     $skippedTests = ($output | Select-String "SKIP|skipped").Count
     
     # Try to extract more detailed results
@@ -59,7 +71,7 @@ function Invoke-NpmTest {
     # Show failed tests details
     if ($failedTests -gt 0) {
         Write-TestResult "`n--- Failed Tests Details ---" "Red"
-        $failedTestDetails = $output | Select-String -Pattern "FAIL|Error|✗" -Context 3
+        $failedTestDetails = $output | Select-String -Pattern "FAIL|Error" -Context 3
         foreach ($detail in $failedTestDetails) {
             Write-TestResult $detail.Line "Red"
             if ($detail.Context.PreContext) {
@@ -87,6 +99,11 @@ function Invoke-NpmTest {
     return $exitCode
 }
 
+# Create log directory if it doesn't exist
+if (!(Test-Path $LogDirectory)) {
+    New-Item -ItemType Directory -Path $LogDirectory -Force | Out-Null
+}
+
 # Change to the frontend directory
 Set-Location "frontend"
 
@@ -102,19 +119,19 @@ $installExitCode = $LASTEXITCODE
 $installOutput | ForEach-Object { Add-Content -Path $logFile -Value $_ }
 
 if ($installExitCode -ne 0) {
-    Write-TestResult "❌ Failed to install dependencies!" "Red"
+    Write-TestResult "Failed to install dependencies!" "Red"
     Write-TestResult "Check the log file for details: $logFile" "Yellow"
     Set-Location ".."
     exit 1
 } else {
-    Write-TestResult "✅ Dependencies installed successfully" "Green"
+    Write-TestResult "Dependencies installed successfully" "Green"
 }
 
 # Run Unit Tests
 $unitTestResult = Invoke-NpmTest -Command "run test:run" -TestType "Unit Tests"
 
 if ($unitTestResult -ne 0) {
-    Write-TestResult "`n❌ Unit tests failed!" "Red"
+    Write-TestResult "`nUnit tests failed!" "Red"
     Write-TestResult "Check the log file for details: $logFile" "Yellow"
     Set-Location ".."
     exit 1
@@ -124,7 +141,7 @@ if ($unitTestResult -ne 0) {
 $coverageResult = Invoke-NpmTest -Command "run test:coverage" -TestType "Tests with Coverage"
 
 if ($coverageResult -ne 0) {
-    Write-TestResult "`n❌ Coverage tests failed!" "Red"
+    Write-TestResult "`nCoverage tests failed!" "Red"
     Write-TestResult "Check the log file for details: $logFile" "Yellow"
     Set-Location ".."
     exit 1
@@ -135,14 +152,14 @@ Write-TestResult "`n=========================================" "Green"
 Write-TestResult "Frontend Test Run Completed at $(Get-Date)" "Green"
 
 if ($unitTestResult -eq 0 -and $coverageResult -eq 0) {
-    Write-TestResult "✅ All frontend tests completed successfully!" "Green"
-    Write-TestResult "📊 Coverage report generated in coverage/ directory" "Cyan"
+    Write-TestResult "All frontend tests completed successfully!" "Green"
+    Write-TestResult "Coverage report generated in coverage/ directory" "Cyan"
 } else {
-    Write-TestResult "❌ Some tests failed!" "Red"
+    Write-TestResult "Some tests failed!" "Red"
 }
 
-Write-TestResult "📝 Detailed log saved to: $logFile" "Cyan"
-Write-TestResult "📋 Test results also available in console output above" "Cyan"
+Write-TestResult "Detailed log saved to: $logFile" "Cyan"
+Write-TestResult "Test results also available in console output above" "Cyan"
 
 # Return to root directory
 Set-Location ".."

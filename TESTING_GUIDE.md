@@ -11,6 +11,8 @@ ProjectLoopbreaker uses a comprehensive testing strategy with:
 
 ## Quick Start
 
+### Run Tests from Root Directory
+
 ### Running All Tests
 ```powershell
 # Run all tests (backend + frontend)

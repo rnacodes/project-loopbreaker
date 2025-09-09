@@ -1,7 +1,13 @@
 # PowerShell script to run all tests (backend and frontend) with comprehensive logging
 $ErrorActionPreference = "Continue"
 $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
-$masterLogFile = "test-results-master-$timestamp.log"
+$rootPath = Get-Location
+$masterLogFile = "$rootPath\logs\test-results-master-$timestamp.log"
+
+# Create logs directory if it doesn't exist
+if (!(Test-Path "logs")) {
+    New-Item -ItemType Directory -Path "logs" -Force | Out-Null
+}
 
 Write-Host "Running All ProjectLoopbreaker Tests..." -ForegroundColor Green
 Write-Host "Master log file: $masterLogFile" -ForegroundColor Cyan
@@ -36,14 +42,14 @@ try {
     if ($LASTEXITCODE -ne 0) {
         $backendSuccess = $false
         $overallSuccess = $false
-        Write-MasterResult "❌ Backend tests failed!" "Red"
+        Write-MasterResult "Backend tests failed!" "Red"
     } else {
-        Write-MasterResult "✅ Backend tests passed!" "Green"
+        Write-MasterResult "Backend tests passed!" "Green"
     }
 } catch {
     $backendSuccess = $false
     $overallSuccess = $false
-    Write-MasterResult "❌ Backend tests encountered an error: $($_.Exception.Message)" "Red"
+    Write-MasterResult "Backend tests encountered an error: $($_.Exception.Message)" "Red"
 }
 
 $backendDuration = (Get-Date) - $backendStartTime
@@ -58,14 +64,14 @@ try {
     if ($LASTEXITCODE -ne 0) {
         $frontendSuccess = $false
         $overallSuccess = $false
-        Write-MasterResult "❌ Frontend tests failed!" "Red"
+        Write-MasterResult "Frontend tests failed!" "Red"
     } else {
-        Write-MasterResult "✅ Frontend tests passed!" "Green"
+        Write-MasterResult "Frontend tests passed!" "Green"
     }
 } catch {
     $frontendSuccess = $false
     $overallSuccess = $false
-    Write-MasterResult "❌ Frontend tests encountered an error: $($_.Exception.Message)" "Red"
+    Write-MasterResult "Frontend tests encountered an error: $($_.Exception.Message)" "Red"
 }
 
 $frontendDuration = (Get-Date) - $frontendStartTime
@@ -77,17 +83,17 @@ Write-MasterResult "`n=========================================" "Green"
 Write-MasterResult "Overall Test Summary" "Green"
 Write-MasterResult "=========================================" "Green"
 Write-MasterResult "Total execution time: $($totalDuration.TotalMinutes.ToString('F2')) minutes" "Cyan"
-Write-MasterResult "Backend tests: $(if($backendSuccess) {'✅ PASSED'} else {'❌ FAILED'})" $(if($backendSuccess) {"Green"} else {"Red"})
-Write-MasterResult "Frontend tests: $(if($frontendSuccess) {'✅ PASSED'} else {'❌ FAILED'})" $(if($frontendSuccess) {"Green"} else {"Red"})
+Write-MasterResult "Backend tests: $(if($backendSuccess) {'PASSED'} else {'FAILED'})" $(if($backendSuccess) {"Green"} else {"Red"})
+Write-MasterResult "Frontend tests: $(if($frontendSuccess) {'PASSED'} else {'FAILED'})" $(if($frontendSuccess) {"Green"} else {"Red"})
 
 if ($overallSuccess) {
-    Write-MasterResult "`n🎉 ALL TESTS COMPLETED SUCCESSFULLY! 🎉" "Green"
-    Write-MasterResult "📊 Check individual log files for detailed results:" "Cyan"
+    Write-MasterResult "`nALL TESTS COMPLETED SUCCESSFULLY!" "Green"
+    Write-MasterResult "Check individual log files for detailed results:" "Cyan"
     Write-MasterResult "   - Backend: test-results-backend-*.log" "Cyan"
     Write-MasterResult "   - Frontend: test-results-frontend-*.log" "Cyan"
 } else {
-    Write-MasterResult "`n💥 SOME TESTS FAILED! 💥" "Red"
-    Write-MasterResult "📋 Check the following for details:" "Yellow"
+    Write-MasterResult "`nSOME TESTS FAILED!" "Red"
+    Write-MasterResult "Check the following for details:" "Yellow"
     Write-MasterResult "   - Master log: $masterLogFile" "Yellow"
     Write-MasterResult "   - Backend log: test-results-backend-*.log" "Yellow"
     Write-MasterResult "   - Frontend log: test-results-frontend-*.log" "Yellow"

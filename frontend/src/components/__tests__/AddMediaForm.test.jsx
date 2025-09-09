@@ -9,7 +9,14 @@ import * as apiService from '../../services/apiService';
 const mockNavigate = vi.fn();
 
 // Mock the API service
-vi.mock('../../services/apiService');
+vi.mock('../../services/apiService', () => ({
+  addMedia: vi.fn(),
+  addPodcastEpisode: vi.fn(),
+  addPodcastSeries: vi.fn(),
+  getAllMixlists: vi.fn(),
+  addMediaToMixlist: vi.fn(),
+}));
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
