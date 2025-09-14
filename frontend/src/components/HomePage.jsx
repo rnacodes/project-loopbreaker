@@ -6,7 +6,7 @@ import {
     AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos, Forest, 
     PlaylistAdd, NoteAlt, ImportExport, Topic, FileDownload
 } from '@mui/icons-material';
-import { getAllMixlists, seedMixlists } from '../services/apiService';
+import { getAllMixlists, seedMixlists, getAllMedia } from '../services/apiService';
 
 // MOCK DATA
 const mainMediaIcons = [
@@ -44,6 +44,7 @@ const speedDialActions = [
 
 // COMPONENTS
 import SearchBar from './shared/SearchBar';
+import SimpleMediaCarousel from './shared/SimpleMediaCarousel';
 
     const MixlistCard = ({ mixlist, onNavigate }) => (
   <Card 
@@ -145,6 +146,9 @@ export default function HomePage() {
   const [mixlists, setMixlists] = useState([]);
   const [mixlistsLoading, setMixlistsLoading] = useState(true);
   const [mixlistsError, setMixlistsError] = useState(null);
+  const [activelyExploringMedia, setActivelyExploringMedia] = useState([]);
+  const [activelyExploringLoading, setActivelyExploringLoading] = useState(true);
+  const [activelyExploringError, setActivelyExploringError] = useState(null);
 
   useEffect(() => {
     const fetchMixlists = async () => {
@@ -163,12 +167,57 @@ export default function HomePage() {
         setMixlists(response.data);
       } catch (error) {
         console.error("Error fetching mixlists:", error);
-        setMixlistsError("Failed to load mixlists");
+        
+        // Provide more specific error messages based on the error type
+        if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+          setMixlistsError("Unable to connect to the server. Please make sure the backend API is running on localhost:5000");
+        } else if (error.response?.status === 404) {
+          setMixlistsError("API endpoint not found. Please check the backend configuration.");
+        } else if (error.response?.status >= 500) {
+          setMixlistsError("Server error occurred. Please try again later.");
+        } else {
+          setMixlistsError("Failed to load mixlists. Please check your connection.");
+        }
       } finally {
         setMixlistsLoading(false);
       }
     };
+
+    const fetchActivelyExploringMedia = async () => {
+      try {
+        setActivelyExploringLoading(true);
+        setActivelyExploringError(null);
+        
+        const response = await getAllMedia();
+        const activelyExploring = response.data.filter(item => {
+          const status = item.status || item.Status;
+          return status && (
+            status.toLowerCase() === 'actively exploring' || 
+            status.toLowerCase() === 'activelyexploring' ||
+            status.toLowerCase() === 'inprogress'
+          );
+        });
+        setActivelyExploringMedia(activelyExploring);
+      } catch (error) {
+        console.error("Error fetching actively exploring media:", error);
+        
+        // Provide more specific error messages based on the error type
+        if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+          setActivelyExploringError("Unable to connect to the server. Please make sure the backend API is running on localhost:5000");
+        } else if (error.response?.status === 404) {
+          setActivelyExploringError("API endpoint not found. Please check the backend configuration.");
+        } else if (error.response?.status >= 500) {
+          setActivelyExploringError("Server error occurred. Please try again later.");
+        } else {
+          setActivelyExploringError("Failed to load actively exploring media. Please check your connection.");
+        }
+      } finally {
+        setActivelyExploringLoading(false);
+      }
+    };
+
     fetchMixlists();
+    fetchActivelyExploringMedia();
   }, []);
 
   const handleCreateMixlist = () => {
@@ -367,6 +416,55 @@ export default function HomePage() {
                     </Grid>
                 </Grid>
             </Box>
+        </Section>
+
+        {/* Jump back in Section - Actively Exploring Media */}
+        <Section title="Jump back in">
+          {activelyExploringLoading ? (
+            <Box sx={{ textAlign: 'center', py: 6 }}>
+              <CircularProgress size={40} sx={{ mb: 2 }} />
+              <Typography variant="h6" color="text.secondary">Loading your active explorations...</Typography>
+            </Box>
+          ) : activelyExploringError ? (
+            <Box sx={{ textAlign: 'center', py: 6 }}>
+              <Typography variant="h6" color="error" sx={{ mb: 2 }}>{activelyExploringError}</Typography>
+              <Button variant="outlined" onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </Box>
+          ) : activelyExploringMedia.length > 0 ? (
+            <SimpleMediaCarousel
+              mediaItems={activelyExploringMedia}
+              title=""
+              subtitle="Continue exploring these items"
+              onMediaClick={(media) => navigate(`/media/${media.id || media.Id}`)}
+              cardWidth={250}
+              cardHeight={350}
+              showCardContent={true}
+            />
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 6 }}>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+                No active explorations found
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Start exploring some media and mark them as "Actively Exploring" to see them here
+              </Typography>
+              <Button 
+                variant="contained" 
+                onClick={handleAddMedia}
+                sx={{ mr: 2 }}
+              >
+                Add Media
+              </Button>
+              <Button 
+                variant="outlined" 
+                onClick={() => navigate('/all-media')}
+              >
+                Browse All Media
+              </Button>
+            </Box>
+          )}
         </Section>
 
         {/* Mixlists Section */}

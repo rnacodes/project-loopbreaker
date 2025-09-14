@@ -704,7 +704,7 @@ function AddMediaForm() {
                     }}
                 />
                 {validationErrors.title && (
-                    <Typography color="error" variant="body2" sx={{ mt: 1, mb: 2 }}>
+                    <Typography color="error" variant="body2" sx={{ mt: 1, mb: 2 }} data-testid="title-error">
                         {validationErrors.title}
                     </Typography>
                 )}
@@ -720,11 +720,12 @@ function AddMediaForm() {
                         color: '#ffffff'
                     }
                 }}>
-                    <InputLabel id="media-type-label">Media Type</InputLabel>
+                    <InputLabel id="media-type-label" data-testid="media-type-label">Media Type</InputLabel>
                     <Select
                         labelId="media-type-label"
                         value={mediaType}
                         label="Media Type"
+                        data-testid="media-type-select"
                         onChange={(e) => setMediaType(e.target.value)}
                         sx={{
                             '& .MuiSelect-select': {
@@ -746,7 +747,7 @@ function AddMediaForm() {
                     </Select>
                 </FormControl>
                 {validationErrors.mediaType && (
-                    <Typography color="error" variant="body2" sx={{ mt: 1, mb: 2 }}>
+                    <Typography color="error" variant="body2" sx={{ mt: 1, mb: 2 }} data-testid="media-type-error">
                         {validationErrors.mediaType}
                     </Typography>
                 )}

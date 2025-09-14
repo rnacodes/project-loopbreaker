@@ -56,7 +56,7 @@ describe('AddMediaForm', () => {
       });
 
       // Select media type
-      const mediaTypeSelect = screen.getByLabelText('Media Type');
+      const mediaTypeSelect = screen.getByTestId('media-type-select');
       fireEvent.mouseDown(mediaTypeSelect);
       fireEvent.click(screen.getByText('Book'));
 
@@ -142,7 +142,7 @@ describe('AddMediaForm', () => {
 
       // Should show validation error for title
       await waitFor(() => {
-        expect(screen.getByText('Title is required')).toBeInTheDocument();
+        expect(screen.getByTestId('title-error')).toBeInTheDocument();
       });
     });
 
@@ -159,7 +159,7 @@ describe('AddMediaForm', () => {
 
       // Should show validation error for media type
       await waitFor(() => {
-        expect(screen.getByText('Media Type is required')).toBeInTheDocument();
+        expect(screen.getByTestId('media-type-error')).toBeInTheDocument();
       });
     });
   });
@@ -174,7 +174,7 @@ describe('AddMediaForm', () => {
       });
 
       // Select Podcast media type
-      const mediaTypeSelect = screen.getByLabelText('Media Type');
+      const mediaTypeSelect = screen.getByTestId('media-type-select');
       fireEvent.mouseDown(mediaTypeSelect);
       fireEvent.click(screen.getByText('Podcast'));
 
@@ -251,7 +251,7 @@ describe('AddMediaForm', () => {
       });
 
       // Select Podcast media type
-      const mediaTypeSelect = screen.getByLabelText('Media Type');
+      const mediaTypeSelect = screen.getByTestId('media-type-select');
       fireEvent.mouseDown(mediaTypeSelect);
       fireEvent.click(screen.getByText('Podcast'));
 
@@ -305,7 +305,7 @@ describe('AddMediaForm', () => {
         target: { value: 'Test Media' }
       });
 
-      const mediaTypeSelect = screen.getByLabelText('Media Type');
+      const mediaTypeSelect = screen.getByTestId('media-type-select');
       fireEvent.mouseDown(mediaTypeSelect);
       fireEvent.click(screen.getByText('Book'));
 
@@ -354,7 +354,7 @@ describe('AddMediaForm', () => {
         target: { value: 'Test Media' }
       });
 
-      const mediaTypeSelect = screen.getByLabelText('Media Type');
+      const mediaTypeSelect = screen.getByTestId('media-type-select');
       fireEvent.mouseDown(mediaTypeSelect);
       fireEvent.click(screen.getByText('Book'));
 
