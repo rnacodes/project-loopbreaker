@@ -381,19 +381,61 @@ function ImportMediaPage() {
         setTmdbError('');
         
         try {
-            // TODO: Implement actual import functionality
-            // For now, just show success message
+            let result;
+            
+            // Determine if it's a movie or TV show and call the appropriate import function
+            if (item.media_type === 'movie' || tmdbSearchType === 'movies') {
+                // Import movie
+                const response = await fetch(`http://localhost:5033/api/movie/from-tmdb/${item.id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to import movie: ${response.statusText}`);
+                }
+                
+                result = await response.json();
+            } else if (item.media_type === 'tv' || tmdbSearchType === 'tv') {
+                // Import TV show
+                const response = await fetch(`http://localhost:5033/api/tvshow/from-tmdb/${item.id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to import TV show: ${response.statusText}`);
+                }
+                
+                result = await response.json();
+            } else {
+                throw new Error('Unknown media type');
+            }
+            
             setTmdbSuccess(`"${item.title || item.name}" imported successfully!`);
             setTmdbIsLoading(false);
             
+            console.log('TMDB import successful:', result);
+            
             // Navigate to the media detail page after import
-            setTimeout(() => {
-                navigate('/all-media'); // Navigate to all media page for now
-            }, 1500);
+            const mediaId = result.id || result.Id;
+            if (mediaId) {
+                setTimeout(() => {
+                    navigate(`/media/${mediaId}`);
+                }, 1500);
+            } else {
+                setTimeout(() => {
+                    navigate('/all-media');
+                }, 1500);
+            }
             
         } catch (err) {
             console.error('TMDB import error:', err);
-            setTmdbError('Failed to import. Please try again.');
+            setTmdbError(`Failed to import: ${err.message}`);
             setTmdbIsLoading(false);
         }
     };
@@ -1153,7 +1195,7 @@ function ImportMediaPage() {
                 >
                     <Box
                         sx={{
-                            backgroundColor: 'white',
+                            backgroundColor: '#474350',
                             borderRadius: 2,
                             maxWidth: '800px',
                             width: '100%',
@@ -1164,7 +1206,7 @@ function ImportMediaPage() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 3 }}>
-                            <Typography variant="h4" sx={{ flex: 1, mr: 2 }}>
+                            <Typography variant="h4" sx={{ flex: 1, mr: 2, color: '#ffffff' }}>
                                 {selectedTmdbItem.title || selectedTmdbItem.name}
                             </Typography>
                             <Button
@@ -1190,46 +1232,46 @@ function ImportMediaPage() {
                                 }}
                             />
                             <Box sx={{ flex: 1 }}>
-                                <Typography variant="h6" gutterBottom>
+                                <Typography variant="h6" gutterBottom sx={{ color: '#ffffff' }}>
                                     Overview
                                 </Typography>
-                                <Typography variant="body1" sx={{ mb: 3 }}>
+                                <Typography variant="body1" sx={{ mb: 3, color: '#ffffff' }}>
                                     {selectedTmdbItem.overview || 'No description available.'}
                                 </Typography>
 
                                 <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mb: 3 }}>
                                     <Box>
-                                        <Typography variant="subtitle2" color="text.secondary">
+                                        <Typography variant="subtitle2" sx={{ color: '#fcfafa' }}>
                                             Release Date
                                         </Typography>
-                                        <Typography variant="body2">
+                                        <Typography variant="body2" sx={{ color: '#ffffff' }}>
                                             {formatDate(selectedTmdbItem.release_date || selectedTmdbItem.first_air_date)}
                                         </Typography>
                                     </Box>
                                     <Box>
-                                        <Typography variant="subtitle2" color="text.secondary">
+                                        <Typography variant="subtitle2" sx={{ color: '#fcfafa' }}>
                                             Rating
                                         </Typography>
-                                        <Typography variant="body2">
+                                        <Typography variant="body2" sx={{ color: '#ffffff' }}>
                                             {selectedTmdbItem.vote_average ? `⭐ ${selectedTmdbItem.vote_average.toFixed(1)}` : 'N/A'}
                                         </Typography>
                                     </Box>
                                     {selectedTmdbItem.runtime && (
                                         <Box>
-                                            <Typography variant="subtitle2" color="text.secondary">
+                                            <Typography variant="subtitle2" sx={{ color: '#fcfafa' }}>
                                                 Runtime
                                             </Typography>
-                                            <Typography variant="body2">
+                                            <Typography variant="body2" sx={{ color: '#ffffff' }}>
                                                 {selectedTmdbItem.runtime} minutes
                                             </Typography>
                                         </Box>
                                     )}
                                     {selectedTmdbItem.number_of_seasons && (
                                         <Box>
-                                            <Typography variant="subtitle2" color="text.secondary">
+                                            <Typography variant="subtitle2" sx={{ color: '#fcfafa' }}>
                                                 Seasons
                                             </Typography>
-                                            <Typography variant="body2">
+                                            <Typography variant="body2" sx={{ color: '#ffffff' }}>
                                                 {selectedTmdbItem.number_of_seasons}
                                             </Typography>
                                         </Box>
@@ -1238,7 +1280,7 @@ function ImportMediaPage() {
 
                                 {selectedTmdbItem.genres && selectedTmdbItem.genres.length > 0 && (
                                     <Box sx={{ mb: 3 }}>
-                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                        <Typography variant="subtitle2" sx={{ color: '#fcfafa' }} gutterBottom>
                                             Genres
                                         </Typography>
                                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>

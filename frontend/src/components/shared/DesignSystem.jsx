@@ -21,7 +21,8 @@ export const COLORS = {
     default: '#1B1B1B',
     paper: '#474350', // davys-gray
     elevated: '#2a2a2a',
-    overlay: 'rgba(0, 0, 0, 0.7)'
+    overlay: 'rgba(0, 0, 0, 0.7)',
+    modal: '#474350' // davys-gray for modals
   },
   
   // Text Colors

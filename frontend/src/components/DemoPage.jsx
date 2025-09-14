@@ -449,6 +449,13 @@ const DemoPage = () => {
                   <Typography variant="caption" color="text.secondary">Primary</Typography>
                 </Box>
               </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Box sx={{ textAlign: 'center', p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                  <Box sx={{ width: '100%', height: 60, backgroundColor: COLORS.background.modal, borderRadius: 1, mb: 1 }} />
+                  <Typography variant="body2" fontWeight="bold">Modal</Typography>
+                  <Typography variant="caption" color="text.secondary">Background</Typography>
+                </Box>
+              </Grid>
             </Grid>
           </Grid>
         </Grid>

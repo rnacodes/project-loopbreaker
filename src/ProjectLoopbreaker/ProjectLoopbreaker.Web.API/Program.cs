@@ -219,6 +219,10 @@ builder.Services.AddScoped<IPodcastMappingService, PodcastMappingService>();
 builder.Services.AddScoped<IPodcastService, PodcastService>();
 builder.Services.AddScoped<IBookService, BookService>();
 builder.Services.AddScoped<IBookMappingService, BookMappingService>();
+builder.Services.AddScoped<IMovieService, MovieService>();
+builder.Services.AddScoped<IMovieMappingService, MovieMappingService>();
+builder.Services.AddScoped<ITvShowService, TvShowService>();
+builder.Services.AddScoped<ITvShowMappingService, TvShowMappingService>();
 
 // In Program.cs
 
