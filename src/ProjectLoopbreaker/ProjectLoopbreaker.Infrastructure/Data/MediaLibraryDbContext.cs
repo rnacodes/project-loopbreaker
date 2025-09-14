@@ -315,9 +315,6 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.Property(e => e.ContentRating)
                     .HasMaxLength(50);
                     
-                entity.Property(e => e.Network)
-                    .HasMaxLength(200);
-                    
                 entity.Property(e => e.TmdbId)
                     .HasMaxLength(20);
                     
@@ -341,7 +338,6 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.HasIndex(e => e.LastAirYear);
                 entity.HasIndex(e => e.TmdbId);
                 entity.HasIndex(e => e.Creator);
-                entity.HasIndex(e => e.Network);
             });
         }
 

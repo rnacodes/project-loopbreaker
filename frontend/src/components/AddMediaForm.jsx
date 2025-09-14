@@ -10,7 +10,7 @@ import {
 import { 
     addMedia, getAllMixlists, addMediaToMixlist, createPodcastEpisode,
     searchTopics, searchGenres, searchPodcastSeries, createBook,
-    uploadThumbnail
+    createMovie, createTvShow, uploadThumbnail
 } from '../services/apiService';
 
 function AddMediaForm() {
@@ -44,6 +44,29 @@ function AddMediaForm() {
     const [asin, setAsin] = useState('');
     const [format, setFormat] = useState('Digital'); // 'Digital' or 'Physical'
     const [partOfSeries, setPartOfSeries] = useState(false);
+    
+    // Movie specific fields
+    const [director, setDirector] = useState('');
+    const [cast, setCast] = useState('');
+    const [releaseYear, setReleaseYear] = useState('');
+    const [runtimeMinutes, setRuntimeMinutes] = useState('');
+    const [mpaaRating, setMpaaRating] = useState('');
+    const [imdbId, setImdbId] = useState('');
+    const [tmdbId, setTmdbId] = useState('');
+    const [tmdbRating, setTmdbRating] = useState('');
+    const [tagline, setTagline] = useState('');
+    const [homepage, setHomepage] = useState('');
+    const [originalLanguage, setOriginalLanguage] = useState('');
+    const [originalTitle, setOriginalTitle] = useState('');
+    
+    // TV Show specific fields
+    const [creator, setCreator] = useState('');
+    const [firstAirYear, setFirstAirYear] = useState('');
+    const [lastAirYear, setLastAirYear] = useState('');
+    const [numberOfSeasons, setNumberOfSeasons] = useState('');
+    const [numberOfEpisodes, setNumberOfEpisodes] = useState('');
+    const [contentRating, setContentRating] = useState('');
+    const [originalName, setOriginalName] = useState('');
     
     // Mixlist selection
     const [availableMixlists, setAvailableMixlists] = useState([]);
@@ -247,8 +270,8 @@ function AddMediaForm() {
             console.log('Raw form values:', { title, mediaType, status, ownershipStatus, rating });
             
             // Check if media type is supported by backend
-            if (mediaType !== 'Podcast' && mediaType !== 'Book') {
-                alert('Currently only Podcast and Book media types are supported by the backend. Other media types are not yet implemented.');
+            if (mediaType !== 'Podcast' && mediaType !== 'Book' && mediaType !== 'Movie' && mediaType !== 'TVShow') {
+                alert('Currently only Podcast, Book, Movie, and TVShow media types are supported by the backend. Other media types are not yet implemented.');
                 return;
             }
             
@@ -309,6 +332,69 @@ function AddMediaForm() {
                     // No podcast type selected, create as regular media
                     response = await addMedia(mediaData);
                 }
+            }
+            // Handle movie-specific creation
+            else if (mediaType === 'Movie') {
+                const movieData = {
+                    title: title,
+                    link: link,
+                    notes: notes,
+                    description: description,
+                    status: status,
+                    dateCompleted: status === 'Completed' && dateCompleted ? dateCompleted : null,
+                    rating: status === 'Completed' && rating ? rating : null,
+                    ownershipStatus: ownershipStatus || null,
+                    topics: topics.length > 0 ? topics : [],
+                    genres: genres.length > 0 ? genres : [],
+                    relatedNotes: relatedNotes,
+                    thumbnail: thumbnail,
+                    director: director || null,
+                    cast: cast || null,
+                    releaseYear: releaseYear ? parseInt(releaseYear) : null,
+                    runtimeMinutes: runtimeMinutes ? parseInt(runtimeMinutes) : null,
+                    mpaaRating: mpaaRating || null,
+                    imdbId: imdbId || null,
+                    tmdbId: tmdbId || null,
+                    tmdbRating: tmdbRating ? parseFloat(tmdbRating) : null,
+                    tagline: tagline || null,
+                    homepage: homepage || null,
+                    originalLanguage: originalLanguage || null,
+                    originalTitle: originalTitle || null
+                };
+                
+                response = await createMovie(movieData);
+            }
+            // Handle TV show-specific creation
+            else if (mediaType === 'TVShow') {
+                const tvShowData = {
+                    title: title,
+                    link: link,
+                    notes: notes,
+                    description: description,
+                    status: status,
+                    dateCompleted: status === 'Completed' && dateCompleted ? dateCompleted : null,
+                    rating: status === 'Completed' && rating ? rating : null,
+                    ownershipStatus: ownershipStatus || null,
+                    topics: topics.length > 0 ? topics : [],
+                    genres: genres.length > 0 ? genres : [],
+                    relatedNotes: relatedNotes,
+                    thumbnail: thumbnail,
+                    creator: creator || null,
+                    cast: cast || null,
+                    firstAirYear: firstAirYear ? parseInt(firstAirYear) : null,
+                    lastAirYear: lastAirYear ? parseInt(lastAirYear) : null,
+                    numberOfSeasons: numberOfSeasons ? parseInt(numberOfSeasons) : null,
+                    numberOfEpisodes: numberOfEpisodes ? parseInt(numberOfEpisodes) : null,
+                    contentRating: contentRating || null,
+                    tmdbId: tmdbId || null,
+                    tmdbRating: tmdbRating ? parseFloat(tmdbRating) : null,
+                    tagline: tagline || null,
+                    homepage: homepage || null,
+                    originalLanguage: originalLanguage || null,
+                    originalName: originalName || null
+                };
+                
+                response = await createTvShow(tvShowData);
             } else {
                 // Create regular media item
                 response = await addMedia(mediaData);
@@ -626,6 +712,766 @@ function AddMediaForm() {
                             />
                         </>
                     )}
+                </Box>
+            );
+        }
+        else if (mediaType === 'Movie') {
+            return (
+                <Box sx={{ mt: 3, mb: 2 }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>
+                        Movie Details
+                    </Typography>
+                    
+                    {/* Director */}
+                    <TextField
+                        label="Director"
+                        placeholder="Enter director name..."
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={director}
+                        onChange={(e) => setDirector(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* Cast */}
+                    <TextField
+                        label="Cast"
+                        placeholder="Enter main cast members (comma-separated)..."
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={cast}
+                        onChange={(e) => setCast(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* Release Year and Runtime */}
+                    <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="Release Year"
+                                placeholder="2023"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={releaseYear}
+                                onChange={(e) => setReleaseYear(e.target.value)}
+                                type="number"
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="Runtime (minutes)"
+                                placeholder="120"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={runtimeMinutes}
+                                onChange={(e) => setRuntimeMinutes(e.target.value)}
+                                type="number"
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    {/* MPAA Rating and TMDB Rating */}
+                    <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="MPAA Rating"
+                                placeholder="PG-13"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={mpaaRating}
+                                onChange={(e) => setMpaaRating(e.target.value)}
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="TMDB Rating"
+                                placeholder="8.5"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={tmdbRating}
+                                onChange={(e) => setTmdbRating(e.target.value)}
+                                type="number"
+                                step="0.1"
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    {/* IMDB ID and TMDB ID */}
+                    <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="IMDB ID"
+                                placeholder="tt1234567"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={imdbId}
+                                onChange={(e) => setImdbId(e.target.value)}
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="TMDB ID"
+                                placeholder="12345"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={tmdbId}
+                                onChange={(e) => setTmdbId(e.target.value)}
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    {/* Tagline */}
+                    <TextField
+                        label="Tagline"
+                        placeholder="Enter movie tagline..."
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={tagline}
+                        onChange={(e) => setTagline(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* Homepage */}
+                    <TextField
+                        label="Homepage"
+                        placeholder="https://example.com"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={homepage}
+                        onChange={(e) => setHomepage(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* Original Language and Original Title */}
+                    <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="Original Language"
+                                placeholder="en"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={originalLanguage}
+                                onChange={(e) => setOriginalLanguage(e.target.value)}
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="Original Title"
+                                placeholder="Original title in original language"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={originalTitle}
+                                onChange={(e) => setOriginalTitle(e.target.value)}
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                    </Grid>
+                </Box>
+            );
+        }
+        else if (mediaType === 'TVShow') {
+            return (
+                <Box sx={{ mt: 3, mb: 2 }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>
+                        TV Show Details
+                    </Typography>
+                    
+                    {/* Creator */}
+                    <TextField
+                        label="Creator"
+                        placeholder="Enter creator name..."
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={creator}
+                        onChange={(e) => setCreator(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* Cast */}
+                    <TextField
+                        label="Cast"
+                        placeholder="Enter main cast members (comma-separated)..."
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={cast}
+                        onChange={(e) => setCast(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* Air Years */}
+                    <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="First Air Year"
+                                placeholder="2020"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={firstAirYear}
+                                onChange={(e) => setFirstAirYear(e.target.value)}
+                                type="number"
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="Last Air Year"
+                                placeholder="2023"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={lastAirYear}
+                                onChange={(e) => setLastAirYear(e.target.value)}
+                                type="number"
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    {/* Seasons and Episodes */}
+                    <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="Number of Seasons"
+                                placeholder="3"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={numberOfSeasons}
+                                onChange={(e) => setNumberOfSeasons(e.target.value)}
+                                type="number"
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="Number of Episodes"
+                                placeholder="24"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={numberOfEpisodes}
+                                onChange={(e) => setNumberOfEpisodes(e.target.value)}
+                                type="number"
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    {/* Content Rating */}
+                    <TextField
+                        label="Content Rating"
+                        placeholder="TV-MA"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={contentRating}
+                        onChange={(e) => setContentRating(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* TMDB Rating and TMDB ID */}
+                    <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="TMDB Rating"
+                                placeholder="8.5"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={tmdbRating}
+                                onChange={(e) => setTmdbRating(e.target.value)}
+                                type="number"
+                                step="0.1"
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="TMDB ID"
+                                placeholder="12345"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={tmdbId}
+                                onChange={(e) => setTmdbId(e.target.value)}
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    {/* Tagline */}
+                    <TextField
+                        label="Tagline"
+                        placeholder="Enter TV show tagline..."
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={tagline}
+                        onChange={(e) => setTagline(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* Homepage */}
+                    <TextField
+                        label="Homepage"
+                        placeholder="https://example.com"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={homepage}
+                        onChange={(e) => setHomepage(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* Original Language and Original Name */}
+                    <Grid container spacing={2}>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="Original Language"
+                                placeholder="en"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={originalLanguage}
+                                onChange={(e) => setOriginalLanguage(e.target.value)}
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                        <Grid item xs={6}>
+                            <TextField
+                                label="Original Name"
+                                placeholder="Original name in original language"
+                                variant="outlined"
+                                fullWidth
+                                margin="normal"
+                                value={originalName}
+                                onChange={(e) => setOriginalName(e.target.value)}
+                                sx={{
+                                    mb: 2,
+                                    '& .MuiInputBase-input': {
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: '#ffffff',
+                                        opacity: 1
+                                    },
+                                    '& .MuiInputLabel-root': {
+                                        color: '#ffffff',
+                                        fontSize: '14px'
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': {
+                                        color: '#ffffff'
+                                    }
+                                }}
+                            />
+                        </Grid>
+                    </Grid>
                 </Box>
             );
         }

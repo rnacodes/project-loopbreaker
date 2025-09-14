@@ -42,7 +42,6 @@ namespace ProjectLoopbreaker.Application.Services
                 NumberOfSeasons = dto.NumberOfSeasons,
                 NumberOfEpisodes = dto.NumberOfEpisodes,
                 ContentRating = dto.ContentRating,
-                Network = dto.Network,
                 TmdbId = dto.TmdbId,
                 TmdbRating = dto.TmdbRating,
                 TmdbPosterPath = dto.TmdbPosterPath,
@@ -117,7 +116,6 @@ namespace ProjectLoopbreaker.Application.Services
                 NumberOfSeasons = tvShow.NumberOfSeasons,
                 NumberOfEpisodes = tvShow.NumberOfEpisodes,
                 ContentRating = tvShow.ContentRating,
-                Network = tvShow.Network,
                 TmdbId = tvShow.TmdbId,
                 TmdbRating = tvShow.TmdbRating,
                 TmdbPosterPath = tvShow.TmdbPosterPath,
@@ -167,11 +165,6 @@ namespace ProjectLoopbreaker.Application.Services
                 tvShow.LastAirYear = lastAirDate.Year;
             }
 
-            // Set network from TMDB data
-            if (tmdbTvShow.Networks?.Length > 0)
-            {
-                tvShow.Network = string.Join(", ", tmdbTvShow.Networks.Select(n => n.Name));
-            }
 
             // Handle genres from TMDB genre IDs (simplified - would need genre mapping service)
             // For now, we'll skip this as it would require a TMDB genre mapping service
@@ -200,7 +193,6 @@ namespace ProjectLoopbreaker.Application.Services
                 NumberOfSeasons = tmdbTvShow.NumberOfSeasons,
                 Tagline = tmdbTvShow.Tagline,
                 Homepage = tmdbTvShow.Homepage,
-                Networks = tmdbTvShow.Networks,
                 PosterUrl = !string.IsNullOrEmpty(tmdbTvShow.PosterPath) 
                     ? $"https://image.tmdb.org/t/p/w500{tmdbTvShow.PosterPath}" 
                     : null,

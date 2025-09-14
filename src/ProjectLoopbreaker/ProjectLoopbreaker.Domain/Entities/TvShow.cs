@@ -21,8 +21,6 @@ namespace ProjectLoopbreaker.Domain.Entities
         [StringLength(50)]
         public string? ContentRating { get; set; } // TV rating (TV-PG, TV-14, etc.)
         
-        [StringLength(200)]
-        public string? Network { get; set; } // Primary network/streaming service
         
         [StringLength(20)]
         public string? TmdbId { get; set; } // The Movie Database ID

@@ -253,7 +253,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 // Parse the media type from the request
                 if (!Enum.TryParse<MediaType>(mediaType, true, out var parsedMediaType))
                 {
-                    return BadRequest($"Invalid media type: {mediaType}. Supported types: Book, Podcast");
+                    return BadRequest($"Invalid media type: {mediaType}. Supported types: Book, Podcast, Movie, TVShow");
                 }
 
                 _logger.LogInformation("Processing CSV upload for media type: {MediaType}", parsedMediaType);
@@ -272,6 +272,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                                 break;
                             case MediaType.Podcast:
                                 mediaItem = await ProcessPodcastRow(csv);
+                                break;
+                            case MediaType.Movie:
+                                mediaItem = await ProcessMovieRow(csv);
+                                break;
+                            case MediaType.TVShow:
+                                mediaItem = await ProcessTvShowRow(csv);
                                 break;
                             default:
                                 errors.Add($"Row {csv.CurrentIndex}: Unsupported media type {parsedMediaType}");
@@ -305,6 +311,34 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                                     Title = podcast.Title,
                                     Thumbnail = podcast.Thumbnail,
                                     MediaType = "Podcast"
+                                });
+                            }
+                            else if (mediaItem is Movie movie)
+                            {
+                                _context.Movies.Add(movie);
+                                // Track the imported movie for the response
+                                importedItems.Add(new
+                                {
+                                    Id = movie.Id,
+                                    Title = movie.Title,
+                                    Director = movie.Director,
+                                    ReleaseYear = movie.ReleaseYear,
+                                    Thumbnail = movie.Thumbnail,
+                                    MediaType = "Movie"
+                                });
+                            }
+                            else if (mediaItem is TvShow tvShow)
+                            {
+                                _context.TvShows.Add(tvShow);
+                                // Track the imported TV show for the response
+                                importedItems.Add(new
+                                {
+                                    Id = tvShow.Id,
+                                    Title = tvShow.Title,
+                                    Creator = tvShow.Creator,
+                                    FirstAirYear = tvShow.FirstAirYear,
+                                    Thumbnail = tvShow.Thumbnail,
+                                    MediaType = "TVShow"
                                 });
                             }
                             else
@@ -461,6 +495,125 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             // For now, we'll just create the basic podcast entity
 
             return podcast;
+        }
+
+        private async Task<Movie?> ProcessMovieRow(CsvReader csv)
+        {
+            var movie = new Movie
+            {
+                Title = GetCsvValue(csv, "Title") ?? "Unknown Title",
+                MediaType = MediaType.Movie,
+                DateAdded = DateTime.UtcNow,
+                Status = ParseStatus(GetCsvValue(csv, "Status")) ?? Status.Uncharted
+            };
+
+            // Optional fields
+            movie.Description = GetCsvValue(csv, "Description");
+            movie.Link = GetCsvValue(csv, "Link");
+            movie.Notes = GetCsvValue(csv, "Notes");
+            movie.RelatedNotes = GetCsvValue(csv, "RelatedNotes");
+            movie.Thumbnail = GetCsvValue(csv, "Thumbnail");
+            movie.Director = GetCsvValue(csv, "Director");
+            movie.Cast = GetCsvValue(csv, "Cast");
+            movie.Tagline = GetCsvValue(csv, "Tagline");
+            movie.Homepage = GetCsvValue(csv, "Homepage");
+            movie.OriginalLanguage = GetCsvValue(csv, "OriginalLanguage");
+            movie.OriginalTitle = GetCsvValue(csv, "OriginalTitle");
+            movie.ImdbId = GetCsvValue(csv, "ImdbId");
+            movie.TmdbId = GetCsvValue(csv, "TmdbId");
+            movie.MpaaRating = GetCsvValue(csv, "MpaaRating");
+
+            // Parse numeric fields
+            var releaseYearStr = GetCsvValue(csv, "ReleaseYear");
+            if (!string.IsNullOrEmpty(releaseYearStr) && int.TryParse(releaseYearStr, out int releaseYear))
+                movie.ReleaseYear = releaseYear;
+
+            var runtimeStr = GetCsvValue(csv, "RuntimeMinutes");
+            if (!string.IsNullOrEmpty(runtimeStr) && int.TryParse(runtimeStr, out int runtime))
+                movie.RuntimeMinutes = runtime;
+
+            var tmdbRatingStr = GetCsvValue(csv, "TmdbRating");
+            if (!string.IsNullOrEmpty(tmdbRatingStr) && double.TryParse(tmdbRatingStr, out double tmdbRating))
+                movie.TmdbRating = tmdbRating;
+
+            // Parse enums
+            var ratingStr = GetCsvValue(csv, "Rating");
+            if (!string.IsNullOrEmpty(ratingStr) && Enum.TryParse<Rating>(ratingStr, true, out Rating rating))
+                movie.Rating = rating;
+
+            var ownershipStr = GetCsvValue(csv, "OwnershipStatus");
+            if (!string.IsNullOrEmpty(ownershipStr) && Enum.TryParse<OwnershipStatus>(ownershipStr, true, out OwnershipStatus ownership))
+                movie.OwnershipStatus = ownership;
+
+            // Parse dates
+            var dateCompletedStr = GetCsvValue(csv, "DateCompleted");
+            if (!string.IsNullOrEmpty(dateCompletedStr) && DateTime.TryParse(dateCompletedStr, out DateTime dateCompleted))
+                movie.DateCompleted = dateCompleted;
+
+            return movie;
+        }
+
+        private async Task<TvShow?> ProcessTvShowRow(CsvReader csv)
+        {
+            var tvShow = new TvShow
+            {
+                Title = GetCsvValue(csv, "Title") ?? "Unknown Title",
+                MediaType = MediaType.TVShow,
+                DateAdded = DateTime.UtcNow,
+                Status = ParseStatus(GetCsvValue(csv, "Status")) ?? Status.Uncharted
+            };
+
+            // Optional fields
+            tvShow.Description = GetCsvValue(csv, "Description");
+            tvShow.Link = GetCsvValue(csv, "Link");
+            tvShow.Notes = GetCsvValue(csv, "Notes");
+            tvShow.RelatedNotes = GetCsvValue(csv, "RelatedNotes");
+            tvShow.Thumbnail = GetCsvValue(csv, "Thumbnail");
+            tvShow.Creator = GetCsvValue(csv, "Creator");
+            tvShow.Cast = GetCsvValue(csv, "Cast");
+            tvShow.Tagline = GetCsvValue(csv, "Tagline");
+            tvShow.Homepage = GetCsvValue(csv, "Homepage");
+            tvShow.OriginalLanguage = GetCsvValue(csv, "OriginalLanguage");
+            tvShow.OriginalName = GetCsvValue(csv, "OriginalName");
+            tvShow.TmdbId = GetCsvValue(csv, "TmdbId");
+            tvShow.ContentRating = GetCsvValue(csv, "ContentRating");
+
+            // Parse numeric fields
+            var firstAirYearStr = GetCsvValue(csv, "FirstAirYear");
+            if (!string.IsNullOrEmpty(firstAirYearStr) && int.TryParse(firstAirYearStr, out int firstAirYear))
+                tvShow.FirstAirYear = firstAirYear;
+
+            var lastAirYearStr = GetCsvValue(csv, "LastAirYear");
+            if (!string.IsNullOrEmpty(lastAirYearStr) && int.TryParse(lastAirYearStr, out int lastAirYear))
+                tvShow.LastAirYear = lastAirYear;
+
+            var numberOfSeasonsStr = GetCsvValue(csv, "NumberOfSeasons");
+            if (!string.IsNullOrEmpty(numberOfSeasonsStr) && int.TryParse(numberOfSeasonsStr, out int numberOfSeasons))
+                tvShow.NumberOfSeasons = numberOfSeasons;
+
+            var numberOfEpisodesStr = GetCsvValue(csv, "NumberOfEpisodes");
+            if (!string.IsNullOrEmpty(numberOfEpisodesStr) && int.TryParse(numberOfEpisodesStr, out int numberOfEpisodes))
+                tvShow.NumberOfEpisodes = numberOfEpisodes;
+
+            var tmdbRatingStr = GetCsvValue(csv, "TmdbRating");
+            if (!string.IsNullOrEmpty(tmdbRatingStr) && double.TryParse(tmdbRatingStr, out double tmdbRating))
+                tvShow.TmdbRating = tmdbRating;
+
+            // Parse enums
+            var ratingStr = GetCsvValue(csv, "Rating");
+            if (!string.IsNullOrEmpty(ratingStr) && Enum.TryParse<Rating>(ratingStr, true, out Rating rating))
+                tvShow.Rating = rating;
+
+            var ownershipStr = GetCsvValue(csv, "OwnershipStatus");
+            if (!string.IsNullOrEmpty(ownershipStr) && Enum.TryParse<OwnershipStatus>(ownershipStr, true, out OwnershipStatus ownership))
+                tvShow.OwnershipStatus = ownership;
+
+            // Parse dates
+            var dateCompletedStr = GetCsvValue(csv, "DateCompleted");
+            if (!string.IsNullOrEmpty(dateCompletedStr) && DateTime.TryParse(dateCompletedStr, out DateTime dateCompleted))
+                tvShow.DateCompleted = dateCompleted;
+
+            return tvShow;
         }
 
 

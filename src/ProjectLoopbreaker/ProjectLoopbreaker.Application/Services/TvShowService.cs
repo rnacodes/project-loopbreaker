@@ -125,7 +125,6 @@ namespace ProjectLoopbreaker.Application.Services
                     NumberOfSeasons = dto.NumberOfSeasons,
                     NumberOfEpisodes = dto.NumberOfEpisodes,
                     ContentRating = dto.ContentRating,
-                    Network = dto.Network,
                     TmdbId = dto.TmdbId,
                     TmdbRating = dto.TmdbRating,
                     TmdbPosterPath = dto.TmdbPosterPath,
@@ -182,7 +181,6 @@ namespace ProjectLoopbreaker.Application.Services
                 tvShow.NumberOfSeasons = dto.NumberOfSeasons;
                 tvShow.NumberOfEpisodes = dto.NumberOfEpisodes;
                 tvShow.ContentRating = dto.ContentRating;
-                tvShow.Network = dto.Network;
                 tvShow.TmdbId = dto.TmdbId;
                 tvShow.TmdbRating = dto.TmdbRating;
                 tvShow.TmdbPosterPath = dto.TmdbPosterPath;

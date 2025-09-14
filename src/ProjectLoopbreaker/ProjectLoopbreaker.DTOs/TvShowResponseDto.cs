@@ -72,8 +72,6 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("contentRating")]
         public string? ContentRating { get; set; }
         
-        [JsonPropertyName("network")]
-        public string? Network { get; set; }
         
         [JsonPropertyName("tmdbId")]
         public string? TmdbId { get; set; }

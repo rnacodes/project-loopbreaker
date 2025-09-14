@@ -15,7 +15,8 @@ import {
 } from '@mui/icons-material';
 import { 
     getMediaById, getAllMixlists, addMediaToMixlist, 
-    removeMediaFromMixlist, getBookById, getPodcastById
+    removeMediaFromMixlist, getBookById, getPodcastById,
+    getMovieById, getTvShowById
 } from '../services/apiService';
 
 function MediaProfilePage() {
@@ -42,7 +43,7 @@ function MediaProfilePage() {
         
         let detailedMedia = basicMedia;
         
-        // If it's a book or podcast, fetch the detailed information
+        // If it's a book, podcast, movie, or TV show, fetch the detailed information
         if (basicMedia.mediaType === 'Book') {
           try {
             const bookResponse = await getBookById(id);
@@ -58,6 +59,22 @@ function MediaProfilePage() {
             console.log('Detailed podcast data:', detailedMedia);
           } catch (podcastError) {
             console.warn('Could not fetch detailed podcast data, using basic data:', podcastError);
+          }
+        } else if (basicMedia.mediaType === 'Movie') {
+          try {
+            const movieResponse = await getMovieById(id);
+            detailedMedia = { ...basicMedia, ...movieResponse.data };
+            console.log('Detailed movie data:', detailedMedia);
+          } catch (movieError) {
+            console.warn('Could not fetch detailed movie data, using basic data:', movieError);
+          }
+        } else if (basicMedia.mediaType === 'TVShow') {
+          try {
+            const tvShowResponse = await getTvShowById(id);
+            detailedMedia = { ...basicMedia, ...tvShowResponse.data };
+            console.log('Detailed TV show data:', detailedMedia);
+          } catch (tvShowError) {
+            console.warn('Could not fetch detailed TV show data, using basic data:', tvShowError);
           }
         }
         
@@ -315,6 +332,20 @@ function MediaProfilePage() {
                   {mediaItem.mediaType === 'Book' && mediaItem.author && (
                     <Typography variant="h5" component="h3" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'normal' }}>
                       by {mediaItem.author}
+                    </Typography>
+                  )}
+                  
+                  {/* Director for movies */}
+                  {mediaItem.mediaType === 'Movie' && mediaItem.director && (
+                    <Typography variant="h5" component="h3" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'normal' }}>
+                      Directed by {mediaItem.director}
+                    </Typography>
+                  )}
+                  
+                  {/* Creator for TV shows */}
+                  {mediaItem.mediaType === 'TVShow' && mediaItem.creator && (
+                    <Typography variant="h5" component="h3" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'normal' }}>
+                      Created by {mediaItem.creator}
                     </Typography>
                   )}
                   
@@ -686,9 +717,251 @@ function MediaProfilePage() {
               </Box>
             )}
             
+            {/* Movie-specific properties */}
+            {mediaItem.mediaType === 'Movie' && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {mediaItem.director && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Director:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.director}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.cast && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Cast:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.cast}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.releaseYear && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Release Year:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.releaseYear}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.runtimeMinutes && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Runtime:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.runtimeMinutes} minutes</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.mpaaRating && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>MPAA Rating:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.mpaaRating}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.tmdbRating && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>TMDB Rating:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.tmdbRating}/10</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.imdbId && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>IMDB ID:</strong>
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.imdbId}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.tmdbId && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>TMDB ID:</strong>
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.tmdbId}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.tagline && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Tagline:</strong>
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontStyle: 'italic' }}>"{mediaItem.tagline}"</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.homepage && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Homepage:</strong>
+                    </Typography>
+                    <Link href={mediaItem.homepage} target="_blank" rel="noopener noreferrer">
+                      {mediaItem.homepage}
+                    </Link>
+                  </Box>
+                )}
+                
+                {mediaItem.originalLanguage && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Original Language:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.originalLanguage}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.originalTitle && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Original Title:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.originalTitle}</Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+            
+            {/* TV Show-specific properties */}
+            {mediaItem.mediaType === 'TVShow' && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {mediaItem.creator && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Creator:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.creator}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.cast && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Cast:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.cast}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.firstAirYear && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>First Air Year:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.firstAirYear}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.lastAirYear && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Last Air Year:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.lastAirYear}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.numberOfSeasons && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Seasons:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.numberOfSeasons}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.numberOfEpisodes && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Episodes:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.numberOfEpisodes}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.contentRating && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Content Rating:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.contentRating}</Typography>
+                  </Box>
+                )}
+                
+                
+                {mediaItem.tmdbRating && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>TMDB Rating:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.tmdbRating}/10</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.tmdbId && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>TMDB ID:</strong>
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.tmdbId}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.tagline && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Tagline:</strong>
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontStyle: 'italic' }}>"{mediaItem.tagline}"</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.homepage && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Homepage:</strong>
+                    </Typography>
+                    <Link href={mediaItem.homepage} target="_blank" rel="noopener noreferrer">
+                      {mediaItem.homepage}
+                    </Link>
+                  </Box>
+                )}
+                
+                {mediaItem.originalLanguage && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Original Language:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.originalLanguage}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.originalName && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Original Name:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.originalName}</Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+            
             {/* Show message if no specific properties are available */}
             {((mediaItem.mediaType === 'Podcast' && !mediaItem.podcastType && !mediaItem.durationInSeconds && !mediaItem.publisher && !mediaItem.audioLink && !mediaItem.releaseDate) ||
-              (mediaItem.mediaType === 'Book' && !mediaItem.isbn && !mediaItem.asin && !mediaItem.format && mediaItem.partOfSeries === undefined)) && (
+              (mediaItem.mediaType === 'Book' && !mediaItem.isbn && !mediaItem.asin && !mediaItem.format && mediaItem.partOfSeries === undefined) ||
+              (mediaItem.mediaType === 'Movie' && !mediaItem.director && !mediaItem.cast && !mediaItem.releaseYear && !mediaItem.runtimeMinutes && !mediaItem.mpaaRating && !mediaItem.tmdbRating) ||
+              (mediaItem.mediaType === 'TVShow' && !mediaItem.creator && !mediaItem.cast && !mediaItem.firstAirYear && !mediaItem.numberOfSeasons && !mediaItem.contentRating)) && (
               <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                 No specific {mediaItem.mediaType.toLowerCase()} details available
               </Typography>

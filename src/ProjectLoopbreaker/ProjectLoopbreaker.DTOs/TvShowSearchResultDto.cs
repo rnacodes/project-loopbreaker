@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using ProjectLoopbreaker.Shared.DTOs.TMDB;
 
 namespace ProjectLoopbreaker.DTOs
 {
@@ -55,9 +54,6 @@ namespace ProjectLoopbreaker.DTOs
 
         [JsonPropertyName("homepage")]
         public string? Homepage { get; set; }
-
-        [JsonPropertyName("networks")]
-        public TmdbNetworkDto[] Networks { get; set; } = Array.Empty<TmdbNetworkDto>();
 
         [JsonPropertyName("posterUrl")]
         public string? PosterUrl { get; set; }

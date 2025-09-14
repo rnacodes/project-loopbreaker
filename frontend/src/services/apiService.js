@@ -357,3 +357,101 @@ export const getTmdbImageUrl = async (imagePath, size = 'w500') => {
         throw error;
     }
 };
+
+// Movie API calls
+export const getAllMovies = () => {
+    return apiClient.get('/movie');
+};
+
+export const getMovieById = (id) => {
+    return apiClient.get(`/movie/${id}`);
+};
+
+export const getMoviesByDirector = (director) => {
+    return apiClient.get(`/movie/by-director/${encodeURIComponent(director)}`);
+};
+
+export const getMoviesByYear = (year) => {
+    return apiClient.get(`/movie/by-year/${year}`);
+};
+
+export const createMovie = (movieData) => {
+    return apiClient.post('/movie', movieData);
+};
+
+export const updateMovie = (id, movieData) => {
+    return apiClient.put(`/movie/${id}`, movieData);
+};
+
+export const deleteMovie = (id) => {
+    return apiClient.delete(`/movie/${id}`);
+};
+
+export const importMovieFromTmdb = async (movieId) => {
+    try {
+        const response = await apiClient.post(`/movie/from-tmdb/${movieId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error importing movie from TMDB:', error);
+        throw error;
+    }
+};
+
+export const searchMoviesFromTmdb = async (query, page = 1) => {
+    try {
+        const response = await apiClient.get(`/movie/search-tmdb?query=${encodeURIComponent(query)}&page=${page}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error searching movies from TMDB:', error);
+        throw error;
+    }
+};
+
+// TV Show API calls
+export const getAllTvShows = () => {
+    return apiClient.get('/tvshow');
+};
+
+export const getTvShowById = (id) => {
+    return apiClient.get(`/tvshow/${id}`);
+};
+
+export const getTvShowsByCreator = (creator) => {
+    return apiClient.get(`/tvshow/by-creator/${encodeURIComponent(creator)}`);
+};
+
+export const getTvShowsByYear = (year) => {
+    return apiClient.get(`/tvshow/by-year/${year}`);
+};
+
+export const createTvShow = (tvShowData) => {
+    return apiClient.post('/tvshow', tvShowData);
+};
+
+export const updateTvShow = (id, tvShowData) => {
+    return apiClient.put(`/tvshow/${id}`, tvShowData);
+};
+
+export const deleteTvShow = (id) => {
+    return apiClient.delete(`/tvshow/${id}`);
+};
+
+export const importTvShowFromTmdb = async (tvShowId) => {
+    try {
+        const response = await apiClient.post(`/tvshow/from-tmdb/${tvShowId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error importing TV show from TMDB:', error);
+        throw error;
+    }
+};
+
+export const searchTvShowsFromTmdb = async (query, page = 1) => {
+    try {
+        const response = await apiClient.get(`/tvshow/search-tmdb?query=${encodeURIComponent(query)}&page=${page}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error searching TV shows from TMDB:', error);
+        throw error;
+    }
+};

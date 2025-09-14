@@ -83,10 +83,6 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("contentRating")]
         public string? ContentRating { get; set; } // TV rating (TV-PG, TV-14, etc.)
         
-        [StringLength(200)]
-        [JsonPropertyName("network")]
-        public string? Network { get; set; } // Primary network/streaming service
-        
         [StringLength(20)]
         [JsonPropertyName("tmdbId")]
         public string? TmdbId { get; set; } // The Movie Database ID
