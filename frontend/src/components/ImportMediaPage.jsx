@@ -7,7 +7,7 @@ import {
     Divider, Chip, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import { Search, Download, Podcasts, MenuBook, ExpandMore, OpenInNew, MovieFilter } from '@mui/icons-material';
-import { searchPodcasts, getPodcastById, importPodcastFromApi, searchBooksFromOpenLibrary, importBookFromOpenLibrary, searchMovies, searchTvShows, searchMulti, getMovieDetails, getTvShowDetails } from '../services/apiService';
+import { searchPodcasts, getPodcastById, importPodcastFromApi, searchBooksFromOpenLibrary, importBookFromOpenLibrary, searchMovies, searchTvShows, searchMulti, getMovieDetails, getTvShowDetails, importMovieFromTmdb, importTvShowFromTmdb } from '../services/apiService';
 import WhiteOutlineButton from './shared/WhiteOutlineButton';
 
 function ImportMediaPage() {
@@ -385,33 +385,11 @@ function ImportMediaPage() {
             
             // Determine if it's a movie or TV show and call the appropriate import function
             if (item.media_type === 'movie' || tmdbSearchType === 'movies') {
-                // Import movie
-                const response = await fetch(`http://localhost:5033/api/movie/from-tmdb/${item.id}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Failed to import movie: ${response.statusText}`);
-                }
-                
-                result = await response.json();
+                // Import movie using the API service
+                result = await importMovieFromTmdb(item.id);
             } else if (item.media_type === 'tv' || tmdbSearchType === 'tv') {
-                // Import TV show
-                const response = await fetch(`http://localhost:5033/api/tvshow/from-tmdb/${item.id}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Failed to import TV show: ${response.statusText}`);
-                }
-                
-                result = await response.json();
+                // Import TV show using the API service
+                result = await importTvShowFromTmdb(item.id);
             } else {
                 throw new Error('Unknown media type');
             }
