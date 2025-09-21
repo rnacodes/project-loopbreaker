@@ -38,9 +38,10 @@ function Invoke-TestRun {
     
     $testArgs = @(
         "test", $TestProject,
-        "--verbosity", "detailed",
-        "--logger", "console;verbosity=detailed",
-        "--logger", "trx;LogFileName=$TestType-results-$timestamp.trx"
+        "--verbosity", "minimal",
+        "--logger", "console;verbosity=minimal",
+        "--logger", "trx;LogFileName=$TestType-results-$timestamp.trx",
+        "--no-build"
     )
     
     if ($WithCoverage) {
@@ -49,8 +50,29 @@ function Invoke-TestRun {
     
     Write-TestResult "Command: dotnet $($testArgs -join ' ')" "Gray"
     
-    $output = & dotnet @testArgs 2>&1
-    $exitCode = $LASTEXITCODE
+    # Add timeout handling
+    $timeoutSeconds = 300  # 5 minutes timeout
+    $job = Start-Job -ScriptBlock {
+        param($args)
+        & dotnet @args 2>&1
+        return $LASTEXITCODE
+    } -ArgumentList $testArgs
+    
+    try {
+        $result = Wait-Job -Job $job -Timeout $timeoutSeconds
+        if ($result) {
+            $output = Receive-Job -Job $job
+            $exitCode = $output[-1]
+            $output = $output[0..($output.Length-2)]
+        } else {
+            Write-TestResult "Test timed out after $timeoutSeconds seconds!" "Red"
+            Stop-Job -Job $job
+            Remove-Job -Job $job
+            return 1
+        }
+    } finally {
+        Remove-Job -Job $job -Force
+    }
     
     # Log all output
     $output | ForEach-Object { Add-Content -Path $logFile -Value $_ }
@@ -95,6 +117,23 @@ Set-Location "tests"
 # Initialize log file
 Write-TestResult "Backend Test Run Started at $(Get-Date)" "Green"
 Write-TestResult "=========================================" "Green"
+
+# Build the solution first
+Write-TestResult "`n=== Building Solution ===" "Yellow"
+$buildOutput = & dotnet build --verbosity minimal 2>&1
+$buildExitCode = $LASTEXITCODE
+
+$buildOutput | ForEach-Object { Add-Content -Path $logFile -Value $_ }
+
+if ($buildExitCode -ne 0) {
+    Write-TestResult "Build failed! Cannot run tests." "Red"
+    Write-TestResult "Build errors:" "Red"
+    $buildOutput | ForEach-Object { Write-TestResult "  $_" "Red" }
+    Set-Location ".."
+    exit 1
+} else {
+    Write-TestResult "Build successful!" "Green"
+}
 
 # Run Unit Tests
 $unitTestResult = Invoke-TestRun -TestProject "ProjectLoopbreaker.UnitTests" -TestType "Unit Tests"

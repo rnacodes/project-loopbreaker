@@ -15,6 +15,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<Book> Books { get; set; }
         public DbSet<Movie> Movies { get; set; }
         public DbSet<TvShow> TvShows { get; set; }
+        public DbSet<Video> Videos { get; set; }
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Genre> Genres { get; set; }
 
@@ -25,6 +26,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         IQueryable<Book> IApplicationDbContext.Books => Books;
         IQueryable<Movie> IApplicationDbContext.Movies => Movies;
         IQueryable<TvShow> IApplicationDbContext.TvShows => TvShows;
+        IQueryable<Video> IApplicationDbContext.Videos => Videos;
         IQueryable<Topic> IApplicationDbContext.Topics => Topics;
         IQueryable<Genre> IApplicationDbContext.Genres => Genres;
 
@@ -195,6 +197,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             modelBuilder.Entity<Book>().ToTable("Books");
             modelBuilder.Entity<Movie>().ToTable("Movies");
             modelBuilder.Entity<TvShow>().ToTable("TvShows");
+            modelBuilder.Entity<Video>().ToTable("Videos");
             // TODO: Add configurations for other media types as they're implemented:
             // modelBuilder.Entity<Article>().ToTable("Articles");
             // etc.
@@ -338,6 +341,42 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.HasIndex(e => e.LastAirYear);
                 entity.HasIndex(e => e.TmdbId);
                 entity.HasIndex(e => e.Creator);
+            });
+
+            // Configure Video specific properties
+            modelBuilder.Entity<Video>(entity =>
+            {
+                entity.Property(e => e.Platform)
+                    .HasMaxLength(100)
+                    .IsRequired();
+                    
+                entity.Property(e => e.ChannelName)
+                    .HasMaxLength(200)
+                    .IsRequired();
+                    
+                entity.Property(e => e.LengthInSeconds)
+                    .HasDefaultValue(0);
+                    
+                entity.Property(e => e.VideoType)
+                    .HasConversion<string>()
+                    .HasMaxLength(50)
+                    .IsRequired();
+                    
+                entity.Property(e => e.ExternalId)
+                    .HasMaxLength(200);
+                    
+                // Configure self-referencing relationship for Series->Episodes
+                entity.HasOne(e => e.ParentVideo)
+                    .WithMany(s => s.Episodes)
+                    .HasForeignKey(e => e.ParentVideoId)
+                    .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete to avoid orphaned episodes
+                    
+                // Create indexes for better query performance
+                entity.HasIndex(e => e.VideoType);
+                entity.HasIndex(e => e.ParentVideoId);
+                entity.HasIndex(e => e.ExternalId);
+                entity.HasIndex(e => e.Platform);
+                entity.HasIndex(e => e.ChannelName);
             });
         }
 

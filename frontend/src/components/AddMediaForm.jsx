@@ -68,6 +68,14 @@ function AddMediaForm() {
     const [contentRating, setContentRating] = useState('');
     const [originalName, setOriginalName] = useState('');
     
+    // Video specific fields
+    const [videoType, setVideoType] = useState('Series'); // 'Series' or 'Episode'
+    const [parentVideoId, setParentVideoId] = useState('');
+    const [platform, setPlatform] = useState('YouTube');
+    const [channelName, setChannelName] = useState('');
+    const [lengthInSeconds, setLengthInSeconds] = useState('');
+    const [externalId, setExternalId] = useState('');
+    
     // Mixlist selection
     const [availableMixlists, setAvailableMixlists] = useState([]);
     const [selectedMixlists, setSelectedMixlists] = useState([]);
@@ -270,8 +278,8 @@ function AddMediaForm() {
             console.log('Raw form values:', { title, mediaType, status, ownershipStatus, rating });
             
             // Check if media type is supported by backend
-            if (mediaType !== 'Podcast' && mediaType !== 'Book' && mediaType !== 'Movie' && mediaType !== 'TVShow') {
-                alert('Currently only Podcast, Book, Movie, and TVShow media types are supported by the backend. Other media types are not yet implemented.');
+            if (mediaType !== 'Podcast' && mediaType !== 'Book' && mediaType !== 'Movie' && mediaType !== 'TVShow' && mediaType !== 'Video') {
+                alert('Currently only Podcast, Book, Movie, TVShow, and Video media types are supported by the backend. Other media types are not yet implemented.');
                 return;
             }
             
@@ -395,6 +403,31 @@ function AddMediaForm() {
                 };
                 
                 response = await createTvShow(tvShowData);
+            }
+            // Handle video-specific creation
+            else if (mediaType === 'Video') {
+                const videoData = {
+                    title: title,
+                    link: link,
+                    notes: notes,
+                    description: description,
+                    status: status,
+                    dateCompleted: status === 'Completed' && dateCompleted ? dateCompleted : null,
+                    rating: status === 'Completed' && rating ? rating : null,
+                    ownershipStatus: ownershipStatus || null,
+                    topics: topics.length > 0 ? topics : [],
+                    genres: genres.length > 0 ? genres : [],
+                    relatedNotes: relatedNotes,
+                    thumbnail: thumbnail,
+                    videoType: videoType,
+                    parentVideoId: parentVideoId || null,
+                    platform: platform || 'YouTube',
+                    channelName: channelName || 'Unknown',
+                    lengthInSeconds: lengthInSeconds ? parseInt(lengthInSeconds) : 0,
+                    externalId: externalId || null
+                };
+                
+                response = await addMedia(videoData);
             } else {
                 // Create regular media item
                 response = await addMedia(mediaData);
@@ -1472,6 +1505,154 @@ function AddMediaForm() {
                             />
                         </Grid>
                     </Grid>
+                </Box>
+            );
+        }
+        else if (mediaType === 'Video') {
+            return (
+                <Box sx={{ mt: 3, mb: 2 }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontSize: '18px', fontWeight: 'bold', color: '#ffffff' }}>
+                        Video Details
+                    </Typography>
+                    
+                    {/* Video Type */}
+                    <FormControl component="fieldset" fullWidth margin="normal">
+                        <FormLabel component="legend" sx={{ 
+                            color: '#ffffff',
+                            fontSize: '14px',
+                            '&.Mui-focused': { color: '#ffffff' }
+                        }}>
+                            Video Type:
+                        </FormLabel>
+                        <RadioGroup
+                            value={videoType}
+                            onChange={(e) => setVideoType(e.target.value)}
+                            sx={{ 
+                                '& .MuiFormControlLabel-label': { 
+                                    fontSize: '14px',
+                                    color: '#ffffff'
+                                }
+                            }}
+                        >
+                            <FormControlLabel value="Series" control={<Radio />} label="Series" />
+                            <FormControlLabel value="Episode" control={<Radio />} label="Episode" />
+                        </RadioGroup>
+                    </FormControl>
+
+                    {/* Platform - Required */}
+                    <FormControl fullWidth margin="normal" sx={{
+                        mb: 2,
+                        '& .MuiInputLabel-root': {
+                            color: '#ffffff',
+                            fontSize: '14px'
+                        },
+                        '& .MuiInputLabel-root.Mui-focused': {
+                            color: '#ffffff'
+                        }
+                    }}>
+                        <InputLabel id="platform-label">Platform *</InputLabel>
+                        <Select
+                            labelId="platform-label"
+                            value={platform}
+                            label="Platform *"
+                            onChange={(e) => setPlatform(e.target.value)}
+                            required
+                        >
+                            <MenuItem value="YouTube">YouTube</MenuItem>
+                            <MenuItem value="Vimeo">Vimeo</MenuItem>
+                            <MenuItem value="Twitch">Twitch</MenuItem>
+                            <MenuItem value="TikTok">TikTok</MenuItem>
+                            <MenuItem value="Instagram">Instagram</MenuItem>
+                            <MenuItem value="Facebook">Facebook</MenuItem>
+                            <MenuItem value="Other">Other</MenuItem>
+                        </Select>
+                    </FormControl>
+
+                    {/* Channel Name - Required */}
+                    <TextField
+                        label="Channel Name"
+                        placeholder="Enter channel/creator name..."
+                        variant="outlined"
+                        fullWidth
+                        required
+                        margin="normal"
+                        value={channelName}
+                        onChange={(e) => setChannelName(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* Length in Seconds */}
+                    <TextField
+                        label="Length (seconds)"
+                        placeholder="Enter video length in seconds..."
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        type="number"
+                        value={lengthInSeconds}
+                        onChange={(e) => setLengthInSeconds(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
+
+                    {/* External ID */}
+                    <TextField
+                        label="External ID"
+                        placeholder="Enter external platform ID (optional)..."
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        value={externalId}
+                        onChange={(e) => setExternalId(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                    />
                 </Box>
             );
         }

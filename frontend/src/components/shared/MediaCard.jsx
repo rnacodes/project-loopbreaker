@@ -179,6 +179,36 @@ const MediaCard = ({
           </Box>
         )}
 
+        {/* Video-specific details */}
+        {media.mediaType === 'Video' && (
+          <Box sx={{ mb: 1 }}>
+            {media.platform && (
+              <Chip
+                label={media.platform}
+                size="small"
+                sx={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                  color: 'white',
+                  fontSize: '0.75rem',
+                  height: '24px',
+                  mr: 1,
+                  mb: 0.5
+                }}
+              />
+            )}
+            {media.channelName && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                {media.channelName}
+              </Typography>
+            )}
+            {media.lengthInSeconds && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                {Math.floor(media.lengthInSeconds / 60)}:{(media.lengthInSeconds % 60).toString().padStart(2, '0')}
+              </Typography>
+            )}
+          </Box>
+        )}
+
         {/* Description/Notes */}
         {media.notes && variant !== 'compact' && (
           <Typography

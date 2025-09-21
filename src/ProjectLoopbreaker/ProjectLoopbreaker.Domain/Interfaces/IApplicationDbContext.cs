@@ -13,6 +13,7 @@ namespace ProjectLoopbreaker.Domain.Interfaces
         IQueryable<Book> Books { get; }
         IQueryable<Movie> Movies { get; }
         IQueryable<TvShow> TvShows { get; }
+        IQueryable<Video> Videos { get; }
         IQueryable<Topic> Topics { get; }
         IQueryable<Genre> Genres { get; }
 

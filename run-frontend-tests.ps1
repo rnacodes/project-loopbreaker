@@ -36,15 +36,35 @@ function Invoke-NpmTest {
     Write-TestResult "`n=== $TestType ===" "Yellow"
     Write-TestResult "Command: npm $Command" "Gray"
     
-    # Execute npm command properly
-    if ($Command -eq "run test:run") {
-        $output = & npm run test:run 2>&1
-    } elseif ($Command -eq "run test:coverage") {
-        $output = & npm run test:coverage 2>&1
-    } else {
-        $output = & npm $Command 2>&1
+    # Execute npm command with timeout
+    $timeoutSeconds = 180  # 3 minutes timeout
+    $job = Start-Job -ScriptBlock {
+        param($cmd)
+        if ($cmd -eq "run test:run") {
+            & npm run test:run 2>&1
+        } elseif ($cmd -eq "run test:coverage") {
+            & npm run test:coverage 2>&1
+        } else {
+            & npm $cmd 2>&1
+        }
+        return $LASTEXITCODE
+    } -ArgumentList $Command
+    
+    try {
+        $result = Wait-Job -Job $job -Timeout $timeoutSeconds
+        if ($result) {
+            $output = Receive-Job -Job $job
+            $exitCode = $output[-1]
+            $output = $output[0..($output.Length-2)]
+        } else {
+            Write-TestResult "Test timed out after $timeoutSeconds seconds!" "Red"
+            Stop-Job -Job $job
+            Remove-Job -Job $job
+            return 1
+        }
+    } finally {
+        Remove-Job -Job $job -Force
     }
-    $exitCode = $LASTEXITCODE
     
     # Log all output
     $output | ForEach-Object { Add-Content -Path $logFile -Value $_ }

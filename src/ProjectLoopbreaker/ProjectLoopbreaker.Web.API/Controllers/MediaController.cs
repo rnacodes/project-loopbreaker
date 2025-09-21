@@ -67,6 +67,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             BaseMediaItem mediaItem = dto.MediaType switch
             {
                 MediaType.Podcast => await CreatePodcastAsync(dto),
+                MediaType.Video => await CreateVideoAsync(dto),
                 // TODO: Add concrete types for other media types as they're implemented
                 // For now, return an error for unsupported types
                 _ => throw new NotSupportedException($"Media type '{dto.MediaType}' is not yet supported. Please implement a concrete class for this media type.")
@@ -135,6 +136,66 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
 
             return podcast;
+        }
+
+        private async Task<Video> CreateVideoAsync(CreateMediaItemDto dto)
+        {
+            var video = new Video
+            {
+                Title = dto.Title,
+                MediaType = dto.MediaType,
+                Link = dto.Link,
+                Notes = dto.Notes,
+                Status = dto.Status,
+                DateAdded = DateTime.UtcNow,
+                DateCompleted = dto.DateCompleted?.ToUniversalTime(),
+                Rating = dto.Rating,
+                OwnershipStatus = dto.OwnershipStatus,
+                Description = dto.Description,
+                RelatedNotes = dto.RelatedNotes,
+                Thumbnail = dto.Thumbnail,
+                Platform = "YouTube", // Default platform, will be overridden by frontend
+                ChannelName = "Unknown", // Default channel name, will be overridden by frontend
+                VideoType = VideoType.Series // Default to Series for now
+            };
+
+            // Handle Topics - check if they exist or create new ones
+            if (dto.Topics?.Length > 0)
+            {
+                foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
+                {
+                    var normalizedTopicName = topicName.Trim().ToLowerInvariant();
+                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
+                    if (existingTopic != null)
+                    {
+                        video.Topics.Add(existingTopic);
+                    }
+                    else
+                    {
+                        video.Topics.Add(new Topic { Name = normalizedTopicName });
+                    }
+                }
+            }
+
+            // Handle Genres - check if they exist or create new ones
+            if (dto.Genres?.Length > 0)
+            {
+                foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
+                {
+                    var normalizedGenreName = genreName.Trim().ToLowerInvariant();
+                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
+                    if (existingGenre != null)
+                    {
+                        video.Genres.Add(existingGenre);
+                    }
+                    else
+                    {
+                        video.Genres.Add(new Genre { Name = normalizedGenreName });
+                    }
+                }
+            }
+
+            return video;
         }
 
         // GET: api/media/{id}

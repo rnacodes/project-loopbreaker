@@ -357,3 +357,6 @@ Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
 Console.WriteLine($"Connection string: {connectionString}");
 
 app.Run();
+
+// Make Program class accessible for testing
+public partial class Program { }
