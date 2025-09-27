@@ -8,9 +8,9 @@ namespace ProjectLoopbreaker.Application.Interfaces
     {
         Task<Podcast> SavePodcastAsync(Podcast podcast, bool updateIfExists = true);
         Task<Podcast> SavePodcastWithEpisodesAsync(Podcast podcastSeries, bool updateIfExists = true);
-        Task<bool> PodcastExistsAsync(string title, string publisher = null);
+        Task<bool> PodcastExistsAsync(string title, string? publisher = null);
         Task<bool> PodcastEpisodeExistsAsync(Guid? parentPodcastId, string episodeTitle);
-        Task<Podcast> GetPodcastByTitleAsync(string title, string publisher = null);
+        Task<Podcast> GetPodcastByTitleAsync(string title, string? publisher = null);
         Task<Podcast> GetPodcastEpisodeByTitleAsync(Guid? parentPodcastId, string episodeTitle);
     }
 }

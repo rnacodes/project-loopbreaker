@@ -80,7 +80,7 @@ namespace ProjectLoopbreaker.Application.Services
             return savedSeries;
         }
 
-        public async Task<bool> PodcastExistsAsync(string title, string publisher = null)
+        public async Task<bool> PodcastExistsAsync(string title, string? publisher = null)
         {
             var query = _context.Podcasts.AsQueryable();
 
@@ -99,7 +99,7 @@ namespace ProjectLoopbreaker.Application.Services
                     e.Title.ToLower() == episodeTitle.ToLower());
         }
 
-        public async Task<Podcast> GetPodcastByTitleAsync(string title, string publisher = null)
+        public async Task<Podcast> GetPodcastByTitleAsync(string title, string? publisher = null)
         {
             var query = _context.Podcasts.AsQueryable();
 

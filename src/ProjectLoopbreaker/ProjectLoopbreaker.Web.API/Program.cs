@@ -4,6 +4,7 @@ using ProjectLoopbreaker.Infrastructure.Clients;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Application.Services;
+using ProjectLoopbreaker.Shared.Interfaces;
 using Amazon.S3;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -226,6 +227,14 @@ builder.Services.AddScoped<ITvShowMappingService, TvShowMappingService>();
 builder.Services.AddScoped<IVideoService, VideoService>();
 builder.Services.AddScoped<IYouTubeService, YouTubeService>();
 builder.Services.AddScoped<IYouTubeMappingService, YouTubeMappingService>();
+
+// Configure YouTube API client
+builder.Services.AddHttpClient<YouTubeApiClient>(client =>
+{
+    client.BaseAddress = new Uri("https://www.googleapis.com/youtube/v3/");
+    client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+});
+builder.Services.AddScoped<IYouTubeApiClient, YouTubeApiClient>();
 
 // In Program.cs
 

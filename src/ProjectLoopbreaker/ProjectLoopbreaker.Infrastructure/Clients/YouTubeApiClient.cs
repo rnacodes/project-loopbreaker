@@ -2,10 +2,11 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using ProjectLoopbreaker.Shared.DTOs.YouTube;
+using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Infrastructure.Clients
 {
-    public class YouTubeApiClient
+    public class YouTubeApiClient : IYouTubeApiClient
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<YouTubeApiClient> _logger;

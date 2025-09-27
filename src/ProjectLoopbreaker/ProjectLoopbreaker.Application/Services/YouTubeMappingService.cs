@@ -1,7 +1,7 @@
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Helpers;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Shared.DTOs.YouTube;
-using ProjectLoopbreaker.Infrastructure.Clients;
 
 namespace ProjectLoopbreaker.Application.Services
 {
@@ -23,7 +23,7 @@ namespace ProjectLoopbreaker.Application.Services
                 MediaType = MediaType.Video,
                 VideoType = VideoType.Episode, // Individual videos are episodes
                 Thumbnail = GetBestThumbnailUrl(videoDto.Snippet.Thumbnails),
-                LengthInSeconds = YouTubeApiClient.ParseDurationToSeconds(videoDto.ContentDetails?.Duration),
+                LengthInSeconds = YouTubeHelper.ParseDurationToSeconds(videoDto.ContentDetails?.Duration),
                 DateAdded = DateTime.UtcNow
             };
 
@@ -98,7 +98,7 @@ namespace ProjectLoopbreaker.Application.Services
             // If we have detailed video information, use it to enhance the entity
             if (videoDetails?.ContentDetails != null)
             {
-                video.LengthInSeconds = YouTubeApiClient.ParseDurationToSeconds(videoDetails.ContentDetails.Duration);
+                video.LengthInSeconds = YouTubeHelper.ParseDurationToSeconds(videoDetails.ContentDetails.Duration);
             }
 
             if (videoDetails?.Snippet != null)

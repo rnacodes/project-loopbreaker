@@ -81,7 +81,7 @@ namespace ProjectLoopbreaker.Application.Services
             return savedSeries;
         }
 
-        public async Task<bool> VideoExistsAsync(string title, string channelName = null)
+        public async Task<bool> VideoExistsAsync(string title, string? channelName = null)
         {
             var query = _context.Videos.AsQueryable();
 
@@ -106,7 +106,7 @@ namespace ProjectLoopbreaker.Application.Services
                     e.Title.ToLower() == episodeTitle.ToLower());
         }
 
-        public async Task<Video> GetVideoByTitleAsync(string title, string channelName = null)
+        public async Task<Video> GetVideoByTitleAsync(string title, string? channelName = null)
         {
             var query = _context.Videos.AsQueryable();
 

@@ -1,20 +1,21 @@
 using Microsoft.Extensions.Logging;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Helpers;
 using ProjectLoopbreaker.Domain.Entities;
-using ProjectLoopbreaker.Infrastructure.Clients;
 using ProjectLoopbreaker.Shared.DTOs.YouTube;
+using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Application.Services
 {
     public class YouTubeService : IYouTubeService
     {
-        private readonly YouTubeApiClient _youTubeApiClient;
+        private readonly IYouTubeApiClient _youTubeApiClient;
         private readonly IYouTubeMappingService _mappingService;
         private readonly IVideoService _videoService;
         private readonly ILogger<YouTubeService> _logger;
 
         public YouTubeService(
-            YouTubeApiClient youTubeApiClient,
+            IYouTubeApiClient youTubeApiClient,
             IYouTubeMappingService mappingService,
             IVideoService videoService,
             ILogger<YouTubeService> logger)
@@ -199,14 +200,14 @@ namespace ProjectLoopbreaker.Application.Services
                 _logger.LogInformation($"Importing from YouTube URL: {url}");
 
                 // Try to extract video ID first
-                var videoId = YouTubeApiClient.ExtractVideoIdFromUrl(url);
+                var videoId = YouTubeHelper.ExtractVideoIdFromUrl(url);
                 if (!string.IsNullOrEmpty(videoId))
                 {
                     return await ImportVideoAsync(videoId);
                 }
 
                 // Try to extract playlist ID
-                var playlistId = YouTubeApiClient.ExtractPlaylistIdFromUrl(url);
+                var playlistId = YouTubeHelper.ExtractPlaylistIdFromUrl(url);
                 if (!string.IsNullOrEmpty(playlistId))
                 {
                     var videos = await ImportPlaylistAsync(playlistId, importAsChannel: true);
@@ -214,7 +215,7 @@ namespace ProjectLoopbreaker.Application.Services
                 }
 
                 // Try to extract channel ID
-                var channelId = YouTubeApiClient.ExtractChannelIdFromUrl(url);
+                var channelId = YouTubeHelper.ExtractChannelIdFromUrl(url);
                 if (!string.IsNullOrEmpty(channelId))
                 {
                     return await ImportChannelAsync(channelId);
