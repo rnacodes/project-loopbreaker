@@ -20,9 +20,8 @@ namespace ProjectLoopbreaker.Domain.Entities
         [StringLength(100)]
         public required string Platform { get; set; } // YouTube, Vimeo, Twitch, etc.
         
-        [Required]
         [StringLength(200)]
-        public required string ChannelName { get; set; }
+        public string? ChannelName { get; set; }
         
         [Range(0, int.MaxValue, ErrorMessage = "Length must be a positive number")]
         public int LengthInSeconds { get; set; } = 0;
@@ -54,6 +53,7 @@ namespace ProjectLoopbreaker.Domain.Entities
     public enum VideoType
     {
         Series,
-        Episode
+        Episode,
+        Channel
     }
 }

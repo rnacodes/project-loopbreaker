@@ -68,10 +68,9 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("platform")]
         public required string Platform { get; set; }
 
-        [Required]
         [StringLength(200)]
         [JsonPropertyName("channelName")]
-        public required string ChannelName { get; set; }
+        public string? ChannelName { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Length must be a positive number")]
         [JsonPropertyName("lengthInSeconds")]

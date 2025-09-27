@@ -255,6 +255,7 @@ function AddMediaForm() {
         if (description && description.trim()) mediaData.description = description;
         if (relatedNotes && relatedNotes.trim()) mediaData.relatedNotes = relatedNotes;
         if (thumbnail && thumbnail.trim()) mediaData.thumbnail = thumbnail;
+        else mediaData.thumbnail = null;
 
         try {
             // Clear previous validation errors
@@ -289,6 +290,7 @@ function AddMediaForm() {
             if (mediaType === 'Book') {
                 const bookData = {
                     title: title,
+                    mediaType: "Book",
                     link: link,
                     notes: notes,
                     description: description,
@@ -299,7 +301,7 @@ function AddMediaForm() {
                     topics: topics.length > 0 ? topics : [],
                     genres: genres.length > 0 ? genres : [],
                     relatedNotes: relatedNotes,
-                    thumbnail: thumbnail,
+                    thumbnail: thumbnail || null,
                     author: author,
                     isbn: isbn || null,
                     asin: asin || null,
@@ -318,6 +320,7 @@ function AddMediaForm() {
                     // Create podcast episode with additional fields - camelCase for backend
                     const episodeData = {
                         title: title,
+                        mediaType: "Podcast",
                         link: link,
                         notes: notes,
                         description: description,
@@ -328,7 +331,7 @@ function AddMediaForm() {
                         topics: topics.length > 0 ? topics : [], // Ensure proper array format
                         genres: genres.length > 0 ? genres : [], // Ensure proper array format
                         relatedNotes: relatedNotes,
-                        thumbnail: thumbnail,
+                        thumbnail: thumbnail || null,
                         parentPodcastId: selectedPodcastSeries?.id || selectedPodcastSeries?.Id || podcastSeriesId,
                         audioLink: audioLink || null,
                         releaseDate: releaseDate || null,
@@ -345,6 +348,7 @@ function AddMediaForm() {
             else if (mediaType === 'Movie') {
                 const movieData = {
                     title: title,
+                    mediaType: "Movie",
                     link: link,
                     notes: notes,
                     description: description,
@@ -355,7 +359,7 @@ function AddMediaForm() {
                     topics: topics.length > 0 ? topics : [],
                     genres: genres.length > 0 ? genres : [],
                     relatedNotes: relatedNotes,
-                    thumbnail: thumbnail,
+                    thumbnail: thumbnail || null,
                     director: director || null,
                     cast: cast || null,
                     releaseYear: releaseYear ? parseInt(releaseYear) : null,
@@ -376,6 +380,7 @@ function AddMediaForm() {
             else if (mediaType === 'TVShow') {
                 const tvShowData = {
                     title: title,
+                    mediaType: "TVShow",
                     link: link,
                     notes: notes,
                     description: description,
@@ -386,7 +391,7 @@ function AddMediaForm() {
                     topics: topics.length > 0 ? topics : [],
                     genres: genres.length > 0 ? genres : [],
                     relatedNotes: relatedNotes,
-                    thumbnail: thumbnail,
+                    thumbnail: thumbnail || null,
                     creator: creator || null,
                     cast: cast || null,
                     firstAirYear: firstAirYear ? parseInt(firstAirYear) : null,
@@ -408,6 +413,7 @@ function AddMediaForm() {
             else if (mediaType === 'Video') {
                 const videoData = {
                     title: title,
+                    mediaType: "Video",
                     link: link,
                     notes: notes,
                     description: description,
@@ -418,11 +424,11 @@ function AddMediaForm() {
                     topics: topics.length > 0 ? topics : [],
                     genres: genres.length > 0 ? genres : [],
                     relatedNotes: relatedNotes,
-                    thumbnail: thumbnail,
+                    thumbnail: thumbnail || null,
                     videoType: videoType,
                     parentVideoId: parentVideoId || null,
                     platform: platform || 'YouTube',
-                    channelName: channelName || 'Unknown',
+                    channelName: channelName || null,
                     lengthInSeconds: lengthInSeconds ? parseInt(lengthInSeconds) : 0,
                     externalId: externalId || null
                 };
@@ -1536,6 +1542,7 @@ function AddMediaForm() {
                         >
                             <FormControlLabel value="Series" control={<Radio />} label="Series" />
                             <FormControlLabel value="Episode" control={<Radio />} label="Episode" />
+                            <FormControlLabel value="Channel" control={<Radio />} label="Channel" />
                         </RadioGroup>
                     </FormControl>
 
@@ -1561,20 +1568,18 @@ function AddMediaForm() {
                             <MenuItem value="YouTube">YouTube</MenuItem>
                             <MenuItem value="Vimeo">Vimeo</MenuItem>
                             <MenuItem value="Twitch">Twitch</MenuItem>
-                            <MenuItem value="TikTok">TikTok</MenuItem>
                             <MenuItem value="Instagram">Instagram</MenuItem>
                             <MenuItem value="Facebook">Facebook</MenuItem>
                             <MenuItem value="Other">Other</MenuItem>
                         </Select>
                     </FormControl>
 
-                    {/* Channel Name - Required */}
+                    {/* Channel Name - Optional */}
                     <TextField
-                        label="Channel Name"
+                        label="Channel Name (Optional)"
                         placeholder="Enter channel/creator name..."
                         variant="outlined"
                         fullWidth
-                        required
                         margin="normal"
                         value={channelName}
                         onChange={(e) => setChannelName(e.target.value)}

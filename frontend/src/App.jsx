@@ -19,6 +19,7 @@ import SearchByTopicOrGenre from './components/SearchByTopicOrGenre';
 import SearchResults from './components/SearchResults';
 import DemoPage from './components/DemoPage';
 import UploadMediaPage from './components/UploadMediaPage';
+import YouTubeCallback from './pages/YouTubeCallback';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
@@ -50,6 +51,7 @@ function App() {
           <Route path="/media/:id" element={<MediaProfilePage />} />
           <Route path="/media/:id/edit" element={<EditMediaForm />} />
           <Route path="/demo" element={<DemoPage />} />
+          <Route path="/youtube/callback" element={<YouTubeCallback />} />
           {/* Catch-all route for 404 */}
           <Route path="*" element={
             <div style={{ padding: '2rem', textAlign: 'center' }}>
