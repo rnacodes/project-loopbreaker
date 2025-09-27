@@ -223,6 +223,9 @@ builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IMovieMappingService, MovieMappingService>();
 builder.Services.AddScoped<ITvShowService, TvShowService>();
 builder.Services.AddScoped<ITvShowMappingService, TvShowMappingService>();
+builder.Services.AddScoped<IVideoService, VideoService>();
+builder.Services.AddScoped<IYouTubeService, YouTubeService>();
+builder.Services.AddScoped<IYouTubeMappingService, YouTubeMappingService>();
 
 // In Program.cs
 
@@ -273,6 +276,27 @@ builder.Services.AddHttpClient<TmdbApiClient>(client =>
     else
     {
         // TMDB uses query parameter for API key
+        client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0 (https://github.com/yourrepo/projectloopbreaker)");
+    }
+});
+
+// Configure YouTube API client
+builder.Services.AddHttpClient<YouTubeApiClient>(client =>
+{
+    client.BaseAddress = new Uri("https://www.googleapis.com/youtube/v3/");
+    
+    var apiKey = Environment.GetEnvironmentVariable("YOUTUBE_API_KEY") ?? 
+                 builder.Configuration["ApiKeys:YouTube"];
+
+    if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUTUBE_API_KEY")
+    {
+        Console.WriteLine("WARNING: No valid YouTube API key found. YouTube functionality will be limited.");
+        Console.WriteLine("Please set a valid API key in environment variable YOUTUBE_API_KEY or configuration.");
+        // Don't throw exception, just log warning
+    }
+    else
+    {
+        // YouTube uses query parameter for API key
         client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0 (https://github.com/yourrepo/projectloopbreaker)");
     }
 });

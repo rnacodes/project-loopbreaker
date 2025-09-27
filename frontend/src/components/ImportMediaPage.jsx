@@ -6,8 +6,8 @@ import {
     Card, CardContent, CircularProgress, Alert,
     Divider, Chip, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
-import { Search, Download, Podcasts, MenuBook, ExpandMore, OpenInNew, MovieFilter } from '@mui/icons-material';
-import { searchPodcasts, getPodcastById, importPodcastFromApi, searchBooksFromOpenLibrary, importBookFromOpenLibrary, searchMovies, searchTvShows, searchMulti, getMovieDetails, getTvShowDetails, importMovieFromTmdb, importTvShowFromTmdb } from '../services/apiService';
+import { Search, Download, Podcasts, MenuBook, ExpandMore, OpenInNew, MovieFilter, VideoLibrary } from '@mui/icons-material';
+import { searchPodcasts, getPodcastById, importPodcastFromApi, searchBooksFromOpenLibrary, importBookFromOpenLibrary, searchMovies, searchTvShows, searchMulti, getMovieDetails, getTvShowDetails, importMovieFromTmdb, importTvShowFromTmdb, searchYouTube, getYouTubeVideoDetails, getYouTubePlaylistDetails, getYouTubeChannelDetails, importYouTubeVideo, importYouTubePlaylist, importYouTubeChannel, importFromYouTubeUrl } from '../services/apiService';
 import WhiteOutlineButton from './shared/WhiteOutlineButton';
 
 function ImportMediaPage() {
@@ -44,6 +44,18 @@ function ImportMediaPage() {
     const [tmdbSuccess, setTmdbSuccess] = useState('');
     const [selectedTmdbItem, setSelectedTmdbItem] = useState(null);
     const [showTmdbDetails, setShowTmdbDetails] = useState(false);
+
+    // YouTube states
+    const [youtubeImportMethod, setYoutubeImportMethod] = useState('search');
+    const [youtubeSearchQuery, setYoutubeSearchQuery] = useState('');
+    const [youtubeSearchType, setYoutubeSearchType] = useState('video');
+    const [youtubeUrl, setYoutubeUrl] = useState('');
+    const [youtubeSearchResults, setYoutubeSearchResults] = useState([]);
+    const [youtubeIsLoading, setYoutubeIsLoading] = useState(false);
+    const [youtubeError, setYoutubeError] = useState('');
+    const [youtubeSuccess, setYoutubeSuccess] = useState('');
+    const [selectedYoutubeItem, setSelectedYoutubeItem] = useState(null);
+    const [showYoutubeDetails, setShowYoutubeDetails] = useState(false);
     
     const navigate = useNavigate();
 
@@ -442,6 +454,130 @@ function ImportMediaPage() {
     };
 
     const formatDate = (dateString) => {
+        if (!dateString) return '';
+        return new Date(dateString).toLocaleDateString();
+    };
+
+    // YouTube handlers
+    const handleYoutubeSearch = async () => {
+        if (!youtubeSearchQuery.trim()) {
+            setYoutubeError('Please enter a search term');
+            return;
+        }
+        
+        setYoutubeIsLoading(true);
+        setYoutubeError('');
+        setYoutubeSearchResults([]);
+        
+        try {
+            const data = await searchYouTube(youtubeSearchQuery, youtubeSearchType, 25);
+            
+            const transformedResults = data.items?.map(item => ({
+                id: item.id?.videoId || item.id?.playlistId || item.id?.channelId,
+                kind: item.id?.kind,
+                title: item.snippet?.title || 'Unknown Title',
+                description: item.snippet?.description || 'No description available',
+                channelTitle: item.snippet?.channelTitle || 'Unknown Channel',
+                thumbnail: getYoutubeThumbnailUrl(item.snippet?.thumbnails),
+                publishedAt: item.snippet?.publishedAt,
+                publishTime: item.snippet?.publishTime
+            })) || [];
+            
+            setYoutubeSearchResults(transformedResults);
+            setYoutubeIsLoading(false);
+            
+        } catch (err) {
+            console.error('YouTube search error:', err);
+            setYoutubeError('Failed to search YouTube. Please try again.');
+            setYoutubeIsLoading(false);
+        }
+    };
+
+    const handleYoutubeImportFromUrl = async () => {
+        if (!youtubeUrl.trim()) {
+            setYoutubeError('Please enter a YouTube URL');
+            return;
+        }
+        
+        setYoutubeIsLoading(true);
+        setYoutubeError('');
+        
+        try {
+            const result = await importFromYouTubeUrl(youtubeUrl);
+            
+            setYoutubeSuccess(`YouTube content imported successfully!`);
+            setYoutubeIsLoading(false);
+            setYoutubeUrl('');
+            
+            console.log('YouTube import successful:', result);
+            
+            const mediaId = result.id || result.Id;
+            if (mediaId) {
+                setTimeout(() => {
+                    navigate(`/media/${mediaId}`);
+                }, 1500);
+            }
+            
+        } catch (err) {
+            console.error('YouTube URL import error:', err);
+            setYoutubeError('Failed to import from URL. Please check the URL and try again.');
+            setYoutubeIsLoading(false);
+        }
+    };
+
+    const handleImportYoutubeItem = async (item) => {
+        setYoutubeIsLoading(true);
+        setYoutubeError('');
+        
+        try {
+            let result;
+            
+            if (item.kind === 'youtube#video') {
+                result = await importYouTubeVideo(item.id);
+            } else if (item.kind === 'youtube#playlist') {
+                result = await importYouTubePlaylist(item.id, true); // Import as channel/series
+            } else if (item.kind === 'youtube#channel') {
+                result = await importYouTubeChannel(item.id);
+            } else {
+                throw new Error('Unknown YouTube content type');
+            }
+            
+            setYoutubeSuccess(`"${item.title}" imported successfully!`);
+            setYoutubeIsLoading(false);
+            
+            console.log('YouTube import successful:', result);
+            
+            const mediaId = Array.isArray(result) ? result[0]?.id : result.id;
+            if (mediaId) {
+                setTimeout(() => {
+                    navigate(`/media/${mediaId}`);
+                }, 1500);
+            }
+            
+        } catch (err) {
+            console.error('YouTube import error:', err);
+            setYoutubeError(`Failed to import: ${err.message}`);
+            setYoutubeIsLoading(false);
+        }
+    };
+
+    const getYoutubeThumbnailUrl = (thumbnails) => {
+        if (!thumbnails) return '/placeholder-video.png';
+        
+        return thumbnails.high?.url || 
+               thumbnails.medium?.url || 
+               thumbnails.default?.url || 
+               '/placeholder-video.png';
+    };
+
+    const getYoutubeItemType = (item) => {
+        if (item.kind === 'youtube#video') return 'Video';
+        if (item.kind === 'youtube#playlist') return 'Playlist';
+        if (item.kind === 'youtube#channel') return 'Channel';
+        return 'Unknown';
+    };
+
+    const formatYoutubeDate = (dateString) => {
         if (!dateString) return '';
         return new Date(dateString).toLocaleDateString();
     };
@@ -1136,6 +1272,242 @@ function ImportMediaPage() {
                         {tmdbSuccess && (
                             <Alert severity="success" sx={{ mt: 2 }}>
                                 {tmdbSuccess}
+                            </Alert>
+                        )}
+                    </Box>
+                </AccordionDetails>
+            </Accordion>
+
+            {/* YouTube Import Section */}
+            <Accordion 
+                expanded={expanded === 'youtube'} 
+                onChange={handleAccordionChange('youtube')}
+                sx={{ mb: 2 }}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMore />}
+                    aria-controls="youtube-content"
+                    id="youtube-header"
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                        <VideoLibrary />
+                        <Typography variant="h6">
+                            YouTube Videos
+                        </Typography>
+                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Powered by
+                            </Typography>
+                            <Button
+                                variant="text"
+                                size="small"
+                                href="https://www.youtube.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                endIcon={<OpenInNew fontSize="small" />}
+                                sx={{ 
+                                    minWidth: 'auto',
+                                    textTransform: 'none',
+                                    color: '#ffffff',
+                                    '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                YouTube
+                            </Button>
+                        </Box>
+                    </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <Box sx={{ padding: 2 }}>
+                        <FormControl fullWidth margin="normal">
+                            <InputLabel>Import Method</InputLabel>
+                            <Select
+                                value={youtubeImportMethod}
+                                label="Import Method"
+                                onChange={(e) => setYoutubeImportMethod(e.target.value)}
+                            >
+                                <MenuItem value="search">Search and Select</MenuItem>
+                                <MenuItem value="url">By YouTube URL</MenuItem>
+                            </Select>
+                        </FormControl>
+
+                        {youtubeImportMethod === 'search' && (
+                            <Box>
+                                <FormControl fullWidth margin="normal">
+                                    <InputLabel>Content Type</InputLabel>
+                                    <Select
+                                        value={youtubeSearchType}
+                                        label="Content Type"
+                                        onChange={(e) => setYoutubeSearchType(e.target.value)}
+                                    >
+                                        <MenuItem value="video">Videos</MenuItem>
+                                        <MenuItem value="playlist">Playlists</MenuItem>
+                                        <MenuItem value="channel">Channels</MenuItem>
+                                    </Select>
+                                </FormControl>
+
+                                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                                    <TextField
+                                        label="Search YouTube"
+                                        value={youtubeSearchQuery}
+                                        onChange={(e) => setYoutubeSearchQuery(e.target.value)}
+                                        variant="outlined"
+                                        fullWidth
+                                        onKeyPress={(e) => e.key === 'Enter' && handleYoutubeSearch()}
+                                    />
+                                    <Button
+                                        variant="contained"
+                                        onClick={handleYoutubeSearch}
+                                        disabled={youtubeIsLoading}
+                                        startIcon={<Search />}
+                                    >
+                                        Search
+                                    </Button>
+                                </Box>
+
+                                {youtubeSearchResults.length > 0 && (
+                                    <Box sx={{ mt: 2 }}>
+                                        <Typography variant="h6" gutterBottom>
+                                            Search Results ({youtubeSearchResults.length})
+                                        </Typography>
+                                        {youtubeSearchResults.map((item, index) => (
+                                            <Card key={`${item.id}-${index}`} sx={{ mb: 2 }}>
+                                                <CardContent>
+                                                    <Box sx={{ display: 'flex', gap: 2 }}>
+                                                        <Box
+                                                            sx={{
+                                                                width: 120,
+                                                                height: 90,
+                                                                borderRadius: 1,
+                                                                overflow: 'hidden',
+                                                                flexShrink: 0,
+                                                                backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                                            }}
+                                                        >
+                                                            <img
+                                                                src={item.thumbnail}
+                                                                alt=""
+                                                                style={{
+                                                                    width: '100%',
+                                                                    height: '100%',
+                                                                    objectFit: 'cover',
+                                                                    display: 'block'
+                                                                }}
+                                                                onError={(e) => {
+                                                                    e.target.src = '/placeholder-video.png';
+                                                                }}
+                                                            />
+                                                        </Box>
+                                                        <Box sx={{ flex: 1 }}>
+                                                            <Typography 
+                                                                variant="h6" 
+                                                                gutterBottom
+                                                                sx={{ 
+                                                                    fontSize: '1.1rem',
+                                                                    fontWeight: 600,
+                                                                    lineHeight: 1.2
+                                                                }}
+                                                            >
+                                                                {item.title}
+                                                            </Typography>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                                                <Chip 
+                                                                    label={getYoutubeItemType(item)}
+                                                                    size="small"
+                                                                    color="primary"
+                                                                />
+                                                                <Typography variant="body2" color="text.secondary">
+                                                                    by {item.channelTitle}
+                                                                </Typography>
+                                                                {item.publishedAt && (
+                                                                    <Typography variant="body2" color="text.secondary">
+                                                                        • {formatYoutubeDate(item.publishedAt)}
+                                                                    </Typography>
+                                                                )}
+                                                            </Box>
+                                                            <Typography 
+                                                                variant="body2" 
+                                                                sx={{ 
+                                                                    mb: 2,
+                                                                    fontSize: '0.875rem',
+                                                                    lineHeight: 1.4,
+                                                                    display: '-webkit-box',
+                                                                    WebkitLineClamp: 2,
+                                                                    WebkitBoxOrient: 'vertical',
+                                                                    overflow: 'hidden'
+                                                                }}
+                                                            >
+                                                                {item.description ? 
+                                                                    (item.description.length > 150 
+                                                                        ? `${item.description.substring(0, 150)}...` 
+                                                                        : item.description
+                                                                    ) : 'No description available.'
+                                                                }
+                                                            </Typography>
+                                                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                                                <WhiteOutlineButton
+                                                                    variant="contained"
+                                                                    size="small"
+                                                                    onClick={() => handleImportYoutubeItem(item)}
+                                                                    disabled={youtubeIsLoading}
+                                                                    startIcon={<Download />}
+                                                                >
+                                                                    Import
+                                                                </WhiteOutlineButton>
+                                                            </Box>
+                                                        </Box>
+                                                    </Box>
+                                                </CardContent>
+                                            </Card>
+                                        ))}
+                                    </Box>
+                                )}
+                            </Box>
+                        )}
+
+                        {youtubeImportMethod === 'url' && (
+                            <Box>
+                                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                                    <TextField
+                                        label="YouTube URL"
+                                        value={youtubeUrl}
+                                        onChange={(e) => setYoutubeUrl(e.target.value)}
+                                        variant="outlined"
+                                        fullWidth
+                                        placeholder="https://www.youtube.com/watch?v=... or https://www.youtube.com/playlist?list=..."
+                                        onKeyPress={(e) => e.key === 'Enter' && handleYoutubeImportFromUrl()}
+                                    />
+                                    <Button
+                                        variant="contained"
+                                        onClick={handleYoutubeImportFromUrl}
+                                        disabled={youtubeIsLoading}
+                                        startIcon={<Download />}
+                                    >
+                                        Import
+                                    </Button>
+                                </Box>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                    Supports YouTube video URLs, playlist URLs, and channel URLs. The system will automatically detect the type and import accordingly.
+                                </Typography>
+                            </Box>
+                        )}
+
+                        {youtubeIsLoading && (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                                <CircularProgress />
+                            </Box>
+                        )}
+
+                        {youtubeError && (
+                            <Alert severity="error" sx={{ mt: 2 }}>
+                                {youtubeError}
+                            </Alert>
+                        )}
+
+                        {youtubeSuccess && (
+                            <Alert severity="success" sx={{ mt: 2 }}>
+                                {youtubeSuccess}
                             </Alert>
                         )}
                     </Box>
