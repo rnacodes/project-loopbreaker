@@ -2,10 +2,11 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using ProjectLoopbreaker.Shared.DTOs.TMDB;
+using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Infrastructure.Clients
 {
-    public class TmdbApiClient
+    public class TmdbApiClient : ITmdbApiClient
     {
         private readonly HttpClient _httpClient;
         private readonly ILogger<TmdbApiClient> _logger;

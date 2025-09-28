@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using ProjectLoopbreaker.Infrastructure.Clients;
+using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Shared.DTOs.TMDB;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
@@ -8,12 +9,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     [Route("api/[controller]")]
     public class TmdbController : ControllerBase
     {
-        private readonly TmdbApiClient _tmdbClient;
+        private readonly ITmdbService _tmdbService;
         private readonly ILogger<TmdbController> _logger;
 
-        public TmdbController(TmdbApiClient tmdbClient, ILogger<TmdbController> logger)
+        public TmdbController(ITmdbService tmdbService, ILogger<TmdbController> logger)
         {
-            _tmdbClient = tmdbClient;
+            _tmdbService = tmdbService;
             _logger = logger;
         }
 
@@ -37,7 +38,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return BadRequest("Query parameter is required");
                 }
 
-                var result = await _tmdbClient.SearchMoviesAsync(query, page, language);
+                var result = await _tmdbService.SearchMoviesAsync(query, page, language);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -67,7 +68,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return BadRequest("Query parameter is required");
                 }
 
-                var result = await _tmdbClient.SearchTvShowsAsync(query, page, language);
+                var result = await _tmdbService.SearchTvShowsAsync(query, page, language);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -97,7 +98,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return BadRequest("Query parameter is required");
                 }
 
-                var result = await _tmdbClient.SearchMultiAsync(query, page, language);
+                var result = await _tmdbService.SearchMultiAsync(query, page, language);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -120,7 +121,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var result = await _tmdbClient.GetMovieDetailsAsync(movieId, language);
+                var result = await _tmdbService.GetMovieDetailsAsync(movieId, language);
                 return Ok(result);
             }
             catch (InvalidOperationException ex)
@@ -148,7 +149,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var result = await _tmdbClient.GetTvShowDetailsAsync(tvShowId, language);
+                var result = await _tmdbService.GetTvShowDetailsAsync(tvShowId, language);
                 return Ok(result);
             }
             catch (InvalidOperationException ex)
@@ -176,7 +177,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var result = await _tmdbClient.GetPopularMoviesAsync(page, language);
+                var result = await _tmdbService.GetPopularMoviesAsync(page, language);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -199,7 +200,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var result = await _tmdbClient.GetPopularTvShowsAsync(page, language);
+                var result = await _tmdbService.GetPopularTvShowsAsync(page, language);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -220,7 +221,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var result = await _tmdbClient.GetMovieGenresAsync(language);
+                var result = await _tmdbService.GetMovieGenresAsync(language);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -241,7 +242,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var result = await _tmdbClient.GetTvGenresAsync(language);
+                var result = await _tmdbService.GetTvGenresAsync(language);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -267,8 +268,64 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return BadRequest("Image path is required");
             }
 
-            var imageUrl = _tmdbClient.GetImageUrl(imagePath, size);
+            var imageUrl = _tmdbService.GetImageUrl(imagePath, size);
             return Ok(imageUrl);
+        }
+
+        /// <summary>
+        /// Import a movie from TMDB into the media library
+        /// </summary>
+        /// <param name="movieId">TMDB movie ID</param>
+        /// <param name="language">Language code (default: en-US)</param>
+        /// <returns>Imported movie entity</returns>
+        [HttpPost("import/movie/{movieId}")]
+        public async Task<ActionResult<Movie>> ImportMovie(
+            int movieId,
+            [FromQuery] string language = "en-US")
+        {
+            try
+            {
+                var result = await _tmdbService.ImportMovieAsync(movieId, language);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Movie not found for import: {MovieId}", movieId);
+                return NotFound($"Movie with ID {movieId} not found");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing movie: {MovieId}", movieId);
+                return StatusCode(500, "An error occurred while importing the movie");
+            }
+        }
+
+        /// <summary>
+        /// Import a TV show from TMDB into the media library
+        /// </summary>
+        /// <param name="tvShowId">TMDB TV show ID</param>
+        /// <param name="language">Language code (default: en-US)</param>
+        /// <returns>Imported TV show entity</returns>
+        [HttpPost("import/tv/{tvShowId}")]
+        public async Task<ActionResult<TvShow>> ImportTvShow(
+            int tvShowId,
+            [FromQuery] string language = "en-US")
+        {
+            try
+            {
+                var result = await _tmdbService.ImportTvShowAsync(tvShowId, language);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "TV show not found for import: {TvShowId}", tvShowId);
+                return NotFound($"TV show with ID {tvShowId} not found");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing TV show: {TvShowId}", tvShowId);
+                return StatusCode(500, "An error occurred while importing the TV show");
+            }
         }
     }
 }

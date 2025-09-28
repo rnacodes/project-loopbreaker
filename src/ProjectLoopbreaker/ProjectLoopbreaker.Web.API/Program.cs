@@ -227,6 +227,7 @@ builder.Services.AddScoped<ITvShowMappingService, TvShowMappingService>();
 builder.Services.AddScoped<IVideoService, VideoService>();
 builder.Services.AddScoped<IYouTubeService, YouTubeService>();
 builder.Services.AddScoped<IYouTubeMappingService, YouTubeMappingService>();
+builder.Services.AddScoped<ITmdbService, TmdbService>();
 
 // Configure YouTube API client
 builder.Services.AddHttpClient<YouTubeApiClient>(client =>
@@ -288,6 +289,7 @@ builder.Services.AddHttpClient<TmdbApiClient>(client =>
         client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0 (https://github.com/yourrepo/projectloopbreaker)");
     }
 });
+builder.Services.AddScoped<ITmdbApiClient>(provider => provider.GetRequiredService<TmdbApiClient>());
 
 // Configure YouTube API client
 builder.Services.AddHttpClient<YouTubeApiClient>(client =>
