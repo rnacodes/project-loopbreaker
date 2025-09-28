@@ -120,13 +120,19 @@ namespace ProjectLoopbreaker.Application.Services
                         : null,
                     Notes = movieDto.Overview,
                     Status = Status.Uncharted,
-                    Rating = movieDto.VoteAverage > 0 ? (Rating?)Math.Round((decimal)(movieDto.VoteAverage / 2)) : null, // Convert 10-point to 5-point scale
+                    Rating = null, // Personal rating - leave null for imports
                     Director = null, // TMDB doesn't provide director in basic movie details
                     Cast = null, // TMDB basic movie details don't include cast - would need additional API call
                     ReleaseYear = releaseYear,
                     RuntimeMinutes = movieDto.Runtime,
                     MpaaRating = null, // Would need additional TMDB call for release info
-                    TmdbId = movieDto.Id.ToString()
+                    TmdbId = movieDto.Id.ToString(),
+                    TmdbRating = movieDto.VoteAverage > 0 ? movieDto.VoteAverage : null, // Store original TMDB rating (0-10 scale)
+                    TmdbBackdropPath = movieDto.BackdropPath,
+                    Tagline = movieDto.Tagline,
+                    Homepage = movieDto.Homepage,
+                    OriginalLanguage = movieDto.OriginalLanguage,
+                    OriginalTitle = movieDto.OriginalTitle
                 };
 
                 // Save to database through domain service
@@ -171,7 +177,7 @@ namespace ProjectLoopbreaker.Application.Services
                     Link = null, // TMDB doesn't provide direct links
                     Notes = tvShowDto.Overview,
                     Status = Status.Uncharted,
-                    Rating = tvShowDto.VoteAverage > 0 ? (Rating?)Math.Round((decimal)(tvShowDto.VoteAverage / 2)) : null, // Convert 10-point to 5-point scale
+                    Rating = null, // Personal rating - leave null for imports
                     Creator = null, // TMDB basic TV show details don't include creator - would need additional API call
                     Cast = null, // TMDB basic TV show details don't include cast - would need additional API call
                     FirstAirYear = firstAirYear,
@@ -180,7 +186,13 @@ namespace ProjectLoopbreaker.Application.Services
                         : (int?)null,
                     NumberOfSeasons = tvShowDto.NumberOfSeasons,
                     NumberOfEpisodes = tvShowDto.NumberOfEpisodes,
-                    TmdbId = tvShowDto.Id.ToString()
+                    TmdbId = tvShowDto.Id.ToString(),
+                    TmdbRating = tvShowDto.VoteAverage > 0 ? tvShowDto.VoteAverage : null, // Store original TMDB rating (0-10 scale)
+                    TmdbPosterPath = tvShowDto.PosterPath,
+                    Tagline = tvShowDto.Tagline,
+                    Homepage = tvShowDto.Homepage,
+                    OriginalLanguage = tvShowDto.OriginalLanguage,
+                    OriginalName = tvShowDto.OriginalName
                 };
 
                 // Save to database through domain service
