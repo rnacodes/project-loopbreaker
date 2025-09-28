@@ -263,11 +263,14 @@ builder.Services.AddHttpClient<ListenNotesApiClient>(client =>
 });
 
 // Configure Open Library API client
-builder.Services.AddHttpClient<OpenLibraryApiClient>(client =>
+builder.Services.AddHttpClient<IOpenLibraryApiClient, OpenLibraryApiClient>(client =>
 {
     client.BaseAddress = new Uri("https://openlibrary.org/");
     client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0 (https://github.com/yourrepo/projectloopbreaker)");
 });
+
+// Register OpenLibrary service
+builder.Services.AddScoped<IOpenLibraryService, OpenLibraryService>();
 
 // Configure TMDB API client
 builder.Services.AddHttpClient<TmdbApiClient>(client =>

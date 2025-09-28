@@ -1,125 +1,176 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using ProjectLoopbreaker.Shared.DTOs.OpenLibrary;
+using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Infrastructure.Clients
 {
-    public class OpenLibraryApiClient
+    public class OpenLibraryApiClient : IOpenLibraryApiClient
     {
         private readonly HttpClient _httpClient;
+        private readonly ILogger<OpenLibraryApiClient> _logger;
+        private readonly JsonSerializerOptions _jsonOptions;
 
-        public OpenLibraryApiClient(HttpClient httpClient)
+        public OpenLibraryApiClient(HttpClient httpClient, ILogger<OpenLibraryApiClient> logger)
         {
             _httpClient = httpClient;
-        }
-
-        public async Task<string> SearchBooksAsync(string query, int? offset = null, int? limit = null)
-        {
-            // Makes a GET request to https://openlibrary.org/search.json
-            var queryParams = new List<string> { $"q={Uri.EscapeDataString(query)}" };
-
-            if (offset.HasValue) queryParams.Add($"offset={offset}");
-            if (limit.HasValue) queryParams.Add($"limit={limit}");
-
-            var queryString = string.Join("&", queryParams);
-            var fullUrl = $"search.json?{queryString}";
-            
-            Console.WriteLine($"Making request to: {_httpClient.BaseAddress}{fullUrl}");
-            
-            var response = await _httpClient.GetAsync(fullUrl);
-            
-            if (!response.IsSuccessStatusCode)
+            _logger = logger;
+            _jsonOptions = new JsonSerializerOptions
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"HTTP Error: {response.StatusCode} - {errorContent}");
-                Console.WriteLine($"Request URL: {_httpClient.BaseAddress}{fullUrl}");
-                throw new HttpRequestException($"HTTP {response.StatusCode}: {errorContent}");
-            }
-            
-            return await response.Content.ReadAsStringAsync();
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
         }
 
-        public async Task<string> SearchBooksByTitleAsync(string title, int? offset = null, int? limit = null)
+        public async Task<OpenLibrarySearchResultDto> SearchBooksAsync(string query, int? offset = null, int? limit = null)
         {
-            // Search specifically by title
+            try
+            {
+                var queryParams = new List<string> { $"q={Uri.EscapeDataString(query)}" };
+
+                if (offset.HasValue) queryParams.Add($"offset={offset}");
+                if (limit.HasValue) queryParams.Add($"limit={limit}");
+
+                var queryString = string.Join("&", queryParams);
+                var fullUrl = $"search.json?{queryString}";
+                
+                _logger.LogInformation("Searching OpenLibrary books with query: {Query}, offset: {Offset}, limit: {Limit}", query, offset, limit);
+                
+                var response = await _httpClient.GetAsync(fullUrl);
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<OpenLibrarySearchResultDto>(jsonContent, _jsonOptions);
+                
+                return result ?? new OpenLibrarySearchResultDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching OpenLibrary books for query: {Query}", query);
+                throw;
+            }
+        }
+
+        public async Task<OpenLibrarySearchResultDto> SearchBooksByTitleAsync(string title, int? offset = null, int? limit = null)
+        {
             var query = $"title:{Uri.EscapeDataString(title)}";
             return await SearchBooksAsync(query, offset, limit);
         }
 
-        public async Task<string> SearchBooksByAuthorAsync(string author, int? offset = null, int? limit = null)
+        public async Task<OpenLibrarySearchResultDto> SearchBooksByAuthorAsync(string author, int? offset = null, int? limit = null)
         {
-            // Search specifically by author
             var query = $"author:{Uri.EscapeDataString(author)}";
             return await SearchBooksAsync(query, offset, limit);
         }
 
-        public async Task<string> SearchBooksByISBNAsync(string isbn)
+        public async Task<OpenLibrarySearchResultDto> SearchBooksByISBNAsync(string isbn)
         {
-            // Search by ISBN
             var query = $"isbn:{Uri.EscapeDataString(isbn)}";
             return await SearchBooksAsync(query);
         }
 
-        public async Task<string> GetBookByOpenLibraryIdAsync(string openLibraryId)
+        public async Task<OpenLibraryWorkDto> GetBookByOpenLibraryIdAsync(string openLibraryId)
         {
-            // Makes a GET request to https://openlibrary.org/works/{id}.json
-            var response = await _httpClient.GetAsync($"works/{openLibraryId}.json");
-            
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"HTTP Error: {response.StatusCode} - {errorContent}");
-                throw new HttpRequestException($"HTTP {response.StatusCode}: {errorContent}");
+                _logger.LogInformation("Getting OpenLibrary work details for ID: {OpenLibraryId}", openLibraryId);
+                
+                var response = await _httpClient.GetAsync($"works/{openLibraryId}.json");
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<OpenLibraryWorkDto>(jsonContent, _jsonOptions);
+                
+                if (result == null)
+                {
+                    throw new InvalidOperationException($"Work with ID {openLibraryId} not found");
+                }
+                
+                return result;
             }
-            
-            return await response.Content.ReadAsStringAsync();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting OpenLibrary work details for ID: {OpenLibraryId}", openLibraryId);
+                throw;
+            }
         }
 
-        public async Task<string> GetBookByISBNAsync(string isbn)
+        public async Task<OpenLibraryBookDto> GetBookByISBNAsync(string isbn)
         {
-            // Makes a GET request to https://openlibrary.org/isbn/{isbn}.json
-            var response = await _httpClient.GetAsync($"isbn/{isbn}.json");
-            
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"HTTP Error: {response.StatusCode} - {errorContent}");
-                throw new HttpRequestException($"HTTP {response.StatusCode}: {errorContent}");
+                _logger.LogInformation("Getting OpenLibrary book details for ISBN: {ISBN}", isbn);
+                
+                var response = await _httpClient.GetAsync($"isbn/{isbn}.json");
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<OpenLibraryBookDto>(jsonContent, _jsonOptions);
+                
+                if (result == null)
+                {
+                    throw new InvalidOperationException($"Book with ISBN {isbn} not found");
+                }
+                
+                return result;
             }
-            
-            return await response.Content.ReadAsStringAsync();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting OpenLibrary book details for ISBN: {ISBN}", isbn);
+                throw;
+            }
         }
 
-        public async Task<string> GetAuthorAsync(string authorId)
+        public async Task<OpenLibraryAuthorDto> GetAuthorAsync(string authorId)
         {
-            // Makes a GET request to https://openlibrary.org/authors/{id}.json
-            var response = await _httpClient.GetAsync($"authors/{authorId}.json");
-            
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"HTTP Error: {response.StatusCode} - {errorContent}");
-                throw new HttpRequestException($"HTTP {response.StatusCode}: {errorContent}");
+                _logger.LogInformation("Getting OpenLibrary author details for ID: {AuthorId}", authorId);
+                
+                var response = await _httpClient.GetAsync($"authors/{authorId}.json");
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<OpenLibraryAuthorDto>(jsonContent, _jsonOptions);
+                
+                if (result == null)
+                {
+                    throw new InvalidOperationException($"Author with ID {authorId} not found");
+                }
+                
+                return result;
             }
-            
-            return await response.Content.ReadAsStringAsync();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting OpenLibrary author details for ID: {AuthorId}", authorId);
+                throw;
+            }
         }
 
         public async Task<string> GetSubjectsAsync()
         {
-            // Makes a GET request to https://openlibrary.org/subjects.json
-            var response = await _httpClient.GetAsync("subjects.json");
-            
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"HTTP Error: {response.StatusCode} - {errorContent}");
-                throw new HttpRequestException($"HTTP {response.StatusCode}: {errorContent}");
+                _logger.LogInformation("Getting OpenLibrary subjects");
+                
+                var response = await _httpClient.GetAsync("subjects.json");
+                response.EnsureSuccessStatusCode();
+                
+                return await response.Content.ReadAsStringAsync();
             }
-            
-            return await response.Content.ReadAsStringAsync();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting OpenLibrary subjects");
+                throw;
+            }
+        }
+
+        public string GetCoverImageUrl(int? coverId, string size = "L")
+        {
+            if (!coverId.HasValue)
+                return string.Empty;
+                
+            return $"https://covers.openlibrary.org/b/id/{coverId}-{size}.jpg";
         }
     }
 }

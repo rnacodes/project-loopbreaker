@@ -1,13 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Application.Interfaces;
-using ProjectLoopbreaker.Infrastructure.Clients;
 using ProjectLoopbreaker.Shared.DTOs.OpenLibrary;
 using ProjectLoopbreaker.DTOs;
-using System.Text.Json;
 using Amazon.S3;
 using Amazon.S3.Model;
-using System.Linq;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -18,7 +15,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         private readonly IBookService _bookService;
         private readonly IBookMappingService _bookMappingService;
         private readonly ILogger<BookController> _logger;
-        private readonly OpenLibraryApiClient _openLibraryClient;
+        private readonly IOpenLibraryService _openLibraryService;
         private readonly IAmazonS3? _s3Client;
         private readonly IConfiguration _configuration;
 
@@ -26,14 +23,14 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             IBookService bookService,
             IBookMappingService bookMappingService,
             ILogger<BookController> logger,
-            OpenLibraryApiClient openLibraryClient,
+            IOpenLibraryService openLibraryService,
             IAmazonS3? s3Client,
             IConfiguration configuration)
         {
             _bookService = bookService;
             _bookMappingService = bookMappingService;
             _logger = logger;
-            _openLibraryClient = openLibraryClient;
+            _openLibraryService = openLibraryService;
             _s3Client = s3Client;
             _configuration = configuration;
         }
@@ -261,25 +258,23 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return BadRequest("Search query is required");
                 }
 
-                string jsonResponse;
+                OpenLibrarySearchResultDto searchResult;
 
                 switch (searchDto.SearchType)
                 {
                     case BookSearchType.Title:
-                        jsonResponse = await _openLibraryClient.SearchBooksByTitleAsync(searchDto.Query, searchDto.Offset, searchDto.Limit);
+                        searchResult = await _openLibraryService.SearchBooksByTitleAsync(searchDto.Query, searchDto.Offset, searchDto.Limit);
                         break;
                     case BookSearchType.Author:
-                        jsonResponse = await _openLibraryClient.SearchBooksByAuthorAsync(searchDto.Query, searchDto.Offset, searchDto.Limit);
+                        searchResult = await _openLibraryService.SearchBooksByAuthorAsync(searchDto.Query, searchDto.Offset, searchDto.Limit);
                         break;
                     case BookSearchType.ISBN:
-                        jsonResponse = await _openLibraryClient.SearchBooksByISBNAsync(searchDto.Query);
+                        searchResult = await _openLibraryService.SearchBooksByISBNAsync(searchDto.Query);
                         break;
                     default:
-                        jsonResponse = await _openLibraryClient.SearchBooksAsync(searchDto.Query, searchDto.Offset, searchDto.Limit);
+                        searchResult = await _openLibraryService.SearchBooksAsync(searchDto.Query, searchDto.Offset, searchDto.Limit);
                         break;
                 }
-
-                var searchResult = JsonSerializer.Deserialize<OpenLibrarySearchResultDto>(jsonResponse);
                 
                 if (searchResult?.Docs == null)
                 {
@@ -308,105 +303,63 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return BadRequest("Import data is required");
                 }
 
-                OpenLibraryBookDto? bookData = null;
-                string? jsonResponse = null;
+                Domain.Entities.Book createdBook;
 
-                // Try to get book data from Open Library
+                // Use the OpenLibrary service to import the book based on available data
                 if (!string.IsNullOrWhiteSpace(importDto.OpenLibraryKey))
                 {
-                    // Get book by Open Library key
-                    try
-                    {
-                        // Clean the Open Library key by removing the /works/ prefix if present
-                        var cleanKey = importDto.OpenLibraryKey.Replace("/works/", "");
-                        jsonResponse = await _openLibraryClient.GetBookByOpenLibraryIdAsync(cleanKey);
-                        var workData = JsonSerializer.Deserialize<OpenLibraryWorkDto>(jsonResponse);
-                        
-                        // Convert work data to book format for consistency
-                        bookData = new OpenLibraryBookDto
-                        {
-                            Key = workData?.Key,
-                            Title = workData?.Title,
-                            AuthorName = workData?.Authors?.Select(a => a.Author?.Key?.Replace("/authors/", "")).ToArray(),
-                            Subject = workData?.Subjects,
-                            CoverId = workData?.Covers?.FirstOrDefault()
-                        };
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Failed to get book by Open Library key: {Key}", importDto.OpenLibraryKey);
-                    }
+                    createdBook = await _openLibraryService.ImportBookFromOpenLibraryKeyAsync(importDto.OpenLibraryKey);
                 }
                 else if (!string.IsNullOrWhiteSpace(importDto.Isbn))
                 {
-                    // Search by ISBN
-                    jsonResponse = await _openLibraryClient.SearchBooksByISBNAsync(importDto.Isbn);
-                    var searchResult = JsonSerializer.Deserialize<OpenLibrarySearchResultDto>(jsonResponse);
-                    bookData = searchResult?.Docs?.FirstOrDefault();
-                }
-                else if (!string.IsNullOrWhiteSpace(importDto.Title) && !string.IsNullOrWhiteSpace(importDto.Author))
-                {
-                    // Search by title and author
-                    var query = $"title:{importDto.Title} author:{importDto.Author}";
-                    jsonResponse = await _openLibraryClient.SearchBooksAsync(query, limit: 1);
-                    var searchResult = JsonSerializer.Deserialize<OpenLibrarySearchResultDto>(jsonResponse);
-                    bookData = searchResult?.Docs?.FirstOrDefault();
+                    createdBook = await _openLibraryService.ImportBookFromISBNAsync(importDto.Isbn);
                 }
                 else if (!string.IsNullOrWhiteSpace(importDto.Title))
                 {
-                    // Search by title only
-                    jsonResponse = await _openLibraryClient.SearchBooksByTitleAsync(importDto.Title, limit: 1);
-                    var searchResult = JsonSerializer.Deserialize<OpenLibrarySearchResultDto>(jsonResponse);
-                    bookData = searchResult?.Docs?.FirstOrDefault();
+                    createdBook = await _openLibraryService.ImportBookFromTitleAndAuthorAsync(importDto.Title, importDto.Author);
                 }
                 else
                 {
                     return BadRequest("At least one of OpenLibraryKey, ISBN, or Title must be provided");
                 }
 
-                if (bookData == null)
+                // Upload cover image to DigitalOcean Spaces if available and not already uploaded
+                if (!string.IsNullOrEmpty(createdBook.Thumbnail) && createdBook.Thumbnail.Contains("covers.openlibrary.org"))
                 {
-                    return NotFound("Book not found in Open Library");
+                    string? uploadedCoverUrl = await UploadImageFromUrlAsync(createdBook.Thumbnail);
+                    if (!string.IsNullOrEmpty(uploadedCoverUrl))
+                    {
+                        // Update the book with the uploaded thumbnail
+                        await _bookService.UpdateBookAsync(createdBook.Id, new CreateBookDto
+                        {
+                            Title = createdBook.Title,
+                            Author = createdBook.Author,
+                            Description = createdBook.Description,
+                            Link = createdBook.Link,
+                            Thumbnail = uploadedCoverUrl,
+                            ISBN = createdBook.ISBN,
+                            Format = createdBook.Format,
+                            PartOfSeries = createdBook.PartOfSeries,
+                            Status = createdBook.Status,
+                            Rating = createdBook.Rating,
+                            OwnershipStatus = createdBook.OwnershipStatus,
+                            Notes = createdBook.Notes,
+                            RelatedNotes = createdBook.RelatedNotes,
+                            Genres = createdBook.Genres?.Select(g => g.Name).ToArray() ?? Array.Empty<string>()
+                        });
+                        createdBook.Thumbnail = uploadedCoverUrl;
+                    }
                 }
 
-                // Upload cover image to DigitalOcean Spaces if available
-                string? originalCoverUrl = bookData.CoverId.HasValue 
-                    ? $"https://covers.openlibrary.org/b/id/{bookData.CoverId}-L.jpg" 
-                    : null;
-                string? uploadedCoverUrl = await UploadImageFromUrlAsync(originalCoverUrl);
-
-                // Create book entity from Open Library data using mapping service
-                var book = await _bookMappingService.MapFromOpenLibraryAsync(bookData);
-                
-                // Update thumbnail with uploaded version if available
-                if (!string.IsNullOrEmpty(uploadedCoverUrl))
-                {
-                    book.Thumbnail = uploadedCoverUrl;
-                }
-
-                // Use the book service to create the book
-                var createdBook = await _bookService.CreateBookAsync(new CreateBookDto
-                {
-                    Title = book.Title,
-                    Author = book.Author,
-                    Description = book.Description,
-                    Link = book.Link,
-                    Thumbnail = book.Thumbnail,
-                    ISBN = book.ISBN,
-                    Format = book.Format,
-                    PartOfSeries = book.PartOfSeries,
-                    Status = book.Status,
-                    Rating = book.Rating,
-                    OwnershipStatus = book.OwnershipStatus,
-                    Notes = book.Notes,
-                    RelatedNotes = book.RelatedNotes,
-                    Genres = book.Genres?.Select(g => g.Name).ToArray() ?? Array.Empty<string>()
-                });
-
-                _logger.LogInformation("Successfully imported book from Open Library: {Title} by {Author}", book.Title, book.Author);
+                _logger.LogInformation("Successfully imported book from Open Library: {Title} by {Author}", createdBook.Title, createdBook.Author);
 
                 var responseDto = await _bookMappingService.MapToResponseDtoAsync(createdBook);
                 return CreatedAtAction(nameof(GetBook), new { id = createdBook.Id }, responseDto);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Book not found in Open Library");
+                return NotFound(new { error = ex.Message });
             }
             catch (Exception ex)
             {
