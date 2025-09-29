@@ -36,5 +36,6 @@ namespace ProjectLoopbreaker.Application.Interfaces
         // Import operations (business logic - convert DTOs to Domain Entities)
         Task<Podcast> ImportPodcastAsync(string podcastId);
         Task<Podcast> ImportPodcastEpisodeAsync(string episodeId);
+        Task<Podcast?> ImportPodcastByNameAsync(string podcastName);
     }
 }

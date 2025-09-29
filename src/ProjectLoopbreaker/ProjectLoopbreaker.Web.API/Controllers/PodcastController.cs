@@ -1,10 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Domain.Entities;
-using ProjectLoopbreaker.Infrastructure.Data;
-using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Application.Interfaces;
-using ProjectLoopbreaker.Shared.Interfaces;
 using ProjectLoopbreaker.DTOs;
 using System.Text.Json;
 
@@ -14,20 +10,20 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     [Route("api/[controller]")]
     public class PodcastController : ControllerBase
     {
-        private readonly MediaLibraryDbContext _context;
+        private readonly IPodcastService _podcastService;
         private readonly IPodcastMappingService _podcastMappingService;
-        private readonly IListenNotesApiClient _listenNotesClient;
+        private readonly IListenNotesService _listenNotesService;
         private readonly ILogger<PodcastController> _logger;
 
         public PodcastController(
-            MediaLibraryDbContext context,
+            IPodcastService podcastService,
             IPodcastMappingService podcastMappingService,
-            IListenNotesApiClient listenNotesClient,
+            IListenNotesService listenNotesService,
             ILogger<PodcastController> logger)
         {
-            _context = context;
+            _podcastService = podcastService;
             _podcastMappingService = podcastMappingService;
-            _listenNotesClient = listenNotesClient;
+            _listenNotesService = listenNotesService;
             _logger = logger;
         }
 
@@ -37,7 +33,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var podcasts = await _context.Podcasts.ToListAsync();
+                var podcasts = await _podcastService.GetAllPodcastsAsync();
                 
                 var response = podcasts.Select(p => new PodcastResponseDto
                 {
@@ -73,19 +69,18 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var series = await _context.Podcasts
-                    .Where(p => p.PodcastType == PodcastType.Series)
-                    .Select(p => new {
+                var series = await _podcastService.GetPodcastSeriesAsync();
+                
+                var response = series.Select(p => new {
                         p.Id,
                         p.Title,
                         p.Description,
                         p.Publisher,
                         p.Thumbnail,
                         p.ExternalId
-                    })
-                    .ToListAsync();
+                }).ToList();
 
-                return Ok(series);
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -105,20 +100,18 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return BadRequest("Query parameter is required");
                 }
 
-                var series = await _context.Podcasts
-                    .Where(p => p.PodcastType == PodcastType.Series && 
-                               p.Title.ToLower().Contains(query.ToLower()))
-                    .Select(p => new {
+                var series = await _podcastService.SearchPodcastSeriesAsync(query);
+                
+                var response = series.Select(p => new {
                         p.Id,
                         p.Title,
                         p.Description,
                         p.Publisher,
                         p.Thumbnail,
                         p.ExternalId
-                    })
-                    .ToListAsync();
+                }).ToList();
 
-                return Ok(series);
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -133,11 +126,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var podcast = await _context.Podcasts
-                    .Include(p => p.Topics)
-                    .Include(p => p.Genres)
-                    .Include(p => p.Episodes)
-                    .FirstOrDefaultAsync(p => p.Id == id);
+                var podcast = await _podcastService.GetPodcastByIdAsync(id);
 
                 if (podcast == null)
                 {
@@ -174,17 +163,32 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/podcast/series/{seriesId}/episodes
         [HttpGet("series/{seriesId}/episodes")]
-        public async Task<ActionResult<IEnumerable<Podcast>>> GetEpisodesBySeriesId(Guid seriesId)
+        public async Task<ActionResult<IEnumerable<PodcastResponseDto>>> GetEpisodesBySeriesId(Guid seriesId)
         {
             try
             {
-                var episodes = await _context.Podcasts
-                    .Where(p => p.ParentPodcastId == seriesId && p.PodcastType == PodcastType.Episode)
-                    .Include(p => p.Topics)
-                    .Include(p => p.Genres)
-                    .ToListAsync();
+                var episodes = await _podcastService.GetEpisodesBySeriesIdAsync(seriesId);
 
-                return Ok(episodes);
+                var response = episodes.Select(p => new PodcastResponseDto
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Description = p.Description,
+                    MediaType = p.MediaType,
+                    Status = p.Status,
+                    DateAdded = p.DateAdded,
+                    Link = p.Link,
+                    Thumbnail = p.Thumbnail,
+                    PodcastType = p.PodcastType,
+                    ParentPodcastId = p.ParentPodcastId,
+                    Publisher = p.Publisher,
+                    ExternalId = p.ExternalId,
+                    AudioLink = p.AudioLink,
+                    ReleaseDate = p.ReleaseDate,
+                    DurationInSeconds = p.DurationInSeconds
+                }).ToList();
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -204,81 +208,33 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return BadRequest("Podcast data is required");
                 }
 
-                // If creating an episode, verify the parent series exists
-                if (dto.PodcastType == PodcastType.Episode && dto.ParentPodcastId.HasValue)
-                {
-                    var parentSeries = await _context.Podcasts
-                        .FirstOrDefaultAsync(p => p.Id == dto.ParentPodcastId.Value && p.PodcastType == PodcastType.Series);
+                var podcast = await _podcastService.CreatePodcastAsync(dto);
 
-                    if (parentSeries == null)
-                    {
-                        return BadRequest($"Parent podcast series with ID {dto.ParentPodcastId.Value} not found.");
-                    }
-                }
-
-                var podcast = new Podcast
+                var response = new PodcastResponseDto
                 {
-                    Title = dto.Title,
-                    MediaType = MediaType.Podcast,
-                    Link = dto.Link,
-                    Notes = dto.Notes,
-                    Status = dto.Status,
-                    DateAdded = DateTime.UtcNow,
-                    DateCompleted = dto.DateCompleted,
-                    Rating = dto.Rating,
-                    OwnershipStatus = dto.OwnershipStatus,
-                    Description = dto.Description,
-                    RelatedNotes = dto.RelatedNotes,
-                    Thumbnail = dto.Thumbnail,
-                    PodcastType = dto.PodcastType,
-                    ParentPodcastId = dto.ParentPodcastId,
-                    ExternalId = dto.ExternalId,
-                    Publisher = dto.Publisher,
-                    AudioLink = dto.AudioLink,
-                    ReleaseDate = dto.ReleaseDate,
-                    DurationInSeconds = dto.DurationInSeconds
+                    Id = podcast.Id,
+                    Title = podcast.Title,
+                    Description = podcast.Description,
+                    MediaType = podcast.MediaType,
+                    Status = podcast.Status,
+                    DateAdded = podcast.DateAdded,
+                    Link = podcast.Link,
+                    Thumbnail = podcast.Thumbnail,
+                    PodcastType = podcast.PodcastType,
+                    ParentPodcastId = podcast.ParentPodcastId,
+                    Publisher = podcast.Publisher,
+                    ExternalId = podcast.ExternalId,
+                    AudioLink = podcast.AudioLink,
+                    ReleaseDate = podcast.ReleaseDate,
+                    DurationInSeconds = podcast.DurationInSeconds
                 };
 
-                // Handle Topics array conversion - check if they exist or create new ones
-                if (dto.Topics?.Length > 0)
-                {
-                    foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
-                    {
-                        var normalizedTopicName = topicName.Trim().ToLowerInvariant();
-                        var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
-                        if (existingTopic != null)
-                        {
-                            podcast.Topics.Add(existingTopic);
-                        }
-                        else
-                        {
-                            podcast.Topics.Add(new Topic { Name = normalizedTopicName });
-                        }
-                    }
-                }
-
-                // Handle Genres array conversion - check if they exist or create new ones
-                if (dto.Genres?.Length > 0)
-                {
-                    foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
-                    {
-                        var normalizedGenreName = genreName.Trim().ToLowerInvariant();
-                        var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
-                        if (existingGenre != null)
-                        {
-                            podcast.Genres.Add(existingGenre);
-                        }
-                        else
-                        {
-                            podcast.Genres.Add(new Genre { Name = normalizedGenreName });
-                        }
-                    }
-                }
-
-                _context.Podcasts.Add(podcast);
-                await _context.SaveChangesAsync();
-
-                return CreatedAtAction(nameof(GetPodcast), new { id = podcast.Id }, podcast);
+                return CreatedAtAction(nameof(GetPodcast), new { id = podcast.Id }, response);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Invalid argument while creating podcast");
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
@@ -313,20 +269,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             {
                 _logger.LogInformation("Starting podcast import from API for ID: {PodcastId}", podcastId);
 
-                // Get podcast data from Listen Notes API
-                var podcastDto = await _listenNotesClient.GetPodcastByIdAsync(podcastId);
-                _logger.LogInformation("Retrieved podcast data from API for ID: {PodcastId}", podcastId);
-
-                // Convert DTO back to JSON for legacy mapping service
-                var podcastJsonData = JsonSerializer.Serialize(podcastDto, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-
-                // Map API data to domain entity
-                var podcast = await _podcastMappingService.MapToPodcastAsync(podcastJsonData);
-                _logger.LogInformation("Mapped podcast data for: {Title}", podcast.Title);
-
-                // Save to database
-                _context.Podcasts.Add(podcast);
-                await _context.SaveChangesAsync();
+                var podcast = await _listenNotesService.ImportPodcastAsync(podcastId);
+                
                 _logger.LogInformation("Successfully imported podcast: {Title} with ID: {Id}", podcast.Title, podcast.Id);
 
                 return CreatedAtAction(nameof(GetPodcast), new { id = podcast.Id }, podcast);
@@ -351,25 +295,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
                 _logger.LogInformation("Searching for podcast by name: {PodcastName}", dto.PodcastName);
 
-                // Search for podcast by name
-                var searchResultsDto = await _listenNotesClient.SearchAsync(dto.PodcastName, "podcast");
-                _logger.LogInformation("Retrieved search results for: {PodcastName}", dto.PodcastName);
-
-                // Convert DTO back to JSON for legacy mapping service
-                var searchResults = JsonSerializer.Serialize(searchResultsDto, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-
-                // Map search results and get the first podcast
-                var podcast = await _podcastMappingService.MapToPodcastWithEpisodesAsync(searchResults);
+                var podcast = await _listenNotesService.ImportPodcastByNameAsync(dto.PodcastName);
                 if (podcast == null)
                 {
                     return NotFound($"No podcast found with name: {dto.PodcastName}");
                 }
 
-                _logger.LogInformation("Mapped podcast data for: {Title}", podcast.Title);
-
-                // Save to database
-                _context.Podcasts.Add(podcast);
-                await _context.SaveChangesAsync();
                 _logger.LogInformation("Successfully imported podcast: {Title} with ID: {Id}", podcast.Title, podcast.Id);
 
                 return CreatedAtAction(nameof(GetPodcast), new { id = podcast.Id }, podcast);
@@ -387,24 +318,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var podcast = await _context.Podcasts.FindAsync(id);
-                if (podcast == null)
+                var deleted = await _podcastService.DeletePodcastAsync(id);
+                
+                if (!deleted)
                 {
                     return NotFound($"Podcast with ID {id} not found.");
                 }
-
-                // If deleting a series, also delete all its episodes
-                if (podcast.PodcastType == PodcastType.Series)
-                {
-                    var episodes = await _context.Podcasts
-                        .Where(p => p.ParentPodcastId == id)
-                        .ToListAsync();
-                    
-                    _context.Podcasts.RemoveRange(episodes);
-                }
-
-                _context.Podcasts.Remove(podcast);
-                await _context.SaveChangesAsync();
 
                 return NoContent();
             }

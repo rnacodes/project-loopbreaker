@@ -321,7 +321,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
                 .ReturnsAsync(podcastDto);
 
             _mockPodcastService
-                .Setup(x => x.GetPodcastByTitleAndPublisherAsync(podcastDto.Title, podcastDto.Publisher))
+                .Setup(x => x.GetPodcastByTitleAsync(podcastDto.Title, podcastDto.Publisher))
                 .ReturnsAsync((Podcast?)null);
 
             _mockPodcastMappingService
@@ -339,7 +339,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             result.Should().NotBeNull();
             result.Should().BeEquivalentTo(expectedPodcast);
             _mockListenNotesApiClient.Verify(x => x.GetPodcastByIdAsync(podcastId), Times.Once);
-            _mockPodcastService.Verify(x => x.GetPodcastByTitleAndPublisherAsync(podcastDto.Title, podcastDto.Publisher), Times.Once);
+            _mockPodcastService.Verify(x => x.GetPodcastByTitleAsync(podcastDto.Title, podcastDto.Publisher), Times.Once);
             _mockPodcastMappingService.Verify(x => x.MapFromListenNotesDto(podcastDto), Times.Once);
             _mockPodcastService.Verify(x => x.CreatePodcastAsync(createPodcastDto), Times.Once);
         }
@@ -357,7 +357,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
                 .ReturnsAsync(podcastDto);
 
             _mockPodcastService
-                .Setup(x => x.GetPodcastByTitleAndPublisherAsync(podcastDto.Title, podcastDto.Publisher))
+                .Setup(x => x.GetPodcastByTitleAsync(podcastDto.Title, podcastDto.Publisher))
                 .ReturnsAsync(existingPodcast);
 
             // Act
@@ -367,7 +367,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             result.Should().NotBeNull();
             result.Should().BeEquivalentTo(existingPodcast);
             _mockListenNotesApiClient.Verify(x => x.GetPodcastByIdAsync(podcastId), Times.Once);
-            _mockPodcastService.Verify(x => x.GetPodcastByTitleAndPublisherAsync(podcastDto.Title, podcastDto.Publisher), Times.Once);
+            _mockPodcastService.Verify(x => x.GetPodcastByTitleAsync(podcastDto.Title, podcastDto.Publisher), Times.Once);
             _mockPodcastMappingService.Verify(x => x.MapFromListenNotesDto(It.IsAny<PodcastSeriesDto>()), Times.Never);
             _mockPodcastService.Verify(x => x.CreatePodcastAsync(It.IsAny<CreatePodcastDto>()), Times.Never);
         }
@@ -390,7 +390,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
                 .Returns(createPodcastDto);
 
             _mockPodcastService
-                .Setup(x => x.GetPodcastByTitleAsync(createPodcastDto.Title))
+                .Setup(x => x.GetPodcastByTitleAsync(createPodcastDto.Title, null))
                 .ReturnsAsync((Podcast?)null);
 
             _mockPodcastService
@@ -405,7 +405,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             result.Should().BeEquivalentTo(expectedPodcast);
             _mockListenNotesApiClient.Verify(x => x.GetEpisodeByIdAsync(episodeId), Times.Once);
             _mockPodcastMappingService.Verify(x => x.MapFromListenNotesEpisodeDto(episodeDto), Times.Once);
-            _mockPodcastService.Verify(x => x.GetPodcastByTitleAsync(createPodcastDto.Title), Times.Once);
+            _mockPodcastService.Verify(x => x.GetPodcastByTitleAsync(createPodcastDto.Title, null), Times.Once);
             _mockPodcastService.Verify(x => x.CreatePodcastAsync(createPodcastDto), Times.Once);
         }
 
@@ -427,7 +427,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
                 .Returns(createPodcastDto);
 
             _mockPodcastService
-                .Setup(x => x.GetPodcastByTitleAsync(createPodcastDto.Title))
+                .Setup(x => x.GetPodcastByTitleAsync(createPodcastDto.Title, null))
                 .ReturnsAsync(existingPodcast);
 
             // Act
@@ -438,7 +438,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             result.Should().BeEquivalentTo(existingPodcast);
             _mockListenNotesApiClient.Verify(x => x.GetEpisodeByIdAsync(episodeId), Times.Once);
             _mockPodcastMappingService.Verify(x => x.MapFromListenNotesEpisodeDto(episodeDto), Times.Once);
-            _mockPodcastService.Verify(x => x.GetPodcastByTitleAsync(createPodcastDto.Title), Times.Once);
+            _mockPodcastService.Verify(x => x.GetPodcastByTitleAsync(createPodcastDto.Title, null), Times.Once);
             _mockPodcastService.Verify(x => x.CreatePodcastAsync(It.IsAny<CreatePodcastDto>()), Times.Never);
         }
 

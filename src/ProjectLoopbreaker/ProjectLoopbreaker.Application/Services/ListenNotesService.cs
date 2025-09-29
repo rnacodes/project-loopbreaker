@@ -208,5 +208,43 @@ namespace ProjectLoopbreaker.Application.Services
                 throw;
             }
         }
+
+        public async Task<Podcast?> ImportPodcastByNameAsync(string podcastName)
+        {
+            try
+            {
+                _logger.LogInformation("Searching and importing podcast by name: {PodcastName}", podcastName);
+
+                // Search for podcast by name
+                var searchResults = await _listenNotesApiClient.SearchAsync(podcastName, "podcast");
+                
+                if (searchResults?.Results == null || !searchResults.Results.Any())
+                {
+                    _logger.LogInformation("No podcast found with name: {PodcastName}", podcastName);
+                    return null;
+                }
+
+                // Get the first result and import it
+                var firstResult = searchResults.Results.First();
+                if (string.IsNullOrEmpty(firstResult.Id))
+                {
+                    _logger.LogWarning("First search result has no ID for podcast name: {PodcastName}", podcastName);
+                    return null;
+                }
+
+                // Import the podcast using its ID
+                var podcast = await ImportPodcastAsync(firstResult.Id);
+                
+                _logger.LogInformation("Successfully imported podcast by name: {PodcastName} -> {Title}", 
+                    podcastName, podcast.Title);
+                
+                return podcast;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing podcast by name: {PodcastName}", podcastName);
+                throw;
+            }
+        }
     }
 }
