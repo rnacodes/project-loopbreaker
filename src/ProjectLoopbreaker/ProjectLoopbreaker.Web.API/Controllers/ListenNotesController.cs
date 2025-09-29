@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ProjectLoopbreaker.Infrastructure.Clients;
-using System.Text.Json;
+using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Domain.Entities;
+using ProjectLoopbreaker.Shared.DTOs.ListenNotes;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -8,23 +9,27 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     [Route("api/[controller]")]
     public class ListenNotesController : ControllerBase
     {
-        private readonly ListenNotesApiClient _listenNotesClient;
+        private readonly IListenNotesService _listenNotesService;
         private readonly ILogger<ListenNotesController> _logger;
 
-        public ListenNotesController(ListenNotesApiClient listenNotesClient, ILogger<ListenNotesController> logger)
+        public ListenNotesController(IListenNotesService listenNotesService, ILogger<ListenNotesController> logger)
         {
-            _listenNotesClient = listenNotesClient;
+            _listenNotesService = listenNotesService;
             _logger = logger;
         }
 
-        // GET: api/ListenNotes/podcasts/{id}
+        /// <summary>
+        /// Get detailed information about a specific podcast
+        /// </summary>
+        /// <param name="id">ListenNotes podcast ID</param>
+        /// <returns>Detailed podcast information</returns>
         [HttpGet("podcasts/{id}")]
-        public async Task<IActionResult> GetPodcast(string id)
+        public async Task<ActionResult<PodcastSeriesDto>> GetPodcast(string id)
         {
             try
             {
-                var result = await _listenNotesClient.GetPodcastByIdAsync(id);
-                return Content(result, "application/json");
+                var result = await _listenNotesService.GetPodcastByIdAsync(id);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -33,14 +38,17 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        // GET: api/ListenNotes/playlists
+        /// <summary>
+        /// Get playlists
+        /// </summary>
+        /// <returns>List of playlists</returns>
         [HttpGet("playlists")]
-        public async Task<IActionResult> GetPlaylists()
+        public async Task<ActionResult<ListenNotesPlaylistsDto>> GetPlaylists()
         {
             try
             {
-                var result = await _listenNotesClient.GetPlaylistsAsync();
-                return Content(result, "application/json");
+                var result = await _listenNotesService.GetPlaylistsAsync();
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -49,14 +57,18 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        // GET: api/ListenNotes/playlists/{id}
+        /// <summary>
+        /// Get detailed information about a specific playlist
+        /// </summary>
+        /// <param name="id">ListenNotes playlist ID</param>
+        /// <returns>Detailed playlist information</returns>
         [HttpGet("playlists/{id}")]
-        public async Task<IActionResult> GetPlaylist(string id)
+        public async Task<ActionResult<ListenNotesPlaylistDto>> GetPlaylist(string id)
         {
             try
             {
-                var result = await _listenNotesClient.GetPlaylistByIdAsync(id);
-                return Content(result, "application/json");
+                var result = await _listenNotesService.GetPlaylistByIdAsync(id);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -65,51 +77,76 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        // GET: api/ListenNotes/search
+        /// <summary>
+        /// Search for podcasts or episodes
+        /// </summary>
+        /// <param name="query">Search query</param>
+        /// <param name="type">The type of search which could be "episode" or "podcast"</param>
+        /// <param name="offset">Offset for pagination</param>
+        /// <param name="lenMin">Minimum length in minutes</param>
+        /// <param name="lenMax">Maximum length in minutes</param>
+        /// <param name="genreIds">Comma-separated genre IDs</param>
+        /// <param name="publishedBefore">Published before date</param>
+        /// <param name="publishedAfter">Published after date</param>
+        /// <param name="onlyIn">Only search in specific fields</param>
+        /// <param name="language">Language code</param>
+        /// <param name="region">Region code</param>
+        /// <param name="sortByDate">Sort by date</param>
+        /// <param name="safeMode">Safe mode</param>
+        /// <param name="uniquePodcasts">Unique podcasts</param>
+        /// <returns>Search results</returns>
         [HttpGet("search")]
-        public async Task<IActionResult> Search(
+        public async Task<ActionResult<SearchResultDto>> Search(
             [FromQuery] string query,
             [FromQuery] string? type = null,
             [FromQuery] int? offset = null,
-            [FromQuery] int? len_min = null,
-            [FromQuery] int? len_max = null,
-            [FromQuery] string? genre_ids = null,
-            [FromQuery] string? published_before = null,
-            [FromQuery] string? published_after = null,
-            [FromQuery] string? only_in = null,
+            [FromQuery] int? lenMin = null,
+            [FromQuery] int? lenMax = null,
+            [FromQuery] string? genreIds = null,
+            [FromQuery] string? publishedBefore = null,
+            [FromQuery] string? publishedAfter = null,
+            [FromQuery] string? onlyIn = null,
             [FromQuery] string? language = null,
             [FromQuery] string? region = null,
-            [FromQuery] string? sort_by_date = null,
-            [FromQuery] string? safe_mode = null,
-            [FromQuery] string? unique_podcasts = null)
+            [FromQuery] string? sortByDate = null,
+            [FromQuery] string? safeMode = null,
+            [FromQuery] string? uniquePodcasts = null)
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(query))
+                {
+                    return BadRequest("Query parameter is required");
+                }
+
                 _logger.LogInformation("Starting search with query: {Query}", query);
                 
-                var result = await _listenNotesClient.SearchAsync(
-                    query, type, offset, len_min, len_max, genre_ids,
-                    published_before, published_after, only_in, language,
-                    region, sort_by_date, safe_mode, unique_podcasts);
+                var result = await _listenNotesService.SearchAsync(
+                    query, type, offset, lenMin, lenMax, genreIds,
+                    publishedBefore, publishedAfter, onlyIn, language,
+                    region, sortByDate, safeMode, uniquePodcasts);
 
                 _logger.LogInformation("Search completed successfully for query: {Query}", query);
-                return Content(result, "application/json");
+                return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error searching with query {Query}. Exception details: {ExceptionMessage}", query, ex.Message);
-                return StatusCode(500, $"An error occurred while performing the search: {ex.Message}");
+                _logger.LogError(ex, "Error searching with query {Query}", query);
+                return StatusCode(500, "An error occurred while performing the search");
             }
         }
 
-        // GET: api/ListenNotes/genres
+        /// <summary>
+        /// Get available genres
+        /// </summary>
+        /// <returns>List of genres</returns>
         [HttpGet("genres")]
-        public async Task<IActionResult> GetGenres()
+        public async Task<ActionResult<ListenNotesGenresDto>> GetGenres()
         {
             try
             {
-                var result = await _listenNotesClient.GetGenresAsync();
-                return Content(result, "application/json");
+                var result = await _listenNotesService.GetGenresAsync();
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -118,14 +155,18 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        // GET: api/ListenNotes/episodes/{id}
+        /// <summary>
+        /// Get detailed information about a specific episode
+        /// </summary>
+        /// <param name="id">ListenNotes episode ID</param>
+        /// <returns>Detailed episode information</returns>
         [HttpGet("episodes/{id}")]
-        public async Task<IActionResult> GetEpisode(string id)
+        public async Task<ActionResult<PodcastEpisodeDto>> GetEpisode(string id)
         {
             try
             {
-                var result = await _listenNotesClient.GetEpisodeByIdAsync(id);
-                return Content(result, "application/json");
+                var result = await _listenNotesService.GetEpisodeByIdAsync(id);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -134,19 +175,27 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        // GET: api/ListenNotes/best-podcasts
+        /// <summary>
+        /// Get best podcasts
+        /// </summary>
+        /// <param name="genreId">Genre ID filter</param>
+        /// <param name="page">Page number</param>
+        /// <param name="region">Region filter</param>
+        /// <param name="sortByDate">Sort by date</param>
+        /// <param name="safeMode">Safe mode</param>
+        /// <returns>Best podcasts</returns>
         [HttpGet("best-podcasts")]
-        public async Task<IActionResult> GetBestPodcasts(
+        public async Task<ActionResult<ListenNotesBestPodcastsDto>> GetBestPodcasts(
             [FromQuery] int? genreId = null,
             [FromQuery] int? page = null,
             [FromQuery] string? region = null,
             [FromQuery] string? sortByDate = null,
-            [FromQuery] bool? safe_mode = null)
+            [FromQuery] bool? safeMode = null)
         {
             try
             {
-                var result = await _listenNotesClient.GetBestPodcastsAsync(genreId, page, region, sortByDate, safe_mode);
-                return Content(result, "application/json");
+                var result = await _listenNotesService.GetBestPodcastsAsync(genreId, page, region, sortByDate, safeMode);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -155,14 +204,18 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        // GET: api/ListenNotes/curated-podcasts
+        /// <summary>
+        /// Get curated podcasts
+        /// </summary>
+        /// <param name="page">Page number</param>
+        /// <returns>Curated podcasts</returns>
         [HttpGet("curated-podcasts")]
-        public async Task<IActionResult> GetCuratedPodcasts([FromQuery] int? page = null)
+        public async Task<ActionResult<ListenNotesCuratedPodcastsDto>> GetCuratedPodcasts([FromQuery] int? page = null)
         {
             try
             {
-                var result = await _listenNotesClient.GetCuratedPodcastsAsync(page);
-                return Content(result, "application/json");
+                var result = await _listenNotesService.GetCuratedPodcastsAsync(page);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -171,14 +224,18 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        // GET: api/ListenNotes/curated-podcasts/{id}
+        /// <summary>
+        /// Get detailed information about a specific curated podcast
+        /// </summary>
+        /// <param name="id">ListenNotes curated podcast ID</param>
+        /// <returns>Detailed curated podcast information</returns>
         [HttpGet("curated-podcasts/{id}")]
-        public async Task<IActionResult> GetCuratedPodcast(string id)
+        public async Task<ActionResult<ListenNotesCuratedPodcastDto>> GetCuratedPodcast(string id)
         {
             try
             {
-                var result = await _listenNotesClient.GetCuratedPodcastByIdAsync(id);
-                return Content(result, "application/json");
+                var result = await _listenNotesService.GetCuratedPodcastByIdAsync(id);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -187,14 +244,19 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        // GET: api/ListenNotes/podcasts/{id}/recommendations
+        /// <summary>
+        /// Get podcast recommendations
+        /// </summary>
+        /// <param name="id">ListenNotes podcast ID</param>
+        /// <param name="safeMode">Safe mode</param>
+        /// <returns>Podcast recommendations</returns>
         [HttpGet("podcasts/{id}/recommendations")]
-        public async Task<IActionResult> GetPodcastRecommendations(string id, [FromQuery] bool? safe_mode = null)
+        public async Task<ActionResult<ListenNotesRecommendationsDto>> GetPodcastRecommendations(string id, [FromQuery] bool? safeMode = null)
         {
             try
             {
-                var result = await _listenNotesClient.GetPodcastRecommendationsAsync(id, safe_mode);
-                return Content(result, "application/json");
+                var result = await _listenNotesService.GetPodcastRecommendationsAsync(id, safeMode);
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -203,19 +265,74 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        // GET: api/ListenNotes/episodes/{id}/recommendations
+        /// <summary>
+        /// Get episode recommendations
+        /// </summary>
+        /// <param name="id">ListenNotes episode ID</param>
+        /// <param name="safeMode">Safe mode</param>
+        /// <returns>Episode recommendations</returns>
         [HttpGet("episodes/{id}/recommendations")]
-        public async Task<IActionResult> GetEpisodeRecommendations(string id, [FromQuery] bool? safe_mode = null)
+        public async Task<ActionResult<ListenNotesRecommendationsDto>> GetEpisodeRecommendations(string id, [FromQuery] bool? safeMode = null)
         {
             try
             {
-                var result = await _listenNotesClient.GetEpisodeRecommendationsAsync(id, safe_mode);
-                return Content(result, "application/json");
+                var result = await _listenNotesService.GetEpisodeRecommendationsAsync(id, safeMode);
+                return Ok(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving recommendations for episode with ID {Id}", id);
                 return StatusCode(500, "An error occurred while retrieving episode recommendations");
+            }
+        }
+
+        /// <summary>
+        /// Import a podcast from ListenNotes into the media library
+        /// </summary>
+        /// <param name="podcastId">ListenNotes podcast ID</param>
+        /// <returns>Imported podcast entity</returns>
+        [HttpPost("import/podcast/{podcastId}")]
+        public async Task<ActionResult<Podcast>> ImportPodcast(string podcastId)
+        {
+            try
+            {
+                var result = await _listenNotesService.ImportPodcastAsync(podcastId);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Podcast not found for import: {PodcastId}", podcastId);
+                return NotFound($"Podcast with ID {podcastId} not found");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing podcast: {PodcastId}", podcastId);
+                return StatusCode(500, "An error occurred while importing the podcast");
+            }
+        }
+
+        /// <summary>
+        /// Import a podcast episode from ListenNotes into the media library
+        /// </summary>
+        /// <param name="episodeId">ListenNotes episode ID</param>
+        /// <returns>Imported podcast entity</returns>
+        [HttpPost("import/episode/{episodeId}")]
+        public async Task<ActionResult<Podcast>> ImportPodcastEpisode(string episodeId)
+        {
+            try
+            {
+                var result = await _listenNotesService.ImportPodcastEpisodeAsync(episodeId);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Episode not found for import: {EpisodeId}", episodeId);
+                return NotFound($"Episode with ID {episodeId} not found");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing episode: {EpisodeId}", episodeId);
+                return StatusCode(500, "An error occurred while importing the episode");
             }
         }
     }

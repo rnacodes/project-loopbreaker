@@ -4,8 +4,9 @@ using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure.Data;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Application.Interfaces;
-using ProjectLoopbreaker.Infrastructure.Clients;
+using ProjectLoopbreaker.Shared.Interfaces;
 using ProjectLoopbreaker.DTOs;
+using System.Text.Json;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -15,13 +16,13 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     {
         private readonly MediaLibraryDbContext _context;
         private readonly IPodcastMappingService _podcastMappingService;
-        private readonly ListenNotesApiClient _listenNotesClient;
+        private readonly IListenNotesApiClient _listenNotesClient;
         private readonly ILogger<PodcastController> _logger;
 
         public PodcastController(
             MediaLibraryDbContext context,
             IPodcastMappingService podcastMappingService,
-            ListenNotesApiClient listenNotesClient,
+            IListenNotesApiClient listenNotesClient,
             ILogger<PodcastController> logger)
         {
             _context = context;
@@ -313,8 +314,11 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 _logger.LogInformation("Starting podcast import from API for ID: {PodcastId}", podcastId);
 
                 // Get podcast data from Listen Notes API
-                var podcastJsonData = await _listenNotesClient.GetPodcastByIdAsync(podcastId);
+                var podcastDto = await _listenNotesClient.GetPodcastByIdAsync(podcastId);
                 _logger.LogInformation("Retrieved podcast data from API for ID: {PodcastId}", podcastId);
+
+                // Convert DTO back to JSON for legacy mapping service
+                var podcastJsonData = JsonSerializer.Serialize(podcastDto, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
                 // Map API data to domain entity
                 var podcast = await _podcastMappingService.MapToPodcastAsync(podcastJsonData);
@@ -348,8 +352,11 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 _logger.LogInformation("Searching for podcast by name: {PodcastName}", dto.PodcastName);
 
                 // Search for podcast by name
-                var searchResults = await _listenNotesClient.SearchAsync(dto.PodcastName, "podcast");
+                var searchResultsDto = await _listenNotesClient.SearchAsync(dto.PodcastName, "podcast");
                 _logger.LogInformation("Retrieved search results for: {PodcastName}", dto.PodcastName);
+
+                // Convert DTO back to JSON for legacy mapping service
+                var searchResults = JsonSerializer.Serialize(searchResultsDto, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
                 // Map search results and get the first podcast
                 var podcast = await _podcastMappingService.MapToPodcastWithEpisodesAsync(searchResults);

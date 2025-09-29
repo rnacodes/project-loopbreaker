@@ -1,155 +1,299 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using ProjectLoopbreaker.Shared.DTOs.ListenNotes;
+using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Infrastructure.Clients
 {
-    public class ListenNotesApiClient
+    public class ListenNotesApiClient : IListenNotesApiClient
     {
         private readonly HttpClient _httpClient;
+        private readonly ILogger<ListenNotesApiClient> _logger;
+        private readonly JsonSerializerOptions _jsonOptions;
+        private readonly string _apiKey;
 
-        public ListenNotesApiClient(HttpClient httpClient)
+        public ListenNotesApiClient(HttpClient httpClient, ILogger<ListenNotesApiClient> logger, IConfiguration configuration)
         {
             _httpClient = httpClient;
-        }
-
-        public async Task<string> GetPodcastByIdAsync(string id)
-        {
-            // Makes a GET request to https://listen-api.listennotes.com/api/v2/podcasts/{id}
-            var response = await _httpClient.GetAsync($"podcasts/{id}");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
-        }
-
-        public async Task<string> GetPlaylistsAsync()
-        {
-            // Makes a GET request to https://listen-api.listennotes.com/api/v2/playlists
-            var response = await _httpClient.GetAsync("playlists");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
-        }
-
-        public async Task<string> GetPlaylistByIdAsync(string id)
-        {
-            // Makes a GET request to https://listen-api.listennotes.com/api/v2/playlists/{id}
-            var response = await _httpClient.GetAsync($"playlists/{id}");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
-        }
-
-        public async Task<string> SearchAsync(string query, string type = null, int? offset = null, int? len_min = null,
-            int? len_max = null, string genre_ids = null, string published_before = null, string published_after = null,
-            string only_in = null, string language = null, string region = null, string sort_by_date = null,
-            string safe_mode = null, string unique_podcasts = null)
-        {
-            // Makes a GET request to https://listen-api.listennotes.com/api/v2/search
-            var queryParams = new List<string> { $"q={Uri.EscapeDataString(query)}" };
-
-            if (type != null) queryParams.Add($"type={Uri.EscapeDataString(type)}");
-            if (offset.HasValue) queryParams.Add($"offset={offset}");
-            if (len_min.HasValue) queryParams.Add($"len_min={len_min}");
-            if (len_max.HasValue) queryParams.Add($"len_max={len_max}");
-            if (genre_ids != null) queryParams.Add($"genre_ids={Uri.EscapeDataString(genre_ids)}");
-            if (published_before != null) queryParams.Add($"published_before={Uri.EscapeDataString(published_before)}");
-            if (published_after != null) queryParams.Add($"published_after={Uri.EscapeDataString(published_after)}");
-            if (only_in != null) queryParams.Add($"only_in={Uri.EscapeDataString(only_in)}");
-            if (language != null) queryParams.Add($"language={Uri.EscapeDataString(language)}");
-            if (region != null) queryParams.Add($"region={Uri.EscapeDataString(region)}");
-            if (sort_by_date != null) queryParams.Add($"sort_by_date={Uri.EscapeDataString(sort_by_date)}");
-            if (safe_mode != null) queryParams.Add($"safe_mode={Uri.EscapeDataString(safe_mode)}");
-            if (unique_podcasts != null) queryParams.Add($"unique_podcasts={Uri.EscapeDataString(unique_podcasts)}");
-
-            var queryString = string.Join("&", queryParams);
-            var fullUrl = $"search?{queryString}";
-            
-            Console.WriteLine($"Making request to: {_httpClient.BaseAddress}{fullUrl}");
-            var hasApiKey = _httpClient.DefaultRequestHeaders.Contains("X-ListenAPI-Key");
-            Console.WriteLine($"API Key present: {(hasApiKey ? "YES" : "NO")}");
-            
-            var response = await _httpClient.GetAsync(fullUrl);
-            
-            if (!response.IsSuccessStatusCode)
+            _logger = logger;
+            _apiKey = Environment.GetEnvironmentVariable("LISTENNOTES_API_KEY") ?? 
+                     configuration["ApiKeys:ListenNotes"] ?? 
+                     "LISTENNOTES_API_KEY";
+            _jsonOptions = new JsonSerializerOptions
             {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"HTTP Error: {response.StatusCode} - {errorContent}");
-                Console.WriteLine($"Request URL: {_httpClient.BaseAddress}{fullUrl}");
-                var headers = string.Join(", ", _httpClient.DefaultRequestHeaders.Select(h => $"{h.Key}={string.Join(",", h.Value)}"));
-                Console.WriteLine($"Request Headers: {headers}");
-                throw new HttpRequestException($"HTTP {response.StatusCode}: {errorContent}");
+                PropertyNameCaseInsensitive = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+        }
+
+        public async Task<PodcastSeriesDto> GetPodcastByIdAsync(string id)
+        {
+            try
+            {
+                _logger.LogInformation("Getting podcast details for ID: {PodcastId}", id);
+                
+                var response = await _httpClient.GetAsync($"podcasts/{id}");
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<PodcastSeriesDto>(jsonContent, _jsonOptions);
+                
+                return result ?? new PodcastSeriesDto();
             }
-            
-            return await response.Content.ReadAsStringAsync();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting podcast details for ID: {PodcastId}", id);
+                throw;
+            }
         }
 
-        public async Task<string> GetGenresAsync()
+        public async Task<ListenNotesPlaylistsDto> GetPlaylistsAsync()
         {
-            // Makes a GET request to https://listen-api.listennotes.com/api/v2/genres
-            var response = await _httpClient.GetAsync("genres");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+            try
+            {
+                _logger.LogInformation("Getting playlists");
+                
+                var response = await _httpClient.GetAsync("playlists");
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ListenNotesPlaylistsDto>(jsonContent, _jsonOptions);
+                
+                return result ?? new ListenNotesPlaylistsDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting playlists");
+                throw;
+            }
         }
 
-        public async Task<string> GetEpisodeByIdAsync(string id)
+        public async Task<ListenNotesPlaylistDto> GetPlaylistByIdAsync(string id)
         {
-            // Makes a GET request to https://listen-api.listennotes.com/api/v2/episodes/{id}
-            var response = await _httpClient.GetAsync($"episodes/{id}");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+            try
+            {
+                _logger.LogInformation("Getting playlist details for ID: {PlaylistId}", id);
+                
+                var response = await _httpClient.GetAsync($"playlists/{id}");
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ListenNotesPlaylistDto>(jsonContent, _jsonOptions);
+                
+                return result ?? new ListenNotesPlaylistDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting playlist details for ID: {PlaylistId}", id);
+                throw;
+            }
         }
 
-        public async Task<string> GetBestPodcastsAsync(int? genreId = null, int? page = null, string region = null,
-            string sortByDate = null, bool? safe_mode = null)
+        public async Task<SearchResultDto> SearchAsync(string query, string? type = null, int? offset = null, 
+            int? lenMin = null, int? lenMax = null, string? genreIds = null, 
+            string? publishedBefore = null, string? publishedAfter = null, 
+            string? onlyIn = null, string? language = null, string? region = null, 
+            string? sortByDate = null, string? safeMode = null, string? uniquePodcasts = null)
         {
-            // Makes a GET request to https://listen-api.listennotes.com/api/v2/best_podcasts
-            var queryParams = new List<string>();
+            try
+            {
+                _logger.LogInformation("Searching podcasts with query: {Query}", query);
+                
+                var queryParams = new List<string> { $"q={Uri.EscapeDataString(query)}" };
 
-            if (genreId.HasValue) queryParams.Add($"genre_id={genreId}");
-            if (page.HasValue) queryParams.Add($"page={page}");
-            if (region != null) queryParams.Add($"region={Uri.EscapeDataString(region)}");
-            if (sortByDate != null) queryParams.Add($"sort_by_date={Uri.EscapeDataString(sortByDate)}");
-            if (safe_mode.HasValue) queryParams.Add($"safe_mode={safe_mode.Value.ToString().ToLower()}");
+                if (type != null) queryParams.Add($"type={Uri.EscapeDataString(type)}");
+                if (offset.HasValue) queryParams.Add($"offset={offset}");
+                if (lenMin.HasValue) queryParams.Add($"len_min={lenMin}");
+                if (lenMax.HasValue) queryParams.Add($"len_max={lenMax}");
+                if (genreIds != null) queryParams.Add($"genre_ids={Uri.EscapeDataString(genreIds)}");
+                if (publishedBefore != null) queryParams.Add($"published_before={Uri.EscapeDataString(publishedBefore)}");
+                if (publishedAfter != null) queryParams.Add($"published_after={Uri.EscapeDataString(publishedAfter)}");
+                if (onlyIn != null) queryParams.Add($"only_in={Uri.EscapeDataString(onlyIn)}");
+                if (language != null) queryParams.Add($"language={Uri.EscapeDataString(language)}");
+                if (region != null) queryParams.Add($"region={Uri.EscapeDataString(region)}");
+                if (sortByDate != null) queryParams.Add($"sort_by_date={Uri.EscapeDataString(sortByDate)}");
+                if (safeMode != null) queryParams.Add($"safe_mode={Uri.EscapeDataString(safeMode)}");
+                if (uniquePodcasts != null) queryParams.Add($"unique_podcasts={Uri.EscapeDataString(uniquePodcasts)}");
 
-            var queryString = queryParams.Count > 0 ? $"?{string.Join("&", queryParams)}" : "";
-            var response = await _httpClient.GetAsync($"best_podcasts{queryString}");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+                var queryString = string.Join("&", queryParams);
+                var fullUrl = $"search?{queryString}";
+                
+                _logger.LogDebug("Making request to: {BaseAddress}{FullUrl}", _httpClient.BaseAddress, fullUrl);
+                
+                var response = await _httpClient.GetAsync(fullUrl);
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<SearchResultDto>(jsonContent, _jsonOptions);
+                
+                return result ?? new SearchResultDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching podcasts with query: {Query}", query);
+                throw;
+            }
         }
 
-        public async Task<string> GetCuratedPodcastsAsync(int? page = null)
+        public async Task<ListenNotesGenresDto> GetGenresAsync()
         {
-            // Makes a GET request to https://listen-api.listennotes.com/api/v2/curated_podcasts
-            var queryString = page.HasValue ? $"?page={page}" : "";
-            var response = await _httpClient.GetAsync($"curated_podcasts{queryString}");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+            try
+            {
+                _logger.LogInformation("Getting genres");
+                
+                var response = await _httpClient.GetAsync("genres");
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ListenNotesGenresDto>(jsonContent, _jsonOptions);
+                
+                return result ?? new ListenNotesGenresDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting genres");
+                throw;
+            }
         }
 
-        public async Task<string> GetCuratedPodcastByIdAsync(string id)
+        public async Task<PodcastEpisodeDto> GetEpisodeByIdAsync(string id)
         {
-            // Makes a GET request to https://listen-api.listennotes.com/api/v2/curated_podcasts/{id}
-            var response = await _httpClient.GetAsync($"curated_podcasts/{id}");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+            try
+            {
+                _logger.LogInformation("Getting episode details for ID: {EpisodeId}", id);
+                
+                var response = await _httpClient.GetAsync($"episodes/{id}");
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<PodcastEpisodeDto>(jsonContent, _jsonOptions);
+                
+                return result ?? new PodcastEpisodeDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting episode details for ID: {EpisodeId}", id);
+                throw;
+            }
         }
 
-        public async Task<string> GetPodcastRecommendationsAsync(string id, bool? safeMod = null)
+        public async Task<ListenNotesBestPodcastsDto> GetBestPodcastsAsync(int? genreId = null, int? page = null, 
+            string? region = null, string? sortByDate = null, bool? safeMode = null)
         {
-            // Makes a GET request to https://listen-api.listennotes.com/api/v2/podcasts/{id}/recommendations
-            var queryString = safeMod.HasValue ? $"?safe_mode={safeMod.Value.ToString().ToLower()}" : "";
-            var response = await _httpClient.GetAsync($"podcasts/{id}/recommendations{queryString}");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+            try
+            {
+                _logger.LogInformation("Getting best podcasts");
+                
+                var queryParams = new List<string>();
+
+                if (genreId.HasValue) queryParams.Add($"genre_id={genreId}");
+                if (page.HasValue) queryParams.Add($"page={page}");
+                if (region != null) queryParams.Add($"region={Uri.EscapeDataString(region)}");
+                if (sortByDate != null) queryParams.Add($"sort_by_date={Uri.EscapeDataString(sortByDate)}");
+                if (safeMode.HasValue) queryParams.Add($"safe_mode={safeMode.Value.ToString().ToLower()}");
+
+                var queryString = queryParams.Count > 0 ? $"?{string.Join("&", queryParams)}" : "";
+                var response = await _httpClient.GetAsync($"best_podcasts{queryString}");
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ListenNotesBestPodcastsDto>(jsonContent, _jsonOptions);
+                
+                return result ?? new ListenNotesBestPodcastsDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting best podcasts");
+                throw;
+            }
         }
 
-        public async Task<string> GetEpisodeRecommendationsAsync(string id, bool? safeMod = null)
+        public async Task<ListenNotesCuratedPodcastsDto> GetCuratedPodcastsAsync(int? page = null)
         {
-            // Makes a GET request to https://listen-api.listennotes.com/api/v2/episodes/{id}/recommendations
-            var queryString = safeMod.HasValue ? $"?safe_mode={safeMod.Value.ToString().ToLower()}" : "";
-            var response = await _httpClient.GetAsync($"episodes/{id}/recommendations{queryString}");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsStringAsync();
+            try
+            {
+                _logger.LogInformation("Getting curated podcasts");
+                
+                var queryString = page.HasValue ? $"?page={page}" : "";
+                var response = await _httpClient.GetAsync($"curated_podcasts{queryString}");
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ListenNotesCuratedPodcastsDto>(jsonContent, _jsonOptions);
+                
+                return result ?? new ListenNotesCuratedPodcastsDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting curated podcasts");
+                throw;
+            }
+        }
+
+        public async Task<ListenNotesCuratedPodcastDto> GetCuratedPodcastByIdAsync(string id)
+        {
+            try
+            {
+                _logger.LogInformation("Getting curated podcast details for ID: {CuratedPodcastId}", id);
+                
+                var response = await _httpClient.GetAsync($"curated_podcasts/{id}");
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ListenNotesCuratedPodcastDto>(jsonContent, _jsonOptions);
+                
+                return result ?? new ListenNotesCuratedPodcastDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting curated podcast details for ID: {CuratedPodcastId}", id);
+                throw;
+            }
+        }
+
+        public async Task<ListenNotesRecommendationsDto> GetPodcastRecommendationsAsync(string id, bool? safeMode = null)
+        {
+            try
+            {
+                _logger.LogInformation("Getting podcast recommendations for ID: {PodcastId}", id);
+                
+                var queryString = safeMode.HasValue ? $"?safe_mode={safeMode.Value.ToString().ToLower()}" : "";
+                var response = await _httpClient.GetAsync($"podcasts/{id}/recommendations{queryString}");
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ListenNotesRecommendationsDto>(jsonContent, _jsonOptions);
+                
+                return result ?? new ListenNotesRecommendationsDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting podcast recommendations for ID: {PodcastId}", id);
+                throw;
+            }
+        }
+
+        public async Task<ListenNotesRecommendationsDto> GetEpisodeRecommendationsAsync(string id, bool? safeMode = null)
+        {
+            try
+            {
+                _logger.LogInformation("Getting episode recommendations for ID: {EpisodeId}", id);
+                
+                var queryString = safeMode.HasValue ? $"?safe_mode={safeMode.Value.ToString().ToLower()}" : "";
+                var response = await _httpClient.GetAsync($"episodes/{id}/recommendations{queryString}");
+                response.EnsureSuccessStatusCode();
+                
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ListenNotesRecommendationsDto>(jsonContent, _jsonOptions);
+                
+                return result ?? new ListenNotesRecommendationsDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting episode recommendations for ID: {EpisodeId}", id);
+                throw;
+            }
         }
     }
 }

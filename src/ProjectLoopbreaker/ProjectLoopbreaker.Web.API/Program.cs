@@ -228,6 +228,7 @@ builder.Services.AddScoped<IVideoService, VideoService>();
 builder.Services.AddScoped<IYouTubeService, YouTubeService>();
 builder.Services.AddScoped<IYouTubeMappingService, YouTubeMappingService>();
 builder.Services.AddScoped<ITmdbService, TmdbService>();
+builder.Services.AddScoped<IListenNotesService, ListenNotesService>();
 
 // Configure YouTube API client
 builder.Services.AddHttpClient<YouTubeApiClient>(client =>
@@ -239,9 +240,8 @@ builder.Services.AddScoped<IYouTubeApiClient, YouTubeApiClient>();
 
 // In Program.cs
 
-// Register both real and mock Listen Notes API clients
 // Configure ListenNotes API client
-builder.Services.AddHttpClient<ListenNotesApiClient>(client =>
+builder.Services.AddHttpClient<IListenNotesApiClient, ListenNotesApiClient>(client =>
 {
     client.BaseAddress = new Uri("https://listen-api.listennotes.com/api/v2/");
     

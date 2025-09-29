@@ -3,6 +3,7 @@ using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Shared.DTOs.ListenNotes;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.DTOs;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Configuration;
@@ -346,6 +347,65 @@ namespace ProjectLoopbreaker.Application.Services
             catch (Exception ex)
             {
                 throw new ApplicationException("Failed to map search result to podcast from ListenNotes API response", ex);
+            }
+        }
+
+        // New methods (working with DTOs)
+        public CreatePodcastDto MapFromListenNotesDto(PodcastSeriesDto podcastDto)
+        {
+            try
+            {
+                _logger.LogInformation("Mapping ListenNotes podcast DTO to CreatePodcastDto for: {Title}", podcastDto.Title);
+
+                var createPodcastDto = new CreatePodcastDto
+                {
+                    Title = podcastDto.Title ?? string.Empty,
+                    MediaType = MediaType.Podcast,
+                    PodcastType = PodcastType.Series,
+                    Link = podcastDto.Website,
+                    Notes = podcastDto.Description,
+                    Status = Status.Uncharted,
+                    Publisher = podcastDto.Publisher,
+                    ExternalId = podcastDto.Id,
+                    Thumbnail = podcastDto.Image ?? podcastDto.Thumbnail
+                };
+
+                return createPodcastDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error mapping ListenNotes podcast DTO to CreatePodcastDto");
+                throw new ApplicationException("Failed to map ListenNotes podcast DTO to CreatePodcastDto", ex);
+            }
+        }
+
+        public CreatePodcastDto MapFromListenNotesEpisodeDto(PodcastEpisodeDto episodeDto)
+        {
+            try
+            {
+                _logger.LogInformation("Mapping ListenNotes episode DTO to CreatePodcastDto for: {Title}", episodeDto.Title);
+
+                var createPodcastDto = new CreatePodcastDto
+                {
+                    Title = episodeDto.Title ?? string.Empty,
+                    MediaType = MediaType.Podcast,
+                    PodcastType = PodcastType.Episode,
+                    Link = episodeDto.Link,
+                    Notes = episodeDto.Description,
+                    Status = Status.Uncharted,
+                    AudioLink = episodeDto.AudioUrl,
+                    ExternalId = episodeDto.Id,
+                    Thumbnail = episodeDto.Image ?? episodeDto.Thumbnail,
+                    ReleaseDate = DateTimeOffset.FromUnixTimeMilliseconds(episodeDto.PublishDateMs).DateTime,
+                    DurationInSeconds = episodeDto.DurationInSeconds
+                };
+
+                return createPodcastDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error mapping ListenNotes episode DTO to CreatePodcastDto");
+                throw new ApplicationException("Failed to map ListenNotes episode DTO to CreatePodcastDto", ex);
             }
         }
     }
