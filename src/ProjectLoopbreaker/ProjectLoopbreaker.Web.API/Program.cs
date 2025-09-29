@@ -230,13 +230,12 @@ builder.Services.AddScoped<IYouTubeMappingService, YouTubeMappingService>();
 builder.Services.AddScoped<ITmdbService, TmdbService>();
 builder.Services.AddScoped<IListenNotesService, ListenNotesService>();
 
-// Configure YouTube API client
-builder.Services.AddHttpClient<YouTubeApiClient>(client =>
+// Configure YouTube API client  
+builder.Services.AddHttpClient<IYouTubeApiClient, YouTubeApiClient>(client =>
 {
     client.BaseAddress = new Uri("https://www.googleapis.com/youtube/v3/");
     client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
 });
-builder.Services.AddScoped<IYouTubeApiClient, YouTubeApiClient>();
 
 // In Program.cs
 
@@ -294,26 +293,6 @@ builder.Services.AddHttpClient<TmdbApiClient>(client =>
 });
 builder.Services.AddScoped<ITmdbApiClient>(provider => provider.GetRequiredService<TmdbApiClient>());
 
-// Configure YouTube API client
-builder.Services.AddHttpClient<YouTubeApiClient>(client =>
-{
-    client.BaseAddress = new Uri("https://www.googleapis.com/youtube/v3/");
-    
-    var apiKey = Environment.GetEnvironmentVariable("YOUTUBE_API_KEY") ?? 
-                 builder.Configuration["ApiKeys:YouTube"];
-
-    if (string.IsNullOrEmpty(apiKey) || apiKey == "YOUTUBE_API_KEY")
-    {
-        Console.WriteLine("WARNING: No valid YouTube API key found. YouTube functionality will be limited.");
-        Console.WriteLine("Please set a valid API key in environment variable YOUTUBE_API_KEY or configuration.");
-        // Don't throw exception, just log warning
-    }
-    else
-    {
-        // YouTube uses query parameter for API key
-        client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0 (https://github.com/yourrepo/projectloopbreaker)");
-    }
-});
 
 // Configure DigitalOcean Spaces S3 Client (optional - won't break app if not configured)
 builder.Services.AddSingleton<IAmazonS3>(sp =>
