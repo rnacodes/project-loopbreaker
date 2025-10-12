@@ -151,7 +151,7 @@ namespace ProjectLoopbreaker.Application.Services
                     }
                 }
 
-                _context.Videos.Add(video);
+                _context.Add(video);
                 await _context.SaveChangesAsync();
                 return video;
             }
@@ -248,7 +248,7 @@ namespace ProjectLoopbreaker.Application.Services
                     return false;
                 }
 
-                _context.Videos.Remove(video);
+                _context.Remove(video);
                 await _context.SaveChangesAsync();
                 return true;
             }

@@ -10,7 +10,7 @@ import {
 import { 
     addMedia, getAllMixlists, addMediaToMixlist, createPodcastEpisode,
     searchTopics, searchGenres, searchPodcastSeries, createBook,
-    createMovie, createTvShow, uploadThumbnail
+    createMovie, createTvShow, createVideo, uploadThumbnail
 } from '../services/apiService';
 
 function AddMediaForm() {
@@ -433,7 +433,7 @@ function AddMediaForm() {
                     externalId: externalId || null
                 };
                 
-                response = await addMedia(videoData);
+                response = await createVideo(videoData);
             } else {
                 // Create regular media item
                 response = await addMedia(mediaData);

@@ -154,8 +154,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 Description = dto.Description,
                 RelatedNotes = dto.RelatedNotes,
                 Thumbnail = dto.Thumbnail,
-                Platform = "YouTube", // Default platform, will be overridden by frontend
-                ChannelName = "Unknown", // Default channel name, will be overridden by frontend
+                Platform = "YouTube", // Default platform for videos created via MediaController
+                ChannelName = null, // Will be set by frontend or YouTube import
                 VideoType = VideoType.Series // Default to Series for now
             };
 
