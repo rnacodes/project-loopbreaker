@@ -1,7 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
+using ProjectLoopbreaker.DTOs;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ProjectLoopbreaker.Application.Interfaces;
@@ -11,10 +14,249 @@ namespace ProjectLoopbreaker.Application.Services
     public class VideoService : IVideoService
     {
         private readonly IApplicationDbContext _context;
+        private readonly ILogger<VideoService> _logger;
 
-        public VideoService(IApplicationDbContext context)
+        public VideoService(IApplicationDbContext context, ILogger<VideoService> logger)
         {
             _context = context;
+            _logger = logger;
+        }
+
+        // Standard CRUD operations
+        public async Task<IEnumerable<Video>> GetAllVideosAsync()
+        {
+            try
+            {
+                return await _context.Videos
+                    .Include(v => v.Topics)
+                    .Include(v => v.Genres)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving all videos");
+                throw;
+            }
+        }
+
+        public async Task<Video?> GetVideoByIdAsync(Guid id)
+        {
+            try
+            {
+                return await _context.Videos
+                    .Include(v => v.Topics)
+                    .Include(v => v.Genres)
+                    .FirstOrDefaultAsync(v => v.Id == id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving video with ID {Id}", id);
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<Video>> GetVideosByChannelAsync(string channelName)
+        {
+            try
+            {
+                return await _context.Videos
+                    .Include(v => v.Topics)
+                    .Include(v => v.Genres)
+                    .Where(v => v.ChannelName != null && v.ChannelName.ToLower() == channelName.ToLower())
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving videos by channel {ChannelName}", channelName);
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<Video>> GetVideoSeriesAsync()
+        {
+            try
+            {
+                return await _context.Videos
+                    .Include(v => v.Topics)
+                    .Include(v => v.Genres)
+                    .Where(v => v.VideoType == VideoType.Series)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving video series");
+                throw;
+            }
+        }
+
+        public async Task<Video> CreateVideoAsync(CreateVideoDto dto)
+        {
+            try
+            {
+                var video = new Video
+                {
+                    Title = dto.Title,
+                    MediaType = MediaType.Video,
+                    Link = dto.Link,
+                    Notes = dto.Notes,
+                    Status = dto.Status,
+                    DateAdded = DateTime.UtcNow,
+                    DateCompleted = dto.DateCompleted,
+                    Rating = dto.Rating,
+                    OwnershipStatus = dto.OwnershipStatus,
+                    Description = dto.Description,
+                    RelatedNotes = dto.RelatedNotes,
+                    Thumbnail = dto.Thumbnail,
+                    VideoType = dto.VideoType,
+                    ParentVideoId = dto.ParentVideoId,
+                    Platform = dto.Platform,
+                    ChannelName = dto.ChannelName,
+                    LengthInSeconds = dto.LengthInSeconds,
+                    ExternalId = dto.ExternalId
+                };
+
+                // Handle Topics
+                if (dto.Topics?.Length > 0)
+                {
+                    foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
+                    {
+                        var normalizedTopicName = topicName.Trim().ToLowerInvariant();
+                        var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
+                        if (existingTopic != null)
+                        {
+                            video.Topics.Add(existingTopic);
+                        }
+                        else
+                        {
+                            video.Topics.Add(new Topic { Name = normalizedTopicName });
+                        }
+                    }
+                }
+
+                // Handle Genres
+                if (dto.Genres?.Length > 0)
+                {
+                    foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
+                    {
+                        var normalizedGenreName = genreName.Trim().ToLowerInvariant();
+                        var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
+                        if (existingGenre != null)
+                        {
+                            video.Genres.Add(existingGenre);
+                        }
+                        else
+                        {
+                            video.Genres.Add(new Genre { Name = normalizedGenreName });
+                        }
+                    }
+                }
+
+                _context.Videos.Add(video);
+                await _context.SaveChangesAsync();
+                return video;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while creating video");
+                throw;
+            }
+        }
+
+        public async Task<Video> UpdateVideoAsync(Guid id, CreateVideoDto dto)
+        {
+            try
+            {
+                var video = await GetVideoByIdAsync(id);
+                if (video == null)
+                {
+                    throw new ArgumentException($"Video with ID {id} not found");
+                }
+
+                // Update properties
+                video.Title = dto.Title;
+                video.Link = dto.Link;
+                video.Notes = dto.Notes;
+                video.Status = dto.Status;
+                video.DateCompleted = dto.DateCompleted;
+                video.Rating = dto.Rating;
+                video.OwnershipStatus = dto.OwnershipStatus;
+                video.Description = dto.Description;
+                video.RelatedNotes = dto.RelatedNotes;
+                video.Thumbnail = dto.Thumbnail;
+                video.VideoType = dto.VideoType;
+                video.ParentVideoId = dto.ParentVideoId;
+                video.Platform = dto.Platform;
+                video.ChannelName = dto.ChannelName;
+                video.LengthInSeconds = dto.LengthInSeconds;
+                video.ExternalId = dto.ExternalId;
+
+                // Update Topics
+                video.Topics.Clear();
+                if (dto.Topics?.Length > 0)
+                {
+                    foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
+                    {
+                        var normalizedTopicName = topicName.Trim().ToLowerInvariant();
+                        var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
+                        if (existingTopic != null)
+                        {
+                            video.Topics.Add(existingTopic);
+                        }
+                        else
+                        {
+                            video.Topics.Add(new Topic { Name = normalizedTopicName });
+                        }
+                    }
+                }
+
+                // Update Genres
+                video.Genres.Clear();
+                if (dto.Genres?.Length > 0)
+                {
+                    foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
+                    {
+                        var normalizedGenreName = genreName.Trim().ToLowerInvariant();
+                        var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
+                        if (existingGenre != null)
+                        {
+                            video.Genres.Add(existingGenre);
+                        }
+                        else
+                        {
+                            video.Genres.Add(new Genre { Name = normalizedGenreName });
+                        }
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                return video;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating video with ID {Id}", id);
+                throw;
+            }
+        }
+
+        public async Task<bool> DeleteVideoAsync(Guid id)
+        {
+            try
+            {
+                var video = await GetVideoByIdAsync(id);
+                if (video == null)
+                {
+                    return false;
+                }
+
+                _context.Videos.Remove(video);
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while deleting video with ID {Id}", id);
+                throw;
+            }
         }
 
         public async Task<Video> SaveVideoAsync(Video video, bool updateIfExists = true)

@@ -416,6 +416,35 @@ export const getTvShowById = (id) => {
     return apiClient.get(`/tvshow/${id}`);
 };
 
+// Video API calls
+export const getAllVideos = () => {
+    return apiClient.get('/video');
+};
+
+export const getVideoById = (id) => {
+    return apiClient.get(`/video/${id}`);
+};
+
+export const getVideosByChannel = (channelName) => {
+    return apiClient.get(`/video/channel/${encodeURIComponent(channelName)}`);
+};
+
+export const getVideoSeries = () => {
+    return apiClient.get('/video/series');
+};
+
+export const createVideo = (videoData) => {
+    return apiClient.post('/video', videoData);
+};
+
+export const updateVideo = (id, videoData) => {
+    return apiClient.put(`/video/${id}`, videoData);
+};
+
+export const deleteVideo = (id) => {
+    return apiClient.delete(`/video/${id}`);
+};
+
 export const getTvShowsByCreator = (creator) => {
     return apiClient.get(`/tvshow/by-creator/${encodeURIComponent(creator)}`);
 };

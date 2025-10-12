@@ -16,7 +16,7 @@ import {
 import { 
     getMediaById, getAllMixlists, addMediaToMixlist, 
     removeMediaFromMixlist, getBookById, getPodcastById,
-    getMovieById, getTvShowById
+    getMovieById, getTvShowById, getVideoById
 } from '../services/apiService';
 
 function MediaProfilePage() {
@@ -43,7 +43,7 @@ function MediaProfilePage() {
         
         let detailedMedia = basicMedia;
         
-        // If it's a book, podcast, movie, or TV show, fetch the detailed information
+        // If it's a book, podcast, movie, TV show, or video, fetch the detailed information
         if (basicMedia.mediaType === 'Book') {
           try {
             const bookResponse = await getBookById(id);
@@ -76,6 +76,14 @@ function MediaProfilePage() {
           } catch (tvShowError) {
             console.warn('Could not fetch detailed TV show data, using basic data:', tvShowError);
           }
+        } else if (basicMedia.mediaType === 'Video') {
+          try {
+            const videoResponse = await getVideoById(id);
+            detailedMedia = { ...basicMedia, ...videoResponse.data };
+            console.log('Detailed video data:', detailedMedia);
+          } catch (videoError) {
+            console.warn('Could not fetch detailed video data, using basic data:', videoError);
+          }
         }
         
         setMediaItem(detailedMedia);
@@ -102,6 +110,14 @@ function MediaProfilePage() {
           value: detailedMedia.podcastType,
           isSeries: detailedMedia.podcastType === 'Series',
           isEpisode: detailedMedia.podcastType === 'Episode'
+        });
+        console.log('Video specific fields:', {
+          platform: detailedMedia.platform,
+          channelName: detailedMedia.channelName,
+          lengthInSeconds: detailedMedia.lengthInSeconds,
+          videoType: detailedMedia.videoType,
+          externalId: detailedMedia.externalId,
+          parentVideoId: detailedMedia.parentVideoId
         });
 
         const mixlistIds = detailedMedia.mixlistIds || [];
@@ -289,7 +305,7 @@ function MediaProfilePage() {
     }}>
       <Box sx={{ 
         width: '100%',
-        maxWidth: '600px',
+        maxWidth: '900px',
         backgroundColor: 'background.paper',
         borderRadius: '16px',
         p: 4,
@@ -957,11 +973,80 @@ function MediaProfilePage() {
               </Box>
             )}
             
+            {/* Video-specific properties */}
+            {mediaItem.mediaType === 'Video' && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {mediaItem.platform && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Platform:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.platform}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.videoType !== undefined && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Video Type:</strong>
+                    </Typography>
+                    <Typography variant="body1">
+                      {mediaItem.videoType === 'Series' || mediaItem.videoType === 0 ? 'Series' : 
+                       mediaItem.videoType === 'Episode' || mediaItem.videoType === 1 ? 'Episode' : 
+                       mediaItem.videoType === 'Channel' || mediaItem.videoType === 2 ? 'Channel' : 
+                       mediaItem.videoType}
+                    </Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.channelName && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Channel:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.channelName}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.lengthInSeconds !== undefined && mediaItem.lengthInSeconds !== null && mediaItem.lengthInSeconds > 0 && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Duration:</strong>
+                    </Typography>
+                    <Typography variant="body1">
+                      {Math.floor(mediaItem.lengthInSeconds / 3600) > 0 && `${Math.floor(mediaItem.lengthInSeconds / 3600)}:`}
+                      {Math.floor((mediaItem.lengthInSeconds % 3600) / 60).toString().padStart(2, '0')}:
+                      {(mediaItem.lengthInSeconds % 60).toString().padStart(2, '0')}
+                    </Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.externalId && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>External ID:</strong>
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.externalId}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.parentVideoId && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Parent Video ID:</strong>
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.parentVideoId}</Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+            
             {/* Show message if no specific properties are available */}
             {((mediaItem.mediaType === 'Podcast' && !mediaItem.podcastType && !mediaItem.durationInSeconds && !mediaItem.publisher && !mediaItem.audioLink && !mediaItem.releaseDate) ||
               (mediaItem.mediaType === 'Book' && !mediaItem.isbn && !mediaItem.asin && !mediaItem.format && mediaItem.partOfSeries === undefined) ||
               (mediaItem.mediaType === 'Movie' && !mediaItem.director && !mediaItem.cast && !mediaItem.releaseYear && !mediaItem.runtimeMinutes && !mediaItem.mpaaRating && !mediaItem.tmdbRating) ||
-              (mediaItem.mediaType === 'TVShow' && !mediaItem.creator && !mediaItem.cast && !mediaItem.firstAirYear && !mediaItem.numberOfSeasons && !mediaItem.contentRating)) && (
+              (mediaItem.mediaType === 'TVShow' && !mediaItem.creator && !mediaItem.cast && !mediaItem.firstAirYear && !mediaItem.numberOfSeasons && !mediaItem.contentRating) ||
+              (mediaItem.mediaType === 'Video' && !mediaItem.platform && !mediaItem.channelName && !mediaItem.lengthInSeconds && mediaItem.videoType === undefined && !mediaItem.externalId)) && (
               <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                 No specific {mediaItem.mediaType.toLowerCase()} details available
               </Typography>
