@@ -13,6 +13,7 @@ vi.mock('../../services/apiService', () => ({
   addMedia: vi.fn(),
   addPodcastEpisode: vi.fn(),
   addPodcastSeries: vi.fn(),
+  createVideo: vi.fn(),
   getAllMixlists: vi.fn(),
   addMediaToMixlist: vi.fn(),
 }));
@@ -43,6 +44,7 @@ describe('AddMediaForm', () => {
     // Reset API mocks
     apiService.addMedia.mockResolvedValue({ data: { id: 1 } });
     apiService.addPodcastEpisode.mockResolvedValue({ data: { id: 1 } });
+    apiService.createVideo.mockResolvedValue({ data: { id: 1 } });
     apiService.addMediaToMixlist.mockResolvedValue({ data: {} });
   });
 
@@ -338,6 +340,184 @@ describe('AddMediaForm', () => {
     });
   });
 
+  describe('Video Media Type', () => {
+    it('should submit video form with all video-specific properties', async () => {
+      renderWithRouter(<AddMediaForm />);
+
+      // Fill in basic fields
+      fireEvent.change(screen.getByPlaceholderText('Enter media title...'), {
+        target: { value: 'Test Video' }
+      });
+
+      // Select Video media type
+      const mediaTypeSelect = screen.getByTestId('media-type-select');
+      fireEvent.mouseDown(mediaTypeSelect);
+      fireEvent.click(screen.getByText('Video'));
+
+      // Fill in video-specific fields
+      fireEvent.change(screen.getByLabelText('Platform'), {
+        target: { value: 'YouTube' }
+      });
+
+      fireEvent.change(screen.getByLabelText('Channel Name'), {
+        target: { value: 'Test Channel' }
+      });
+
+      fireEvent.change(screen.getByLabelText('Length (Seconds)'), {
+        target: { value: '3600' }
+      });
+
+      fireEvent.change(screen.getByLabelText('External ID'), {
+        target: { value: 'external123' }
+      });
+
+      // Select video type
+      fireEvent.click(screen.getByLabelText('Series'));
+
+      // Fill in other required fields
+      fireEvent.change(screen.getByPlaceholderText('https://example.com'), {
+        target: { value: 'https://youtube.com/watch?v=test' }
+      });
+
+      fireEvent.change(screen.getByPlaceholderText('Brief description of the media...'), {
+        target: { value: 'Test video description' }
+      });
+
+      fireEvent.click(screen.getByLabelText('Completed'));
+
+      fireEvent.change(screen.getByLabelText('Date Completed'), {
+        target: { value: '2024-01-15' }
+      });
+
+      // Add genres and topics
+      const genreInput = screen.getByPlaceholderText('Type a genre and press Enter...');
+      fireEvent.change(genreInput, { target: { value: 'Educational' } });
+      fireEvent.keyPress(genreInput, { key: 'Enter', code: 'Enter' });
+
+      const topicInput = screen.getByPlaceholderText('Type a topic and press Enter...');
+      fireEvent.change(topicInput, { target: { value: 'Technology' } });
+      fireEvent.keyPress(topicInput, { key: 'Enter', code: 'Enter' });
+
+      // Submit form
+      fireEvent.click(screen.getByText('Save Media'));
+
+      // Verify video creation API call
+      await waitFor(() => {
+        expect(apiService.createVideo).toHaveBeenCalledWith({
+          Title: 'Test Video',
+          Link: 'https://youtube.com/watch?v=test',
+          Notes: '',
+          Description: 'Test video description',
+          Status: 'Completed',
+          DateCompleted: '2024-01-15',
+          Rating: '',
+          OwnershipStatus: '',
+          Topics: ['Technology'],
+          Genres: ['Educational'],
+          RelatedNotes: '',
+          Thumbnail: '',
+          VideoType: 'Series',
+          ParentVideoId: '',
+          Platform: 'YouTube',
+          ChannelName: 'Test Channel',
+          LengthInSeconds: 3600,
+          ExternalId: 'external123'
+        });
+      });
+    });
+
+    it('should submit video episode form with parent video ID', async () => {
+      renderWithRouter(<AddMediaForm />);
+
+      // Fill in basic fields
+      fireEvent.change(screen.getByPlaceholderText('Enter media title...'), {
+        target: { value: 'Test Episode' }
+      });
+
+      // Select Video media type
+      const mediaTypeSelect = screen.getByTestId('media-type-select');
+      fireEvent.mouseDown(mediaTypeSelect);
+      fireEvent.click(screen.getByText('Video'));
+
+      // Select Episode video type
+      fireEvent.click(screen.getByLabelText('Episode'));
+
+      // Fill in parent video ID
+      fireEvent.change(screen.getByLabelText('Parent Video ID'), {
+        target: { value: '123e4567-e89b-12d3-a456-426614174000' }
+      });
+
+      // Fill in video-specific fields
+      fireEvent.change(screen.getByLabelText('Platform'), {
+        target: { value: 'YouTube' }
+      });
+
+      // Fill in other required fields
+      fireEvent.change(screen.getByPlaceholderText('https://example.com'), {
+        target: { value: 'https://youtube.com/watch?v=episode' }
+      });
+
+      // Add genres and topics
+      const genreInput = screen.getByPlaceholderText('Type a genre and press Enter...');
+      fireEvent.change(genreInput, { target: { value: 'Educational' } });
+      fireEvent.keyPress(genreInput, { key: 'Enter', code: 'Enter' });
+
+      const topicInput = screen.getByPlaceholderText('Type a topic and press Enter...');
+      fireEvent.change(topicInput, { target: { value: 'Technology' } });
+      fireEvent.keyPress(topicInput, { key: 'Enter', code: 'Enter' });
+
+      // Submit form
+      fireEvent.click(screen.getByText('Save Media'));
+
+      // Verify episode creation API call
+      await waitFor(() => {
+        expect(apiService.createVideo).toHaveBeenCalledWith({
+          Title: 'Test Episode',
+          Link: 'https://youtube.com/watch?v=episode',
+          Notes: '',
+          Description: '',
+          Status: 'Uncharted',
+          DateCompleted: null,
+          Rating: '',
+          OwnershipStatus: '',
+          Topics: ['Technology'],
+          Genres: ['Educational'],
+          RelatedNotes: '',
+          Thumbnail: '',
+          VideoType: 'Episode',
+          ParentVideoId: '123e4567-e89b-12d3-a456-426614174000',
+          Platform: 'YouTube',
+          ChannelName: '',
+          LengthInSeconds: 0,
+          ExternalId: ''
+        });
+      });
+    });
+
+    it('should handle video form validation errors', async () => {
+      renderWithRouter(<AddMediaForm />);
+
+      // Fill in title
+      fireEvent.change(screen.getByPlaceholderText('Enter media title...'), {
+        target: { value: 'Test Video' }
+      });
+
+      // Select Video media type
+      const mediaTypeSelect = screen.getByTestId('media-type-select');
+      fireEvent.mouseDown(mediaTypeSelect);
+      fireEvent.click(screen.getByText('Video'));
+
+      // Don't fill in required Platform field
+      // Submit form
+      fireEvent.click(screen.getByText('Save Media'));
+
+      // Should show validation error for platform
+      await waitFor(() => {
+        expect(screen.getByTestId('platform-error')).toBeInTheDocument();
+      });
+    });
+  });
+
   describe('Error Handling', () => {
     it('should handle API errors gracefully', async () => {
       apiService.addMedia.mockRejectedValue({
@@ -373,6 +553,47 @@ describe('AddMediaForm', () => {
       // Verify error handling
       await waitFor(() => {
         expect(screen.getByText(/Failed to add media/)).toBeInTheDocument();
+      });
+    });
+
+    it('should handle video API errors gracefully', async () => {
+      apiService.createVideo.mockRejectedValue({
+        response: {
+          status: 500,
+          data: { message: 'Server error' }
+        }
+      });
+
+      renderWithRouter(<AddMediaForm />);
+
+      // Fill in required fields for video
+      fireEvent.change(screen.getByPlaceholderText('Enter media title...'), {
+        target: { value: 'Test Video' }
+      });
+
+      const mediaTypeSelect = screen.getByTestId('media-type-select');
+      fireEvent.mouseDown(mediaTypeSelect);
+      fireEvent.click(screen.getByText('Video'));
+
+      fireEvent.change(screen.getByLabelText('Platform'), {
+        target: { value: 'YouTube' }
+      });
+
+      // Add genres and topics
+      const genreInput = screen.getByPlaceholderText('Type a genre and press Enter...');
+      fireEvent.change(genreInput, { target: { value: 'Educational' } });
+      fireEvent.keyPress(genreInput, { key: 'Enter', code: 'Enter' });
+
+      const topicInput = screen.getByPlaceholderText('Type a topic and press Enter...');
+      fireEvent.change(topicInput, { target: { value: 'Technology' } });
+      fireEvent.keyPress(topicInput, { key: 'Enter', code: 'Enter' });
+
+      // Submit form
+      fireEvent.click(screen.getByText('Save Media'));
+
+      // Verify error handling
+      await waitFor(() => {
+        expect(screen.getByText(/Failed to add video/)).toBeInTheDocument();
       });
     });
   });
