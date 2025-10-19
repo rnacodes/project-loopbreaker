@@ -4,7 +4,7 @@ import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedi
 import { 
     Search, Book, Movie, Tv, Article, LibraryMusic, Podcasts, SportsEsports, YouTube, Language, MenuBook, AutoAwesome, 
     AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos, Forest, 
-    PlaylistAdd, NoteAlt, ImportExport, Topic, FileDownload
+    PlaylistAdd, NoteAlt, ImportExport, Topic, FileDownload, LocalLibrary
 } from '@mui/icons-material';
 import { getAllMixlists, seedMixlists, getAllMedia } from '../services/apiService';
 
@@ -12,6 +12,7 @@ import { getAllMixlists, seedMixlists, getAllMedia } from '../services/apiServic
 const mainMediaIcons = [
     { name: 'Articles', icon: <Article sx={{ fontSize: 40 }} />, key: 'articles' },
     { name: 'Books', icon: <Book sx={{ fontSize: 40 }} />, key: 'books' },
+    { name: 'Courses', icon: <LocalLibrary sx={{ fontSize: 40 }} />, key: 'courses' },
     { name: 'Documents and Notes', icon: <NoteAlt sx={{ fontSize: 40 }} />, key: 'articles' },
     { name: 'Movies', icon: <Movie sx={{ fontSize: 40 }} />, key: 'movies' },
     { name: 'Music', icon: <LibraryMusic sx={{ fontSize: 40 }} />, key: 'music' },
@@ -292,10 +293,16 @@ export default function HomePage() {
                   <Grid item xs={4} sm={3} md={2} key={item.key} sx={{ textAlign: 'center' }}>
                       <Box 
                           onClick={() => {
-                              if (item.key === 'podcasts') {
-                                  navigate('/all-media?mediaType=Podcast');
-                              } else if (item.key === 'books') {
+                              if (item.key === 'books') {
                                   navigate('/all-media?mediaType=Book');
+                              } else if (item.key === 'movies') {
+                                  navigate('/all-media?mediaType=Movie');
+                              } else if (item.key === 'online_videos') {
+                                  navigate('/all-media?mediaType=OnlineVideo');
+                              } else if (item.key === 'podcasts') {
+                                  navigate('/all-media?mediaType=Podcast');
+                              } else if (item.key === 'tv') {
+                                  navigate('/all-media?mediaType=TVShow');
                               } else {
                                   // For other media types, you can add navigation logic here
                                   console.log(`Clicked on ${item.name}`);
@@ -326,7 +333,7 @@ export default function HomePage() {
                     <Grid item xs={6} sm={4} md={3} key={item.key} sx={{ textAlign: 'center' }}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: 'text.secondary', '&:hover': { color: 'text.primary' } }}>
                             {React.cloneElement(item.icon, { sx: { fontSize: 50 } })}
-                            <Typography variant="body2" sx={{ mt: 0.5, fontWeight: 'bold' }}>{item.name}</Typography>
+                            <Typography variant="body2" sx={{ mt: 0.5 }}>{item.name}</Typography>
                         </Box>
                     </Grid>
                 ))}

@@ -229,6 +229,8 @@ builder.Services.AddScoped<IYouTubeService, YouTubeService>();
 builder.Services.AddScoped<IYouTubeMappingService, YouTubeMappingService>();
 builder.Services.AddScoped<ITmdbService, TmdbService>();
 builder.Services.AddScoped<IListenNotesService, ListenNotesService>();
+builder.Services.AddScoped<IInstapaperService, InstapaperService>();
+builder.Services.AddScoped<IArticleMappingService, ArticleMappingService>();
 
 // Configure YouTube API client  
 builder.Services.AddHttpClient<IYouTubeApiClient, YouTubeApiClient>(client =>
@@ -292,6 +294,13 @@ builder.Services.AddHttpClient<TmdbApiClient>(client =>
     }
 });
 builder.Services.AddScoped<ITmdbApiClient>(provider => provider.GetRequiredService<TmdbApiClient>());
+
+// Configure Instapaper API client
+builder.Services.AddHttpClient<IInstapaperApiClient, InstapaperApiClient>(client =>
+{
+    client.BaseAddress = new Uri("https://www.instapaper.com/");
+    client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+});
 
 
 // Configure DigitalOcean Spaces S3 Client (optional - won't break app if not configured)

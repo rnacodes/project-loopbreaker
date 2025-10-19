@@ -66,6 +66,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             // Create the appropriate concrete type based on MediaType
             BaseMediaItem mediaItem = dto.MediaType switch
             {
+                MediaType.Article => await CreateArticleAsync(dto),
                 MediaType.Podcast => await CreatePodcastAsync(dto),
                 MediaType.Video => await CreateVideoAsync(dto),
                 // TODO: Add concrete types for other media types as they're implemented
@@ -73,7 +74,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 _ => throw new NotSupportedException($"Media type '{dto.MediaType}' is not yet supported. Please implement a concrete class for this media type.")
             };
 
-            _context.MediaItems.Add(mediaItem);
+            _context.Add(mediaItem);
             await _context.SaveChangesAsync();
 
             // Return the created item, including its new ID
@@ -196,6 +197,67 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
 
             return video;
+        }
+
+        private async Task<Article> CreateArticleAsync(CreateMediaItemDto dto)
+        {
+            var article = new Article
+            {
+                Title = dto.Title,
+                MediaType = dto.MediaType,
+                Link = dto.Link,
+                Notes = dto.Notes,
+                Status = dto.Status,
+                DateAdded = DateTime.UtcNow,
+                DateCompleted = dto.DateCompleted?.ToUniversalTime(),
+                Rating = dto.Rating,
+                OwnershipStatus = dto.OwnershipStatus,
+                Description = dto.Description,
+                RelatedNotes = dto.RelatedNotes,
+                Thumbnail = dto.Thumbnail,
+                OriginalUrl = dto.Link, // Use Link as OriginalUrl for basic articles
+                ReadingProgress = 0.0,
+                IsStarred = false,
+                IsArchived = false
+            };
+
+            // Handle Topics - check if they exist or create new ones
+            if (dto.Topics?.Length > 0)
+            {
+                foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
+                {
+                    var normalizedTopicName = topicName.Trim().ToLowerInvariant();
+                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
+                    if (existingTopic != null)
+                    {
+                        article.Topics.Add(existingTopic);
+                    }
+                    else
+                    {
+                        article.Topics.Add(new Topic { Name = normalizedTopicName });
+                    }
+                }
+            }
+
+            // Handle Genres - check if they exist or create new ones
+            if (dto.Genres?.Length > 0)
+            {
+                foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
+                {
+                    var normalizedGenreName = genreName.Trim().ToLowerInvariant();
+                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
+                    if (existingGenre != null)
+                    {
+                        article.Genres.Add(existingGenre);
+                    }
+                    else
+                    {
+                        article.Genres.Add(new Genre { Name = normalizedGenreName });
+                    }
+                }
+            }
+
+            return article;
         }
 
         // GET: api/media/{id}
