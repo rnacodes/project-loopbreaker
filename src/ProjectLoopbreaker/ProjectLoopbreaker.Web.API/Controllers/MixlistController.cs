@@ -19,10 +19,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     public class MixlistController : ControllerBase
     {
         private readonly MediaLibraryDbContext _context;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public MixlistController(MediaLibraryDbContext context)
+        public MixlistController(MediaLibraryDbContext context, IHttpClientFactory httpClientFactory)
         {
             _context = context;
+            _httpClientFactory = httpClientFactory;
         }
 
         // GET: api/mixlist
@@ -305,6 +307,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return NotFound($"Mixlist with ID {id} not found.");
                 }
 
+                // Delete thumbnail from S3 if it exists
+                if (!string.IsNullOrEmpty(mixlist.Thumbnail))
+                {
+                    await DeleteThumbnailFromS3(mixlist.Thumbnail);
+                }
+
                 // Clear media items (just removes association, doesn't delete media)
                 mixlist.MediaItems.Clear();
 
@@ -316,6 +324,31 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { error = "Failed to delete mixlist", details = ex.Message });
+            }
+        }
+
+        private async Task DeleteThumbnailFromS3(string thumbnailUrl)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(thumbnailUrl))
+                    return;
+
+                // Call the UploadController's delete endpoint
+                var httpClient = _httpClientFactory.CreateClient();
+                httpClient.BaseAddress = new Uri(Request.Scheme + "://" + Request.Host);
+                
+                var response = await httpClient.DeleteAsync($"/api/upload/thumbnail?url={Uri.EscapeDataString(thumbnailUrl)}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Failed to delete thumbnail: {thumbnailUrl}. Status: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log but don't fail the entire operation if thumbnail deletion fails
+                Console.WriteLine($"Error deleting thumbnail {thumbnailUrl}: {ex.Message}");
             }
         }
 

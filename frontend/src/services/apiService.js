@@ -78,6 +78,13 @@ export const deleteMedia = (id) => {
     return apiClient.delete(`/media/${id}`);
 };
 
+// Bulk media deletion
+export const bulkDeleteMedia = (ids) => {
+    return apiClient.delete('/media/bulk', {
+        data: { ids }
+    });
+};
+
 // Legacy - Remove after migration
 // export const addPodcastEpisode = (episodeData) => {
 //     return apiClient.post('/podcastepisode', episodeData);

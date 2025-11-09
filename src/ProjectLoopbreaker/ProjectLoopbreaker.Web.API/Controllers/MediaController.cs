@@ -15,10 +15,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     public class MediaController : ControllerBase
     {
         private readonly Infrastructure.Data.MediaLibraryDbContext _context;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public MediaController(Infrastructure.Data.MediaLibraryDbContext context)
+        public MediaController(Infrastructure.Data.MediaLibraryDbContext context, IHttpClientFactory httpClientFactory)
         {
             _context = context;
+            _httpClientFactory = httpClientFactory;
         }
 
         // GET: api/media
@@ -404,6 +406,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return NotFound($"Media item with ID {id} not found.");
                 }
 
+                // Delete thumbnail from S3 if it exists
+                if (!string.IsNullOrEmpty(mediaItem.Thumbnail))
+                {
+                    await DeleteThumbnailFromS3(mediaItem.Thumbnail);
+                }
+
                 // Remove from all mixlists
                 mediaItem.Mixlists.Clear();
                 mediaItem.Topics.Clear();
@@ -417,6 +425,98 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { error = "Failed to delete media item", details = ex.Message });
+            }
+        }
+
+        // DELETE: api/media/bulk
+        [HttpDelete("bulk")]
+        public async Task<IActionResult> BulkDeleteMediaItems([FromBody] BulkDeleteRequest request)
+        {
+            try
+            {
+                if (request.Ids == null || !request.Ids.Any())
+                {
+                    return BadRequest("No media IDs provided for deletion.");
+                }
+
+                var mediaItems = await _context.MediaItems
+                    .Include(m => m.Mixlists)
+                    .Include(m => m.Topics)
+                    .Include(m => m.Genres)
+                    .Where(m => request.Ids.Contains(m.Id))
+                    .ToListAsync();
+
+                if (!mediaItems.Any())
+                {
+                    return NotFound("No media items found with the provided IDs.");
+                }
+
+                var deletedCount = 0;
+                var thumbnailsDeletionErrors = new List<string>();
+
+                foreach (var mediaItem in mediaItems)
+                {
+                    // Delete thumbnail from S3 if it exists
+                    if (!string.IsNullOrEmpty(mediaItem.Thumbnail))
+                    {
+                        try
+                        {
+                            await DeleteThumbnailFromS3(mediaItem.Thumbnail);
+                        }
+                        catch (Exception ex)
+                        {
+                            thumbnailsDeletionErrors.Add($"Failed to delete thumbnail for '{mediaItem.Title}': {ex.Message}");
+                        }
+                    }
+
+                    // Remove from all mixlists
+                    mediaItem.Mixlists.Clear();
+                    mediaItem.Topics.Clear();
+                    mediaItem.Genres.Clear();
+
+                    _context.MediaItems.Remove(mediaItem);
+                    deletedCount++;
+                }
+
+                await _context.SaveChangesAsync();
+
+                var response = new
+                {
+                    message = $"Successfully deleted {deletedCount} media item{(deletedCount != 1 ? "s" : "")}",
+                    deletedCount = deletedCount,
+                    thumbnailsDeletionErrors = thumbnailsDeletionErrors.Any() ? thumbnailsDeletionErrors : null
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to bulk delete media items", details = ex.Message });
+            }
+        }
+
+        private async Task DeleteThumbnailFromS3(string thumbnailUrl)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(thumbnailUrl))
+                    return;
+
+                // Call the UploadController's delete endpoint
+                var httpClient = _httpClientFactory.CreateClient();
+                httpClient.BaseAddress = new Uri(Request.Scheme + "://" + Request.Host);
+                
+                var response = await httpClient.DeleteAsync($"/api/upload/thumbnail?url={Uri.EscapeDataString(thumbnailUrl)}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Failed to delete thumbnail: {thumbnailUrl}. Status: {response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log but don't fail the entire operation if thumbnail deletion fails
+                Console.WriteLine($"Error deleting thumbnail {thumbnailUrl}: {ex.Message}");
             }
         }
 
@@ -682,5 +782,10 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return StatusCode(500, new { error = "Failed to export media items", details = ex.Message });
             }
         }
+    }
+
+    public class BulkDeleteRequest
+    {
+        public List<Guid> Ids { get; set; } = new List<Guid>();
     }
 }

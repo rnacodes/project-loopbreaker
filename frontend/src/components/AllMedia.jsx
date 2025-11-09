@@ -3,10 +3,12 @@ import { useSearchParams, Link } from 'react-router-dom';
 import {
     Container, Typography, Box, Grid, Card, CardContent, CardMedia,
     Chip, Button, ButtonGroup, List, ListItem, ListItemText,
-    ListItemSecondaryAction, IconButton, Divider, CircularProgress
+    ListItemSecondaryAction, IconButton, Divider, CircularProgress,
+    Checkbox, Toolbar, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
+    Snackbar, Alert
 } from '@mui/material';
-import { ViewModule, ViewList, OpenInNew, FileDownload } from '@mui/icons-material';
-import { getAllMedia, getMediaByType } from '../services/apiService';
+import { ViewModule, ViewList, OpenInNew, FileDownload, Delete, CheckBox, CheckBoxOutlineBlank } from '@mui/icons-material';
+import { getAllMedia, getMediaByType, bulkDeleteMedia } from '../services/apiService';
 
 function AllMedia() {
   const [mediaItems, setMediaItems] = useState([]);
@@ -14,6 +16,10 @@ function AllMedia() {
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('card'); // 'card' or 'list'
   const [searchParams] = useSearchParams();
+  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     const fetchMedia = async () => {
@@ -56,18 +62,75 @@ function AllMedia() {
     setViewMode(mode);
   };
 
+  const handleSelectItem = (itemId) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(itemId)) {
+      newSelected.delete(itemId);
+    } else {
+      newSelected.add(itemId);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    const allIds = new Set(mediaItems.map(item => item.id));
+    setSelectedItems(allIds);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedItems(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      setDeleting(true);
+      const idsArray = Array.from(selectedItems);
+      await bulkDeleteMedia(idsArray);
+      
+      setSnackbar({ 
+        open: true, 
+        message: `Successfully deleted ${idsArray.length} media item${idsArray.length !== 1 ? 's' : ''}!`, 
+        severity: 'success' 
+      });
+      
+      // Refresh the media list
+      const mediaType = searchParams.get('mediaType');
+      let response;
+      if (mediaType) {
+        response = await getMediaByType(mediaType);
+      } else {
+        response = await getAllMedia();
+      }
+      
+      if (response && response.data) {
+        setMediaItems(response.data);
+      }
+      
+      setSelectedItems(new Set());
+    } catch (error) {
+      console.error('Failed to delete media items:', error);
+      setSnackbar({ 
+        open: true, 
+        message: error.response?.data?.error || 'Failed to delete media items', 
+        severity: 'error' 
+      });
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   const renderCardView = () => (
     <Grid container spacing={3} sx={{ mt: 2 }}>
       {mediaItems.map((item) => (
         <Grid item xs={12} sm={6} md={4} key={item.id}>
           <Card 
-            component={Link} 
-            to={`/media/${item.id}`}
             sx={{ 
               textDecoration: 'none',
               height: '100%',
               display: 'flex',
               flexDirection: 'column',
+              position: 'relative',
               '&:hover': {
                 transform: 'translateY(-2px)',
                 boxShadow: 4
@@ -75,7 +138,28 @@ function AllMedia() {
               transition: 'all 0.2s ease-in-out'
             }}
           >
-            <CardContent sx={{ flexGrow: 1 }}>
+            <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 1 }}>
+              <Checkbox
+                checked={selectedItems.has(item.id)}
+                onChange={(e) => {
+                  e.stopPropagation();
+                  handleSelectItem(item.id);
+                }}
+                sx={{ 
+                  bgcolor: 'background.paper',
+                  '&:hover': { bgcolor: 'background.paper' }
+                }}
+              />
+            </Box>
+            <CardContent 
+              component={Link} 
+              to={`/media/${item.id}`}
+              sx={{ 
+                flexGrow: 1,
+                textDecoration: 'none',
+                pt: 6
+              }}
+            >
               <Typography variant="h6" component="div" gutterBottom>
                 {item.title || item.Title}
               </Typography>
@@ -146,8 +230,6 @@ function AllMedia() {
       {mediaItems.map((item, index) => (
         <React.Fragment key={item.id}>
           <ListItem 
-            component={Link} 
-            to={`/media/${item.id}`}
             sx={{ 
               textDecoration: 'none',
               '&:hover': {
@@ -155,7 +237,15 @@ function AllMedia() {
               }
             }}
           >
+            <Checkbox
+              checked={selectedItems.has(item.id)}
+              onChange={() => handleSelectItem(item.id)}
+              sx={{ mr: 2 }}
+            />
             <ListItemText
+              component={Link}
+              to={`/media/${item.id}`}
+              sx={{ textDecoration: 'none', color: 'inherit' }}
               primary={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                   <Typography variant="h6" component="div">
@@ -272,6 +362,7 @@ function AllMedia() {
             </Typography>
             <Typography variant="body1" color="text.secondary">
               {mediaItems.length} media item{mediaItems.length !== 1 ? 's' : ''} found
+              {selectedItems.size > 0 && ` (${selectedItems.size} selected)`}
             </Typography>
           </Box>
           
@@ -293,6 +384,52 @@ function AllMedia() {
             </Button>
           </ButtonGroup>
         </Box>
+
+        {/* Bulk Actions Toolbar */}
+        {mediaItems.length > 0 && (
+          <Toolbar 
+            sx={{ 
+              mb: 2, 
+              bgcolor: 'background.paper',
+              borderRadius: 1,
+              px: 2,
+              py: 1,
+              display: 'flex',
+              gap: 2,
+              justifyContent: 'space-between'
+            }}
+          >
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleSelectAll}
+                startIcon={<CheckBox />}
+              >
+                Select All
+              </Button>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleDeselectAll}
+                startIcon={<CheckBoxOutlineBlank />}
+                disabled={selectedItems.size === 0}
+              >
+                Deselect All
+              </Button>
+            </Box>
+            <Button
+              variant="contained"
+              color="error"
+              size="small"
+              onClick={() => setDeleteDialogOpen(true)}
+              startIcon={<Delete />}
+              disabled={selectedItems.size === 0}
+            >
+              Delete Selected ({selectedItems.size})
+            </Button>
+          </Toolbar>
+        )}
 
         {/* Export Button */}
         {/* <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
@@ -336,6 +473,47 @@ function AllMedia() {
         ) : (
           viewMode === 'card' ? renderCardView() : renderListView()
         )}
+
+        {/* Bulk Delete Confirmation Dialog */}
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={() => !deleting && setDeleteDialogOpen(false)}
+        >
+          <DialogTitle>Confirm Bulk Delete</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Are you sure you want to delete {selectedItems.size} media item{selectedItems.size !== 1 ? 's' : ''}? 
+              This action cannot be undone.
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleBulkDelete} 
+              color="error" 
+              variant="contained"
+              disabled={deleting}
+            >
+              {deleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Snackbar for feedback */}
+        <Snackbar 
+          open={snackbar.open} 
+          autoHideDuration={6000} 
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          <Alert 
+            onClose={() => setSnackbar({ ...snackbar, open: false })} 
+            severity={snackbar.severity}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Box>
     </Container>
   );

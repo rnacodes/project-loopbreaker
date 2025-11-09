@@ -270,7 +270,8 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
             // Arrange - Missing required fields
             var createDto = new CreateVideoDto
             {
-                // Missing Title and Platform
+                Title = "", // Empty title to test validation
+                Platform = "", // Empty platform to test validation
                 VideoType = VideoType.Series,
                 Status = Status.Uncharted
             };

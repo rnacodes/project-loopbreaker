@@ -130,6 +130,73 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
+        // DELETE: api/upload/thumbnail
+        [HttpDelete("thumbnail")]
+        public async Task<IActionResult> DeleteThumbnail([FromQuery] string url)
+        {
+            try
+            {
+                // Check if S3 client is configured
+                if (_s3Client == null)
+                {
+                    _logger.LogWarning("S3 client not configured, skipping thumbnail deletion");
+                    return Ok(new { message = "S3 client not configured, thumbnail not deleted" });
+                }
+
+                if (string.IsNullOrEmpty(url))
+                {
+                    return BadRequest("Thumbnail URL is required.");
+                }
+
+                // Get DigitalOcean Spaces configuration
+                var spacesConfig = _configuration.GetSection("DigitalOceanSpaces");
+                var bucketName = spacesConfig["BucketName"];
+                var endpoint = spacesConfig["Endpoint"];
+
+                if (string.IsNullOrEmpty(bucketName) || string.IsNullOrEmpty(endpoint))
+                {
+                    _logger.LogWarning("S3 configuration incomplete, skipping thumbnail deletion");
+                    return Ok(new { message = "S3 configuration incomplete, thumbnail not deleted" });
+                }
+
+                // Extract the key from the URL
+                // URL format: https://{bucketName}.{endpoint}/{key}
+                var expectedPrefix = $"https://{bucketName}.{endpoint}/";
+                if (!url.StartsWith(expectedPrefix))
+                {
+                    _logger.LogWarning("Thumbnail URL doesn't match expected format: {Url}", url);
+                    return Ok(new { message = "Thumbnail URL doesn't match expected format, skipping deletion" });
+                }
+
+                var key = url.Substring(expectedPrefix.Length);
+
+                // Delete the object from S3
+                var deleteRequest = new DeleteObjectRequest
+                {
+                    BucketName = bucketName,
+                    Key = key
+                };
+
+                await _s3Client.DeleteObjectAsync(deleteRequest);
+
+                _logger.LogInformation("Successfully deleted thumbnail from DigitalOcean Spaces: {Url}", url);
+
+                return Ok(new { message = "Thumbnail deleted successfully", url = url });
+            }
+            catch (AmazonS3Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting thumbnail from DigitalOcean Spaces: {Url}", url);
+                // Don't fail the entire operation if thumbnail deletion fails
+                return Ok(new { message = "Failed to delete thumbnail but operation continued", error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during thumbnail deletion: {Url}", url);
+                // Don't fail the entire operation if thumbnail deletion fails
+                return Ok(new { message = "Failed to delete thumbnail but operation continued", error = ex.Message });
+            }
+        }
+
         // POST: api/upload/thumbnail
         [HttpPost("thumbnail")]
         public async Task<IActionResult> UploadThumbnail(IFormFile file)
