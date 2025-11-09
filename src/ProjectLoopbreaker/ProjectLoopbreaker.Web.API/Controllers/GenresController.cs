@@ -3,6 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure.Data;
 using ProjectLoopbreaker.DTOs;
+using System.Globalization;
+using CsvHelper;
+using CsvHelper.Configuration;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -147,6 +150,150 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        // POST: api/genres/import/json
+        [HttpPost("import/json")]
+        public async Task<ActionResult<BulkImportResultDto>> ImportGenresFromJson([FromBody] List<CreateGenreDto> genres)
+        {
+            var result = new BulkImportResultDto();
+
+            if (genres == null || !genres.Any())
+            {
+                return BadRequest("No genres provided for import.");
+            }
+
+            foreach (var genreDto in genres)
+            {
+                result.TotalProcessed++;
+
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(genreDto.Name))
+                    {
+                        result.Errors.Add($"Genre at index {result.TotalProcessed - 1}: Name is required");
+                        result.ErrorCount++;
+                        continue;
+                    }
+
+                    var normalizedGenreName = genreDto.Name.Trim().ToLowerInvariant();
+
+                    // Check if genre already exists
+                    var existingGenre = await _context.Genres
+                        .FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
+
+                    if (existingGenre != null)
+                    {
+                        result.Skipped.Add($"Genre '{genreDto.Name}' already exists");
+                        result.SkippedCount++;
+                        continue;
+                    }
+
+                    var genre = new Genre { Name = normalizedGenreName };
+                    _context.Genres.Add(genre);
+                    await _context.SaveChangesAsync();
+
+                    result.Imported.Add(new GenreResponseDto
+                    {
+                        Id = genre.Id,
+                        Name = genre.Name,
+                        MediaItemIds = Array.Empty<Guid>()
+                    });
+                    result.SuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    result.Errors.Add($"Genre '{genreDto.Name}': {ex.Message}");
+                    result.ErrorCount++;
+                }
+            }
+
+            return Ok(result);
+        }
+
+        // POST: api/genres/import/csv
+        [HttpPost("import/csv")]
+        public async Task<ActionResult<BulkImportResultDto>> ImportGenresFromCsv(IFormFile file)
+        {
+            var result = new BulkImportResultDto();
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("No file uploaded");
+            }
+
+            if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("File must be a CSV");
+            }
+
+            try
+            {
+                using var reader = new StreamReader(file.OpenReadStream());
+                using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+
+                csv.Read();
+                csv.ReadHeader();
+                var headers = csv.HeaderRecord;
+
+                if (headers == null || !headers.Any(h => h.Equals("Name", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return BadRequest("CSV file must have a 'Name' column");
+                }
+
+                while (csv.Read())
+                {
+                    result.TotalProcessed++;
+
+                    try
+                    {
+                        var name = csv.GetField("Name");
+
+                        if (string.IsNullOrWhiteSpace(name))
+                        {
+                            result.Errors.Add($"Row {csv.CurrentIndex}: Name is required");
+                            result.ErrorCount++;
+                            continue;
+                        }
+
+                        var normalizedGenreName = name.Trim().ToLowerInvariant();
+
+                        // Check if genre already exists
+                        var existingGenre = await _context.Genres
+                            .FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
+
+                        if (existingGenre != null)
+                        {
+                            result.Skipped.Add($"Genre '{name}' already exists");
+                            result.SkippedCount++;
+                            continue;
+                        }
+
+                        var genre = new Genre { Name = normalizedGenreName };
+                        _context.Genres.Add(genre);
+                        await _context.SaveChangesAsync();
+
+                        result.Imported.Add(new GenreResponseDto
+                        {
+                            Id = genre.Id,
+                            Name = genre.Name,
+                            MediaItemIds = Array.Empty<Guid>()
+                        });
+                        result.SuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        result.Errors.Add($"Row {csv.CurrentIndex}: {ex.Message}");
+                        result.ErrorCount++;
+                    }
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error processing CSV file: {ex.Message}");
+            }
         }
     }
 

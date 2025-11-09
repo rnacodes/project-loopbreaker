@@ -160,6 +160,34 @@ export const createGenre = (genreData) => {
     return apiClient.post('/genres', genreData);
 };
 
+export const importGenresFromJson = (genres) => {
+    return apiClient.post('/genres/import/json', genres);
+};
+
+export const importGenresFromCsv = (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post('/genres/import/csv', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+};
+
+export const importTopicsFromJson = (topics) => {
+    return apiClient.post('/topics/import/json', topics);
+};
+
+export const importTopicsFromCsv = (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiClient.post('/topics/import/csv', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data',
+        },
+    });
+};
+
 // Podcast API calls (unified for series and episodes)
 export const getAllPodcasts = () => {
     return apiClient.get('/podcast');
