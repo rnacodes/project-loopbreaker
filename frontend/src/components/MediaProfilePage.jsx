@@ -16,7 +16,7 @@ import {
 import { 
     getMediaById, getAllMixlists, addMediaToMixlist, 
     removeMediaFromMixlist, getBookById, getPodcastById,
-    getMovieById, getTvShowById, getVideoById
+    getMovieById, getTvShowById, getVideoById, getArticleById
 } from '../services/apiService';
 
 function MediaProfilePage() {
@@ -84,6 +84,17 @@ function MediaProfilePage() {
           } catch (videoError) {
             console.warn('Could not fetch detailed video data, using basic data:', videoError);
           }
+        } else if (basicMedia.mediaType === 'Article') {
+          try {
+            const articleResponse = await getArticleById(id);
+            console.log('Article API response:', articleResponse);
+            // Check if response has .data property or if it's the data itself
+            const articleData = articleResponse.data || articleResponse;
+            detailedMedia = { ...basicMedia, ...articleData };
+            console.log('Detailed article data:', detailedMedia);
+          } catch (articleError) {
+            console.warn('Could not fetch detailed article data, using basic data:', articleError);
+          }
         }
         
         setMediaItem(detailedMedia);
@@ -118,6 +129,19 @@ function MediaProfilePage() {
           videoType: detailedMedia.videoType,
           externalId: detailedMedia.externalId,
           parentVideoId: detailedMedia.parentVideoId
+        });
+        console.log('Article specific fields:', {
+          author: detailedMedia.author,
+          publication: detailedMedia.publication,
+          publicationDate: detailedMedia.publicationDate,
+          originalUrl: detailedMedia.originalUrl,
+          readingProgress: detailedMedia.readingProgress,
+          estimatedReadingTimeMinutes: detailedMedia.estimatedReadingTimeMinutes,
+          wordCount: detailedMedia.wordCount,
+          isStarred: detailedMedia.isStarred,
+          savedToInstapaperDate: detailedMedia.savedToInstapaperDate,
+          progressTimestamp: detailedMedia.progressTimestamp,
+          instapaperBookmarkId: detailedMedia.instapaperBookmarkId
         });
 
         const mixlistIds = detailedMedia.mixlistIds || [];
@@ -346,6 +370,13 @@ function MediaProfilePage() {
                   
                   {/* Author for books */}
                   {mediaItem.mediaType === 'Book' && mediaItem.author && (
+                    <Typography variant="h5" component="h3" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'normal' }}>
+                      by {mediaItem.author}
+                    </Typography>
+                  )}
+                  
+                  {/* Author for articles */}
+                  {mediaItem.mediaType === 'Article' && mediaItem.author && (
                     <Typography variant="h5" component="h3" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'normal' }}>
                       by {mediaItem.author}
                     </Typography>
@@ -1041,12 +1072,95 @@ function MediaProfilePage() {
               </Box>
             )}
             
+            {/* Article-specific properties */}
+            {mediaItem.mediaType === 'Article' && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {mediaItem.author && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                      <strong>Author:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.author}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.publication && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                      <strong>Publication:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.publication}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.publicationDate && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                      <strong>Publication Date:</strong>
+                    </Typography>
+                    <Typography variant="body1">
+                      {new Date(mediaItem.publicationDate).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.estimatedReadingTimeMinutes > 0 && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                      <strong>Est. Reading Time:</strong>
+                    </Typography>
+                    <Typography variant="body1">
+                      {mediaItem.estimatedReadingTimeMinutes} {mediaItem.estimatedReadingTimeMinutes === 1 ? 'minute' : 'minutes'}
+                    </Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.wordCount > 0 && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                      <strong>Word Count:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.wordCount.toLocaleString()}</Typography>
+                  </Box>
+                )}
+                
+                {mediaItem.isStarred && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                      <strong>Starred:</strong>
+                    </Typography>
+                    <Star sx={{ color: '#FFD700', fontSize: 20 }} />
+                  </Box>
+                )}
+                
+                {mediaItem.savedToInstapaperDate && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                      <strong>Saved to Instapaper:</strong>
+                    </Typography>
+                    <Typography variant="body1">
+                      {new Date(mediaItem.savedToInstapaperDate).toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            )}
+            
             {/* Show message if no specific properties are available */}
             {((mediaItem.mediaType === 'Podcast' && !mediaItem.podcastType && !mediaItem.durationInSeconds && !mediaItem.publisher && !mediaItem.audioLink && !mediaItem.releaseDate) ||
               (mediaItem.mediaType === 'Book' && !mediaItem.isbn && !mediaItem.asin && !mediaItem.format && mediaItem.partOfSeries === undefined) ||
               (mediaItem.mediaType === 'Movie' && !mediaItem.director && !mediaItem.cast && !mediaItem.releaseYear && !mediaItem.runtimeMinutes && !mediaItem.mpaaRating && !mediaItem.tmdbRating) ||
               (mediaItem.mediaType === 'TVShow' && !mediaItem.creator && !mediaItem.cast && !mediaItem.firstAirYear && !mediaItem.numberOfSeasons && !mediaItem.contentRating) ||
-              (mediaItem.mediaType === 'Video' && !mediaItem.platform && !mediaItem.channelName && !mediaItem.lengthInSeconds && mediaItem.videoType === undefined && !mediaItem.externalId)) && (
+              (mediaItem.mediaType === 'Video' && !mediaItem.platform && !mediaItem.channelName && !mediaItem.lengthInSeconds && mediaItem.videoType === undefined && !mediaItem.externalId) ||
+              (mediaItem.mediaType === 'Article' && !mediaItem.author && !mediaItem.publication && !mediaItem.publicationDate && !mediaItem.originalUrl && !mediaItem.readingProgress && !mediaItem.estimatedReadingTimeMinutes && !mediaItem.wordCount)) && (
               <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                 No specific {mediaItem.mediaType.toLowerCase()} details available
               </Typography>

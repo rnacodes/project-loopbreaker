@@ -4,12 +4,13 @@ import {
     Container, Box, Typography, Grid, Button, CircularProgress,
     Alert, ToggleButton, ToggleButtonGroup, TextField,
     InputAdornment, Chip, Select, MenuItem, FormControl,
-    InputLabel, Paper, Divider, IconButton, Tooltip
+    InputLabel, Paper, Divider, IconButton, Tooltip,
+    List, ListItem, ListItemText
 } from '@mui/material';
 import {
     ArrowBack, Add, CloudDownload, ViewModule, ViewList,
     Search, FilterList, Star, Archive, CheckCircle,
-    Inbox, Sort, Refresh
+    Inbox, Sort, Refresh, OpenInNew
 } from '@mui/icons-material';
 import { getAllArticles } from '../services/apiService';
 import ArticleCard from './shared/ArticleCard';
@@ -340,20 +341,123 @@ function ArticlesPage() {
                                 Showing {filteredArticles.length} of {articles.length} articles
                             </Typography>
                             
-                            <Grid container spacing={3}>
-                                {filteredArticles.map(article => (
-                                    <Grid
-                                        item
-                                        xs={12}
-                                        sm={viewMode === 'grid' ? 6 : 12}
-                                        md={viewMode === 'grid' ? 4 : 12}
-                                        lg={viewMode === 'grid' ? 3 : 12}
-                                        key={article.id}
-                                    >
-                                        <ArticleCard article={article} />
-                                    </Grid>
-                                ))}
-                            </Grid>
+                            {viewMode === 'grid' ? (
+                                <Grid container spacing={3}>
+                                    {filteredArticles.map(article => (
+                                        <Grid
+                                            item
+                                            xs={12}
+                                            sm={6}
+                                            md={4}
+                                            lg={3}
+                                            key={article.id}
+                                        >
+                                            <ArticleCard article={article} />
+                                        </Grid>
+                                    ))}
+                                </Grid>
+                            ) : (
+                                <List sx={{ mt: 2 }}>
+                                    {filteredArticles.map((article, index) => (
+                                        <React.Fragment key={article.id}>
+                                            <ListItem
+                                                sx={{
+                                                    cursor: 'pointer',
+                                                    '&:hover': {
+                                                        backgroundColor: 'action.hover'
+                                                    },
+                                                    py: 2,
+                                                    px: 2,
+                                                    borderRadius: 1
+                                                }}
+                                                onClick={() => navigate(`/media/${article.id}`)}
+                                            >
+                                                <ListItemText
+                                                    primary={
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
+                                                            <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+                                                                {article.title}
+                                                            </Typography>
+                                                            {article.isStarred && (
+                                                                <Star sx={{ color: 'warning.main', fontSize: 20 }} />
+                                                            )}
+                                                            {article.author && (
+                                                                <Typography variant="body2" color="text.secondary">
+                                                                    by {article.author}
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
+                                                    }
+                                                    secondary={
+                                                        <Box>
+                                                            {article.description && (
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    sx={{
+                                                                        mb: 1,
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        display: '-webkit-box',
+                                                                        WebkitLineClamp: 2,
+                                                                        WebkitBoxOrient: 'vertical'
+                                                                    }}
+                                                                >
+                                                                    {article.description}
+                                                                </Typography>
+                                                            )}
+                                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                                                                <Chip
+                                                                    label={article.status === 'ActivelyExploring' ? 'Reading' : article.status === 'Uncharted' ? 'To Read' : article.status}
+                                                                    size="small"
+                                                                    color={article.status === 'Completed' ? 'success' : article.status === 'ActivelyExploring' ? 'primary' : 'default'}
+                                                                />
+                                                                {article.publication && (
+                                                                    <Chip
+                                                                        label={article.publication}
+                                                                        size="small"
+                                                                        variant="outlined"
+                                                                    />
+                                                                )}
+                                                                {article.estimatedReadingTimeMinutes > 0 && (
+                                                                    <Chip
+                                                                        label={`${article.estimatedReadingTimeMinutes} min read`}
+                                                                        size="small"
+                                                                        variant="outlined"
+                                                                    />
+                                                                )}
+                                                                {article.readingProgress > 0 && (
+                                                                    <Chip
+                                                                        label={`${Math.round(article.readingProgress * 100)}% complete`}
+                                                                        size="small"
+                                                                        color="info"
+                                                                        variant="outlined"
+                                                                    />
+                                                                )}
+                                                            </Box>
+                                                        </Box>
+                                                    }
+                                                />
+                                                {(article.effectiveUrl || article.originalUrl || article.link) && (
+                                                    <IconButton
+                                                        edge="end"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            const url = article.effectiveUrl || article.originalUrl || article.link;
+                                                            if (url) {
+                                                                window.open(url, '_blank', 'noopener,noreferrer');
+                                                            }
+                                                        }}
+                                                        sx={{ ml: 2 }}
+                                                    >
+                                                        <OpenInNew />
+                                                    </IconButton>
+                                                )}
+                                            </ListItem>
+                                            {index < filteredArticles.length - 1 && <Divider />}
+                                        </React.Fragment>
+                                    ))}
+                                </List>
+                            )}
                         </>
                     )}
                 </Paper>
