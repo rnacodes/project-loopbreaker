@@ -1,0 +1,366 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    Container, Box, Typography, Grid, Button, CircularProgress,
+    Alert, ToggleButton, ToggleButtonGroup, TextField,
+    InputAdornment, Chip, Select, MenuItem, FormControl,
+    InputLabel, Paper, Divider, IconButton, Tooltip
+} from '@mui/material';
+import {
+    ArrowBack, Add, CloudDownload, ViewModule, ViewList,
+    Search, FilterList, Star, Archive, CheckCircle,
+    Inbox, Sort, Refresh
+} from '@mui/icons-material';
+import { getAllArticles } from '../services/apiService';
+import ArticleCard from './shared/ArticleCard';
+
+function ArticlesPage() {
+    const navigate = useNavigate();
+    const [articles, setArticles] = useState([]);
+    const [filteredArticles, setFilteredArticles] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [viewMode, setViewMode] = useState('grid');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [filterFolder, setFilterFolder] = useState('all');
+    const [sortBy, setSortBy] = useState('dateAdded');
+
+    useEffect(() => {
+        fetchArticles();
+    }, []);
+
+    useEffect(() => {
+        applyFiltersAndSort();
+    }, [articles, searchQuery, filterStatus, filterFolder, sortBy]);
+
+    const fetchArticles = async () => {
+        setLoading(true);
+        setError('');
+        try {
+            const data = await getAllArticles();
+            setArticles(data);
+        } catch (err) {
+            setError(err.message || 'Failed to load articles');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const applyFiltersAndSort = () => {
+        let filtered = [...articles];
+
+        // Apply search filter
+        if (searchQuery) {
+            const query = searchQuery.toLowerCase();
+            filtered = filtered.filter(article =>
+                article.title?.toLowerCase().includes(query) ||
+                article.author?.toLowerCase().includes(query) ||
+                article.publication?.toLowerCase().includes(query) ||
+                article.description?.toLowerCase().includes(query)
+            );
+        }
+
+        // Apply status filter
+        if (filterStatus !== 'all') {
+            filtered = filtered.filter(article => {
+                switch (filterStatus) {
+                    case 'unread':
+                        return article.status === 'Uncharted' || (article.status === 'ActivelyExploring' && article.readingProgress < 1);
+                    case 'reading':
+                        return article.status === 'ActivelyExploring' && article.readingProgress > 0 && article.readingProgress < 1;
+                    case 'completed':
+                        return article.status === 'Completed' || article.isReadingCompleted;
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        // Apply folder filter (Instapaper-specific)
+        if (filterFolder !== 'all') {
+            filtered = filtered.filter(article => {
+                switch (filterFolder) {
+                    case 'starred':
+                        return article.isStarred;
+                    case 'archived':
+                        return article.isArchived;
+                    case 'unarchived':
+                        return !article.isArchived;
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        // Apply sorting
+        filtered.sort((a, b) => {
+            switch (sortBy) {
+                case 'dateAdded':
+                    return new Date(b.dateAdded) - new Date(a.dateAdded);
+                case 'dateAddedAsc':
+                    return new Date(a.dateAdded) - new Date(b.dateAdded);
+                case 'title':
+                    return (a.title || '').localeCompare(b.title || '');
+                case 'author':
+                    return (a.author || '').localeCompare(b.author || '');
+                case 'readingTime':
+                    return b.estimatedReadingTimeMinutes - a.estimatedReadingTimeMinutes;
+                case 'progress':
+                    return b.readingProgress - a.readingProgress;
+                default:
+                    return 0;
+            }
+        });
+
+        setFilteredArticles(filtered);
+    };
+
+    const getStatsChips = () => {
+        const total = articles.length;
+        const unread = articles.filter(a => a.status === 'Uncharted' || (a.readingProgress === 0 && !a.isReadingCompleted)).length;
+        const reading = articles.filter(a => a.readingProgress > 0 && a.readingProgress < 1).length;
+        const completed = articles.filter(a => a.isReadingCompleted || a.status === 'Completed').length;
+        const starred = articles.filter(a => a.isStarred).length;
+
+        return { total, unread, reading, completed, starred };
+    };
+
+    const stats = getStatsChips();
+
+    if (loading) {
+        return (
+            <Box
+                sx={{
+                    minHeight: '100vh',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    py: 4,
+                    px: 2
+                }}
+            >
+                <Box sx={{ 
+                    width: '100%',
+                    maxWidth: '600px',
+                    backgroundColor: 'background.paper',
+                    borderRadius: '16px',
+                    p: 4,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    textAlign: 'center'
+                }}>
+                    <CircularProgress size={60} sx={{ mb: 2 }} />
+                    <Typography variant="h6">Loading articles...</Typography>
+                </Box>
+            </Box>
+        );
+    }
+
+    return (
+        <Box
+            sx={{
+                minHeight: '100vh',
+                py: 4,
+                px: 2
+            }}
+        >
+            <Container maxWidth="xl">
+                <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+                    <Button
+                        startIcon={<ArrowBack />}
+                        onClick={() => navigate('/')}
+                    >
+                        Back to Home
+                    </Button>
+
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Tooltip title="Refresh">
+                            <IconButton
+                                onClick={fetchArticles}
+                            >
+                                <Refresh />
+                            </IconButton>
+                        </Tooltip>
+                        
+                        <Button
+                            variant="contained"
+                            startIcon={<CloudDownload />}
+                            onClick={() => navigate('/instapaper/auth')}
+                        >
+                            Import from Instapaper
+                        </Button>
+                    </Box>
+                </Box>
+
+                <Paper
+                    elevation={8}
+                    sx={{
+                        p: 4,
+                        borderRadius: '16px',
+                        backgroundColor: 'background.paper',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                    }}
+                >
+                    <Typography variant="h4" gutterBottom fontWeight="bold">
+                        My Articles
+                    </Typography>
+
+                    {/* Stats Chips */}
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
+                        <Chip label={`Total: ${stats.total}`} color="default" />
+                        <Chip label={`Unread: ${stats.unread}`} icon={<Inbox />} color="primary" />
+                        <Chip label={`Reading: ${stats.reading}`} color="info" />
+                        <Chip label={`Completed: ${stats.completed}`} icon={<CheckCircle />} color="success" />
+                        {stats.starred > 0 && (
+                            <Chip label={`Starred: ${stats.starred}`} icon={<Star />} color="warning" />
+                        )}
+                    </Box>
+
+                    <Divider sx={{ mb: 3 }} />
+
+                    {error && (
+                        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
+                            {error}
+                        </Alert>
+                    )}
+
+                    {/* Filters and Search */}
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                        <Grid item xs={12} md={4}>
+                            <TextField
+                                fullWidth
+                                placeholder="Search articles..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                InputProps={{
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Search />
+                                        </InputAdornment>
+                                    )
+                                }}
+                            />
+                        </Grid>
+
+                        <Grid item xs={6} md={2}>
+                            <FormControl fullWidth>
+                                <InputLabel>Status</InputLabel>
+                                <Select
+                                    value={filterStatus}
+                                    onChange={(e) => setFilterStatus(e.target.value)}
+                                    label="Status"
+                                    startAdornment={<FilterList sx={{ ml: 1, mr: -0.5 }} />}
+                                >
+                                    <MenuItem value="all">All Status</MenuItem>
+                                    <MenuItem value="unread">Unread</MenuItem>
+                                    <MenuItem value="reading">Reading</MenuItem>
+                                    <MenuItem value="completed">Completed</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+
+                        <Grid item xs={6} md={2}>
+                            <FormControl fullWidth>
+                                <InputLabel>Folder</InputLabel>
+                                <Select
+                                    value={filterFolder}
+                                    onChange={(e) => setFilterFolder(e.target.value)}
+                                    label="Folder"
+                                >
+                                    <MenuItem value="all">All Folders</MenuItem>
+                                    <MenuItem value="starred">Starred</MenuItem>
+                                    <MenuItem value="archived">Archived</MenuItem>
+                                    <MenuItem value="unarchived">Unarchived</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+
+                        <Grid item xs={6} md={2}>
+                            <FormControl fullWidth>
+                                <InputLabel>Sort By</InputLabel>
+                                <Select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    label="Sort By"
+                                    startAdornment={<Sort sx={{ ml: 1, mr: -0.5 }} />}
+                                >
+                                    <MenuItem value="dateAdded">Newest First</MenuItem>
+                                    <MenuItem value="dateAddedAsc">Oldest First</MenuItem>
+                                    <MenuItem value="title">Title (A-Z)</MenuItem>
+                                    <MenuItem value="author">Author (A-Z)</MenuItem>
+                                    <MenuItem value="readingTime">Reading Time</MenuItem>
+                                    <MenuItem value="progress">Progress</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+
+                        <Grid item xs={6} md={2}>
+                            <ToggleButtonGroup
+                                value={viewMode}
+                                exclusive
+                                onChange={(e, newMode) => newMode && setViewMode(newMode)}
+                                fullWidth
+                                sx={{ height: '56px' }}
+                            >
+                                <ToggleButton value="grid">
+                                    <ViewModule />
+                                </ToggleButton>
+                                <ToggleButton value="list">
+                                    <ViewList />
+                                </ToggleButton>
+                            </ToggleButtonGroup>
+                        </Grid>
+                    </Grid>
+
+                    {/* Articles Display */}
+                    {filteredArticles.length === 0 ? (
+                        <Box sx={{ textAlign: 'center', py: 8 }}>
+                            <Typography variant="h6" color="text.secondary" gutterBottom>
+                                No articles found
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" paragraph>
+                                {articles.length === 0
+                                    ? "Import articles from Instapaper to get started"
+                                    : "Try adjusting your filters or search query"}
+                            </Typography>
+                            {articles.length === 0 && (
+                                <Button
+                                    variant="contained"
+                                    startIcon={<CloudDownload />}
+                                    onClick={() => navigate('/instapaper/auth')}
+                                    sx={{ mt: 2 }}
+                                >
+                                    Import from Instapaper
+                                </Button>
+                            )}
+                        </Box>
+                    ) : (
+                        <>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Showing {filteredArticles.length} of {articles.length} articles
+                            </Typography>
+                            
+                            <Grid container spacing={3}>
+                                {filteredArticles.map(article => (
+                                    <Grid
+                                        item
+                                        xs={12}
+                                        sm={viewMode === 'grid' ? 6 : 12}
+                                        md={viewMode === 'grid' ? 4 : 12}
+                                        lg={viewMode === 'grid' ? 3 : 12}
+                                        key={article.id}
+                                    >
+                                        <ArticleCard article={article} />
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        </>
+                    )}
+                </Paper>
+            </Container>
+        </Box>
+    );
+}
+
+export default ArticlesPage;
+

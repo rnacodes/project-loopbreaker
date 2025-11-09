@@ -38,20 +38,20 @@ namespace ProjectLoopbreaker.Shared.DTOs.Instapaper
         public string? Hash { get; set; }
         
         /// <summary>
-        /// Converts Unix timestamp to DateTime
+        /// Converts Unix timestamp to DateTime (UTC)
         /// </summary>
         public DateTime GetDateAdded()
         {
-            return DateTimeOffset.FromUnixTimeSeconds(Time).DateTime;
+            return DateTimeOffset.FromUnixTimeSeconds(Time).UtcDateTime;
         }
         
         /// <summary>
-        /// Converts progress timestamp to DateTime if available
+        /// Converts progress timestamp to DateTime (UTC) if available
         /// </summary>
         public DateTime? GetProgressDateTime()
         {
             return ProgressTimestamp.HasValue 
-                ? DateTimeOffset.FromUnixTimeSeconds(ProgressTimestamp.Value).DateTime 
+                ? DateTimeOffset.FromUnixTimeSeconds(ProgressTimestamp.Value).UtcDateTime 
                 : null;
         }
         

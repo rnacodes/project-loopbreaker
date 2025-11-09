@@ -124,14 +124,81 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                 var response = await _httpClient.SendAsync(request);
                 var content = await response.Content.ReadAsStringAsync();
                 
+                _logger.LogInformation("Instapaper API Response Status: {StatusCode}", response.StatusCode);
+                _logger.LogInformation("Instapaper API Response Content (first 500 chars): {Content}", 
+                    content.Length > 500 ? content.Substring(0, 500) : content);
+                
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError("Failed to get Instapaper bookmarks: {StatusCode} - {Content}", response.StatusCode, content);
-                    throw new HttpRequestException($"Failed to get bookmarks: {response.StatusCode}");
+                    throw new HttpRequestException($"Failed to get bookmarks: {response.StatusCode} - {content}");
                 }
                 
-                var bookmarksResponse = JsonSerializer.Deserialize<InstapaperBookmarksResponse>(content);
-                return bookmarksResponse ?? new InstapaperBookmarksResponse();
+                try
+                {
+                    // Instapaper returns an array of items with different types
+                    var responseItems = JsonSerializer.Deserialize<List<InstapaperResponseItem>>(content);
+                    
+                    if (responseItems == null || responseItems.Count == 0)
+                    {
+                        _logger.LogWarning("Instapaper returned empty response");
+                        return new InstapaperBookmarksResponse();
+                    }
+                    
+                    var bookmarksResponse = new InstapaperBookmarksResponse();
+                    
+                    // Parse items by type
+                    foreach (var item in responseItems)
+                    {
+                        if (item.Type == "user" && item.UserId.HasValue)
+                        {
+                            bookmarksResponse.User = new InstapaperUserDto
+                            {
+                                UserId = item.UserId.Value,
+                                Username = item.Username ?? string.Empty,
+                                SubscriptionIsActive = item.SubscriptionIsActive // Keep as string "1" or null
+                            };
+                        }
+                        else if (item.Type == "bookmark" && item.BookmarkId.HasValue)
+                        {
+                            bookmarksResponse.Bookmarks.Add(new InstapaperBookmarkDto
+                            {
+                                BookmarkId = (int)item.BookmarkId.Value, // Convert long to int
+                                Url = item.Url ?? string.Empty,
+                                Title = item.Title ?? "Untitled",
+                                Description = item.Description ?? string.Empty,
+                                Time = item.Time ?? 0,
+                                Starred = item.Starred, // Keep as string "1" or null
+                                PrivateSource = item.PrivateSource ?? string.Empty,
+                                Hash = item.Hash ?? string.Empty,
+                                Progress = item.Progress ?? 0.0,
+                                ProgressTimestamp = item.ProgressTimestamp ?? 0
+                            });
+                        }
+                        else if (item.Type == "highlight" && item.HighlightId.HasValue)
+                        {
+                            bookmarksResponse.Highlights.Add(new InstapaperHighlightDto
+                            {
+                                HighlightId = (int)item.HighlightId.Value, // Convert long to int
+                                Text = item.Text ?? string.Empty,
+                                Note = item.Note ?? string.Empty,
+                                BookmarkId = (int)(item.BookmarkId ?? 0), // Convert long to int
+                                Time = item.Time ?? 0,
+                                Position = item.Position ?? 0
+                            });
+                        }
+                    }
+                    
+                    _logger.LogInformation("Successfully parsed {BookmarkCount} bookmarks, {HighlightCount} highlights", 
+                        bookmarksResponse.Bookmarks.Count, bookmarksResponse.Highlights.Count);
+                    
+                    return bookmarksResponse;
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogError(ex, "Failed to deserialize Instapaper response. Content: {Content}", content);
+                    throw new InvalidOperationException($"Invalid response format from Instapaper. Please check logs for details. First 200 chars: {(content.Length > 200 ? content.Substring(0, 200) : content)}", ex);
+                }
             }
             catch (Exception ex)
             {

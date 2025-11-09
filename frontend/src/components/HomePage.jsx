@@ -293,7 +293,9 @@ export default function HomePage() {
                   <Grid item xs={4} sm={3} md={2} key={item.key} sx={{ textAlign: 'center' }}>
                       <Box 
                           onClick={() => {
-                              if (item.key === 'books') {
+                              if (item.key === 'articles') {
+                                  navigate('/articles');
+                              } else if (item.key === 'books') {
                                   navigate('/all-media?mediaType=Book');
                               } else if (item.key === 'movies') {
                                   navigate('/all-media?mediaType=Movie');

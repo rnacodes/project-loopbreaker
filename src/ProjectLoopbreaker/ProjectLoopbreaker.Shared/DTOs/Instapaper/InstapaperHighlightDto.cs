@@ -16,6 +16,9 @@ namespace ProjectLoopbreaker.Shared.DTOs.Instapaper
         [JsonPropertyName("text")]
         public string Text { get; set; } = string.Empty;
         
+        [JsonPropertyName("note")]
+        public string Note { get; set; } = string.Empty;
+        
         [JsonPropertyName("position")]
         public int Position { get; set; }
         
@@ -23,11 +26,11 @@ namespace ProjectLoopbreaker.Shared.DTOs.Instapaper
         public long Time { get; set; } // Unix timestamp
         
         /// <summary>
-        /// Converts Unix timestamp to DateTime
+        /// Converts Unix timestamp to DateTime (UTC)
         /// </summary>
         public DateTime GetDateCreated()
         {
-            return DateTimeOffset.FromUnixTimeSeconds(Time).DateTime;
+            return DateTimeOffset.FromUnixTimeSeconds(Time).UtcDateTime;
         }
     }
 }
