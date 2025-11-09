@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Container, Typography, TextField, Button, Box,
-    Card, CardContent, Snackbar, Alert, CircularProgress
+    Card, CardContent, Snackbar, Alert, CircularProgress,
+    Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
-import { Save, Cancel, ArrowBack } from '@mui/icons-material';
-import { getMixlistById, updateMixlist, uploadThumbnail } from '../services/apiService';
+import { Save, Cancel, ArrowBack, Delete } from '@mui/icons-material';
+import { getMixlistById, updateMixlist, uploadThumbnail, deleteMixlist } from '../services/apiService';
 
 function EditMixlistForm() {
     const { id } = useParams();
@@ -14,6 +15,7 @@ function EditMixlistForm() {
     const [saving, setSaving] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
     const [thumbnailFile, setThumbnailFile] = useState(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     
     const [formData, setFormData] = useState({
         name: '',
@@ -120,6 +122,31 @@ function EditMixlistForm() {
         navigate(`/mixlist/${id}`);
     };
 
+    const handleDelete = async () => {
+        try {
+            await deleteMixlist(id);
+            setSnackbar({ 
+                open: true, 
+                message: 'Mixlist deleted successfully!', 
+                severity: 'success' 
+            });
+            
+            // Navigate to mixlists page after a short delay
+            setTimeout(() => {
+                navigate('/mixlists');
+            }, 1500);
+        } catch (error) {
+            console.error('Failed to delete mixlist:', error);
+            setSnackbar({ 
+                open: true, 
+                message: error.response?.data?.error || 'Failed to delete mixlist', 
+                severity: 'error' 
+            });
+        } finally {
+            setDeleteDialogOpen(false);
+        }
+    };
+
     if (loading) {
         return (
             <Container maxWidth="md">
@@ -224,25 +251,37 @@ function EditMixlistForm() {
                                 </Box>
 
                                 {/* Action Buttons */}
-                                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'flex-end', mt: 4 }}>
+                                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between', mt: 4 }}>
                                     <Button
                                         variant="outlined"
-                                        startIcon={<Cancel />}
-                                        onClick={handleCancel}
+                                        color="error"
+                                        startIcon={<Delete />}
+                                        onClick={() => setDeleteDialogOpen(true)}
                                         disabled={saving}
                                         size="large"
                                     >
-                                        Cancel
+                                        Delete Mixlist
                                     </Button>
-                                    <Button
-                                        type="submit"
-                                        variant="contained"
-                                        startIcon={<Save />}
-                                        disabled={saving}
-                                        size="large"
-                                    >
-                                        {saving ? 'Saving...' : 'Save Changes'}
-                                    </Button>
+                                    <Box sx={{ display: 'flex', gap: 2 }}>
+                                        <Button
+                                            variant="outlined"
+                                            startIcon={<Cancel />}
+                                            onClick={handleCancel}
+                                            disabled={saving}
+                                            size="large"
+                                        >
+                                            Cancel
+                                        </Button>
+                                        <Button
+                                            type="submit"
+                                            variant="contained"
+                                            startIcon={<Save />}
+                                            disabled={saving}
+                                            size="large"
+                                        >
+                                            {saving ? 'Saving...' : 'Save Changes'}
+                                        </Button>
+                                    </Box>
                                 </Box>
                             </Box>
                         </form>
@@ -263,6 +302,29 @@ function EditMixlistForm() {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+            >
+                <DialogTitle>Confirm Delete</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete the mixlist "{formData.name}"? 
+                        This will remove the mixlist but will NOT delete the media items in it.
+                        This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialogOpen(false)}>
+                        Cancel
+                    </Button>
+                    <Button onClick={handleDelete} color="error" variant="contained">
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Container>
     );
 }

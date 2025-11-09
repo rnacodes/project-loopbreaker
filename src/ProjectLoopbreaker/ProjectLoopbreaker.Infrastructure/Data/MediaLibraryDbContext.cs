@@ -16,6 +16,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<Movie> Movies { get; set; }
         public DbSet<TvShow> TvShows { get; set; }
         public DbSet<Video> Videos { get; set; }
+        public DbSet<Article> Articles { get; set; }
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Genre> Genres { get; set; }
 
@@ -27,6 +28,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         IQueryable<Movie> IApplicationDbContext.Movies => Movies;
         IQueryable<TvShow> IApplicationDbContext.TvShows => TvShows;
         IQueryable<Video> IApplicationDbContext.Videos => Videos;
+        IQueryable<Article> IApplicationDbContext.Articles => Articles;
         IQueryable<Topic> IApplicationDbContext.Topics => Topics;
         IQueryable<Genre> IApplicationDbContext.Genres => Genres;
 
@@ -198,9 +200,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             modelBuilder.Entity<Movie>().ToTable("Movies");
             modelBuilder.Entity<TvShow>().ToTable("TvShows");
             modelBuilder.Entity<Video>().ToTable("Videos");
-            // TODO: Add configurations for other media types as they're implemented:
-            // modelBuilder.Entity<Article>().ToTable("Articles");
-            // etc.
+            modelBuilder.Entity<Article>().ToTable("Articles");
 
             // Configure Podcast specific properties
             modelBuilder.Entity<Podcast>(entity =>
@@ -377,6 +377,45 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.HasIndex(e => e.ExternalId);
                 entity.HasIndex(e => e.Platform);
                 entity.HasIndex(e => e.ChannelName);
+            });
+
+            // Configure Article specific properties
+            modelBuilder.Entity<Article>(entity =>
+            {
+                entity.Property(e => e.InstapaperBookmarkId)
+                    .HasMaxLength(50);
+                    
+                entity.Property(e => e.OriginalUrl)
+                    .HasMaxLength(2000);
+                    
+                entity.Property(e => e.Author)
+                    .HasMaxLength(300);
+                    
+                entity.Property(e => e.Publication)
+                    .HasMaxLength(200);
+                    
+                entity.Property(e => e.ReadingProgress)
+                    .HasDefaultValue(0.0);
+                    
+                entity.Property(e => e.EstimatedReadingTimeMinutes)
+                    .HasDefaultValue(0);
+                    
+                entity.Property(e => e.WordCount)
+                    .HasDefaultValue(0);
+                    
+                entity.Property(e => e.IsStarred)
+                    .HasDefaultValue(false);
+                    
+                entity.Property(e => e.IsArchived)
+                    .HasDefaultValue(false);
+                    
+                // Create indexes for better query performance
+                entity.HasIndex(e => e.InstapaperBookmarkId);
+                entity.HasIndex(e => e.Author);
+                entity.HasIndex(e => e.Publication);
+                entity.HasIndex(e => e.IsStarred);
+                entity.HasIndex(e => e.IsArchived);
+                entity.HasIndex(e => e.PublicationDate);
             });
         }
 

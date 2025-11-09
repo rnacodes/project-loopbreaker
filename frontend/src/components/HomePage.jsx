@@ -298,7 +298,7 @@ export default function HomePage() {
                               } else if (item.key === 'movies') {
                                   navigate('/all-media?mediaType=Movie');
                               } else if (item.key === 'online_videos') {
-                                  navigate('/all-media?mediaType=OnlineVideo');
+                                  navigate('/all-media?mediaType=Video');
                               } else if (item.key === 'podcasts') {
                                   navigate('/all-media?mediaType=Podcast');
                               } else if (item.key === 'tv') {

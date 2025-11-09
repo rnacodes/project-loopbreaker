@@ -296,16 +296,22 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var mixlist = await _context.Mixlists.FindAsync(id);
+                var mixlist = await _context.Mixlists
+                    .Include(m => m.MediaItems)
+                    .FirstOrDefaultAsync(m => m.Id == id);
+
                 if (mixlist == null)
                 {
                     return NotFound($"Mixlist with ID {id} not found.");
                 }
 
+                // Clear media items (just removes association, doesn't delete media)
+                mixlist.MediaItems.Clear();
+
                 _context.Mixlists.Remove(mixlist);
                 await _context.SaveChangesAsync();
                 
-                return Ok(new { message = $"Mixlist '{mixlist.Name}' deleted successfully." });
+                return Ok(new { message = $"Mixlist '{mixlist.Name}' deleted successfully" });
             }
             catch (Exception ex)
             {

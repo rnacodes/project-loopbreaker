@@ -393,16 +393,26 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var mediaItem = await _context.MediaItems.FindAsync(id);
+                var mediaItem = await _context.MediaItems
+                    .Include(m => m.Mixlists)
+                    .Include(m => m.Topics)
+                    .Include(m => m.Genres)
+                    .FirstOrDefaultAsync(m => m.Id == id);
+
                 if (mediaItem == null)
                 {
                     return NotFound($"Media item with ID {id} not found.");
                 }
 
+                // Remove from all mixlists
+                mediaItem.Mixlists.Clear();
+                mediaItem.Topics.Clear();
+                mediaItem.Genres.Clear();
+
                 _context.MediaItems.Remove(mediaItem);
                 await _context.SaveChangesAsync();
                 
-                return Ok(new { message = $"Media item '{mediaItem.Title}' deleted successfully." });
+                return Ok(new { message = $"Media item '{mediaItem.Title}' deleted successfully" });
             }
             catch (Exception ex)
             {

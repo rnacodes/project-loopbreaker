@@ -55,6 +55,11 @@ export const updateMixlist = (id, mixlistData) => {
     return apiClient.put(`/mixlist/${id}`, mixlistData);
 };
 
+// Mixlist deletion
+export const deleteMixlist = (id) => {
+    return apiClient.delete(`/mixlist/${id}`);
+};
+
 export const removeMediaFromMixlist = (mixlistId, mediaItemId) => {
     return apiClient.delete(`/mixlist/${mixlistId}/items/${mediaItemId}`);
 };
@@ -66,6 +71,11 @@ export const seedMixlists = () => {
 // Media update functions
 export const updateMedia = (id, mediaData) => {
     return apiClient.put(`/media/${id}`, mediaData);
+};
+
+// Media deletion
+export const deleteMedia = (id) => {
+    return apiClient.delete(`/media/${id}`);
 };
 
 // Legacy - Remove after migration
