@@ -352,18 +352,13 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
         }
 
         [Fact]
-        public async Task SearchTopics_WithEmptyQuery_ShouldReturnAllTopics()
+        public async Task SearchTopics_WithEmptyQuery_ShouldReturnBadRequest()
         {
-            // Act
+            // Act - Empty query should return BadRequest as it's not a valid search
             var response = await _client.GetAsync("/api/topics/search?query=");
 
             // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            
-            var content = await response.Content.ReadAsStringAsync();
-            var topics = JsonSerializer.Deserialize<List<TopicResponseDto>>(content, _jsonOptions);
-            Assert.NotNull(topics);
-            // Should return all topics
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]

@@ -71,16 +71,113 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 MediaType.Article => await CreateArticleAsync(dto),
                 MediaType.Podcast => await CreatePodcastAsync(dto),
                 MediaType.Video => await CreateVideoAsync(dto),
-                // TODO: Add concrete types for other media types as they're implemented
-                // For now, return an error for unsupported types
+                MediaType.Movie => await CreateMovieAsync(dto),
+                MediaType.TVShow => await CreateTvShowAsync(dto),
+                MediaType.Book => await CreateBookAsync(dto),
+                // For any other types, return an error
                 _ => throw new NotSupportedException($"Media type '{dto.MediaType}' is not yet supported. Please implement a concrete class for this media type.")
             };
 
             _context.Add(mediaItem);
             await _context.SaveChangesAsync();
 
+            // Reload the entity with includes to properly serialize topics and genres
+            var createdMediaItem = await _context.MediaItems
+                .Include(m => m.Topics)
+                .Include(m => m.Genres)
+                .Include(m => m.Mixlists)
+                .FirstOrDefaultAsync(m => m.Id == mediaItem.Id);
+
+            var response = new MediaItemResponseDto
+            {
+                Id = createdMediaItem!.Id,
+                Title = createdMediaItem.Title,
+                MediaType = createdMediaItem.MediaType,
+                Link = createdMediaItem.Link,
+                Notes = createdMediaItem.Notes,
+                DateAdded = createdMediaItem.DateAdded,
+                Status = createdMediaItem.Status,
+                DateCompleted = createdMediaItem.DateCompleted,
+                Rating = createdMediaItem.Rating,
+                OwnershipStatus = createdMediaItem.OwnershipStatus,
+                Description = createdMediaItem.Description,
+                RelatedNotes = createdMediaItem.RelatedNotes,
+                Thumbnail = createdMediaItem.Thumbnail,
+                Topics = createdMediaItem.Topics.Select(t => t.Name).ToArray(),
+                Genres = createdMediaItem.Genres.Select(g => g.Name).ToArray(),
+                MixlistIds = createdMediaItem.Mixlists.Select(m => m.Id).ToArray()
+            };
+
             // Return the created item, including its new ID
-            return CreatedAtAction(nameof(GetMediaItem), new { id = mediaItem.Id }, mediaItem);
+            return CreatedAtAction(nameof(GetMediaItem), new { id = mediaItem.Id }, response);
+        }
+
+        /// <summary>
+        /// Helper method to add Topics to a media item ensuring proper EF Core change tracking
+        /// </summary>
+        private async Task AddTopicsToMediaItemAsync(BaseMediaItem mediaItem, string[] topicNames)
+        {
+            if (topicNames == null || topicNames.Length == 0)
+                return;
+
+            foreach (var topicName in topicNames.Where(t => !string.IsNullOrWhiteSpace(t)))
+            {
+                var normalizedTopicName = topicName.Trim().ToLowerInvariant();
+                
+                // Check if topic exists using AsNoTracking to avoid tracking conflicts
+                var existingTopic = await _context.Topics
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
+                
+                if (existingTopic == null)
+                {
+                    // Create new topic
+                    existingTopic = new Topic { Name = normalizedTopicName };
+                    _context.Topics.Add(existingTopic);
+                    await _context.SaveChangesAsync();
+                }
+                
+                // Get tracked version and add to media item
+                var trackedTopic = await _context.Topics.FindAsync(existingTopic.Id);
+                if (trackedTopic != null && !mediaItem.Topics.Any(t => t.Id == trackedTopic.Id))
+                {
+                    mediaItem.Topics.Add(trackedTopic);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Helper method to add Genres to a media item ensuring proper EF Core change tracking
+        /// </summary>
+        private async Task AddGenresToMediaItemAsync(BaseMediaItem mediaItem, string[] genreNames)
+        {
+            if (genreNames == null || genreNames.Length == 0)
+                return;
+
+            foreach (var genreName in genreNames.Where(g => !string.IsNullOrWhiteSpace(g)))
+            {
+                var normalizedGenreName = genreName.Trim().ToLowerInvariant();
+                
+                // Check if genre exists using AsNoTracking to avoid tracking conflicts
+                var existingGenre = await _context.Genres
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
+                
+                if (existingGenre == null)
+                {
+                    // Create new genre
+                    existingGenre = new Genre { Name = normalizedGenreName };
+                    _context.Genres.Add(existingGenre);
+                    await _context.SaveChangesAsync();
+                }
+                
+                // Get tracked version and add to media item
+                var trackedGenre = await _context.Genres.FindAsync(existingGenre.Id);
+                if (trackedGenre != null && !mediaItem.Genres.Any(g => g.Id == trackedGenre.Id))
+                {
+                    mediaItem.Genres.Add(trackedGenre);
+                }
+            }
         }
 
         private async Task<Podcast> CreatePodcastAsync(CreateMediaItemDto dto)
@@ -102,41 +199,9 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 PodcastType = PodcastType.Series // Default to Series for now
             };
 
-            // Handle Topics - check if they exist or create new ones
-            if (dto.Topics?.Length > 0)
-            {
-                foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
-                {
-                    var normalizedTopicName = topicName.Trim().ToLowerInvariant();
-                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
-                    if (existingTopic != null)
-                    {
-                        podcast.Topics.Add(existingTopic);
-                    }
-                    else
-                    {
-                        podcast.Topics.Add(new Topic { Name = normalizedTopicName });
-                    }
-                }
-            }
-
-            // Handle Genres - check if they exist or create new ones
-            if (dto.Genres?.Length > 0)
-            {
-                foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
-                {
-                    var normalizedGenreName = genreName.Trim().ToLowerInvariant();
-                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
-                    if (existingGenre != null)
-                    {
-                        podcast.Genres.Add(existingGenre);
-                    }
-                    else
-                    {
-                        podcast.Genres.Add(new Genre { Name = normalizedGenreName });
-                    }
-                }
-            }
+            // Use helper methods to add Topics and Genres with proper change tracking
+            await AddTopicsToMediaItemAsync(podcast, dto.Topics);
+            await AddGenresToMediaItemAsync(podcast, dto.Genres);
 
             return podcast;
         }
@@ -162,41 +227,9 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 VideoType = VideoType.Series // Default to Series for now
             };
 
-            // Handle Topics - check if they exist or create new ones
-            if (dto.Topics?.Length > 0)
-            {
-                foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
-                {
-                    var normalizedTopicName = topicName.Trim().ToLowerInvariant();
-                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
-                    if (existingTopic != null)
-                    {
-                        video.Topics.Add(existingTopic);
-                    }
-                    else
-                    {
-                        video.Topics.Add(new Topic { Name = normalizedTopicName });
-                    }
-                }
-            }
-
-            // Handle Genres - check if they exist or create new ones
-            if (dto.Genres?.Length > 0)
-            {
-                foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
-                {
-                    var normalizedGenreName = genreName.Trim().ToLowerInvariant();
-                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
-                    if (existingGenre != null)
-                    {
-                        video.Genres.Add(existingGenre);
-                    }
-                    else
-                    {
-                        video.Genres.Add(new Genre { Name = normalizedGenreName });
-                    }
-                }
-            }
+            // Use helper methods to add Topics and Genres with proper change tracking
+            await AddTopicsToMediaItemAsync(video, dto.Topics);
+            await AddGenresToMediaItemAsync(video, dto.Genres);
 
             return video;
         }
@@ -223,43 +256,87 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 IsArchived = false
             };
 
-            // Handle Topics - check if they exist or create new ones
-            if (dto.Topics?.Length > 0)
-            {
-                foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
-                {
-                    var normalizedTopicName = topicName.Trim().ToLowerInvariant();
-                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
-                    if (existingTopic != null)
-                    {
-                        article.Topics.Add(existingTopic);
-                    }
-                    else
-                    {
-                        article.Topics.Add(new Topic { Name = normalizedTopicName });
-                    }
-                }
-            }
-
-            // Handle Genres - check if they exist or create new ones
-            if (dto.Genres?.Length > 0)
-            {
-                foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
-                {
-                    var normalizedGenreName = genreName.Trim().ToLowerInvariant();
-                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
-                    if (existingGenre != null)
-                    {
-                        article.Genres.Add(existingGenre);
-                    }
-                    else
-                    {
-                        article.Genres.Add(new Genre { Name = normalizedGenreName });
-                    }
-                }
-            }
+            // Use helper methods to add Topics and Genres with proper change tracking
+            await AddTopicsToMediaItemAsync(article, dto.Topics);
+            await AddGenresToMediaItemAsync(article, dto.Genres);
 
             return article;
+        }
+
+        private async Task<Movie> CreateMovieAsync(CreateMediaItemDto dto)
+        {
+            var movie = new Movie
+            {
+                Title = dto.Title,
+                MediaType = MediaType.Movie,
+                Link = dto.Link,
+                Notes = dto.Notes,
+                Status = dto.Status,
+                DateAdded = DateTime.UtcNow,
+                DateCompleted = dto.DateCompleted?.ToUniversalTime(),
+                Rating = dto.Rating,
+                OwnershipStatus = dto.OwnershipStatus,
+                Description = dto.Description,
+                RelatedNotes = dto.RelatedNotes,
+                Thumbnail = dto.Thumbnail
+            };
+
+            // Use helper methods to add Topics and Genres with proper change tracking
+            await AddTopicsToMediaItemAsync(movie, dto.Topics);
+            await AddGenresToMediaItemAsync(movie, dto.Genres);
+
+            return movie;
+        }
+
+        private async Task<TvShow> CreateTvShowAsync(CreateMediaItemDto dto)
+        {
+            var tvShow = new TvShow
+            {
+                Title = dto.Title,
+                MediaType = MediaType.TVShow,
+                Link = dto.Link,
+                Notes = dto.Notes,
+                Status = dto.Status,
+                DateAdded = DateTime.UtcNow,
+                DateCompleted = dto.DateCompleted?.ToUniversalTime(),
+                Rating = dto.Rating,
+                OwnershipStatus = dto.OwnershipStatus,
+                Description = dto.Description,
+                RelatedNotes = dto.RelatedNotes,
+                Thumbnail = dto.Thumbnail
+            };
+
+            // Use helper methods to add Topics and Genres with proper change tracking
+            await AddTopicsToMediaItemAsync(tvShow, dto.Topics);
+            await AddGenresToMediaItemAsync(tvShow, dto.Genres);
+
+            return tvShow;
+        }
+
+        private async Task<Book> CreateBookAsync(CreateMediaItemDto dto)
+        {
+            var book = new Book
+            {
+                Title = dto.Title,
+                Author = "", // Will be set by frontend or book import
+                MediaType = MediaType.Book,
+                Link = dto.Link,
+                Notes = dto.Notes,
+                Status = dto.Status,
+                DateAdded = DateTime.UtcNow,
+                DateCompleted = dto.DateCompleted?.ToUniversalTime(),
+                Rating = dto.Rating,
+                OwnershipStatus = dto.OwnershipStatus,
+                Description = dto.Description,
+                RelatedNotes = dto.RelatedNotes,
+                Thumbnail = dto.Thumbnail
+            };
+
+            // Use helper methods to add Topics and Genres with proper change tracking
+            await AddTopicsToMediaItemAsync(book, dto.Topics);
+            await AddGenresToMediaItemAsync(book, dto.Genres);
+
+            return book;
         }
 
         // GET: api/media/{id}
@@ -340,48 +417,99 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 existingItem.RelatedNotes = dto.RelatedNotes;
                 existingItem.Thumbnail = dto.Thumbnail;
 
-                // Clear existing topics and genres
+                // Clear existing topics and genres and save immediately
                 existingItem.Topics.Clear();
                 existingItem.Genres.Clear();
+                await _context.SaveChangesAsync();
 
-                // Add new topics - check if they exist or create new ones
+                // Process topics: ensure they exist first, then create associations
                 if (dto.Topics?.Length > 0)
                 {
                     foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
                     {
                         var normalizedTopicName = topicName.Trim().ToLowerInvariant();
-                        var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
-                        if (existingTopic != null)
+                        
+                        // Check if topic exists using AsNoTracking to avoid tracking conflicts
+                        var topic = await _context.Topics
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
+                        
+                        if (topic == null)
                         {
-                            existingItem.Topics.Add(existingTopic);
+                            // Create new topic and save immediately
+                            topic = new Topic { Name = normalizedTopicName };
+                            _context.Topics.Add(topic);
+                            await _context.SaveChangesAsync();
                         }
-                        else
+                        
+                        // Now attach the topic to the media item using a fresh query
+                        var trackedTopic = await _context.Topics.FindAsync(topic.Id);
+                        if (trackedTopic != null && !existingItem.Topics.Any(t => t.Id == trackedTopic.Id))
                         {
-                            existingItem.Topics.Add(new Topic { Name = normalizedTopicName });
+                            existingItem.Topics.Add(trackedTopic);
                         }
                     }
                 }
 
-                // Add new genres - check if they exist or create new ones
+                // Process genres: ensure they exist first, then create associations
                 if (dto.Genres?.Length > 0)
                 {
                     foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
                     {
                         var normalizedGenreName = genreName.Trim().ToLowerInvariant();
-                        var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
-                        if (existingGenre != null)
+                        
+                        // Check if genre exists using AsNoTracking to avoid tracking conflicts
+                        var genre = await _context.Genres
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
+                        
+                        if (genre == null)
                         {
-                            existingItem.Genres.Add(existingGenre);
+                            // Create new genre and save immediately
+                            genre = new Genre { Name = normalizedGenreName };
+                            _context.Genres.Add(genre);
+                            await _context.SaveChangesAsync();
                         }
-                        else
+                        
+                        // Now attach the genre to the media item using a fresh query
+                        var trackedGenre = await _context.Genres.FindAsync(genre.Id);
+                        if (trackedGenre != null && !existingItem.Genres.Any(g => g.Id == trackedGenre.Id))
                         {
-                            existingItem.Genres.Add(new Genre { Name = normalizedGenreName });
+                            existingItem.Genres.Add(trackedGenre);
                         }
                     }
                 }
 
                 await _context.SaveChangesAsync();
-                return Ok(existingItem);
+
+                // Reload with mixlists to return complete DTO
+                var updatedItem = await _context.MediaItems
+                    .Include(m => m.Topics)
+                    .Include(m => m.Genres)
+                    .Include(m => m.Mixlists)
+                    .FirstOrDefaultAsync(m => m.Id == id);
+
+                var response = new MediaItemResponseDto
+                {
+                    Id = updatedItem!.Id,
+                    Title = updatedItem.Title,
+                    MediaType = updatedItem.MediaType,
+                    Link = updatedItem.Link,
+                    Notes = updatedItem.Notes,
+                    DateAdded = updatedItem.DateAdded,
+                    Status = updatedItem.Status,
+                    DateCompleted = updatedItem.DateCompleted,
+                    Rating = updatedItem.Rating,
+                    OwnershipStatus = updatedItem.OwnershipStatus,
+                    Description = updatedItem.Description,
+                    RelatedNotes = updatedItem.RelatedNotes,
+                    Thumbnail = updatedItem.Thumbnail,
+                    Topics = updatedItem.Topics.Select(t => t.Name).ToArray(),
+                    Genres = updatedItem.Genres.Select(g => g.Name).ToArray(),
+                    MixlistIds = updatedItem.Mixlists.Select(m => m.Id).ToArray()
+                };
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
@@ -420,7 +548,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 _context.MediaItems.Remove(mediaItem);
                 await _context.SaveChangesAsync();
                 
-                return Ok(new { message = $"Media item '{mediaItem.Title}' deleted successfully" });
+                return NoContent();
             }
             catch (Exception ex)
             {

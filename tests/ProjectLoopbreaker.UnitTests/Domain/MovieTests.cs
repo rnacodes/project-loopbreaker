@@ -10,11 +10,11 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void Constructor_ShouldInitializeWithDefaultValues()
         {
             // Act
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
 
             // Assert
             Assert.NotEqual(Guid.Empty, movie.Id);
-            Assert.Null(movie.Title);
+            Assert.Equal("", movie.Title);
             Assert.Null(movie.Description);
             Assert.Null(movie.Thumbnail);
             Assert.Null(movie.Director);
@@ -42,7 +42,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void Properties_CanBeSetAndRetrieved()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
             var testDate = DateTime.UtcNow;
 
             // Act
@@ -53,7 +53,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             movie.MediaType = MediaType.Movie;
             movie.Status = Status.ActivelyExploring;
             movie.Rating = Rating.SuperLike;
-            movie.OwnershipStatus = OwnershipStatus.Owned;
+            movie.OwnershipStatus = OwnershipStatus.Own;
             movie.DateAdded = testDate;
             movie.DateCompleted = testDate.AddDays(7);
             movie.Director = "Test Director";
@@ -78,7 +78,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             Assert.Equal(MediaType.Movie, movie.MediaType);
             Assert.Equal(Status.ActivelyExploring, movie.Status);
             Assert.Equal(Rating.SuperLike, movie.Rating);
-            Assert.Equal(OwnershipStatus.Owned, movie.OwnershipStatus);
+            Assert.Equal(OwnershipStatus.Own, movie.OwnershipStatus);
             Assert.Equal(testDate, movie.DateAdded);
             Assert.Equal(testDate.AddDays(7), movie.DateCompleted);
             Assert.Equal("Test Director", movie.Director);
@@ -100,7 +100,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void ReleaseYear_CanBeSetToPositiveValue()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
 
             // Act
             movie.ReleaseYear = 2024;
@@ -113,7 +113,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void RuntimeMinutes_CanBeSetToPositiveValue()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
 
             // Act
             movie.RuntimeMinutes = 150;
@@ -126,7 +126,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void TmdbRating_CanBeSetToDecimalValue()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
 
             // Act
             movie.TmdbRating = 7.8;
@@ -139,7 +139,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void GetTmdbBackdropUrl_WithValidPath_ShouldReturnFullUrl()
         {
             // Arrange
-            var movie = new Movie { TmdbBackdropPath = "/abcdef.jpg" };
+            var movie = new Movie { Title = "", TmdbBackdropPath = "/abcdef.jpg" };
 
             // Act
             var url = movie.GetTmdbBackdropUrl();
@@ -152,7 +152,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void GetTmdbBackdropUrl_WithCustomSize_ShouldReturnFullUrlWithSize()
         {
             // Arrange
-            var movie = new Movie { TmdbBackdropPath = "/abcdef.jpg" };
+            var movie = new Movie { Title = "", TmdbBackdropPath = "/abcdef.jpg" };
 
             // Act
             var url = movie.GetTmdbBackdropUrl("w500");
@@ -165,7 +165,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void GetTmdbBackdropUrl_WithNullPath_ShouldReturnNull()
         {
             // Arrange
-            var movie = new Movie { TmdbBackdropPath = null };
+            var movie = new Movie { Title = "", TmdbBackdropPath = null };
 
             // Act
             var url = movie.GetTmdbBackdropUrl();
@@ -178,7 +178,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void GetTmdbBackdropUrl_WithEmptyPath_ShouldReturnNull()
         {
             // Arrange
-            var movie = new Movie { TmdbBackdropPath = "" };
+            var movie = new Movie { Title = "", TmdbBackdropPath = "" };
 
             // Act
             var url = movie.GetTmdbBackdropUrl();
@@ -191,7 +191,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void NavigationProperties_TopicsCanBeAddedAndRetrieved()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
             var topic1 = new Topic { Name = "action" };
             var topic2 = new Topic { Name = "thriller" };
 
@@ -209,7 +209,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void NavigationProperties_GenresCanBeAddedAndRetrieved()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
             var genre1 = new Genre { Name = "sci-fi" };
             var genre2 = new Genre { Name = "adventure" };
 
@@ -227,7 +227,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void NavigationProperties_MixlistsCanBeAddedAndRetrieved()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
             var mixlist1 = new Mixlist { Name = "Favorite Movies" };
             var mixlist2 = new Mixlist { Name = "Must Watch" };
 
@@ -245,7 +245,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void InheritsFromBaseMediaItem_ShouldHaveBaseProperties()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
 
             // Assert
             Assert.IsAssignableFrom<BaseMediaItem>(movie);
@@ -259,7 +259,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void ImdbId_CanStoreStandardFormat()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
 
             // Act
             movie.ImdbId = "tt1234567";
@@ -272,7 +272,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void TmdbId_CanStoreNumericId()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
 
             // Act
             movie.TmdbId = "550"; // Fight Club's TMDB ID
@@ -285,7 +285,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void MpaaRating_CanStoreVariousRatings()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
 
             // Act & Assert
             movie.MpaaRating = "G";
@@ -308,7 +308,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void Cast_CanStoreCommaSeparatedList()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
 
             // Act
             movie.Cast = "Tom Hanks, Tim Allen, Joan Cusack";
@@ -321,7 +321,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void Tagline_CanStoreMovieTagline()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
 
             // Act
             movie.Tagline = "In space, no one can hear you scream.";
@@ -334,7 +334,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void OriginalTitle_CanStoreForeignTitle()
         {
             // Arrange
-            var movie = new Movie();
+            var movie = new Movie { Title = "" };
 
             // Act
             movie.Title = "Spirited Away";

@@ -10,11 +10,11 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void Constructor_ShouldInitializeWithDefaultValues()
         {
             // Act
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
 
             // Assert
             Assert.NotEqual(Guid.Empty, tvShow.Id);
-            Assert.Null(tvShow.Title);
+            Assert.Equal("", tvShow.Title);
             Assert.Null(tvShow.Description);
             Assert.Null(tvShow.Thumbnail);
             Assert.Null(tvShow.Creator);
@@ -43,7 +43,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void Properties_CanBeSetAndRetrieved()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
             var testDate = DateTime.UtcNow;
 
             // Act
@@ -54,7 +54,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             tvShow.MediaType = MediaType.TVShow;
             tvShow.Status = Status.ActivelyExploring;
             tvShow.Rating = Rating.SuperLike;
-            tvShow.OwnershipStatus = OwnershipStatus.Streaming;
+            tvShow.OwnershipStatus = OwnershipStatus.Streamed;
             tvShow.DateAdded = testDate;
             tvShow.DateCompleted = testDate.AddDays(30);
             tvShow.Creator = "Test Creator";
@@ -80,7 +80,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             Assert.Equal(MediaType.TVShow, tvShow.MediaType);
             Assert.Equal(Status.ActivelyExploring, tvShow.Status);
             Assert.Equal(Rating.SuperLike, tvShow.Rating);
-            Assert.Equal(OwnershipStatus.Streaming, tvShow.OwnershipStatus);
+            Assert.Equal(OwnershipStatus.Streamed, tvShow.OwnershipStatus);
             Assert.Equal(testDate, tvShow.DateAdded);
             Assert.Equal(testDate.AddDays(30), tvShow.DateCompleted);
             Assert.Equal("Test Creator", tvShow.Creator);
@@ -103,7 +103,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void FirstAirYear_CanBeSetToPositiveValue()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
 
             // Act
             tvShow.FirstAirYear = 2024;
@@ -116,7 +116,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void LastAirYear_CanBeSetToPositiveValue()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
 
             // Act
             tvShow.LastAirYear = 2026;
@@ -129,7 +129,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void NumberOfSeasons_CanBeSetToPositiveValue()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
 
             // Act
             tvShow.NumberOfSeasons = 5;
@@ -142,7 +142,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void NumberOfEpisodes_CanBeSetToPositiveValue()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
 
             // Act
             tvShow.NumberOfEpisodes = 50;
@@ -155,7 +155,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void TmdbRating_CanBeSetToDecimalValue()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
 
             // Act
             tvShow.TmdbRating = 9.2;
@@ -168,7 +168,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void GetTmdbPosterUrl_WithValidPath_ShouldReturnFullUrl()
         {
             // Arrange
-            var tvShow = new TvShow { TmdbPosterPath = "/poster123.jpg" };
+            var tvShow = new TvShow { Title = "", TmdbPosterPath = "/poster123.jpg" };
 
             // Act
             var url = tvShow.GetTmdbPosterUrl();
@@ -181,7 +181,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void GetTmdbPosterUrl_WithCustomSize_ShouldReturnFullUrlWithSize()
         {
             // Arrange
-            var tvShow = new TvShow { TmdbPosterPath = "/poster123.jpg" };
+            var tvShow = new TvShow { Title = "", TmdbPosterPath = "/poster123.jpg" };
 
             // Act
             var url = tvShow.GetTmdbPosterUrl("w300");
@@ -194,7 +194,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void GetTmdbPosterUrl_WithNullPath_ShouldReturnNull()
         {
             // Arrange
-            var tvShow = new TvShow { TmdbPosterPath = null };
+            var tvShow = new TvShow { Title = "", TmdbPosterPath = null };
 
             // Act
             var url = tvShow.GetTmdbPosterUrl();
@@ -207,7 +207,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void GetTmdbPosterUrl_WithEmptyPath_ShouldReturnNull()
         {
             // Arrange
-            var tvShow = new TvShow { TmdbPosterPath = "" };
+            var tvShow = new TvShow { Title = "", TmdbPosterPath = "" };
 
             // Act
             var url = tvShow.GetTmdbPosterUrl();
@@ -222,6 +222,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             // Arrange
             var tvShow = new TvShow
             {
+                Title = "",
                 TmdbPosterPath = "/poster123.jpg",
                 Thumbnail = "https://example.com/thumb.jpg"
             };
@@ -239,6 +240,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             // Arrange
             var tvShow = new TvShow
             {
+                Title = "",
                 TmdbPosterPath = null,
                 Thumbnail = "https://example.com/thumb.jpg"
             };
@@ -256,6 +258,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             // Arrange
             var tvShow = new TvShow
             {
+                Title = "",
                 TmdbPosterPath = null,
                 Thumbnail = null
             };
@@ -273,6 +276,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             // Arrange
             var tvShow = new TvShow
             {
+                Title = "",
                 FirstAirYear = 2015,
                 LastAirYear = 2020
             };
@@ -290,6 +294,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             // Arrange
             var tvShow = new TvShow
             {
+                Title = "",
                 FirstAirYear = 2020,
                 LastAirYear = 2020
             };
@@ -307,6 +312,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             // Arrange
             var tvShow = new TvShow
             {
+                Title = "",
                 FirstAirYear = 2020,
                 LastAirYear = null
             };
@@ -324,6 +330,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             // Arrange
             var tvShow = new TvShow
             {
+                Title = "",
                 FirstAirYear = null,
                 LastAirYear = null
             };
@@ -341,6 +348,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             // Arrange
             var tvShow = new TvShow
             {
+                Title = "",
                 NumberOfSeasons = 3,
                 NumberOfEpisodes = 30
             };
@@ -358,6 +366,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             // Arrange
             var tvShow = new TvShow
             {
+                Title = "",
                 NumberOfSeasons = 1,
                 NumberOfEpisodes = 10
             };
@@ -375,6 +384,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             // Arrange
             var tvShow = new TvShow
             {
+                Title = "",
                 NumberOfSeasons = 1,
                 NumberOfEpisodes = 1
             };
@@ -392,6 +402,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             // Arrange
             var tvShow = new TvShow
             {
+                Title = "",
                 NumberOfSeasons = 5,
                 NumberOfEpisodes = null
             };
@@ -409,6 +420,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             // Arrange
             var tvShow = new TvShow
             {
+                Title = "",
                 NumberOfSeasons = null,
                 NumberOfEpisodes = 42
             };
@@ -426,6 +438,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             // Arrange
             var tvShow = new TvShow
             {
+                Title = "",
                 NumberOfSeasons = null,
                 NumberOfEpisodes = null
             };
@@ -441,7 +454,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void NavigationProperties_TopicsCanBeAddedAndRetrieved()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
             var topic1 = new Topic { Name = "drama" };
             var topic2 = new Topic { Name = "mystery" };
 
@@ -459,7 +472,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void NavigationProperties_GenresCanBeAddedAndRetrieved()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
             var genre1 = new Genre { Name = "crime" };
             var genre2 = new Genre { Name = "thriller" };
 
@@ -477,7 +490,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void NavigationProperties_MixlistsCanBeAddedAndRetrieved()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
             var mixlist1 = new Mixlist { Name = "Favorite Shows" };
             var mixlist2 = new Mixlist { Name = "Binge Watch" };
 
@@ -495,7 +508,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void InheritsFromBaseMediaItem_ShouldHaveBaseProperties()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
 
             // Assert
             Assert.IsAssignableFrom<BaseMediaItem>(tvShow);
@@ -509,7 +522,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void ContentRating_CanStoreVariousRatings()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
 
             // Act & Assert
             tvShow.ContentRating = "TV-Y";
@@ -529,7 +542,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void Cast_CanStoreCommaSeparatedList()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
 
             // Act
             tvShow.Cast = "Bryan Cranston, Aaron Paul, Anna Gunn";
@@ -542,7 +555,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void Tagline_CanStoreShowTagline()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
 
             // Act
             tvShow.Tagline = "Winter is coming.";
@@ -555,7 +568,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
         public void OriginalName_CanStoreForeignTitle()
         {
             // Arrange
-            var tvShow = new TvShow();
+            var tvShow = new TvShow { Title = "" };
 
             // Act
             tvShow.Title = "Money Heist";

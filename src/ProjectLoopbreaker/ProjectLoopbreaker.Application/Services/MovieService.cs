@@ -187,9 +187,10 @@ namespace ProjectLoopbreaker.Application.Services
                 movie.OriginalLanguage = dto.OriginalLanguage;
                 movie.OriginalTitle = dto.OriginalTitle;
 
-                // Clear existing topics and genres
+                // Clear existing topics and genres and save immediately to avoid FK conflicts
                 movie.Topics.Clear();
                 movie.Genres.Clear();
+                await _context.SaveChangesAsync();
 
                 // Handle Topics array conversion
                 await HandleTopicsAsync(movie, dto.Topics);
@@ -277,40 +278,62 @@ namespace ProjectLoopbreaker.Application.Services
 
         private async Task HandleTopicsAsync(Movie movie, string[]? topics)
         {
-            if (topics?.Length > 0)
+            if (topics == null || topics.Length == 0)
+                return;
+
+            foreach (var topicName in topics.Where(t => !string.IsNullOrWhiteSpace(t)))
             {
-                foreach (var topicName in topics.Where(t => !string.IsNullOrWhiteSpace(t)))
+                var normalizedTopicName = topicName.Trim().ToLowerInvariant();
+                
+                // Check if topic exists using AsNoTracking to avoid tracking conflicts
+                var topic = await _context.Topics
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
+                
+                if (topic == null)
                 {
-                    var normalizedTopicName = topicName.Trim().ToLowerInvariant();
-                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
-                    if (existingTopic != null)
-                    {
-                        movie.Topics.Add(existingTopic);
-                    }
-                    else
-                    {
-                        movie.Topics.Add(new Topic { Name = normalizedTopicName });
-                    }
+                    // Create new topic and save immediately
+                    topic = new Topic { Name = normalizedTopicName };
+                    _context.Add(topic);
+                    await _context.SaveChangesAsync();
+                }
+                
+                // Get tracked version and add to movie
+                var trackedTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Id == topic.Id);
+                if (trackedTopic != null && !movie.Topics.Any(t => t.Id == trackedTopic.Id))
+                {
+                    movie.Topics.Add(trackedTopic);
                 }
             }
         }
 
         private async Task HandleGenresAsync(Movie movie, string[]? genres)
         {
-            if (genres?.Length > 0)
+            if (genres == null || genres.Length == 0)
+                return;
+
+            foreach (var genreName in genres.Where(g => !string.IsNullOrWhiteSpace(g)))
             {
-                foreach (var genreName in genres.Where(g => !string.IsNullOrWhiteSpace(g)))
+                var normalizedGenreName = genreName.Trim().ToLowerInvariant();
+                
+                // Check if genre exists using AsNoTracking to avoid tracking conflicts
+                var genre = await _context.Genres
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
+                
+                if (genre == null)
                 {
-                    var normalizedGenreName = genreName.Trim().ToLowerInvariant();
-                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
-                    if (existingGenre != null)
-                    {
-                        movie.Genres.Add(existingGenre);
-                    }
-                    else
-                    {
-                        movie.Genres.Add(new Genre { Name = normalizedGenreName });
-                    }
+                    // Create new genre and save immediately
+                    genre = new Genre { Name = normalizedGenreName };
+                    _context.Add(genre);
+                    await _context.SaveChangesAsync();
+                }
+                
+                // Get tracked version and add to movie
+                var trackedGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Id == genre.Id);
+                if (trackedGenre != null && !movie.Genres.Any(g => g.Id == trackedGenre.Id))
+                {
+                    movie.Genres.Add(trackedGenre);
                 }
             }
         }

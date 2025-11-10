@@ -189,9 +189,10 @@ namespace ProjectLoopbreaker.Application.Services
                 tvShow.OriginalLanguage = dto.OriginalLanguage;
                 tvShow.OriginalName = dto.OriginalName;
 
-                // Clear existing topics and genres
+                // Clear existing topics and genres and save immediately to avoid FK conflicts
                 tvShow.Topics.Clear();
                 tvShow.Genres.Clear();
+                await _context.SaveChangesAsync();
 
                 // Handle Topics array conversion
                 await HandleTopicsAsync(tvShow, dto.Topics);
@@ -279,40 +280,62 @@ namespace ProjectLoopbreaker.Application.Services
 
         private async Task HandleTopicsAsync(TvShow tvShow, string[]? topics)
         {
-            if (topics?.Length > 0)
+            if (topics == null || topics.Length == 0)
+                return;
+
+            foreach (var topicName in topics.Where(t => !string.IsNullOrWhiteSpace(t)))
             {
-                foreach (var topicName in topics.Where(t => !string.IsNullOrWhiteSpace(t)))
+                var normalizedTopicName = topicName.Trim().ToLowerInvariant();
+                
+                // Check if topic exists using AsNoTracking to avoid tracking conflicts
+                var topic = await _context.Topics
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
+                
+                if (topic == null)
                 {
-                    var normalizedTopicName = topicName.Trim().ToLowerInvariant();
-                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
-                    if (existingTopic != null)
-                    {
-                        tvShow.Topics.Add(existingTopic);
-                    }
-                    else
-                    {
-                        tvShow.Topics.Add(new Topic { Name = normalizedTopicName });
-                    }
+                    // Create new topic and save immediately
+                    topic = new Topic { Name = normalizedTopicName };
+                    _context.Add(topic);
+                    await _context.SaveChangesAsync();
+                }
+                
+                // Get tracked version and add to TV show
+                var trackedTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Id == topic.Id);
+                if (trackedTopic != null && !tvShow.Topics.Any(t => t.Id == trackedTopic.Id))
+                {
+                    tvShow.Topics.Add(trackedTopic);
                 }
             }
         }
 
         private async Task HandleGenresAsync(TvShow tvShow, string[]? genres)
         {
-            if (genres?.Length > 0)
+            if (genres == null || genres.Length == 0)
+                return;
+
+            foreach (var genreName in genres.Where(g => !string.IsNullOrWhiteSpace(g)))
             {
-                foreach (var genreName in genres.Where(g => !string.IsNullOrWhiteSpace(g)))
+                var normalizedGenreName = genreName.Trim().ToLowerInvariant();
+                
+                // Check if genre exists using AsNoTracking to avoid tracking conflicts
+                var genre = await _context.Genres
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
+                
+                if (genre == null)
                 {
-                    var normalizedGenreName = genreName.Trim().ToLowerInvariant();
-                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
-                    if (existingGenre != null)
-                    {
-                        tvShow.Genres.Add(existingGenre);
-                    }
-                    else
-                    {
-                        tvShow.Genres.Add(new Genre { Name = normalizedGenreName });
-                    }
+                    // Create new genre and save immediately
+                    genre = new Genre { Name = normalizedGenreName };
+                    _context.Add(genre);
+                    await _context.SaveChangesAsync();
+                }
+                
+                // Get tracked version and add to TV show
+                var trackedGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Id == genre.Id);
+                if (trackedGenre != null && !tvShow.Genres.Any(g => g.Id == trackedGenre.Id))
+                {
+                    tvShow.Genres.Add(trackedGenre);
                 }
             }
         }

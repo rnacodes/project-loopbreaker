@@ -48,9 +48,10 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return await GetAllGenres();
             }
 
+            var normalizedQuery = query.ToLowerInvariant();
             var genres = await _context.Genres
                 .Include(g => g.MediaItems)
-                .Where(g => g.Name.Contains(query))
+                .Where(g => g.Name.Contains(normalizedQuery))
                 .OrderBy(g => g.Name)
                 .ToListAsync();
                 

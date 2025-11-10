@@ -48,9 +48,10 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return await GetAllTopics();
             }
 
+            var normalizedQuery = query.ToLowerInvariant();
             var topics = await _context.Topics
                 .Include(t => t.MediaItems)
-                .Where(t => t.Name.Contains(query))
+                .Where(t => t.Name.Contains(normalizedQuery))
                 .OrderBy(t => t.Name)
                 .ToListAsync();
                 

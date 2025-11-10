@@ -319,7 +319,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 _context.Mixlists.Remove(mixlist);
                 await _context.SaveChangesAsync();
                 
-                return Ok(new { message = $"Mixlist '{mixlist.Name}' deleted successfully" });
+                return NoContent();
             }
             catch (Exception ex)
             {

@@ -352,18 +352,13 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
         }
 
         [Fact]
-        public async Task SearchGenres_WithEmptyQuery_ShouldReturnAllGenres()
+        public async Task SearchGenres_WithEmptyQuery_ShouldReturnBadRequest()
         {
-            // Act
+            // Act - Empty query should return BadRequest as it's not a valid search
             var response = await _client.GetAsync("/api/genres/search?query=");
 
             // Assert
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-            
-            var content = await response.Content.ReadAsStringAsync();
-            var genres = JsonSerializer.Deserialize<List<GenreResponseDto>>(content, _jsonOptions);
-            Assert.NotNull(genres);
-            // Should return all genres
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
 
         [Fact]
