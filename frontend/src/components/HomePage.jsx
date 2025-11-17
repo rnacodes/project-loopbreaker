@@ -4,7 +4,7 @@ import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedi
 import { 
     Search, Book, Movie, Tv, Article, LibraryMusic, Podcasts, SportsEsports, YouTube, Language, MenuBook, AutoAwesome, 
     AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos, Forest, 
-    PlaylistAdd, NoteAlt, ImportExport, Topic, FileDownload, LocalLibrary
+    PlaylistAdd, NoteAlt, ImportExport, Topic, FileDownload, LocalLibrary, Apps
 } from '@mui/icons-material';
 import { getAllMixlists, seedMixlists, getAllMedia } from '../services/apiService';
 
@@ -237,6 +237,10 @@ export default function HomePage() {
     navigate('/add-media');
   };
 
+  const handleSourceDirectory = () => {
+    navigate('/sources');
+  };
+
   const handleSeedMixlists = async () => {
     try {
       setMixlistsLoading(true);
@@ -343,7 +347,27 @@ export default function HomePage() {
 
             <Box sx={{ mt: 4, p: 3, backgroundColor: 'background.paper', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
                 <Grid container spacing={3} alignItems="center" justifyContent="center">
-                    <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
+                    <Grid item xs={12} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
+                        <Box 
+                            onClick={handleSourceDirectory}
+                            sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center', 
+                                cursor: 'pointer', 
+                                color: 'text.primary', 
+                                p: 2,
+                                '&:hover': {
+                                    transform: 'scale(1.05)',
+                                    transition: 'transform 0.2s ease'
+                                }
+                            }}
+                        >
+                            <Apps sx={{ fontSize: 70, color: '#9C27B0' }} />
+                            <Typography variant="h5" sx={{ mt: 1 }}>Source Directory</Typography>
+                        </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
                         <Box 
                             onClick={handleCreateMixlist}
                             sx={{ 
@@ -363,7 +387,7 @@ export default function HomePage() {
                             <Typography variant="h5" sx={{ mt: 1 }}>Create a Mixlist</Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
+                    <Grid item xs={12} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
                         <Box 
                             onClick={handleImportMedia}
                             sx={{ 
@@ -383,7 +407,7 @@ export default function HomePage() {
                             <Typography variant="h5" sx={{ mt: 1 }}>Import Media</Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
+                    <Grid item xs={12} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
                         <Box 
                             onClick={handleSearchByTopicOrGenre}
                             sx={{ 
@@ -403,7 +427,7 @@ export default function HomePage() {
                             <Typography variant="h5" sx={{ mt: 1 }}>Browse Topics/Genres</Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={3} sx={{ textAlign: 'center' }}>
+                    <Grid item xs={12} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
                         <Box 
                             onClick={handleAddMedia}
                             sx={{ 
