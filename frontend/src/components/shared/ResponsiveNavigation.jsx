@@ -25,7 +25,8 @@ import {
   Upload,
   Download,
   Search,
-  Science
+  Science,
+  Apps
 } from '@mui/icons-material';
 
 const ResponsiveNavigation = () => {
@@ -47,6 +48,7 @@ const ResponsiveNavigation = () => {
     { text: 'Home', path: '/', icon: <Home /> },
     { text: 'All Media', path: '/all-media', icon: <Movie /> },
     { text: 'Mixlists', path: '/mixlists', icon: <QueueMusic /> },
+    { text: 'Sources', path: '/sources', icon: <Apps /> },
     { text: 'Add Media', path: '/add-media', icon: <Add /> },
     { text: 'Import Media', path: '/import-media', icon: <Download /> },
     { text: 'Upload Media', path: '/upload-media', icon: <Upload /> },
