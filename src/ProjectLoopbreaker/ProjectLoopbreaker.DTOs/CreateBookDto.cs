@@ -78,5 +78,9 @@ namespace ProjectLoopbreaker.DTOs
         
         [JsonPropertyName("partOfSeries")]
         public bool PartOfSeries { get; set; } = false;
+        
+        [Range(1, 5)]
+        [JsonPropertyName("goodreadsRating")]
+        public decimal? GoodreadsRating { get; set; }
     }
 }

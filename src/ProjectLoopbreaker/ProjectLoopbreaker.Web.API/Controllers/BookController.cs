@@ -345,7 +345,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                             OwnershipStatus = createdBook.OwnershipStatus,
                             Notes = createdBook.Notes,
                             RelatedNotes = createdBook.RelatedNotes,
-                            Genres = createdBook.Genres?.Select(g => g.Name).ToArray() ?? Array.Empty<string>()
+                            Genres = createdBook.Genres?.Select(g => g.Name).ToArray() ?? Array.Empty<string>(),
+                            GoodreadsRating = createdBook.GoodreadsRating
                         });
                         createdBook.Thumbnail = uploadedCoverUrl;
                     }

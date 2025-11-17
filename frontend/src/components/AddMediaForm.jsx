@@ -44,6 +44,7 @@ function AddMediaForm() {
     const [asin, setAsin] = useState('');
     const [format, setFormat] = useState('Digital'); // 'Digital' or 'Physical'
     const [partOfSeries, setPartOfSeries] = useState(false);
+    const [goodreadsRating, setGoodreadsRating] = useState('');
     
     // Movie specific fields
     const [director, setDirector] = useState('');
@@ -306,7 +307,8 @@ function AddMediaForm() {
                     isbn: isbn || null,
                     asin: asin || null,
                     format: format,
-                    partOfSeries: partOfSeries
+                    partOfSeries: partOfSeries,
+                    goodreadsRating: goodreadsRating ? parseFloat(goodreadsRating) : null
                 };
                 
                 response = await createBook(bookData);
@@ -598,6 +600,37 @@ function AddMediaForm() {
                                 color: '#ffffff'
                             }
                         }}
+                    />
+
+                    {/* Goodreads Rating */}
+                    <TextField
+                        label="Goodreads Rating (1-5)"
+                        placeholder="e.g., 4.5"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        type="number"
+                        inputProps={{ min: 1, max: 5, step: 0.1 }}
+                        value={goodreadsRating}
+                        onChange={(e) => setGoodreadsRating(e.target.value)}
+                        sx={{
+                            mb: 2,
+                            '& .MuiInputBase-input': {
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputBase-input::placeholder': {
+                                color: '#ffffff',
+                                opacity: 1
+                            },
+                            '& .MuiInputLabel-root': {
+                                color: '#ffffff',
+                                fontSize: '14px'
+                            },
+                            '& .MuiInputLabel-root.Mui-focused': {
+                                color: '#ffffff'
+                            }
+                        }}
+                        helperText="Will auto-convert to PLB rating if not set manually"
                     />
 
                     {/* Format */}

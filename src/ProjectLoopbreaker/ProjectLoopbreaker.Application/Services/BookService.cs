@@ -4,6 +4,7 @@ using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Utilities;
 
 namespace ProjectLoopbreaker.Application.Services
 {
@@ -122,8 +123,15 @@ namespace ProjectLoopbreaker.Application.Services
                     ISBN = dto.ISBN,
                     ASIN = dto.ASIN,
                     Format = dto.Format,
-                    PartOfSeries = dto.PartOfSeries
+                    PartOfSeries = dto.PartOfSeries,
+                    GoodreadsRating = dto.GoodreadsRating
                 };
+                
+                // If GoodreadsRating is provided but Rating is not, auto-convert
+                if (dto.GoodreadsRating.HasValue && !dto.Rating.HasValue)
+                {
+                    book.Rating = RatingConverter.ConvertGoodreadsRatingToPLBRating(dto.GoodreadsRating);
+                }
 
                 // Handle Topics array conversion
                 await HandleTopicsAsync(book, dto.Topics);
@@ -170,6 +178,13 @@ namespace ProjectLoopbreaker.Application.Services
                 book.ASIN = dto.ASIN;
                 book.Format = dto.Format;
                 book.PartOfSeries = dto.PartOfSeries;
+                book.GoodreadsRating = dto.GoodreadsRating;
+                
+                // If GoodreadsRating is provided but Rating is not, auto-convert
+                if (dto.GoodreadsRating.HasValue && !dto.Rating.HasValue)
+                {
+                    book.Rating = RatingConverter.ConvertGoodreadsRatingToPLBRating(dto.GoodreadsRating);
+                }
 
                 // Clear existing topics and genres
                 book.Topics.Clear();

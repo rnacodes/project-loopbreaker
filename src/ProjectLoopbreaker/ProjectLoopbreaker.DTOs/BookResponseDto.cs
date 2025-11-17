@@ -64,5 +64,8 @@ namespace ProjectLoopbreaker.DTOs
         
         [JsonPropertyName("genres")]
         public string[] Genres { get; set; } = Array.Empty<string>();
+        
+        [JsonPropertyName("goodreadsRating")]
+        public decimal? GoodreadsRating { get; set; }
     }
 }

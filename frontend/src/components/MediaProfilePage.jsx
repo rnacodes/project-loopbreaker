@@ -761,6 +761,15 @@ function MediaProfilePage() {
                     <Typography variant="body1">{mediaItem.partOfSeries ? 'Yes' : 'No'}</Typography>
                   </Box>
                 )}
+                
+                {mediaItem.goodreadsRating && (
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                      <strong>Goodreads Rating:</strong>
+                    </Typography>
+                    <Typography variant="body1">{mediaItem.goodreadsRating} / 5</Typography>
+                  </Box>
+                )}
               </Box>
             )}
             

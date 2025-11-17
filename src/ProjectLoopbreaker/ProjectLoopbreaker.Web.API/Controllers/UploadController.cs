@@ -497,6 +497,29 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             if (!string.IsNullOrEmpty(ownershipStr) && Enum.TryParse<OwnershipStatus>(ownershipStr, true, out OwnershipStatus ownership))
                 book.OwnershipStatus = ownership;
 
+            // Parse Goodreads rating (1-5 scale)
+            var goodreadsRatingStr = GetCsvValue(csv, "GoodreadsRating");
+            if (!string.IsNullOrEmpty(goodreadsRatingStr) && decimal.TryParse(goodreadsRatingStr, out decimal goodreadsRating))
+            {
+                if (goodreadsRating >= 1 && goodreadsRating <= 5)
+                {
+                    book.GoodreadsRating = goodreadsRating;
+                    
+                    // If Rating (PLB rating) is not set, auto-convert from Goodreads rating
+                    if (!book.Rating.HasValue)
+                    {
+                        book.Rating = goodreadsRating switch
+                        {
+                            5 => Rating.SuperLike,
+                            4 => Rating.Like,
+                            3 => Rating.Neutral,
+                            >= 1 and < 3 => Rating.Dislike,
+                            _ => null
+                        };
+                    }
+                }
+            }
+
             // Parse dates
             var dateCompletedStr = GetCsvValue(csv, "DateCompleted");
             if (!string.IsNullOrEmpty(dateCompletedStr) && DateTime.TryParse(dateCompletedStr, out DateTime dateCompleted))

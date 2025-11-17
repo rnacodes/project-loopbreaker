@@ -5,6 +5,7 @@ using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.Shared.DTOs.OpenLibrary;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Utilities;
 
 namespace ProjectLoopbreaker.Application.Services
 {
@@ -39,8 +40,15 @@ namespace ProjectLoopbreaker.Application.Services
                 ISBN = dto.ISBN,
                 ASIN = dto.ASIN,
                 Format = dto.Format,
-                PartOfSeries = dto.PartOfSeries
+                PartOfSeries = dto.PartOfSeries,
+                GoodreadsRating = dto.GoodreadsRating
             };
+            
+            // If GoodreadsRating is provided but Rating is not, auto-convert
+            if (dto.GoodreadsRating.HasValue && !dto.Rating.HasValue)
+            {
+                book.Rating = RatingConverter.ConvertGoodreadsRatingToPLBRating(dto.GoodreadsRating);
+            }
 
             // Handle Topics array conversion
             if (dto.Topics?.Length > 0)
@@ -104,7 +112,8 @@ namespace ProjectLoopbreaker.Application.Services
                 Notes = book.Notes,
                 RelatedNotes = book.RelatedNotes,
                 Topics = book.Topics.Select(t => t.Name).ToArray(),
-                Genres = book.Genres.Select(g => g.Name).ToArray()
+                Genres = book.Genres.Select(g => g.Name).ToArray(),
+                GoodreadsRating = book.GoodreadsRating
             };
         }
 

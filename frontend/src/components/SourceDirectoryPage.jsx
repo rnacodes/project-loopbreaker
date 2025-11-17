@@ -57,16 +57,15 @@ function SourceDirectoryPage() {
             provider: 'TMDB',
             providerUrl: 'https://www.themoviedb.org',
             icon: <MovieFilter sx={{ fontSize: 48 }} />,
-            description: 'Discover and import movies and TV shows from The Movie Database with complete metadata.',
+            description: 'Use MediaVerse as your primary tracker for movies & TV shows.',
             color: '#01D277',
             available: true,
             connected: false,
             action: () => navigate('/import-media'),
             features: [
-                'Search movies & TV shows',
-                'Detailed cast & crew info',
-                'Ratings & reviews',
-                'High-quality posters'
+                'Import: Search movies & TV shows on TMDB',
+                'Upload: Export your watchlist from external providers and upload your spreadsheet',
+                'Metadata from uploaded lists will be filled in during daily update'
             ]
         },
         {
