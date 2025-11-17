@@ -119,6 +119,10 @@ namespace ProjectLoopbreaker.Application.Services
                         ? $"https://www.imdb.com/title/{movieDto.ImdbId}/" 
                         : null,
                     Notes = movieDto.Overview,
+                    Description = movieDto.Overview,
+                    Thumbnail = !string.IsNullOrEmpty(movieDto.PosterPath)
+                        ? $"https://image.tmdb.org/t/p/w500{movieDto.PosterPath}"
+                        : null,
                     Status = Status.Uncharted,
                     Rating = null, // Personal rating - leave null for imports
                     Director = null, // TMDB doesn't provide director in basic movie details
@@ -126,6 +130,7 @@ namespace ProjectLoopbreaker.Application.Services
                     ReleaseYear = releaseYear,
                     RuntimeMinutes = movieDto.Runtime,
                     MpaaRating = null, // Would need additional TMDB call for release info
+                    ImdbId = movieDto.ImdbId,
                     TmdbId = movieDto.Id.ToString(),
                     TmdbRating = movieDto.VoteAverage > 0 ? movieDto.VoteAverage : null, // Store original TMDB rating (0-10 scale)
                     TmdbBackdropPath = movieDto.BackdropPath,
@@ -176,6 +181,10 @@ namespace ProjectLoopbreaker.Application.Services
                     MediaType = MediaType.TVShow,
                     Link = null, // TMDB doesn't provide direct links
                     Notes = tvShowDto.Overview,
+                    Description = tvShowDto.Overview,
+                    Thumbnail = !string.IsNullOrEmpty(tvShowDto.PosterPath)
+                        ? $"https://image.tmdb.org/t/p/w500{tvShowDto.PosterPath}"
+                        : null,
                     Status = Status.Uncharted,
                     Rating = null, // Personal rating - leave null for imports
                     Creator = null, // TMDB basic TV show details don't include creator - would need additional API call

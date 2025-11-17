@@ -22,11 +22,19 @@ namespace ProjectLoopbreaker.Domain.Entities
         public string? ContentRating { get; set; } // TV rating (TV-PG, TV-14, etc.)
         
         
+        /// <summary>
+        /// The Movie Database (TMDb) ID for this TV show. Used to fetch updated metadata from TMDb API.
+        /// </summary>
         [StringLength(20)]
-        public string? TmdbId { get; set; } // The Movie Database ID
+        public string? TmdbId { get; set; }
         
         public double? TmdbRating { get; set; }
         
+        /// <summary>
+        /// TMDb poster image path (not a full URL, just the path component).
+        /// Use GetTmdbPosterUrl() to construct the full URL.
+        /// Example value: "/path-to-poster.jpg"
+        /// </summary>
         [StringLength(2000)]
         public string? TmdbPosterPath { get; set; }
         
@@ -97,6 +105,15 @@ namespace ProjectLoopbreaker.Domain.Entities
                 return $"{NumberOfEpisodes} episode{(NumberOfEpisodes > 1 ? "s" : "")}";
             }
             return null;
+        }
+        
+        /// <summary>
+        /// Gets the JustWatch search URL for "Where to Watch" functionality
+        /// </summary>
+        public string GetJustWatchUrl()
+        {
+            var encodedTitle = Uri.EscapeDataString(Title);
+            return $"https://www.justwatch.com/us/search?q={encodedTitle}";
         }
     }
 }

@@ -20,11 +20,19 @@ namespace ProjectLoopbreaker.Domain.Entities
         [StringLength(20)]
         public string? ImdbId { get; set; }
         
+        /// <summary>
+        /// The Movie Database (TMDb) ID for this movie. Used to fetch updated metadata from TMDb API.
+        /// </summary>
         [StringLength(20)]
-        public string? TmdbId { get; set; } // The Movie Database ID
+        public string? TmdbId { get; set; }
         
         public double? TmdbRating { get; set; }
         
+        /// <summary>
+        /// TMDb backdrop image path (not a full URL, just the path component).
+        /// Use GetTmdbBackdropUrl() to construct the full URL.
+        /// Example value: "/path-to-backdrop.jpg"
+        /// </summary>
         [StringLength(2000)]
         public string? TmdbBackdropPath { get; set; }
         
@@ -49,6 +57,26 @@ namespace ProjectLoopbreaker.Domain.Entities
                 return null;
                 
             return $"https://image.tmdb.org/t/p/{size}{TmdbBackdropPath}";
+        }
+        
+        /// <summary>
+        /// Gets the JustWatch search URL for "Where to Watch" functionality
+        /// </summary>
+        public string GetJustWatchUrl()
+        {
+            var encodedTitle = Uri.EscapeDataString(Title);
+            return $"https://www.justwatch.com/us/search?q={encodedTitle}";
+        }
+        
+        /// <summary>
+        /// Gets the IMDB URL if ImdbId is available
+        /// </summary>
+        public string? GetImdbUrl()
+        {
+            if (string.IsNullOrEmpty(ImdbId))
+                return null;
+                
+            return $"https://www.imdb.com/title/{ImdbId}/";
         }
     }
 }

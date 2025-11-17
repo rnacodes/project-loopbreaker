@@ -39,7 +39,13 @@ namespace ProjectLoopbreaker.Domain.Entities
         // Add a field for one or more strings that would allow me to paste in links to my related Obsidian notes or other documents.
         public string? RelatedNotes { get; set; } // This can store links to Obsidian notes or other documents
         
-        // Optional thumbnail for the media item
+        /// <summary>
+        /// Thumbnail image URL for the media item.
+        /// This field stores the FULL URL to the thumbnail image, not just a path.
+        /// For media imported from external APIs (e.g., TMDb for movies/TV shows, ListenNotes for podcasts),
+        /// this should contain the complete, publicly accessible URL constructed from the API's image path.
+        /// Example: "https://image.tmdb.org/t/p/w500/path-to-poster.jpg"
+        /// </summary>
         [Url]
         [StringLength(2000)]
         public string? Thumbnail { get; set; }
