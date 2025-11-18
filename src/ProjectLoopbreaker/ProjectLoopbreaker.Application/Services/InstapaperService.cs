@@ -1,6 +1,7 @@
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Domain.Interfaces;
+using ProjectLoopbreaker.Shared.Interfaces;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.Shared.DTOs.Instapaper;
 using Microsoft.EntityFrameworkCore;

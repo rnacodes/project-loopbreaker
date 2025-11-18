@@ -5,6 +5,7 @@ namespace ProjectLoopbreaker.DTOs
 {
     public class ArticleResponseDto
     {
+        // Base media item properties
         [JsonPropertyName("id")]
         public Guid Id { get; set; }
         
@@ -14,14 +15,8 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("mediaType")]
         public MediaType MediaType { get; set; }
         
-        [JsonPropertyName("originalUrl")]
-        public string? OriginalUrl { get; set; }
-        
         [JsonPropertyName("link")]
         public string? Link { get; set; }
-        
-        [JsonPropertyName("effectiveUrl")]
-        public string? EffectiveUrl { get; set; }
         
         [JsonPropertyName("notes")]
         public string? Notes { get; set; }
@@ -44,42 +39,6 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("description")]
         public string? Description { get; set; }
         
-        [JsonPropertyName("author")]
-        public string? Author { get; set; }
-        
-        [JsonPropertyName("publication")]
-        public string? Publication { get; set; }
-        
-        [JsonPropertyName("publicationDate")]
-        public DateTime? PublicationDate { get; set; }
-        
-        [JsonPropertyName("savedToInstapaperDate")]
-        public DateTime? SavedToInstapaperDate { get; set; }
-        
-        [JsonPropertyName("readingProgress")]
-        public double ReadingProgress { get; set; }
-        
-        [JsonPropertyName("progressTimestamp")]
-        public DateTime? ProgressTimestamp { get; set; }
-        
-        [JsonPropertyName("estimatedReadingTimeMinutes")]
-        public int EstimatedReadingTimeMinutes { get; set; }
-        
-        [JsonPropertyName("wordCount")]
-        public int WordCount { get; set; }
-        
-        [JsonPropertyName("isStarred")]
-        public bool IsStarred { get; set; }
-        
-        [JsonPropertyName("isArchived")]
-        public bool IsArchived { get; set; }
-        
-        [JsonPropertyName("hasBeenStarted")]
-        public bool HasBeenStarted { get; set; }
-        
-        [JsonPropertyName("isReadingCompleted")]
-        public bool IsReadingCompleted { get; set; }
-        
         [JsonPropertyName("relatedNotes")]
         public string? RelatedNotes { get; set; }
         
@@ -91,11 +50,45 @@ namespace ProjectLoopbreaker.DTOs
         
         [JsonPropertyName("genres")]
         public string[] Genres { get; set; } = Array.Empty<string>();
-        
-        [JsonPropertyName("mixlistIds")]
-        public Guid[] MixlistIds { get; set; } = Array.Empty<Guid>();
-        
+
+        // Article-specific properties
         [JsonPropertyName("instapaperBookmarkId")]
         public string? InstapaperBookmarkId { get; set; }
+        
+        [JsonPropertyName("contentStoragePath")]
+        public string? ContentStoragePath { get; set; }
+        
+        [JsonPropertyName("contentUrl")]
+        public string? ContentUrl { get; set; }
+        
+        [JsonPropertyName("isArchived")]
+        public bool IsArchived { get; set; }
+        
+        [JsonPropertyName("isStarred")]
+        public bool IsStarred { get; set; }
+        
+        [JsonPropertyName("lastSyncDate")]
+        public DateTime? LastSyncDate { get; set; }
+        
+        [JsonPropertyName("instapaperHash")]
+        public string? InstapaperHash { get; set; }
+        
+        [JsonPropertyName("author")]
+        public string? Author { get; set; }
+        
+        [JsonPropertyName("publication")]
+        public string? Publication { get; set; }
+        
+        [JsonPropertyName("publicationDate")]
+        public DateTime? PublicationDate { get; set; }
+        
+        [JsonPropertyName("readingProgress")]
+        public int? ReadingProgress { get; set; }
+        
+        [JsonPropertyName("wordCount")]
+        public int? WordCount { get; set; }
+        
+        [JsonPropertyName("estimatedReadingTime")]
+        public int? EstimatedReadingTime { get; set; }
     }
 }

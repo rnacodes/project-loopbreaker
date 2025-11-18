@@ -383,25 +383,19 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             modelBuilder.Entity<Article>(entity =>
             {
                 entity.Property(e => e.InstapaperBookmarkId)
-                    .HasMaxLength(50);
+                    .HasMaxLength(100);
                     
-                entity.Property(e => e.OriginalUrl)
-                    .HasMaxLength(2000);
+                entity.Property(e => e.ContentStoragePath)
+                    .HasMaxLength(500);
+                    
+                entity.Property(e => e.InstapaperHash)
+                    .HasMaxLength(100);
                     
                 entity.Property(e => e.Author)
-                    .HasMaxLength(300);
+                    .HasMaxLength(200);
                     
                 entity.Property(e => e.Publication)
                     .HasMaxLength(200);
-                    
-                entity.Property(e => e.ReadingProgress)
-                    .HasDefaultValue(0.0);
-                    
-                entity.Property(e => e.EstimatedReadingTimeMinutes)
-                    .HasDefaultValue(0);
-                    
-                entity.Property(e => e.WordCount)
-                    .HasDefaultValue(0);
                     
                 entity.Property(e => e.IsStarred)
                     .HasDefaultValue(false);
@@ -420,27 +414,27 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         }
 
         // IApplicationDbContext interface method implementations
-        public void Add<TEntity>(TEntity entity) where TEntity : class
+        public new void Add<TEntity>(TEntity entity) where TEntity : class
         {
             base.Add(entity);
         }
 
-        public void Update<TEntity>(TEntity entity) where TEntity : class
+        public new void Update<TEntity>(TEntity entity) where TEntity : class
         {
             base.Update(entity);
         }
 
-        public void Remove<TEntity>(TEntity entity) where TEntity : class
+        public new void Remove<TEntity>(TEntity entity) where TEntity : class
         {
             base.Remove(entity);
         }
 
-        public async Task<TEntity?> FindAsync<TEntity>(params object[] keyValues) where TEntity : class
+        public new async Task<TEntity?> FindAsync<TEntity>(params object[] keyValues) where TEntity : class
         {
             return await base.FindAsync<TEntity>(keyValues);
         }
 
-        public object Entry<TEntity>(TEntity entity) where TEntity : class
+        public new object Entry<TEntity>(TEntity entity) where TEntity : class
         {
             return base.Entry(entity);
         }

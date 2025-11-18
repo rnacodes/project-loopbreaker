@@ -5,94 +5,96 @@ namespace ProjectLoopbreaker.Domain.Entities
     public class Article : BaseMediaItem
     {
         /// <summary>
-        /// External identifier from Instapaper (bookmark_id)
+        /// External ID from Instapaper API (bookmark_id).
+        /// Used for checking the "have" parameter during sync.
         /// </summary>
-        [StringLength(50)]
+        [StringLength(100)]
         public string? InstapaperBookmarkId { get; set; }
         
         /// <summary>
-        /// The original URL of the article
+        /// S3 path/key to the full article content stored in DigitalOcean Spaces.
+        /// The actual HTML content is NOT stored in the database, only the reference to S3.
+        /// Example: "articles/content_guid.html"
         /// </summary>
-        [Url]
-        [StringLength(2000)]
-        public string? OriginalUrl { get; set; }
+        [StringLength(500)]
+        public string? ContentStoragePath { get; set; }
         
         /// <summary>
-        /// Author of the article
+        /// Indicates if the article is archived in Instapaper.
+        /// Synced from Instapaper API during ongoing synchronization.
         /// </summary>
-        [StringLength(300)]
+        public bool IsArchived { get; set; } = false;
+        
+        /// <summary>
+        /// Indicates if the article is starred/favorited in Instapaper.
+        /// Synced from Instapaper API during ongoing synchronization.
+        /// </summary>
+        public bool IsStarred { get; set; } = false;
+        
+        /// <summary>
+        /// The last time this article was synced with Instapaper.
+        /// Used to track sync freshness and detect stale data.
+        /// </summary>
+        public DateTime? LastSyncDate { get; set; }
+        
+        /// <summary>
+        /// Hash value from Instapaper for change detection.
+        /// Used with the "have" parameter to detect updates.
+        /// </summary>
+        [StringLength(100)]
+        public string? InstapaperHash { get; set; }
+        
+        /// <summary>
+        /// The author of the article (if available).
+        /// </summary>
+        [StringLength(200)]
         public string? Author { get; set; }
         
         /// <summary>
-        /// Publication or website name
+        /// The publication/source name (e.g., "New York Times", "TechCrunch").
         /// </summary>
         [StringLength(200)]
         public string? Publication { get; set; }
         
         /// <summary>
-        /// Date the article was originally published
+        /// The publication date of the article.
         /// </summary>
         public DateTime? PublicationDate { get; set; }
         
         /// <summary>
-        /// Date the article was saved to Instapaper
+        /// Reading progress percentage (0-100).
+        /// Can be used to track how far through the article the user has read.
         /// </summary>
-        public DateTime? SavedToInstapaperDate { get; set; }
+        [Range(0, 100)]
+        public int? ReadingProgress { get; set; }
         
         /// <summary>
-        /// Reading progress (0.0 to 1.0)
+        /// Word count of the article (if available).
+        /// Useful for estimating reading time.
         /// </summary>
-        [Range(0.0, 1.0)]
-        public double ReadingProgress { get; set; } = 0.0;
+        public int? WordCount { get; set; }
         
         /// <summary>
-        /// Timestamp when reading progress was last updated
+        /// Gets the full URL to the stored content in DigitalOcean Spaces.
         /// </summary>
-        public DateTime? ProgressTimestamp { get; set; }
-        
-        /// <summary>
-        /// Estimated reading time in minutes
-        /// </summary>
-        [Range(0, int.MaxValue)]
-        public int EstimatedReadingTimeMinutes { get; set; } = 0;
-        
-        /// <summary>
-        /// Word count of the article
-        /// </summary>
-        [Range(0, int.MaxValue)]
-        public int WordCount { get; set; } = 0;
-        
-        /// <summary>
-        /// Whether the article is marked as starred in Instapaper
-        /// </summary>
-        public bool IsStarred { get; set; } = false;
-        
-        /// <summary>
-        /// Whether the article is archived in Instapaper
-        /// </summary>
-        public bool IsArchived { get; set; } = false;
-        
-        /// <summary>
-        /// Full text content of the article (if available)
-        /// </summary>
-        public string? FullTextContent { get; set; }
-        
-        /// <summary>
-        /// Gets the effective URL - returns Link if available, otherwise OriginalUrl
-        /// </summary>
-        public string? GetEffectiveUrl()
+        public string? GetContentUrl(string bucketName, string endpoint)
         {
-            return !string.IsNullOrEmpty(Link) ? Link : OriginalUrl;
+            if (string.IsNullOrEmpty(ContentStoragePath))
+                return null;
+                
+            return $"https://{bucketName}.{endpoint}/{ContentStoragePath}";
         }
         
         /// <summary>
-        /// Gets whether this article has been started (reading progress > 0)
+        /// Gets the estimated reading time in minutes based on word count.
+        /// Assumes average reading speed of 200 words per minute.
         /// </summary>
-        public bool HasBeenStarted => ReadingProgress > 0.0;
-        
-        /// <summary>
-        /// Gets whether this article has been completed (reading progress = 1.0)
-        /// </summary>
-        public bool IsReadingCompleted => Math.Abs(ReadingProgress - 1.0) < 0.001; // Using small epsilon for floating point comparison
+        public int? GetEstimatedReadingTime()
+        {
+            if (!WordCount.HasValue || WordCount <= 0)
+                return null;
+                
+            return (int)Math.Ceiling(WordCount.Value / 200.0);
+        }
     }
 }

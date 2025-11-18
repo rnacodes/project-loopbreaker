@@ -6,16 +6,15 @@ namespace ProjectLoopbreaker.DTOs
 {
     public class CreateArticleDto
     {
+        // Base media item properties
         [Required]
         [StringLength(500)]
         [JsonPropertyName("title")]
         public required string Title { get; set; }
-        
-        [Url]
-        [StringLength(2000)]
-        [JsonPropertyName("originalUrl")]
-        public string? OriginalUrl { get; set; }
-        
+
+        [JsonPropertyName("mediaType")]
+        public MediaType MediaType { get; set; } = MediaType.Article;
+
         [Url]
         [StringLength(2000)]
         [JsonPropertyName("link")]
@@ -40,7 +39,41 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("description")]
         public string? Description { get; set; }
         
-        [StringLength(300)]
+        [JsonPropertyName("relatedNotes")]
+        public string? RelatedNotes { get; set; }
+        
+        [Url]
+        [StringLength(2000)]
+        [JsonPropertyName("thumbnail")]
+        public string? Thumbnail { get; set; }
+        
+        // JSON arrays for better query performance
+        [JsonPropertyName("topics")]
+        public string[] Topics { get; set; } = Array.Empty<string>();
+        
+        [JsonPropertyName("genres")]
+        public string[] Genres { get; set; } = Array.Empty<string>();
+
+        // Article-specific properties
+        [StringLength(100)]
+        [JsonPropertyName("instapaperBookmarkId")]
+        public string? InstapaperBookmarkId { get; set; }
+        
+        [StringLength(500)]
+        [JsonPropertyName("contentStoragePath")]
+        public string? ContentStoragePath { get; set; }
+        
+        [JsonPropertyName("isArchived")]
+        public bool IsArchived { get; set; } = false;
+        
+        [JsonPropertyName("isStarred")]
+        public bool IsStarred { get; set; } = false;
+        
+        [StringLength(100)]
+        [JsonPropertyName("instapaperHash")]
+        public string? InstapaperHash { get; set; }
+        
+        [StringLength(200)]
         [JsonPropertyName("author")]
         public string? Author { get; set; }
         
@@ -51,48 +84,12 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("publicationDate")]
         public DateTime? PublicationDate { get; set; }
         
-        [Range(0.0, 1.0)]
+        [Range(0, 100, ErrorMessage = "Reading progress must be between 0 and 100")]
         [JsonPropertyName("readingProgress")]
-        public double ReadingProgress { get; set; } = 0.0;
+        public int? ReadingProgress { get; set; }
         
-        [Range(0, int.MaxValue)]
-        [JsonPropertyName("estimatedReadingTimeMinutes")]
-        public int EstimatedReadingTimeMinutes { get; set; } = 0;
-        
-        [Range(0, int.MaxValue)]
+        [Range(0, int.MaxValue, ErrorMessage = "Word count must be a positive number")]
         [JsonPropertyName("wordCount")]
-        public int WordCount { get; set; } = 0;
-        
-        [JsonPropertyName("isStarred")]
-        public bool IsStarred { get; set; } = false;
-        
-        [JsonPropertyName("isArchived")]
-        public bool IsArchived { get; set; } = false;
-        
-        [JsonPropertyName("fullTextContent")]
-        public string? FullTextContent { get; set; }
-        
-        // JSON arrays for better query performance
-        [JsonPropertyName("topics")]
-        public string[] Topics { get; set; } = Array.Empty<string>();
-        
-        [JsonPropertyName("genres")]
-        public string[] Genres { get; set; } = Array.Empty<string>();
-        
-        [JsonPropertyName("relatedNotes")]
-        public string? RelatedNotes { get; set; }
-        
-        [Url]
-        [StringLength(2000)]
-        [JsonPropertyName("thumbnail")]
-        public string? Thumbnail { get; set; }
-        
-        // Instapaper-specific fields
-        [StringLength(50)]
-        [JsonPropertyName("instapaperBookmarkId")]
-        public string? InstapaperBookmarkId { get; set; }
-        
-        [JsonPropertyName("savedToInstapaperDate")]
-        public DateTime? SavedToInstapaperDate { get; set; }
+        public int? WordCount { get; set; }
     }
 }

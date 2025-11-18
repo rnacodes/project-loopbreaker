@@ -320,7 +320,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 // Parse the media type from the request
                 if (!Enum.TryParse<MediaType>(mediaType, true, out var parsedMediaType))
                 {
-                    return BadRequest($"Invalid media type: {mediaType}. Supported types: Book, Podcast, Movie, TVShow");
+                    return BadRequest($"Invalid media type: {mediaType}. Supported types: Book, Podcast, Movie, TVShow, Article");
                 }
 
                 _logger.LogInformation("Processing CSV upload for media type: {MediaType}", parsedMediaType);
@@ -345,6 +345,9 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                                 break;
                             case MediaType.TVShow:
                                 mediaItem = await ProcessTvShowRow(csv);
+                                break;
+                            case MediaType.Article:
+                                mediaItem = await ProcessArticleRow(csv);
                                 break;
                             default:
                                 errors.Add($"Row {csv.CurrentIndex}: Unsupported media type {parsedMediaType}");
@@ -406,6 +409,21 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                                     FirstAirYear = tvShow.FirstAirYear,
                                     Thumbnail = tvShow.Thumbnail,
                                     MediaType = "TVShow"
+                                });
+                            }
+                            else if (mediaItem is Article article)
+                            {
+                                _context.Articles.Add(article);
+                                // Track the imported article for the response
+                                importedItems.Add(new
+                                {
+                                    Id = article.Id,
+                                    Title = article.Title,
+                                    Author = article.Author,
+                                    Link = article.Link,
+                                    IsArchived = article.IsArchived,
+                                    IsStarred = article.IsStarred,
+                                    MediaType = "Article"
                                 });
                             }
                             else
@@ -706,7 +724,73 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             return tvShow;
         }
 
+        private async Task<Article?> ProcessArticleRow(CsvReader csv)
+        {
+            var article = new Article
+            {
+                Title = GetCsvValue(csv, "Title") ?? "Unknown Title",
+                MediaType = MediaType.Article,
+                DateAdded = DateTime.UtcNow,
+                Status = ParseStatus(GetCsvValue(csv, "Status")) ?? Status.Uncharted
+            };
 
+            // Optional fields
+            article.Description = GetCsvValue(csv, "Description");
+            article.Link = GetCsvValue(csv, "Url") ?? GetCsvValue(csv, "Link"); // Support both column names
+            article.Notes = GetCsvValue(csv, "Notes");
+            article.RelatedNotes = GetCsvValue(csv, "RelatedNotes");
+            article.Thumbnail = GetCsvValue(csv, "Thumbnail");
+            article.Author = GetCsvValue(csv, "Author");
+            article.Publication = GetCsvValue(csv, "Publication");
+            article.InstapaperBookmarkId = GetCsvValue(csv, "InstapaperBookmarkId") ?? GetCsvValue(csv, "BookmarkId");
+            article.InstapaperHash = GetCsvValue(csv, "InstapaperHash") ?? GetCsvValue(csv, "Hash");
+
+            // Parse boolean fields
+            var isArchivedStr = GetCsvValue(csv, "IsArchived") ?? GetCsvValue(csv, "Archived");
+            if (!string.IsNullOrEmpty(isArchivedStr))
+            {
+                article.IsArchived = isArchivedStr.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                                    isArchivedStr.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+                                    isArchivedStr.Equals("yes", StringComparison.OrdinalIgnoreCase);
+            }
+
+            var isStarredStr = GetCsvValue(csv, "IsStarred") ?? GetCsvValue(csv, "Starred");
+            if (!string.IsNullOrEmpty(isStarredStr))
+            {
+                article.IsStarred = isStarredStr.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                                   isStarredStr.Equals("1", StringComparison.OrdinalIgnoreCase) ||
+                                   isStarredStr.Equals("yes", StringComparison.OrdinalIgnoreCase);
+            }
+
+            // Parse numeric fields
+            var wordCountStr = GetCsvValue(csv, "WordCount");
+            if (!string.IsNullOrEmpty(wordCountStr) && int.TryParse(wordCountStr, out int wordCount))
+                article.WordCount = wordCount;
+
+            var readingProgressStr = GetCsvValue(csv, "ReadingProgress");
+            if (!string.IsNullOrEmpty(readingProgressStr) && int.TryParse(readingProgressStr, out int readingProgress))
+                article.ReadingProgress = readingProgress;
+
+            // Parse dates
+            var publicationDateStr = GetCsvValue(csv, "PublicationDate");
+            if (!string.IsNullOrEmpty(publicationDateStr) && DateTime.TryParse(publicationDateStr, out DateTime publicationDate))
+                article.PublicationDate = publicationDate;
+
+            var dateCompletedStr = GetCsvValue(csv, "DateCompleted");
+            if (!string.IsNullOrEmpty(dateCompletedStr) && DateTime.TryParse(dateCompletedStr, out DateTime dateCompleted))
+                article.DateCompleted = dateCompleted;
+
+            // Parse enums
+            var ratingStr = GetCsvValue(csv, "Rating");
+            if (!string.IsNullOrEmpty(ratingStr) && Enum.TryParse<Rating>(ratingStr, true, out Rating rating))
+                article.Rating = rating;
+
+            var ownershipStr = GetCsvValue(csv, "OwnershipStatus");
+            if (!string.IsNullOrEmpty(ownershipStr) && Enum.TryParse<OwnershipStatus>(ownershipStr, true, out OwnershipStatus ownership))
+                article.OwnershipStatus = ownership;
+
+            return article;
+        }
 
         private static string? GetCsvValue(CsvReader csv, string fieldName)
         {

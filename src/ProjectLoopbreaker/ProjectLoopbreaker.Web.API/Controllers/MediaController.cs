@@ -250,8 +250,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 Description = dto.Description,
                 RelatedNotes = dto.RelatedNotes,
                 Thumbnail = dto.Thumbnail,
-                OriginalUrl = dto.Link, // Use Link as OriginalUrl for basic articles
-                ReadingProgress = 0.0,
+                ReadingProgress = 0,
                 IsStarred = false,
                 IsArchived = false
             };

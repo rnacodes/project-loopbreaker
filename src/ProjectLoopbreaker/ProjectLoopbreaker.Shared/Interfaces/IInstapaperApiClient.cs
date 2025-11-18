@@ -1,7 +1,11 @@
 using ProjectLoopbreaker.Shared.DTOs.Instapaper;
 
-namespace ProjectLoopbreaker.Domain.Interfaces
+namespace ProjectLoopbreaker.Shared.Interfaces
 {
+    /// <summary>
+    /// Interface for Instapaper API client.
+    /// Provides methods for interacting with the Instapaper API for article synchronization.
+    /// </summary>
     public interface IInstapaperApiClient
     {
         /// <summary>
@@ -49,5 +53,14 @@ namespace ProjectLoopbreaker.Domain.Interfaces
             string url, 
             string? title = null, 
             string? selection = null);
+
+        /// <summary>
+        /// Gets the full text content of a bookmark from Instapaper.
+        /// Returns parsed HTML content of the article.
+        /// </summary>
+        /// <param name="bookmarkId">The Instapaper bookmark ID</param>
+        /// <returns>Full parsed HTML content of the article</returns>
+        Task<InstapaperBookmarkTextResponseDto> GetBookmarkTextAsync(string bookmarkId);
     }
 }
+
