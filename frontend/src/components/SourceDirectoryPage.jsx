@@ -27,10 +27,10 @@ function SourceDirectoryPage() {
             connected: false,
             action: () => navigate('/import-media'),
             features: [
-                'Search 3M+ podcasts',
                 'Import episodes or series',
                 'Auto-fetch metadata & artwork',
-                'Episode tracking'
+                'Episode tracking',
+                'Background sync of new episodes'
             ]
         },
         {

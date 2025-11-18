@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.DTOs;
@@ -7,16 +8,27 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Application.Services
 {
     public class PodcastService : IPodcastService
     {
         private readonly IApplicationDbContext _context;
+        private readonly IListenNotesApiClient _listenNotesApiClient;
+        private readonly IPodcastMappingService _podcastMappingService;
+        private readonly ILogger<PodcastService> _logger;
 
-        public PodcastService(IApplicationDbContext context)
+        public PodcastService(
+            IApplicationDbContext context,
+            IListenNotesApiClient listenNotesApiClient,
+            IPodcastMappingService podcastMappingService,
+            ILogger<PodcastService> logger)
         {
             _context = context;
+            _listenNotesApiClient = listenNotesApiClient;
+            _podcastMappingService = podcastMappingService;
+            _logger = logger;
         }
 
         public async Task<Podcast> SavePodcastAsync(Podcast podcast, bool updateIfExists = true)
@@ -193,7 +205,9 @@ namespace ProjectLoopbreaker.Application.Services
                 Publisher = dto.Publisher,
                 AudioLink = dto.AudioLink,
                 ReleaseDate = dto.ReleaseDate,
-                DurationInSeconds = dto.DurationInSeconds
+                DurationInSeconds = dto.DurationInSeconds,
+                IsSubscribed = dto.IsSubscribed,
+                LastSyncDate = dto.LastSyncDate
             };
 
             // Handle Topics array conversion - check if they exist or create new ones
@@ -267,6 +281,148 @@ namespace ProjectLoopbreaker.Application.Services
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        // Subscription management methods
+        public async Task<Podcast?> SubscribeToPodcastSeriesAsync(Guid seriesId)
+        {
+            var series = await _context.Podcasts
+                .FirstOrDefaultAsync(p => p.Id == seriesId && p.PodcastType == PodcastType.Series);
+
+            if (series == null)
+            {
+                return null;
+            }
+
+            series.IsSubscribed = true;
+            await _context.SaveChangesAsync();
+
+            return series;
+        }
+
+        public async Task<Podcast?> UnsubscribeFromPodcastSeriesAsync(Guid seriesId)
+        {
+            var series = await _context.Podcasts
+                .FirstOrDefaultAsync(p => p.Id == seriesId && p.PodcastType == PodcastType.Series);
+
+            if (series == null)
+            {
+                return null;
+            }
+
+            series.IsSubscribed = false;
+            await _context.SaveChangesAsync();
+
+            return series;
+        }
+
+        public async Task<IEnumerable<Podcast>> GetSubscribedPodcastSeriesAsync()
+        {
+            return await _context.Podcasts
+                .Where(p => p.PodcastType == PodcastType.Series && p.IsSubscribed)
+                .ToListAsync();
+        }
+
+        public async Task<PodcastSyncResultDto?> SyncPodcastSeriesEpisodesAsync(Guid seriesId)
+        {
+            var series = await GetPodcastByIdAsync(seriesId);
+
+            if (series == null || series.PodcastType != PodcastType.Series || string.IsNullOrEmpty(series.ExternalId))
+            {
+                _logger.LogWarning("Cannot sync series {SeriesId}: series not found, not a series type, or has no external ID", seriesId);
+                return null;
+            }
+
+            try
+            {
+                _logger.LogInformation("Syncing episodes for podcast series: {Title} (External ID: {ExternalId})", 
+                    series.Title, series.ExternalId);
+
+                // Fetch podcast details from ListenNotes API (includes episodes)
+                var podcastDto = await _listenNotesApiClient.GetPodcastByIdAsync(series.ExternalId);
+
+                if (podcastDto?.Episodes == null || !podcastDto.Episodes.Any())
+                {
+                    _logger.LogInformation("No episodes found for podcast series: {Title}", series.Title);
+                    series.LastSyncDate = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+
+                    return new PodcastSyncResultDto
+                    {
+                        SeriesTitle = series.Title,
+                        NewEpisodesCount = 0,
+                        TotalEpisodesCount = 0,
+                        LastSyncDate = series.LastSyncDate.Value
+                    };
+                }
+
+                int newEpisodesCount = 0;
+
+                // Process each episode from the API
+                foreach (var episodeDto in podcastDto.Episodes)
+                {
+                    // Check if episode already exists by external ID
+                    var existingEpisode = await _context.Podcasts
+                        .FirstOrDefaultAsync(p => 
+                            p.ExternalId == episodeDto.Id && 
+                            p.PodcastType == PodcastType.Episode);
+
+                    if (existingEpisode == null)
+                    {
+                        // Map and create new episode
+                        var createEpisodeDto = _podcastMappingService.MapFromListenNotesEpisodeDto(episodeDto);
+                        createEpisodeDto.ParentPodcastId = seriesId;
+                        createEpisodeDto.PodcastType = PodcastType.Episode;
+
+                        var newEpisode = new Podcast
+                        {
+                            Title = createEpisodeDto.Title,
+                            MediaType = MediaType.Podcast,
+                            PodcastType = PodcastType.Episode,
+                            ParentPodcastId = seriesId,
+                            Link = createEpisodeDto.Link,
+                            Notes = createEpisodeDto.Notes,
+                            Status = Status.Uncharted, // Default status for new episodes
+                            AudioLink = createEpisodeDto.AudioLink,
+                            ExternalId = createEpisodeDto.ExternalId,
+                            Thumbnail = createEpisodeDto.Thumbnail,
+                            ReleaseDate = createEpisodeDto.ReleaseDate,
+                            DurationInSeconds = createEpisodeDto.DurationInSeconds,
+                            Description = createEpisodeDto.Description,
+                            DateAdded = DateTime.UtcNow
+                        };
+
+                        _context.Add(newEpisode);
+                        newEpisodesCount++;
+
+                        _logger.LogInformation("Added new episode: {Title} (External ID: {ExternalId})", 
+                            newEpisode.Title, newEpisode.ExternalId);
+                    }
+                }
+
+                // Update last sync date
+                series.LastSyncDate = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                var totalEpisodeCount = await _context.Podcasts
+                    .CountAsync(p => p.ParentPodcastId == seriesId && p.PodcastType == PodcastType.Episode);
+
+                _logger.LogInformation("Sync complete for {Title}: {NewCount} new episodes, {TotalCount} total episodes", 
+                    series.Title, newEpisodesCount, totalEpisodeCount);
+
+                return new PodcastSyncResultDto
+                {
+                    SeriesTitle = series.Title,
+                    NewEpisodesCount = newEpisodesCount,
+                    TotalEpisodesCount = totalEpisodeCount,
+                    LastSyncDate = series.LastSyncDate.Value
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error syncing episodes for podcast series {SeriesId}", seriesId);
+                throw;
+            }
         }
     }
 }

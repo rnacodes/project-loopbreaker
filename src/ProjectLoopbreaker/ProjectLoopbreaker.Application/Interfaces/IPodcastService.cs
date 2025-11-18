@@ -24,5 +24,11 @@ namespace ProjectLoopbreaker.Application.Interfaces
         Task<IEnumerable<Podcast>> SearchPodcastSeriesAsync(string query);
         Task<Podcast> CreatePodcastAsync(CreatePodcastDto dto);
         Task<bool> DeletePodcastAsync(Guid id);
+        
+        // Subscription management methods
+        Task<Podcast?> SubscribeToPodcastSeriesAsync(Guid seriesId);
+        Task<Podcast?> UnsubscribeFromPodcastSeriesAsync(Guid seriesId);
+        Task<IEnumerable<Podcast>> GetSubscribedPodcastSeriesAsync();
+        Task<PodcastSyncResultDto?> SyncPodcastSeriesEpisodesAsync(Guid seriesId);
     }
 }

@@ -80,5 +80,13 @@ namespace ProjectLoopbreaker.DTOs
         [Range(0, int.MaxValue, ErrorMessage = "Duration must be a positive number")]
         [JsonPropertyName("durationInSeconds")]
         public int DurationInSeconds { get; set; }
+        
+        // Subscription tracking (for Series)
+        [JsonPropertyName("isSubscribed")]
+        public bool IsSubscribed { get; set; } = false;
+        
+        // Last sync date for checking new episodes (for Series)
+        [JsonPropertyName("lastSyncDate")]
+        public DateTime? LastSyncDate { get; set; }
     }
 }

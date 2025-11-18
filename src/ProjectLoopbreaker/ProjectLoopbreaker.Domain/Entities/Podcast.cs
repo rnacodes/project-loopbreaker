@@ -26,6 +26,12 @@ namespace ProjectLoopbreaker.Domain.Entities
         // Publisher information
         public string? Publisher { get; set; }
         
+        // Subscription tracking (for Series)
+        public bool IsSubscribed { get; set; } = false;
+        
+        // Last sync date for checking new episodes (for Series)
+        public DateTime? LastSyncDate { get; set; }
+        
         /// <summary>
         /// Gets the thumbnail for this podcast, inheriting from parent series if it's an episode
         /// </summary>

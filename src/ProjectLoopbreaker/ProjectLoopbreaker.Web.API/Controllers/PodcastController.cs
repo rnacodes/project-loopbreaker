@@ -51,7 +51,9 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     ExternalId = p.ExternalId,
                     AudioLink = p.AudioLink,
                     ReleaseDate = p.ReleaseDate,
-                    DurationInSeconds = p.DurationInSeconds
+                    DurationInSeconds = p.DurationInSeconds,
+                    IsSubscribed = p.IsSubscribed,
+                    LastSyncDate = p.LastSyncDate
                 }).ToList();
 
                 return Ok(response);
@@ -149,7 +151,9 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     ExternalId = podcast.ExternalId,
                     AudioLink = podcast.AudioLink,
                     ReleaseDate = podcast.ReleaseDate,
-                    DurationInSeconds = podcast.DurationInSeconds
+                    DurationInSeconds = podcast.DurationInSeconds,
+                    IsSubscribed = podcast.IsSubscribed,
+                    LastSyncDate = podcast.LastSyncDate
                 };
 
                 return Ok(response);
@@ -185,7 +189,9 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     ExternalId = p.ExternalId,
                     AudioLink = p.AudioLink,
                     ReleaseDate = p.ReleaseDate,
-                    DurationInSeconds = p.DurationInSeconds
+                    DurationInSeconds = p.DurationInSeconds,
+                    IsSubscribed = p.IsSubscribed,
+                    LastSyncDate = p.LastSyncDate
                 }).ToList();
 
                 return Ok(response);
@@ -226,7 +232,9 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     ExternalId = podcast.ExternalId,
                     AudioLink = podcast.AudioLink,
                     ReleaseDate = podcast.ReleaseDate,
-                    DurationInSeconds = podcast.DurationInSeconds
+                    DurationInSeconds = podcast.DurationInSeconds,
+                    IsSubscribed = podcast.IsSubscribed,
+                    LastSyncDate = podcast.LastSyncDate
                 };
 
                 return CreatedAtAction(nameof(GetPodcast), new { id = podcast.Id }, response);
@@ -331,6 +339,124 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             {
                 _logger.LogError(ex, "Error occurred while deleting podcast with ID {Id}", id);
                 return StatusCode(500, new { error = "Failed to delete podcast", details = ex.Message });
+            }
+        }
+
+        // POST: api/podcast/series/{seriesId}/subscribe
+        [HttpPost("series/{seriesId}/subscribe")]
+        public async Task<IActionResult> SubscribeToPodcastSeries(Guid seriesId)
+        {
+            try
+            {
+                var series = await _podcastService.SubscribeToPodcastSeriesAsync(seriesId);
+                
+                if (series == null)
+                {
+                    return NotFound($"Podcast series with ID {seriesId} not found.");
+                }
+
+                _logger.LogInformation("Subscribed to podcast series: {Title} (ID: {SeriesId})", series.Title, seriesId);
+
+                return Ok(new { message = "Successfully subscribed to podcast series", seriesId, isSubscribed = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while subscribing to podcast series {SeriesId}", seriesId);
+                return StatusCode(500, new { error = "Failed to subscribe to podcast series", details = ex.Message });
+            }
+        }
+
+        // POST: api/podcast/series/{seriesId}/unsubscribe
+        [HttpPost("series/{seriesId}/unsubscribe")]
+        public async Task<IActionResult> UnsubscribeFromPodcastSeries(Guid seriesId)
+        {
+            try
+            {
+                var series = await _podcastService.UnsubscribeFromPodcastSeriesAsync(seriesId);
+                
+                if (series == null)
+                {
+                    return NotFound($"Podcast series with ID {seriesId} not found.");
+                }
+
+                _logger.LogInformation("Unsubscribed from podcast series: {Title} (ID: {SeriesId})", series.Title, seriesId);
+
+                return Ok(new { message = "Successfully unsubscribed from podcast series", seriesId, isSubscribed = false });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while unsubscribing from podcast series {SeriesId}", seriesId);
+                return StatusCode(500, new { error = "Failed to unsubscribe from podcast series", details = ex.Message });
+            }
+        }
+
+        // GET: api/podcast/subscriptions
+        [HttpGet("subscriptions")]
+        public async Task<ActionResult<IEnumerable<PodcastResponseDto>>> GetSubscribedPodcasts()
+        {
+            try
+            {
+                var subscribedSeries = await _podcastService.GetSubscribedPodcastSeriesAsync();
+                
+                var response = subscribedSeries.Select(p => new PodcastResponseDto
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Description = p.Description,
+                    MediaType = p.MediaType,
+                    Status = p.Status,
+                    DateAdded = p.DateAdded,
+                    Link = p.Link,
+                    Thumbnail = p.Thumbnail,
+                    PodcastType = p.PodcastType,
+                    ParentPodcastId = p.ParentPodcastId,
+                    Publisher = p.Publisher,
+                    ExternalId = p.ExternalId,
+                    AudioLink = p.AudioLink,
+                    ReleaseDate = p.ReleaseDate,
+                    DurationInSeconds = p.DurationInSeconds,
+                    IsSubscribed = p.IsSubscribed,
+                    LastSyncDate = p.LastSyncDate
+                }).ToList();
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving subscribed podcasts");
+                return StatusCode(500, new { error = "Failed to retrieve subscribed podcasts", details = ex.Message });
+            }
+        }
+
+        // POST: api/podcast/series/{seriesId}/sync
+        [HttpPost("series/{seriesId}/sync")]
+        public async Task<IActionResult> SyncPodcastSeriesEpisodes(Guid seriesId)
+        {
+            try
+            {
+                var result = await _podcastService.SyncPodcastSeriesEpisodesAsync(seriesId);
+                
+                if (result == null)
+                {
+                    return NotFound($"Podcast series with ID {seriesId} not found or has no external ID.");
+                }
+
+                _logger.LogInformation("Synced episodes for podcast series: {Title} (ID: {SeriesId}). New episodes: {NewEpisodesCount}", 
+                    result.SeriesTitle, seriesId, result.NewEpisodesCount);
+
+                return Ok(new { 
+                    message = "Successfully synced podcast series episodes", 
+                    seriesId, 
+                    seriesTitle = result.SeriesTitle,
+                    newEpisodesCount = result.NewEpisodesCount,
+                    totalEpisodesCount = result.TotalEpisodesCount,
+                    lastSyncDate = result.LastSyncDate
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while syncing episodes for podcast series {SeriesId}", seriesId);
+                return StatusCode(500, new { error = "Failed to sync podcast series episodes", details = ex.Message });
             }
         }
     }

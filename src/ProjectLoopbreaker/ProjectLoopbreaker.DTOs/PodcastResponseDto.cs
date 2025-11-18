@@ -49,5 +49,11 @@ namespace ProjectLoopbreaker.DTOs
         
         [JsonPropertyName("durationInSeconds")]
         public int DurationInSeconds { get; set; }
+        
+        [JsonPropertyName("isSubscribed")]
+        public bool IsSubscribed { get; set; }
+        
+        [JsonPropertyName("lastSyncDate")]
+        public DateTime? LastSyncDate { get; set; }
     }
 }

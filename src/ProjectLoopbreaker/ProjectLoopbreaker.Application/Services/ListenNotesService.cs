@@ -139,7 +139,8 @@ namespace ProjectLoopbreaker.Application.Services
                     Publisher = createPodcastDto.Publisher,
                     ExternalId = createPodcastDto.ExternalId,
                     Thumbnail = createPodcastDto.Thumbnail,
-                    DateAdded = DateTime.UtcNow
+                    DateAdded = DateTime.UtcNow,
+                    IsSubscribed = true // Automatically subscribe when importing a series
                 };
 
                 // Save to database through domain service
