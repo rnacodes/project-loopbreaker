@@ -30,7 +30,8 @@ function SourceDirectoryPage() {
                 'Import episodes or series',
                 'Auto-fetch metadata & artwork',
                 'Episode tracking',
-                'Background sync of new episodes'
+                'Background sync of new episodes',
+    'Import listening history from Podcasts app and Apple Podcasts'
             ]
         },
         {

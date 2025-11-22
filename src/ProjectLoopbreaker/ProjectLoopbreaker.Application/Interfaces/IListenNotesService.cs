@@ -34,8 +34,8 @@ namespace ProjectLoopbreaker.Application.Interfaces
         Task<ListenNotesCuratedPodcastDto> GetCuratedPodcastByIdAsync(string id);
 
         // Import operations (business logic - convert DTOs to Domain Entities)
-        Task<Podcast> ImportPodcastAsync(string podcastId);
-        Task<Podcast> ImportPodcastEpisodeAsync(string episodeId);
-        Task<Podcast?> ImportPodcastByNameAsync(string podcastName);
+        Task<PodcastSeries> ImportPodcastSeriesAsync(string podcastId);
+        Task<PodcastEpisode> ImportPodcastEpisodeAsync(string episodeId, Guid seriesId);
+        Task<PodcastSeries?> ImportPodcastSeriesByNameAsync(string podcastName);
     }
 }

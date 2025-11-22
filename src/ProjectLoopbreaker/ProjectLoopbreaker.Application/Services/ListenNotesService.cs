@@ -105,103 +105,75 @@ namespace ProjectLoopbreaker.Application.Services
         }
 
         // Import operations (business logic - convert DTOs to Domain Entities)
-        public async Task<Podcast> ImportPodcastAsync(string podcastId)
+        public async Task<PodcastSeries> ImportPodcastSeriesAsync(string podcastId)
         {
             try
             {
-                _logger.LogInformation("Importing podcast with ID: {PodcastId}", podcastId);
+                _logger.LogInformation("Importing podcast series with ID: {PodcastId}", podcastId);
 
                 // Get podcast details from ListenNotes API
                 var podcastDto = await _listenNotesApiClient.GetPodcastByIdAsync(podcastId);
 
-                // Check if podcast already exists by title and publisher
-                var existingPodcast = await _podcastService.GetPodcastByTitleAsync(
+                // Check if podcast series already exists by title and publisher
+                var existingSeries = await _podcastService.GetPodcastSeriesByTitleAsync(
                     podcastDto.Title, podcastDto.Publisher);
-                if (existingPodcast != null)
+                if (existingSeries != null)
                 {
-                    _logger.LogInformation("Podcast {Title} by {Publisher} already exists", 
+                    _logger.LogInformation("Podcast series {Title} by {Publisher} already exists", 
                         podcastDto.Title, podcastDto.Publisher);
-                    return existingPodcast;
+                    return existingSeries;
                 }
 
-                // Map ListenNotes DTO to CreatePodcastDto and convert to Podcast entity
-                var createPodcastDto = _podcastMappingService.MapFromListenNotesDto(podcastDto);
+                // Map ListenNotes DTO to CreatePodcastSeriesDto
+                var createSeriesDto = _podcastMappingService.MapFromListenNotesSeriesDto(podcastDto);
                 
-                // Convert CreatePodcastDto to Podcast entity
-                var podcast = new Podcast
-                {
-                    Title = createPodcastDto.Title,
-                    MediaType = createPodcastDto.MediaType,
-                    PodcastType = createPodcastDto.PodcastType,
-                    Link = createPodcastDto.Link,
-                    Notes = createPodcastDto.Notes,
-                    Status = createPodcastDto.Status,
-                    Publisher = createPodcastDto.Publisher,
-                    ExternalId = createPodcastDto.ExternalId,
-                    Thumbnail = createPodcastDto.Thumbnail,
-                    DateAdded = DateTime.UtcNow,
-                    IsSubscribed = true // Automatically subscribe when importing a series
-                };
+                // Automatically subscribe when importing a series
+                createSeriesDto.IsSubscribed = true;
 
                 // Save to database through domain service
-                var savedPodcast = await _podcastService.SavePodcastAsync(podcast);
+                var savedSeries = await _podcastService.CreatePodcastSeriesAsync(createSeriesDto);
                 
-                _logger.LogInformation("Successfully imported podcast: {Title} (ListenNotes ID: {PodcastId})", 
+                _logger.LogInformation("Successfully imported podcast series: {Title} (ListenNotes ID: {PodcastId})", 
                     podcastDto.Title, podcastId);
                 
-                return savedPodcast;
+                return savedSeries;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error importing podcast with ID: {PodcastId}", podcastId);
+                _logger.LogError(ex, "Error importing podcast series with ID: {PodcastId}", podcastId);
                 throw;
             }
         }
 
-        public async Task<Podcast> ImportPodcastEpisodeAsync(string episodeId)
+        public async Task<PodcastEpisode> ImportPodcastEpisodeAsync(string episodeId, Guid seriesId)
         {
             try
             {
-                _logger.LogInformation("Importing podcast episode with ID: {EpisodeId}", episodeId);
+                _logger.LogInformation("Importing podcast episode with ID: {EpisodeId} for series: {SeriesId}", episodeId, seriesId);
 
                 // Get episode details from ListenNotes API
                 var episodeDto = await _listenNotesApiClient.GetEpisodeByIdAsync(episodeId);
 
-                // Map ListenNotes episode DTO to CreatePodcastDto (treating episode as individual podcast)
-                var createPodcastDto = _podcastMappingService.MapFromListenNotesEpisodeDto(episodeDto);
-
-                // Check if episode already exists by title
-                var existingPodcast = await _podcastService.GetPodcastByTitleAsync(createPodcastDto.Title);
-                if (existingPodcast != null)
+                // Check if episode already exists by external ID
+                var existingEpisodes = await _podcastService.GetEpisodesBySeriesIdAsync(seriesId);
+                var existingEpisode = existingEpisodes.FirstOrDefault(e => e.ExternalId == episodeId);
+                if (existingEpisode != null)
                 {
-                    _logger.LogInformation("Episode {Title} already exists", createPodcastDto.Title);
-                    return existingPodcast;
+                    _logger.LogInformation("Episode {Title} already exists", episodeDto.Title);
+                    return existingEpisode;
                 }
 
-                // Convert CreatePodcastDto to Podcast entity
-                var podcast = new Podcast
-                {
-                    Title = createPodcastDto.Title,
-                    MediaType = createPodcastDto.MediaType,
-                    PodcastType = createPodcastDto.PodcastType,
-                    Link = createPodcastDto.Link,
-                    Notes = createPodcastDto.Notes,
-                    Status = createPodcastDto.Status,
-                    AudioLink = createPodcastDto.AudioLink,
-                    ExternalId = createPodcastDto.ExternalId,
-                    Thumbnail = createPodcastDto.Thumbnail,
-                    ReleaseDate = createPodcastDto.ReleaseDate,
-                    DurationInSeconds = createPodcastDto.DurationInSeconds,
-                    DateAdded = DateTime.UtcNow
-                };
+                // Map ListenNotes episode DTO to CreatePodcastEpisodeDto
+                var createEpisodeDto = _podcastMappingService.MapFromListenNotesEpisodeDto(episodeDto);
+                createEpisodeDto.SeriesId = seriesId;
 
                 // Save to database through domain service
-                var savedPodcast = await _podcastService.SavePodcastAsync(podcast);
+                var savedEpisode = await _podcastService.CreatePodcastEpisodeAsync(createEpisodeDto);
                 
                 _logger.LogInformation("Successfully imported episode: {Title} (ListenNotes ID: {EpisodeId})", 
                     episodeDto.Title, episodeId);
                 
-                return savedPodcast;
+                return savedEpisode;
             }
             catch (Exception ex)
             {
@@ -210,11 +182,11 @@ namespace ProjectLoopbreaker.Application.Services
             }
         }
 
-        public async Task<Podcast?> ImportPodcastByNameAsync(string podcastName)
+        public async Task<PodcastSeries?> ImportPodcastSeriesByNameAsync(string podcastName)
         {
             try
             {
-                _logger.LogInformation("Searching and importing podcast by name: {PodcastName}", podcastName);
+                _logger.LogInformation("Searching and importing podcast series by name: {PodcastName}", podcastName);
 
                 // Search for podcast by name
                 var searchResults = await _listenNotesApiClient.SearchAsync(podcastName, "podcast");
@@ -233,17 +205,17 @@ namespace ProjectLoopbreaker.Application.Services
                     return null;
                 }
 
-                // Import the podcast using its ID
-                var podcast = await ImportPodcastAsync(firstResult.Id);
+                // Import the podcast series using its ID
+                var series = await ImportPodcastSeriesAsync(firstResult.Id);
                 
-                _logger.LogInformation("Successfully imported podcast by name: {PodcastName} -> {Title}", 
-                    podcastName, podcast.Title);
+                _logger.LogInformation("Successfully imported podcast series by name: {PodcastName} -> {Title}", 
+                    podcastName, series.Title);
                 
-                return podcast;
+                return series;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error importing podcast by name: {PodcastName}", podcastName);
+                _logger.LogError(ex, "Error importing podcast series by name: {PodcastName}", podcastName);
                 throw;
             }
         }

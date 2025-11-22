@@ -31,161 +31,36 @@ namespace ProjectLoopbreaker.Application.Services
             _logger = logger;
         }
 
-        public async Task<Podcast> SavePodcastAsync(Podcast podcast, bool updateIfExists = true)
+        // Podcast Series methods
+        public async Task<IEnumerable<PodcastSeries>> GetAllPodcastSeriesAsync()
         {
-            // Check if a podcast with the same title already exists
-            var existingPodcast = await GetPodcastByTitleAsync(podcast.Title);
-
-            if (existingPodcast != null)
-            {
-                if (updateIfExists)
-                {
-                    // Update existing podcast properties
-                    existingPodcast.Link = podcast.Link ?? existingPodcast.Link;
-                    existingPodcast.Notes = podcast.Notes ?? existingPodcast.Notes;
-                    existingPodcast.Thumbnail = podcast.Thumbnail ?? existingPodcast.Thumbnail;
-                    // Don't overwrite these if they exist
-                    existingPodcast.Description = existingPodcast.Description ?? podcast.Description;
-                    existingPodcast.RelatedNotes = existingPodcast.RelatedNotes ?? podcast.RelatedNotes;
-
-                    await _context.SaveChangesAsync();
-                    return existingPodcast;
-                }
-                else
-                {
-                    return existingPodcast; // Return existing without modifications
-                }
-            }
-            else
-            {
-                // It's a new podcast, add it
-                _context.Add(podcast);
-                await _context.SaveChangesAsync();
-                return podcast;
-            }
-        }
-
-        // This method is now merged into SavePodcastAsync since episodes are just podcasts with PodcastType.Episode
-
-        public async Task<Podcast> SavePodcastWithEpisodesAsync(Podcast podcastSeries, bool updateIfExists = true)
-        {
-            // First save or update the podcast series
-            var savedSeries = await SavePodcastAsync(podcastSeries, updateIfExists);
-
-            // If there are episodes to save
-            if (podcastSeries.Episodes != null && podcastSeries.Episodes.Any())
-            {
-                foreach (var episode in podcastSeries.Episodes)
-                {
-                    // Make sure episode is linked to the correct series
-                    episode.ParentPodcastId = savedSeries.Id;
-                    episode.PodcastType = PodcastType.Episode;
-
-                    // Save the episode (with duplicate checking)
-                    await SavePodcastAsync(episode, updateIfExists);
-                }
-
-                // Refresh the series with all episodes
-                var entry = _context.Entry(savedSeries);
-                // Note: Collection loading is not available through the interface
-                // This will need to be handled differently or the interface updated
-            }
-
-            return savedSeries;
-        }
-
-        public async Task<bool> PodcastExistsAsync(string title, string? publisher = null)
-        {
-            var query = _context.Podcasts.AsQueryable();
-
-            // Always check title (case-insensitive)
-            query = query.Where(p => p.Title.ToLower() == title.ToLower());
-
-            return await query.AnyAsync();
-        }
-
-        public async Task<bool> PodcastEpisodeExistsAsync(Guid? parentPodcastId, string episodeTitle)
-        {
-            return await _context.Podcasts
-                .AnyAsync(e =>
-                    e.ParentPodcastId == parentPodcastId &&
-                    e.PodcastType == PodcastType.Episode &&
-                    e.Title.ToLower() == episodeTitle.ToLower());
-        }
-
-        public async Task<Podcast> GetPodcastByTitleAsync(string title, string? publisher = null)
-        {
-            var query = _context.Podcasts.AsQueryable();
-
-            // Always check title (case-insensitive)
-            query = query.Where(p => p.Title.ToLower() == title.ToLower());
-
-            return await query.FirstOrDefaultAsync();
-        }
-
-        public async Task<Podcast> GetPodcastEpisodeByTitleAsync(Guid? parentPodcastId, string episodeTitle)
-        {
-            return await _context.Podcasts
-                .FirstOrDefaultAsync(e =>
-                    e.ParentPodcastId == parentPodcastId &&
-                    e.PodcastType == PodcastType.Episode &&
-                    e.Title.ToLower() == episodeTitle.ToLower());
-        }
-
-        // New CRUD methods implementation
-        public async Task<IEnumerable<Podcast>> GetAllPodcastsAsync()
-        {
-            return await _context.Podcasts.ToListAsync();
-        }
-
-        public async Task<IEnumerable<Podcast>> GetPodcastSeriesAsync()
-        {
-            return await _context.Podcasts
-                .Where(p => p.PodcastType == PodcastType.Series)
+            return await _context.PodcastSeries
+                .Include(p => p.Topics)
+                .Include(p => p.Genres)
                 .ToListAsync();
         }
 
-        public async Task<Podcast?> GetPodcastByIdAsync(Guid id)
+        public async Task<PodcastSeries?> GetPodcastSeriesByIdAsync(Guid id)
         {
-            return await _context.Podcasts
+            return await _context.PodcastSeries
                 .Include(p => p.Topics)
                 .Include(p => p.Genres)
                 .Include(p => p.Episodes)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        public async Task<IEnumerable<Podcast>> GetEpisodesBySeriesIdAsync(Guid seriesId)
+        public async Task<IEnumerable<PodcastSeries>> SearchPodcastSeriesAsync(string query)
         {
-            return await _context.Podcasts
-                .Where(p => p.ParentPodcastId == seriesId && p.PodcastType == PodcastType.Episode)
+            return await _context.PodcastSeries
+                .Where(p => p.Title.Contains(query) || (p.Publisher != null && p.Publisher.Contains(query)))
                 .Include(p => p.Topics)
                 .Include(p => p.Genres)
                 .ToListAsync();
         }
 
-        public async Task<IEnumerable<Podcast>> SearchPodcastSeriesAsync(string query)
+        public async Task<PodcastSeries> CreatePodcastSeriesAsync(CreatePodcastSeriesDto dto)
         {
-            return await _context.Podcasts
-                .Where(p => p.PodcastType == PodcastType.Series && 
-                           (p.Title.Contains(query) || p.Publisher.Contains(query)))
-                .ToListAsync();
-        }
-
-        public async Task<Podcast> CreatePodcastAsync(CreatePodcastDto dto)
-        {
-            // If creating an episode, verify the parent series exists
-            if (dto.PodcastType == PodcastType.Episode && dto.ParentPodcastId.HasValue)
-            {
-                var parentSeries = await _context.Podcasts
-                    .FirstOrDefaultAsync(p => p.Id == dto.ParentPodcastId.Value && p.PodcastType == PodcastType.Series);
-
-                if (parentSeries == null)
-                {
-                    throw new ArgumentException($"Parent podcast series with ID {dto.ParentPodcastId.Value} not found.");
-                }
-            }
-
-            var podcast = new Podcast
+            var series = new PodcastSeries
             {
                 Title = dto.Title,
                 MediaType = MediaType.Podcast,
@@ -199,18 +74,14 @@ namespace ProjectLoopbreaker.Application.Services
                 Description = dto.Description,
                 RelatedNotes = dto.RelatedNotes,
                 Thumbnail = dto.Thumbnail,
-                PodcastType = dto.PodcastType,
-                ParentPodcastId = dto.ParentPodcastId,
-                ExternalId = dto.ExternalId,
                 Publisher = dto.Publisher,
-                AudioLink = dto.AudioLink,
-                ReleaseDate = dto.ReleaseDate,
-                DurationInSeconds = dto.DurationInSeconds,
+                ExternalId = dto.ExternalId,
                 IsSubscribed = dto.IsSubscribed,
-                LastSyncDate = dto.LastSyncDate
+                LastSyncDate = dto.LastSyncDate,
+                TotalEpisodes = dto.TotalEpisodes
             };
 
-            // Handle Topics array conversion - check if they exist or create new ones
+            // Handle Topics array conversion
             if (dto.Topics?.Length > 0)
             {
                 foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
@@ -221,16 +92,16 @@ namespace ProjectLoopbreaker.Application.Services
 
                     if (existingTopic != null)
                     {
-                        podcast.Topics.Add(existingTopic);
+                        series.Topics.Add(existingTopic);
                     }
                     else
                     {
-                        podcast.Topics.Add(new Topic { Name = normalizedTopicName });
+                        series.Topics.Add(new Topic { Name = normalizedTopicName });
                     }
                 }
             }
 
-            // Handle Genres array conversion - check if they exist or create new ones
+            // Handle Genres array conversion
             if (dto.Genres?.Length > 0)
             {
                 foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
@@ -241,53 +112,202 @@ namespace ProjectLoopbreaker.Application.Services
 
                     if (existingGenre != null)
                     {
-                        podcast.Genres.Add(existingGenre);
+                        series.Genres.Add(existingGenre);
                     }
                     else
                     {
-                        podcast.Genres.Add(new Genre { Name = normalizedGenreName });
+                        series.Genres.Add(new Genre { Name = normalizedGenreName });
                     }
                 }
             }
 
-            _context.Add(podcast);
+            _context.Add(series);
             await _context.SaveChangesAsync();
 
-            return podcast;
+            return series;
         }
 
-        public async Task<bool> DeletePodcastAsync(Guid id)
+        public async Task<bool> DeletePodcastSeriesAsync(Guid id)
         {
-            var podcast = await _context.FindAsync<Podcast>(id);
-            if (podcast == null)
+            var series = await _context.FindAsync<PodcastSeries>(id);
+            if (series == null)
             {
                 return false;
             }
 
-            // If deleting a series, also delete all its episodes
-            if (podcast.PodcastType == PodcastType.Series)
-            {
-                var episodes = await _context.Podcasts
-                    .Where(p => p.ParentPodcastId == id)
-                    .ToListAsync();
-                
-                foreach (var episode in episodes)
-                {
-                    _context.Remove(episode);
-                }
-            }
-
-            _context.Remove(podcast);
+            // Cascade delete will automatically remove episodes
+            _context.Remove(series);
             await _context.SaveChangesAsync();
 
             return true;
         }
 
-        // Subscription management methods
-        public async Task<Podcast?> SubscribeToPodcastSeriesAsync(Guid seriesId)
+        public async Task<bool> PodcastSeriesExistsAsync(string title, string? publisher = null)
         {
-            var series = await _context.Podcasts
-                .FirstOrDefaultAsync(p => p.Id == seriesId && p.PodcastType == PodcastType.Series);
+            var query = _context.PodcastSeries.AsQueryable();
+            query = query.Where(p => p.Title.ToLower() == title.ToLower());
+
+            if (!string.IsNullOrWhiteSpace(publisher))
+            {
+                query = query.Where(p => p.Publisher != null && p.Publisher.ToLower() == publisher.ToLower());
+            }
+
+            return await query.AnyAsync();
+        }
+
+        public async Task<PodcastSeries?> GetPodcastSeriesByTitleAsync(string title, string? publisher = null)
+        {
+            var query = _context.PodcastSeries.AsQueryable();
+            query = query.Where(p => p.Title.ToLower() == title.ToLower());
+
+            if (!string.IsNullOrWhiteSpace(publisher))
+            {
+                query = query.Where(p => p.Publisher != null && p.Publisher.ToLower() == publisher.ToLower());
+            }
+
+            return await query.FirstOrDefaultAsync();
+        }
+
+        // Podcast Episode methods
+        public async Task<IEnumerable<PodcastEpisode>> GetEpisodesBySeriesIdAsync(Guid seriesId)
+        {
+            return await _context.PodcastEpisodes
+                .Where(e => e.SeriesId == seriesId)
+                .Include(e => e.Topics)
+                .Include(e => e.Genres)
+                .OrderByDescending(e => e.ReleaseDate)
+                .ToListAsync();
+        }
+
+        public async Task<PodcastEpisode?> GetPodcastEpisodeByIdAsync(Guid id)
+        {
+            return await _context.PodcastEpisodes
+                .Include(e => e.Series)
+                .Include(e => e.Topics)
+                .Include(e => e.Genres)
+                .FirstOrDefaultAsync(e => e.Id == id);
+        }
+
+        public async Task<IEnumerable<PodcastEpisode>> GetAllPodcastEpisodesAsync()
+        {
+            return await _context.PodcastEpisodes
+                .Include(e => e.Series)
+                .Include(e => e.Topics)
+                .Include(e => e.Genres)
+                .ToListAsync();
+        }
+
+        public async Task<PodcastEpisode> CreatePodcastEpisodeAsync(CreatePodcastEpisodeDto dto)
+        {
+            // Verify the parent series exists
+            var parentSeries = await _context.PodcastSeries
+                .FirstOrDefaultAsync(p => p.Id == dto.SeriesId);
+
+            if (parentSeries == null)
+            {
+                throw new ArgumentException($"Parent podcast series with ID {dto.SeriesId} not found.");
+            }
+
+            var episode = new PodcastEpisode
+            {
+                Title = dto.Title,
+                MediaType = MediaType.Podcast,
+                Link = dto.Link,
+                Notes = dto.Notes,
+                Status = dto.Status,
+                DateAdded = DateTime.UtcNow,
+                DateCompleted = dto.DateCompleted,
+                Rating = dto.Rating,
+                OwnershipStatus = dto.OwnershipStatus,
+                Description = dto.Description,
+                RelatedNotes = dto.RelatedNotes,
+                Thumbnail = dto.Thumbnail,
+                SeriesId = dto.SeriesId,
+                AudioLink = dto.AudioLink,
+                ReleaseDate = dto.ReleaseDate,
+                DurationInSeconds = dto.DurationInSeconds,
+                EpisodeNumber = dto.EpisodeNumber,
+                SeasonNumber = dto.SeasonNumber,
+                ExternalId = dto.ExternalId,
+                Publisher = dto.Publisher
+            };
+
+            // Handle Topics array conversion
+            if (dto.Topics?.Length > 0)
+            {
+                foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
+                {
+                    var normalizedTopicName = topicName.ToLower();
+                    var existingTopic = await _context.Topics
+                        .FirstOrDefaultAsync(t => t.Name.ToLower() == normalizedTopicName);
+
+                    if (existingTopic != null)
+                    {
+                        episode.Topics.Add(existingTopic);
+                    }
+                    else
+                    {
+                        episode.Topics.Add(new Topic { Name = normalizedTopicName });
+                    }
+                }
+            }
+
+            // Handle Genres array conversion
+            if (dto.Genres?.Length > 0)
+            {
+                foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
+                {
+                    var normalizedGenreName = genreName.ToLower();
+                    var existingGenre = await _context.Genres
+                        .FirstOrDefaultAsync(g => g.Name.ToLower() == normalizedGenreName);
+
+                    if (existingGenre != null)
+                    {
+                        episode.Genres.Add(existingGenre);
+                    }
+                    else
+                    {
+                        episode.Genres.Add(new Genre { Name = normalizedGenreName });
+                    }
+                }
+            }
+
+            _context.Add(episode);
+            await _context.SaveChangesAsync();
+
+            return episode;
+        }
+
+        public async Task<bool> DeletePodcastEpisodeAsync(Guid id)
+        {
+            var episode = await _context.FindAsync<PodcastEpisode>(id);
+            if (episode == null)
+            {
+                return false;
+            }
+
+            _context.Remove(episode);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<bool> PodcastEpisodeExistsAsync(Guid seriesId, string episodeTitle)
+        {
+            return await _context.PodcastEpisodes
+                .AnyAsync(e => e.SeriesId == seriesId && e.Title.ToLower() == episodeTitle.ToLower());
+        }
+
+        public async Task<PodcastEpisode?> GetPodcastEpisodeByTitleAsync(Guid seriesId, string episodeTitle)
+        {
+            return await _context.PodcastEpisodes
+                .FirstOrDefaultAsync(e => e.SeriesId == seriesId && e.Title.ToLower() == episodeTitle.ToLower());
+        }
+
+        // Subscription management methods
+        public async Task<PodcastSeries?> SubscribeToPodcastSeriesAsync(Guid seriesId)
+        {
+            var series = await _context.PodcastSeries.FirstOrDefaultAsync(p => p.Id == seriesId);
 
             if (series == null)
             {
@@ -300,10 +320,9 @@ namespace ProjectLoopbreaker.Application.Services
             return series;
         }
 
-        public async Task<Podcast?> UnsubscribeFromPodcastSeriesAsync(Guid seriesId)
+        public async Task<PodcastSeries?> UnsubscribeFromPodcastSeriesAsync(Guid seriesId)
         {
-            var series = await _context.Podcasts
-                .FirstOrDefaultAsync(p => p.Id == seriesId && p.PodcastType == PodcastType.Series);
+            var series = await _context.PodcastSeries.FirstOrDefaultAsync(p => p.Id == seriesId);
 
             if (series == null)
             {
@@ -316,20 +335,22 @@ namespace ProjectLoopbreaker.Application.Services
             return series;
         }
 
-        public async Task<IEnumerable<Podcast>> GetSubscribedPodcastSeriesAsync()
+        public async Task<IEnumerable<PodcastSeries>> GetSubscribedPodcastSeriesAsync()
         {
-            return await _context.Podcasts
-                .Where(p => p.PodcastType == PodcastType.Series && p.IsSubscribed)
+            return await _context.PodcastSeries
+                .Where(p => p.IsSubscribed)
+                .Include(p => p.Topics)
+                .Include(p => p.Genres)
                 .ToListAsync();
         }
 
         public async Task<PodcastSyncResultDto?> SyncPodcastSeriesEpisodesAsync(Guid seriesId)
         {
-            var series = await GetPodcastByIdAsync(seriesId);
+            var series = await GetPodcastSeriesByIdAsync(seriesId);
 
-            if (series == null || series.PodcastType != PodcastType.Series || string.IsNullOrEmpty(series.ExternalId))
+            if (series == null || string.IsNullOrEmpty(series.ExternalId))
             {
-                _logger.LogWarning("Cannot sync series {SeriesId}: series not found, not a series type, or has no external ID", seriesId);
+                _logger.LogWarning("Cannot sync series {SeriesId}: series not found or has no external ID", seriesId);
                 return null;
             }
 
@@ -362,33 +383,32 @@ namespace ProjectLoopbreaker.Application.Services
                 foreach (var episodeDto in podcastDto.Episodes)
                 {
                     // Check if episode already exists by external ID
-                    var existingEpisode = await _context.Podcasts
-                        .FirstOrDefaultAsync(p => 
-                            p.ExternalId == episodeDto.Id && 
-                            p.PodcastType == PodcastType.Episode);
+                    var existingEpisode = await _context.PodcastEpisodes
+                        .FirstOrDefaultAsync(e => e.ExternalId == episodeDto.Id);
 
                     if (existingEpisode == null)
                     {
                         // Map and create new episode
                         var createEpisodeDto = _podcastMappingService.MapFromListenNotesEpisodeDto(episodeDto);
-                        createEpisodeDto.ParentPodcastId = seriesId;
-                        createEpisodeDto.PodcastType = PodcastType.Episode;
+                        createEpisodeDto.SeriesId = seriesId;
 
-                        var newEpisode = new Podcast
+                        var newEpisode = new PodcastEpisode
                         {
                             Title = createEpisodeDto.Title,
                             MediaType = MediaType.Podcast,
-                            PodcastType = PodcastType.Episode,
-                            ParentPodcastId = seriesId,
+                            SeriesId = seriesId,
                             Link = createEpisodeDto.Link,
                             Notes = createEpisodeDto.Notes,
-                            Status = Status.Uncharted, // Default status for new episodes
+                            Status = Status.Uncharted,
                             AudioLink = createEpisodeDto.AudioLink,
                             ExternalId = createEpisodeDto.ExternalId,
                             Thumbnail = createEpisodeDto.Thumbnail,
                             ReleaseDate = createEpisodeDto.ReleaseDate,
                             DurationInSeconds = createEpisodeDto.DurationInSeconds,
                             Description = createEpisodeDto.Description,
+                            Publisher = createEpisodeDto.Publisher,
+                            EpisodeNumber = createEpisodeDto.EpisodeNumber,
+                            SeasonNumber = createEpisodeDto.SeasonNumber,
                             DateAdded = DateTime.UtcNow
                         };
 
@@ -404,8 +424,8 @@ namespace ProjectLoopbreaker.Application.Services
                 series.LastSyncDate = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
-                var totalEpisodeCount = await _context.Podcasts
-                    .CountAsync(p => p.ParentPodcastId == seriesId && p.PodcastType == PodcastType.Episode);
+                var totalEpisodeCount = await _context.PodcastEpisodes
+                    .CountAsync(e => e.SeriesId == seriesId);
 
                 _logger.LogInformation("Sync complete for {Title}: {NewCount} new episodes, {TotalCount} total episodes", 
                     series.Title, newEpisodesCount, totalEpisodeCount);

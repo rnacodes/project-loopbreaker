@@ -351,47 +351,49 @@ namespace ProjectLoopbreaker.Application.Services
         }
 
         // New methods (working with DTOs)
-        public CreatePodcastDto MapFromListenNotesDto(PodcastSeriesDto podcastDto)
+        public CreatePodcastSeriesDto MapFromListenNotesSeriesDto(PodcastSeriesDto podcastDto)
         {
             try
             {
-                _logger.LogInformation("Mapping ListenNotes podcast DTO to CreatePodcastDto for: {Title}", podcastDto.Title);
+                _logger.LogInformation("Mapping ListenNotes podcast DTO to CreatePodcastSeriesDto for: {Title}", podcastDto.Title);
 
-                var createPodcastDto = new CreatePodcastDto
+                var createSeriesDto = new CreatePodcastSeriesDto
                 {
                     Title = podcastDto.Title ?? string.Empty,
                     MediaType = MediaType.Podcast,
-                    PodcastType = PodcastType.Series,
                     Link = podcastDto.Website,
                     Notes = podcastDto.Description,
+                    Description = podcastDto.Description,
                     Status = Status.Uncharted,
                     Publisher = podcastDto.Publisher,
                     ExternalId = podcastDto.Id,
-                    Thumbnail = podcastDto.Image ?? podcastDto.Thumbnail
+                    Thumbnail = podcastDto.Image ?? podcastDto.Thumbnail,
+                    TotalEpisodes = podcastDto.Episodes?.Count ?? 0
                 };
 
-                return createPodcastDto;
+                return createSeriesDto;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error mapping ListenNotes podcast DTO to CreatePodcastDto");
-                throw new ApplicationException("Failed to map ListenNotes podcast DTO to CreatePodcastDto", ex);
+                _logger.LogError(ex, "Error mapping ListenNotes podcast DTO to CreatePodcastSeriesDto");
+                throw new ApplicationException("Failed to map ListenNotes podcast DTO to CreatePodcastSeriesDto", ex);
             }
         }
 
-        public CreatePodcastDto MapFromListenNotesEpisodeDto(PodcastEpisodeDto episodeDto)
+        public CreatePodcastEpisodeDto MapFromListenNotesEpisodeDto(PodcastEpisodeDto episodeDto)
         {
             try
             {
-                _logger.LogInformation("Mapping ListenNotes episode DTO to CreatePodcastDto for: {Title}", episodeDto.Title);
+                _logger.LogInformation("Mapping ListenNotes episode DTO to CreatePodcastEpisodeDto for: {Title}", episodeDto.Title);
 
-                var createPodcastDto = new CreatePodcastDto
+                var createEpisodeDto = new CreatePodcastEpisodeDto
                 {
                     Title = episodeDto.Title ?? string.Empty,
                     MediaType = MediaType.Podcast,
-                    PodcastType = PodcastType.Episode,
+                    SeriesId = Guid.Empty, // Will be set by caller
                     Link = episodeDto.Link,
                     Notes = episodeDto.Description,
+                    Description = episodeDto.Description,
                     Status = Status.Uncharted,
                     AudioLink = episodeDto.AudioUrl,
                     ExternalId = episodeDto.Id,
@@ -400,12 +402,12 @@ namespace ProjectLoopbreaker.Application.Services
                     DurationInSeconds = episodeDto.DurationInSeconds
                 };
 
-                return createPodcastDto;
+                return createEpisodeDto;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error mapping ListenNotes episode DTO to CreatePodcastDto");
-                throw new ApplicationException("Failed to map ListenNotes episode DTO to CreatePodcastDto", ex);
+                _logger.LogError(ex, "Error mapping ListenNotes episode DTO to CreatePodcastEpisodeDto");
+                throw new ApplicationException("Failed to map ListenNotes episode DTO to CreatePodcastEpisodeDto", ex);
             }
         }
     }

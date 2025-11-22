@@ -9,7 +9,8 @@ namespace ProjectLoopbreaker.Domain.Interfaces
         // Entity collections for querying
         IQueryable<BaseMediaItem> MediaItems { get; }
         IQueryable<Mixlist> Mixlists { get; }
-        IQueryable<Podcast> Podcasts { get; }
+        IQueryable<PodcastSeries> PodcastSeries { get; }
+        IQueryable<PodcastEpisode> PodcastEpisodes { get; }
         IQueryable<Book> Books { get; }
         IQueryable<Movie> Movies { get; }
         IQueryable<TvShow> TvShows { get; }

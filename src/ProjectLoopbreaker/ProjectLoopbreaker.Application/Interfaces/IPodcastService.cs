@@ -8,27 +8,28 @@ namespace ProjectLoopbreaker.Application.Interfaces
 {
     public interface IPodcastService
     {
-        // Existing methods
-        Task<Podcast> SavePodcastAsync(Podcast podcast, bool updateIfExists = true);
-        Task<Podcast> SavePodcastWithEpisodesAsync(Podcast podcastSeries, bool updateIfExists = true);
-        Task<bool> PodcastExistsAsync(string title, string? publisher = null);
-        Task<bool> PodcastEpisodeExistsAsync(Guid? parentPodcastId, string episodeTitle);
-        Task<Podcast> GetPodcastByTitleAsync(string title, string? publisher = null);
-        Task<Podcast> GetPodcastEpisodeByTitleAsync(Guid? parentPodcastId, string episodeTitle);
-
-        // New CRUD methods needed by PodcastController
-        Task<IEnumerable<Podcast>> GetAllPodcastsAsync();
-        Task<IEnumerable<Podcast>> GetPodcastSeriesAsync();
-        Task<Podcast?> GetPodcastByIdAsync(Guid id);
-        Task<IEnumerable<Podcast>> GetEpisodesBySeriesIdAsync(Guid seriesId);
-        Task<IEnumerable<Podcast>> SearchPodcastSeriesAsync(string query);
-        Task<Podcast> CreatePodcastAsync(CreatePodcastDto dto);
-        Task<bool> DeletePodcastAsync(Guid id);
+        // Podcast Series methods
+        Task<IEnumerable<PodcastSeries>> GetAllPodcastSeriesAsync();
+        Task<PodcastSeries?> GetPodcastSeriesByIdAsync(Guid id);
+        Task<IEnumerable<PodcastSeries>> SearchPodcastSeriesAsync(string query);
+        Task<PodcastSeries> CreatePodcastSeriesAsync(CreatePodcastSeriesDto dto);
+        Task<bool> DeletePodcastSeriesAsync(Guid id);
+        Task<bool> PodcastSeriesExistsAsync(string title, string? publisher = null);
+        Task<PodcastSeries?> GetPodcastSeriesByTitleAsync(string title, string? publisher = null);
+        
+        // Podcast Episode methods
+        Task<IEnumerable<PodcastEpisode>> GetEpisodesBySeriesIdAsync(Guid seriesId);
+        Task<PodcastEpisode?> GetPodcastEpisodeByIdAsync(Guid id);
+        Task<IEnumerable<PodcastEpisode>> GetAllPodcastEpisodesAsync();
+        Task<PodcastEpisode> CreatePodcastEpisodeAsync(CreatePodcastEpisodeDto dto);
+        Task<bool> DeletePodcastEpisodeAsync(Guid id);
+        Task<bool> PodcastEpisodeExistsAsync(Guid seriesId, string episodeTitle);
+        Task<PodcastEpisode?> GetPodcastEpisodeByTitleAsync(Guid seriesId, string episodeTitle);
         
         // Subscription management methods
-        Task<Podcast?> SubscribeToPodcastSeriesAsync(Guid seriesId);
-        Task<Podcast?> UnsubscribeFromPodcastSeriesAsync(Guid seriesId);
-        Task<IEnumerable<Podcast>> GetSubscribedPodcastSeriesAsync();
+        Task<PodcastSeries?> SubscribeToPodcastSeriesAsync(Guid seriesId);
+        Task<PodcastSeries?> UnsubscribeFromPodcastSeriesAsync(Guid seriesId);
+        Task<IEnumerable<PodcastSeries>> GetSubscribedPodcastSeriesAsync();
         Task<PodcastSyncResultDto?> SyncPodcastSeriesEpisodesAsync(Guid seriesId);
     }
 }

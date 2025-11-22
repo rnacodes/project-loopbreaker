@@ -188,25 +188,70 @@ export const importTopicsFromCsv = (file) => {
     });
 };
 
-// Podcast API calls (unified for series and episodes)
-export const getAllPodcasts = () => {
-    return apiClient.get('/podcast');
+// Podcast Series API calls
+export const getAllPodcastSeries = () => {
+    return apiClient.get('/podcast/series');
 };
 
-export const getPodcastSeries = () => {
-    return apiClient.get('/podcast/series');
+export const getPodcastSeriesById = (id) => {
+    return apiClient.get(`/podcast/series/${id}`);
 };
 
 export const searchPodcastSeries = (query) => {
     return apiClient.get(`/podcast/series/search?query=${encodeURIComponent(query)}`);
 };
 
-export const getPodcastById = (id) => {
-    return apiClient.get(`/podcast/${id}`);
+export const createPodcastSeries = (seriesData) => {
+    return apiClient.post('/podcast/series', seriesData);
+};
+
+export const deletePodcastSeries = (id) => {
+    return apiClient.delete(`/podcast/series/${id}`);
+};
+
+export const subscribeToPodcastSeries = (seriesId) => {
+    return apiClient.post(`/podcast/series/${seriesId}/subscribe`);
+};
+
+export const unsubscribeFromPodcastSeries = (seriesId) => {
+    return apiClient.post(`/podcast/series/${seriesId}/unsubscribe`);
+};
+
+export const getSubscribedPodcastSeries = () => {
+    return apiClient.get('/podcast/series/subscriptions');
+};
+
+export const syncPodcastSeriesEpisodes = (seriesId) => {
+    return apiClient.post(`/podcast/series/${seriesId}/sync`);
+};
+
+export const importPodcastSeriesFromApi = (podcastId) => {
+    return apiClient.post(`/podcast/series/from-api/${podcastId}`);
+};
+
+export const importPodcastSeriesByName = (podcastName) => {
+    return apiClient.post('/podcast/series/from-api/by-name', { podcastName });
+};
+
+// Podcast Episode API calls
+export const getEpisodesBySeriesId = (seriesId) => {
+    return apiClient.get(`/podcast/series/${seriesId}/episodes`);
+};
+
+export const getPodcastEpisodeById = (id) => {
+    return apiClient.get(`/podcast/episodes/${id}`);
+};
+
+export const getAllPodcastEpisodes = () => {
+    return apiClient.get('/podcast/episodes');
 };
 
 export const createPodcastEpisode = (episodeData) => {
-    return apiClient.post('/podcast/episode', episodeData);
+    return apiClient.post('/podcast/episodes', episodeData);
+};
+
+export const deletePodcastEpisode = (id) => {
+    return apiClient.delete(`/podcast/episodes/${id}`);
 };
 
 // Media filtering API calls

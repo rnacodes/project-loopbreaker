@@ -7,7 +7,7 @@ import {
     Divider, Chip, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import { Search, Download, Podcasts, MenuBook, ExpandMore, OpenInNew, MovieFilter, VideoLibrary, Article } from '@mui/icons-material';
-import { searchPodcasts, getPodcastById, importPodcastFromApi, searchBooksFromOpenLibrary, importBookFromOpenLibrary, searchMovies, searchTvShows, searchMulti, getMovieDetails, getTvShowDetails, importMovieFromTmdb, importTvShowFromTmdb, searchYouTube, getYouTubeVideoDetails, getYouTubePlaylistDetails, getYouTubeChannelDetails, importYouTubeVideo, importYouTubePlaylist, importYouTubeChannel, importFromYouTubeUrl } from '../services/apiService';
+import { searchPodcasts, getPodcastSeriesById, importPodcastSeriesFromApi, importPodcastSeriesByName, searchBooksFromOpenLibrary, importBookFromOpenLibrary, searchMovies, searchTvShows, searchMulti, getMovieDetails, getTvShowDetails, importMovieFromTmdb, importTvShowFromTmdb, searchYouTube, getYouTubeVideoDetails, getYouTubePlaylistDetails, getYouTubeChannelDetails, importYouTubeVideo, importYouTubePlaylist, importYouTubeChannel, importFromYouTubeUrl } from '../services/apiService';
 import WhiteOutlineButton from './shared/WhiteOutlineButton';
 
 function ImportMediaPage() {
@@ -108,10 +108,10 @@ function ImportMediaPage() {
         setPodcastError('');
         
         try {
-            // Use real API to import podcast
-            const result = await importPodcastFromApi({ podcastId: podcastId });
+            // Use real API to import podcast series
+            const result = await importPodcastSeriesFromApi(podcastId);
             
-            setPodcastSuccess(`Podcast imported successfully!`);
+            setPodcastSuccess(`Podcast series imported successfully!`);
             setPodcastIsLoading(false);
             setPodcastId('');
             
@@ -142,10 +142,10 @@ function ImportMediaPage() {
         setPodcastError('');
         
         try {
-            // Use real API to import podcast by name
-            const result = await importPodcastFromApi({ podcastName: podcastName });
+            // Use real API to import podcast series by name
+            const result = await importPodcastSeriesByName(podcastName);
             
-            setPodcastSuccess(`Podcast imported successfully!`);
+            setPodcastSuccess(`Podcast series imported successfully!`);
             setPodcastIsLoading(false);
             setPodcastName('');
             
@@ -171,11 +171,11 @@ function ImportMediaPage() {
         setPodcastError('');
         
         try {
-            // Use real API to import podcast
-            const result = await importPodcastFromApi({ podcastId: podcast.id });
+            // Use real API to import podcast series
+            const result = await importPodcastSeriesFromApi(podcast.id);
             
             // Show success message
-            setPodcastSuccess(`"${podcast.title}" imported successfully!`);
+            setPodcastSuccess(`"${podcast.title}" imported successfully as a podcast series!`);
             setPodcastIsLoading(false);
             
             console.log('Podcast imported successfully:', result);

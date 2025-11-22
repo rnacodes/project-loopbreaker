@@ -287,16 +287,16 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         }
 
         /// <summary>
-        /// Import a podcast from ListenNotes into the media library
+        /// Import a podcast series from ListenNotes into the media library
         /// </summary>
         /// <param name="podcastId">ListenNotes podcast ID</param>
-        /// <returns>Imported podcast entity</returns>
+        /// <returns>Imported podcast series entity</returns>
         [HttpPost("import/podcast/{podcastId}")]
-        public async Task<ActionResult<Podcast>> ImportPodcast(string podcastId)
+        public async Task<ActionResult<PodcastSeries>> ImportPodcast(string podcastId)
         {
             try
             {
-                var result = await _listenNotesService.ImportPodcastAsync(podcastId);
+                var result = await _listenNotesService.ImportPodcastSeriesAsync(podcastId);
                 return Ok(result);
             }
             catch (InvalidOperationException ex)
@@ -315,13 +315,14 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         /// Import a podcast episode from ListenNotes into the media library
         /// </summary>
         /// <param name="episodeId">ListenNotes episode ID</param>
-        /// <returns>Imported podcast entity</returns>
+        /// <param name="seriesId">ID of the parent podcast series</param>
+        /// <returns>Imported podcast episode entity</returns>
         [HttpPost("import/episode/{episodeId}")]
-        public async Task<ActionResult<Podcast>> ImportPodcastEpisode(string episodeId)
+        public async Task<ActionResult<PodcastEpisode>> ImportPodcastEpisode(string episodeId, [FromQuery] Guid seriesId)
         {
             try
             {
-                var result = await _listenNotesService.ImportPodcastEpisodeAsync(episodeId);
+                var result = await _listenNotesService.ImportPodcastEpisodeAsync(episodeId, seriesId);
                 return Ok(result);
             }
             catch (InvalidOperationException ex)

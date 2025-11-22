@@ -11,7 +11,8 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         // Entity Framework DbSet properties
         public DbSet<BaseMediaItem> MediaItems { get; set; }
         public DbSet<Mixlist> Mixlists { get; set; }
-        public DbSet<Podcast> Podcasts { get; set; }
+        public DbSet<PodcastSeries> PodcastSeries { get; set; }
+        public DbSet<PodcastEpisode> PodcastEpisodes { get; set; }
         public DbSet<Book> Books { get; set; }
         public DbSet<Movie> Movies { get; set; }
         public DbSet<TvShow> TvShows { get; set; }
@@ -23,7 +24,8 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         // IApplicationDbContext interface implementations
         IQueryable<BaseMediaItem> IApplicationDbContext.MediaItems => MediaItems;
         IQueryable<Mixlist> IApplicationDbContext.Mixlists => Mixlists;
-        IQueryable<Podcast> IApplicationDbContext.Podcasts => Podcasts;
+        IQueryable<PodcastSeries> IApplicationDbContext.PodcastSeries => PodcastSeries;
+        IQueryable<PodcastEpisode> IApplicationDbContext.PodcastEpisodes => PodcastEpisodes;
         IQueryable<Book> IApplicationDbContext.Books => Books;
         IQueryable<Movie> IApplicationDbContext.Movies => Movies;
         IQueryable<TvShow> IApplicationDbContext.TvShows => TvShows;
@@ -195,15 +197,38 @@ namespace ProjectLoopbreaker.Infrastructure.Data
 
             // Configure Table-Per-Type (TPT) inheritance for all media entities
             modelBuilder.Entity<BaseMediaItem>().ToTable("MediaItems");
-            modelBuilder.Entity<Podcast>().ToTable("Podcasts");
+            modelBuilder.Entity<PodcastSeries>().ToTable("PodcastSeries");
+            modelBuilder.Entity<PodcastEpisode>().ToTable("PodcastEpisodes");
             modelBuilder.Entity<Book>().ToTable("Books");
             modelBuilder.Entity<Movie>().ToTable("Movies");
             modelBuilder.Entity<TvShow>().ToTable("TvShows");
             modelBuilder.Entity<Video>().ToTable("Videos");
             modelBuilder.Entity<Article>().ToTable("Articles");
 
-            // Configure Podcast specific properties
-            modelBuilder.Entity<Podcast>(entity =>
+            // Configure PodcastSeries specific properties
+            modelBuilder.Entity<PodcastSeries>(entity =>
+            {
+                entity.Property(e => e.Publisher)
+                    .HasMaxLength(500);
+                    
+                entity.Property(e => e.ExternalId)
+                    .HasMaxLength(200);
+                    
+                entity.Property(e => e.IsSubscribed)
+                    .HasDefaultValue(false);
+                    
+                entity.Property(e => e.TotalEpisodes)
+                    .HasDefaultValue(0);
+                    
+                // Create index on ExternalId for API imports
+                entity.HasIndex(e => e.ExternalId);
+                
+                // Create index on IsSubscribed for subscription queries
+                entity.HasIndex(e => e.IsSubscribed);
+            });
+
+            // Configure PodcastEpisode specific properties
+            modelBuilder.Entity<PodcastEpisode>(entity =>
             {
                 entity.Property(e => e.AudioLink)
                     .HasMaxLength(2000);
@@ -211,31 +236,26 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.Property(e => e.DurationInSeconds)
                     .HasDefaultValue(0);
                     
-                entity.Property(e => e.PodcastType)
-                    .HasConversion<string>()
-                    .HasMaxLength(50)
-                    .IsRequired();
-                    
                 entity.Property(e => e.ExternalId)
                     .HasMaxLength(200);
                     
                 entity.Property(e => e.Publisher)
                     .HasMaxLength(500);
                     
-                // Configure self-referencing relationship for Series->Episodes
-                entity.HasOne(e => e.ParentPodcast)
+                // Configure relationship with PodcastSeries
+                entity.HasOne(e => e.Series)
                     .WithMany(s => s.Episodes)
-                    .HasForeignKey(e => e.ParentPodcastId)
-                    .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete to avoid orphaned episodes
+                    .HasForeignKey(e => e.SeriesId)
+                    .OnDelete(DeleteBehavior.Cascade); // Cascade delete: when series deleted, delete episodes
                     
-                // Create index on PodcastType for better query performance
-                entity.HasIndex(e => e.PodcastType);
-                
-                // Create index on ParentPodcastId for better query performance
-                entity.HasIndex(e => e.ParentPodcastId);
+                // Create index on SeriesId for better query performance
+                entity.HasIndex(e => e.SeriesId);
                 
                 // Create index on ExternalId for API imports
                 entity.HasIndex(e => e.ExternalId);
+                
+                // Create index on ReleaseDate for chronological queries
+                entity.HasIndex(e => e.ReleaseDate);
             });
 
             // Configure Book specific properties

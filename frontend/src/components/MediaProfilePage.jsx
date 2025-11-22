@@ -15,7 +15,7 @@ import {
 } from '@mui/icons-material';
 import { 
     getMediaById, getAllMixlists, addMediaToMixlist, 
-    removeMediaFromMixlist, getBookById, getPodcastById,
+    removeMediaFromMixlist, getBookById, getPodcastSeriesById, getPodcastEpisodeById,
     getMovieById, getTvShowById, getVideoById, getArticleById
 } from '../services/apiService';
 
@@ -54,9 +54,17 @@ function MediaProfilePage() {
           }
         } else if (basicMedia.mediaType === 'Podcast') {
           try {
-            const podcastResponse = await getPodcastById(id);
-            detailedMedia = { ...basicMedia, ...podcastResponse.data };
-            console.log('Detailed podcast data:', detailedMedia);
+            // Try to fetch as podcast series first
+            try {
+              const seriesResponse = await getPodcastSeriesById(id);
+              detailedMedia = { ...basicMedia, ...seriesResponse.data, podcastType: 'Series' };
+              console.log('Detailed podcast series data:', detailedMedia);
+            } catch (seriesError) {
+              // If series fetch fails, try as episode
+              const episodeResponse = await getPodcastEpisodeById(id);
+              detailedMedia = { ...basicMedia, ...episodeResponse.data, podcastType: 'Episode' };
+              console.log('Detailed podcast episode data:', detailedMedia);
+            }
           } catch (podcastError) {
             console.warn('Could not fetch detailed podcast data, using basic data:', podcastError);
           }

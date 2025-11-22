@@ -338,8 +338,10 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                                 mediaItem = await ProcessBookRow(csv);
                                 break;
                             case MediaType.Podcast:
-                                mediaItem = await ProcessPodcastRow(csv);
-                                break;
+                                // TODO: Update to handle PodcastSeries and PodcastEpisode separately
+                                // mediaItem = await ProcessPodcastRow(csv);
+                                _logger.LogWarning("Podcast CSV import not yet updated for new structure. Skipping row.");
+                                continue;
                             case MediaType.Movie:
                                 mediaItem = await ProcessMovieRow(csv);
                                 break;
@@ -371,16 +373,28 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                                     MediaType = "Book"
                                 });
                             }
-                            else if (mediaItem is Podcast podcast)
+                            else if (mediaItem is PodcastSeries podcastSeries)
                             {
-                                _context.Podcasts.Add(podcast);
-                                // Track the imported podcast for the response
+                                _context.PodcastSeries.Add(podcastSeries);
+                                // Track the imported podcast series for the response
                                 importedItems.Add(new
                                 {
-                                    Id = podcast.Id,
-                                    Title = podcast.Title,
-                                    Thumbnail = podcast.Thumbnail,
-                                    MediaType = "Podcast"
+                                    Id = podcastSeries.Id,
+                                    Title = podcastSeries.Title,
+                                    Thumbnail = podcastSeries.Thumbnail,
+                                    MediaType = "PodcastSeries"
+                                });
+                            }
+                            else if (mediaItem is PodcastEpisode podcastEpisode)
+                            {
+                                _context.PodcastEpisodes.Add(podcastEpisode);
+                                // Track the imported podcast episode for the response
+                                importedItems.Add(new
+                                {
+                                    Id = podcastEpisode.Id,
+                                    Title = podcastEpisode.Title,
+                                    Thumbnail = podcastEpisode.Thumbnail,
+                                    MediaType = "PodcastEpisode"
                                 });
                             }
                             else if (mediaItem is Movie movie)
@@ -549,6 +563,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             return book;
         }
 
+        // TODO: Update for new PodcastSeries/PodcastEpisode structure
+        /*
         private async Task<Podcast?> ProcessPodcastRow(CsvReader csv)
         {
             var podcast = new Podcast
@@ -604,6 +620,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
             return podcast;
         }
+        */
 
         private async Task<Movie?> ProcessMovieRow(CsvReader csv)
         {
