@@ -31,7 +31,7 @@ function SourceDirectoryPage() {
                 'Auto-fetch metadata & artwork',
                 'Episode tracking',
                 'Background sync of new episodes',
-    'Import listening history from Podcasts app and Apple Podcasts'
+                'Import listening history from Podcasts app and Apple Podcasts'
             ]
         },
         {
@@ -52,6 +52,8 @@ function SourceDirectoryPage() {
                 'Cover images & descriptions'
             ]
         },
+
+        //TODO: Add TMDB credit and logo here like it is on the ImportMediaPage.jsx
         {
             id: 'movies-tv',
             name: 'Movies & TV Shows',
