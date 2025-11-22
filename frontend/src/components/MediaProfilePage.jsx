@@ -1,3 +1,5 @@
+//TODO: Update to reflect latest changes to the API and frontend.
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
