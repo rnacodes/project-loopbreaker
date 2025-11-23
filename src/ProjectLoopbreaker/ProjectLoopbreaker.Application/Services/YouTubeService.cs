@@ -12,17 +12,20 @@ namespace ProjectLoopbreaker.Application.Services
         private readonly IYouTubeApiClient _youTubeApiClient;
         private readonly IYouTubeMappingService _mappingService;
         private readonly IVideoService _videoService;
+        private readonly IYouTubeChannelService _channelService;
         private readonly ILogger<YouTubeService> _logger;
 
         public YouTubeService(
             IYouTubeApiClient youTubeApiClient,
             IYouTubeMappingService mappingService,
             IVideoService videoService,
+            IYouTubeChannelService channelService,
             ILogger<YouTubeService> logger)
         {
             _youTubeApiClient = youTubeApiClient;
             _mappingService = mappingService;
             _videoService = videoService;
+            _channelService = channelService;
             _logger = logger;
         }
 
@@ -83,10 +86,47 @@ namespace ProjectLoopbreaker.Application.Services
                     throw new InvalidOperationException($"Video with ID {videoId} not found");
                 }
 
+                // Auto-import/link channel if available
+                Guid? channelId = null;
+                if (!string.IsNullOrEmpty(videoDto.Snippet?.ChannelId))
+                {
+                    try
+                    {
+                        _logger.LogInformation($"Checking for channel: {videoDto.Snippet.ChannelId}");
+                        
+                        // Check if channel already exists
+                        var existingChannel = await _channelService.GetChannelByExternalIdAsync(videoDto.Snippet.ChannelId);
+                        
+                        if (existingChannel != null)
+                        {
+                            _logger.LogInformation($"Channel already exists: {existingChannel.Title}");
+                            channelId = existingChannel.Id;
+                        }
+                        else
+                        {
+                            // Import the channel
+                            _logger.LogInformation($"Auto-importing channel: {videoDto.Snippet.ChannelTitle}");
+                            var importedChannel = await _channelService.ImportChannelFromYouTubeAsync(videoDto.Snippet.ChannelId);
+                            channelId = importedChannel.Id;
+                            _logger.LogInformation($"Successfully auto-imported channel: {importedChannel.Title}");
+                        }
+                    }
+                    catch (Exception channelEx)
+                    {
+                        _logger.LogWarning(channelEx, $"Failed to import channel for video {videoId}, continuing without channel link");
+                        // Continue without channel - don't fail the video import
+                    }
+                }
+
                 var video = _mappingService.MapVideoToEntity(videoDto);
+                if (channelId.HasValue)
+                {
+                    video.ChannelId = channelId.Value;
+                }
                 var savedVideo = await _videoService.SaveVideoAsync(video, updateIfExists: true);
 
-                _logger.LogInformation($"Successfully imported YouTube video: {video.Title}");
+                _logger.LogInformation($"Successfully imported YouTube video: {video.Title}" + 
+                    (channelId.HasValue ? $" (linked to channel)" : ""));
                 return savedVideo;
             }
             catch (Exception ex)
@@ -143,6 +183,10 @@ namespace ProjectLoopbreaker.Application.Services
                     {
                         episode.ParentVideoId = savedPlaylist.Id;
                         episode.VideoType = VideoType.Episode;
+                        
+                        // Auto-link channel for each episode
+                        await AutoLinkChannelToVideo(episode, videoDetails);
+                        
                         var savedEpisode = await _videoService.SaveVideoAsync(episode, updateIfExists: true);
                         videos.Add(savedEpisode);
                     }
@@ -153,6 +197,9 @@ namespace ProjectLoopbreaker.Application.Services
                     var individualVideos = _mappingService.MapPlaylistItemsToVideoEntities(playlistItems, videoDetails);
                     foreach (var video in individualVideos)
                     {
+                        // Auto-link channel for each video
+                        await AutoLinkChannelToVideo(video, videoDetails);
+                        
                         var savedVideo = await _videoService.SaveVideoAsync(video, updateIfExists: true);
                         videos.Add(savedVideo);
                     }
@@ -227,6 +274,44 @@ namespace ProjectLoopbreaker.Application.Services
             {
                 _logger.LogError(ex, $"Error importing from YouTube URL: {url}");
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Helper method to automatically import and link a channel to a video
+        /// </summary>
+        private async Task AutoLinkChannelToVideo(Video video, List<YouTubeVideoDto> videoDetails)
+        {
+            try
+            {
+                // Find the matching video DTO by ExternalId
+                var matchingVideoDto = videoDetails.FirstOrDefault(vd => vd.Id == video.ExternalId);
+                if (matchingVideoDto?.Snippet?.ChannelId == null)
+                {
+                    return; // No channel info available
+                }
+
+                var youtubeChannelId = matchingVideoDto.Snippet.ChannelId;
+
+                // Check if channel already exists
+                var existingChannel = await _channelService.GetChannelByExternalIdAsync(youtubeChannelId);
+                
+                if (existingChannel != null)
+                {
+                    video.ChannelId = existingChannel.Id;
+                }
+                else
+                {
+                    // Import the channel
+                    _logger.LogInformation($"Auto-importing channel: {matchingVideoDto.Snippet.ChannelTitle}");
+                    var importedChannel = await _channelService.ImportChannelFromYouTubeAsync(youtubeChannelId);
+                    video.ChannelId = importedChannel.Id;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"Failed to auto-link channel for video {video.Title}, continuing without channel link");
+                // Don't fail the video import if channel linking fails
             }
         }
     }
