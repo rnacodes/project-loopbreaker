@@ -21,6 +21,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<Article> Articles { get; set; }
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Genre> Genres { get; set; }
+        public DbSet<Highlight> Highlights { get; set; }
 
         // IApplicationDbContext interface implementations
         IQueryable<BaseMediaItem> IApplicationDbContext.MediaItems => MediaItems;
@@ -35,6 +36,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         IQueryable<Article> IApplicationDbContext.Articles => Articles;
         IQueryable<Topic> IApplicationDbContext.Topics => Topics;
         IQueryable<Genre> IApplicationDbContext.Genres => Genres;
+        IQueryable<Highlight> IApplicationDbContext.Highlights => Highlights;
 
 
         public MediaLibraryDbContext(DbContextOptions<MediaLibraryDbContext> options) : base(options) { }
@@ -454,13 +456,94 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.Property(e => e.IsArchived)
                     .HasDefaultValue(false);
                     
+                entity.Property(e => e.ReadwiseDocumentId)
+                    .HasMaxLength(100);
+                    
+                entity.Property(e => e.ReaderLocation)
+                    .HasMaxLength(50);
+                    
                 // Create indexes for better query performance
                 entity.HasIndex(e => e.InstapaperBookmarkId);
+                entity.HasIndex(e => e.ReadwiseDocumentId);
                 entity.HasIndex(e => e.Author);
                 entity.HasIndex(e => e.Publication);
                 entity.HasIndex(e => e.IsStarred);
                 entity.HasIndex(e => e.IsArchived);
                 entity.HasIndex(e => e.PublicationDate);
+                entity.HasIndex(e => e.ReaderLocation);
+            });
+
+            // Configure Highlight entity
+            modelBuilder.Entity<Highlight>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.ReadwiseId)
+                    .IsRequired();
+                    
+                entity.Property(e => e.Text)
+                    .HasMaxLength(8191)
+                    .IsRequired();
+                    
+                entity.Property(e => e.Note)
+                    .HasMaxLength(8191);
+                    
+                entity.Property(e => e.Title)
+                    .HasMaxLength(511);
+                    
+                entity.Property(e => e.Author)
+                    .HasMaxLength(1024);
+                    
+                entity.Property(e => e.Category)
+                    .HasMaxLength(50);
+                    
+                entity.Property(e => e.SourceUrl)
+                    .HasMaxLength(2047);
+                    
+                entity.Property(e => e.ImageUrl)
+                    .HasMaxLength(2047);
+                    
+                entity.Property(e => e.HighlightUrl)
+                    .HasMaxLength(4095);
+                    
+                entity.Property(e => e.LocationType)
+                    .HasMaxLength(50);
+                    
+                entity.Property(e => e.Tags)
+                    .HasMaxLength(1000);
+                    
+                entity.Property(e => e.SourceType)
+                    .HasMaxLength(64);
+                    
+                entity.Property(e => e.Color)
+                    .HasMaxLength(50);
+                    
+                entity.Property(e => e.IsFavorite)
+                    .HasDefaultValue(false);
+                    
+                entity.Property(e => e.CreatedAt)
+                    .IsRequired();
+                    
+                // Configure relationships
+                entity.HasOne(e => e.Article)
+                    .WithMany(a => a.Highlights)
+                    .HasForeignKey(e => e.ArticleId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                    
+                entity.HasOne(e => e.Book)
+                    .WithMany(b => b.Highlights)
+                    .HasForeignKey(e => e.BookId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                    
+                // Create indexes for better query performance
+                entity.HasIndex(e => e.ReadwiseId)
+                    .IsUnique();
+                entity.HasIndex(e => e.ArticleId);
+                entity.HasIndex(e => e.BookId);
+                entity.HasIndex(e => e.ReadwiseBookId);
+                entity.HasIndex(e => e.Category);
+                entity.HasIndex(e => e.HighlightedAt);
+                entity.HasIndex(e => e.IsFavorite);
             });
         }
 

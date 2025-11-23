@@ -234,6 +234,11 @@ builder.Services.AddScoped<IInstapaperService, InstapaperService>();
 builder.Services.AddScoped<IArticleService, ArticleService>();
 builder.Services.AddScoped<IArticleMappingService, ArticleMappingService>();
 
+// Register Readwise services
+builder.Services.AddScoped<IHighlightService, HighlightService>();
+builder.Services.AddScoped<IReadwiseService, ReadwiseService>();
+builder.Services.AddScoped<IReaderService, ReaderService>();
+
 // Configure YouTube API client  
 builder.Services.AddHttpClient<IYouTubeApiClient, YouTubeApiClient>(client =>
 {
@@ -270,6 +275,46 @@ builder.Services.AddHttpClient<IInstapaperApiClient, InstapaperApiClient>(client
 {
     client.BaseAddress = new Uri("https://www.instapaper.com/api/1/");
     client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+});
+
+// Configure Readwise API client
+builder.Services.AddHttpClient<IReadwiseApiClient, ReadwiseApiClient>(client =>
+{
+    client.BaseAddress = new Uri("https://readwise.io/api/v2/");
+    client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+    
+    var apiKey = Environment.GetEnvironmentVariable("READWISE_API_KEY") ?? 
+                 builder.Configuration["ApiKeys:Readwise"];
+    
+    if (string.IsNullOrEmpty(apiKey) || apiKey == "READWISE_API_TOKEN")
+    {
+        Console.WriteLine("WARNING: No valid Readwise API key found. Readwise functionality will be limited.");
+        Console.WriteLine("Please set a valid API key in environment variable READWISE_API_KEY or configuration.");
+    }
+    else
+    {
+        Console.WriteLine("Readwise API key configured successfully");
+    }
+});
+
+// Configure Readwise Reader API client
+builder.Services.AddHttpClient<IReaderApiClient, ReaderApiClient>(client =>
+{
+    client.BaseAddress = new Uri("https://readwise.io/api/v3/");
+    client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+    
+    // Reader uses the same API key as Readwise
+    var apiKey = Environment.GetEnvironmentVariable("READWISE_API_KEY") ?? 
+                 builder.Configuration["ApiKeys:Readwise"];
+    
+    if (string.IsNullOrEmpty(apiKey) || apiKey == "READWISE_API_TOKEN")
+    {
+        Console.WriteLine("WARNING: No valid Readwise API key found. Reader functionality will be limited.");
+    }
+    else
+    {
+        Console.WriteLine("Readwise Reader API key configured successfully");
+    }
 });
 
 // Configure Open Library API client

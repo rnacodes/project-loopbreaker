@@ -11,16 +11,19 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     {
         private readonly IArticleService _articleService;
         private readonly IArticleMappingService _articleMappingService;
+        private readonly IReaderService? _readerService;
         private readonly ILogger<ArticleController> _logger;
 
         public ArticleController(
             IArticleService articleService,
             IArticleMappingService articleMappingService,
-            ILogger<ArticleController> logger)
+            ILogger<ArticleController> logger,
+            IReaderService? readerService = null)
         {
             _articleService = articleService;
             _articleMappingService = articleMappingService;
             _logger = logger;
+            _readerService = readerService;
         }
 
         // GET: api/article
@@ -274,6 +277,74 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             {
                 _logger.LogError(ex, "Error occurred while updating sync status for article with ID {Id}", id);
                 return StatusCode(500, new { error = "Failed to update article sync status", details = ex.Message });
+            }
+        }
+
+        // POST: api/article/sync-reader
+        [HttpPost("sync-reader")]
+        public async Task<ActionResult<ReaderSyncResultDto>> SyncFromReader([FromQuery] string? location = null)
+        {
+            try
+            {
+                if (_readerService == null)
+                {
+                    return StatusCode(500, new { error = "Reader service not configured" });
+                }
+
+                _logger.LogInformation("Starting Reader document sync (location: {Location})", location ?? "all");
+                var result = await _readerService.SyncDocumentsAsync(location);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error syncing from Reader");
+                return StatusCode(500, new { error = "Failed to sync from Reader", details = ex.Message });
+            }
+        }
+
+        // POST: api/article/{id}/fetch-content
+        [HttpPost("{id}/fetch-content")]
+        public async Task<IActionResult> FetchArticleContent(Guid id)
+        {
+            try
+            {
+                if (_readerService == null)
+                {
+                    return StatusCode(500, new { error = "Reader service not configured" });
+                }
+
+                var success = await _readerService.FetchAndStoreArticleContentAsync(id);
+                if (!success)
+                {
+                    return NotFound(new { error = "Article not found or content unavailable" });
+                }
+                return Ok(new { message = "Content fetched and stored successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching content for article {Id}", id);
+                return StatusCode(500, new { error = "Failed to fetch content", details = ex.Message });
+            }
+        }
+
+        // POST: api/article/bulk-fetch-content
+        [HttpPost("bulk-fetch-content")]
+        public async Task<IActionResult> BulkFetchContent([FromQuery] int batchSize = 50)
+        {
+            try
+            {
+                if (_readerService == null)
+                {
+                    return StatusCode(500, new { error = "Reader service not configured" });
+                }
+
+                var count = await _readerService.BulkFetchArticleContentsAsync(batchSize);
+                return Ok(new { fetchedCount = count, message = $"Successfully fetched content for {count} articles" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in bulk content fetch");
+                return StatusCode(500, new { error = "Failed to bulk fetch content", details = ex.Message });
             }
         }
     }

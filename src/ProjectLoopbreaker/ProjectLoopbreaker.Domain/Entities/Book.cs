@@ -25,6 +25,22 @@ namespace ProjectLoopbreaker.Domain.Entities
         /// </summary>
         [Range(1, 5)]
         public decimal? GoodreadsRating { get; set; }
+        
+        /// <summary>
+        /// External ID from Readwise API (book.id)
+        /// Used for syncing book metadata
+        /// </summary>
+        public int? ReadwiseBookId { get; set; }
+        
+        /// <summary>
+        /// Last synced from Readwise
+        /// </summary>
+        public DateTime? LastReadwiseSync { get; set; }
+        
+        /// <summary>
+        /// Navigation property: Highlights associated with this book
+        /// </summary>
+        public ICollection<Highlight> Highlights { get; set; } = new List<Highlight>();
     }
     
     public enum BookFormat

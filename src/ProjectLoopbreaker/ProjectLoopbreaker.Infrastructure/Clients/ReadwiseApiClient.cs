@@ -1,0 +1,195 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using ProjectLoopbreaker.Shared.Interfaces;
+using ProjectLoopbreaker.Shared.DTOs.Readwise;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Text;
+
+namespace ProjectLoopbreaker.Infrastructure.Clients
+{
+    public class ReadwiseApiClient : IReadwiseApiClient
+    {
+        private readonly HttpClient _httpClient;
+        private readonly ILogger<ReadwiseApiClient> _logger;
+        private readonly IConfiguration _configuration;
+        private readonly string? _apiToken;
+
+        public ReadwiseApiClient(
+            HttpClient httpClient,
+            ILogger<ReadwiseApiClient> logger,
+            IConfiguration configuration)
+        {
+            _httpClient = httpClient;
+            _logger = logger;
+            _configuration = configuration;
+
+            // Load Readwise API token from configuration
+            _apiToken = _configuration["ApiKeys:Readwise"];
+
+            _httpClient.BaseAddress = new Uri("https://readwise.io/api/v2/");
+            
+            if (!string.IsNullOrEmpty(_apiToken))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization = 
+                    new AuthenticationHeaderValue("Token", _apiToken);
+            }
+        }
+
+        public async Task<bool> ValidateTokenAsync()
+        {
+            if (string.IsNullOrEmpty(_apiToken))
+            {
+                _logger.LogWarning("Readwise API token not configured");
+                return false;
+            }
+
+            try
+            {
+                var response = await _httpClient.GetAsync("auth/");
+                return response.StatusCode == System.Net.HttpStatusCode.NoContent;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating Readwise API token");
+                return false;
+            }
+        }
+
+        public async Task<ReadwiseHighlightsResponse> GetHighlightsAsync(
+            string? updatedAfter = null,
+            int page = 1,
+            int pageSize = 1000)
+        {
+            try
+            {
+                var queryParams = new List<string>
+                {
+                    $"page={page}",
+                    $"page_size={Math.Min(pageSize, 1000)}"
+                };
+
+                if (!string.IsNullOrEmpty(updatedAfter))
+                {
+                    queryParams.Add($"updated__gt={Uri.EscapeDataString(updatedAfter)}");
+                }
+
+                var query = string.Join("&", queryParams);
+                var response = await _httpClient.GetAsync($"highlights/?{query}");
+                
+                response.EnsureSuccessStatusCode();
+                
+                var content = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ReadwiseHighlightsResponse>(content, 
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                _logger.LogInformation("Retrieved {Count} highlights from Readwise (page {Page})", 
+                    result?.results.Count ?? 0, page);
+
+                return result ?? new ReadwiseHighlightsResponse();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching highlights from Readwise");
+                return new ReadwiseHighlightsResponse();
+            }
+        }
+
+        public async Task<ReadwiseBooksResponse> GetBooksAsync(
+            string? updatedAfter = null,
+            string? category = null,
+            int page = 1,
+            int pageSize = 1000)
+        {
+            try
+            {
+                var queryParams = new List<string>
+                {
+                    $"page={page}",
+                    $"page_size={Math.Min(pageSize, 1000)}"
+                };
+
+                if (!string.IsNullOrEmpty(updatedAfter))
+                {
+                    queryParams.Add($"updated__gt={Uri.EscapeDataString(updatedAfter)}");
+                }
+
+                if (!string.IsNullOrEmpty(category))
+                {
+                    queryParams.Add($"category={category}");
+                }
+
+                var query = string.Join("&", queryParams);
+                var response = await _httpClient.GetAsync($"books/?{query}");
+                
+                response.EnsureSuccessStatusCode();
+                
+                var content = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ReadwiseBooksResponse>(content,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                _logger.LogInformation("Retrieved {Count} books from Readwise (page {Page})", 
+                    result?.results.Count ?? 0, page);
+
+                return result ?? new ReadwiseBooksResponse();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching books from Readwise");
+                return new ReadwiseBooksResponse();
+            }
+        }
+
+        public async Task<ReadwiseBookDto?> GetBookByIdAsync(int bookId)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"books/{bookId}/");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Book {BookId} not found in Readwise", bookId);
+                    return null;
+                }
+                
+                var content = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<ReadwiseBookDto>(content,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching book {BookId} from Readwise", bookId);
+                return null;
+            }
+        }
+
+        public async Task<bool> CreateHighlightsAsync(List<CreateReadwiseHighlightDto> highlights)
+        {
+            try
+            {
+                var payload = new { highlights };
+                var json = JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync("highlights/", content);
+                response.EnsureSuccessStatusCode();
+
+                _logger.LogInformation("Successfully created/updated {Count} highlights in Readwise", 
+                    highlights.Count);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating highlights in Readwise");
+                return false;
+            }
+        }
+
+        private bool IsConfigured()
+        {
+            return !string.IsNullOrEmpty(_apiToken);
+        }
+    }
+}
+

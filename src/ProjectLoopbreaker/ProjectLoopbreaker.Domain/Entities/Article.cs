@@ -75,6 +75,29 @@ namespace ProjectLoopbreaker.Domain.Entities
         public int? WordCount { get; set; }
         
         /// <summary>
+        /// External ID from Readwise Reader API (document.id)
+        /// Used for syncing Reader documents
+        /// </summary>
+        [StringLength(100)]
+        public string? ReadwiseDocumentId { get; set; }
+        
+        /// <summary>
+        /// Readwise Reader location: new, later, archive, feed
+        /// </summary>
+        [StringLength(50)]
+        public string? ReaderLocation { get; set; }
+        
+        /// <summary>
+        /// Last synced from Readwise Reader
+        /// </summary>
+        public DateTime? LastReaderSync { get; set; }
+        
+        /// <summary>
+        /// Navigation property: Highlights associated with this article
+        /// </summary>
+        public ICollection<Highlight> Highlights { get; set; } = new List<Highlight>();
+        
+        /// <summary>
         /// Gets the full URL to the stored content in DigitalOcean Spaces.
         /// </summary>
         public string? GetContentUrl(string bucketName, string endpoint)
