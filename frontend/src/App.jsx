@@ -25,6 +25,8 @@ import InstapaperAuthPage from './components/InstapaperAuthPage';
 import InstapaperImportPage from './components/InstapaperImportPage';
 import ArticlesPage from './components/ArticlesPage';
 import SourceDirectoryPage from './components/SourceDirectoryPage';
+import YouTubeChannelList from './components/YouTubeChannelList';
+import YouTubeChannelProfile from './components/YouTubeChannelProfile';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
@@ -62,6 +64,8 @@ function App() {
           <Route path="/instapaper/import" element={<InstapaperImportPage />} />
           <Route path="/articles" element={<ArticlesPage />} />
           <Route path="/sources" element={<SourceDirectoryPage />} />
+          <Route path="/youtube-channels" element={<YouTubeChannelList />} />
+          <Route path="/youtube-channel/:id" element={<YouTubeChannelProfile />} />
           {/* Catch-all route for 404 */}
           <Route path="*" element={
             <div style={{ padding: '2rem', textAlign: 'center' }}>

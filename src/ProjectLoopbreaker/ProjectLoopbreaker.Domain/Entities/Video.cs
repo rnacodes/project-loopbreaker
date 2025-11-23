@@ -20,8 +20,16 @@ namespace ProjectLoopbreaker.Domain.Entities
         [StringLength(100)]
         public required string Platform { get; set; } // YouTube, Vimeo, Twitch, etc.
         
-        [StringLength(200)]
-        public string? ChannelName { get; set; }
+        /// <summary>
+        /// Foreign Key to the YouTubeChannel entity (for YouTube videos only)
+        /// Links this video to its parent channel, enabling channel-based organization
+        /// </summary>
+        public Guid? ChannelId { get; set; }
+        
+        /// <summary>
+        /// Navigation property to the associated YouTube channel
+        /// </summary>
+        public YouTubeChannel? Channel { get; set; }
         
         [Range(0, int.MaxValue, ErrorMessage = "Length must be a positive number")]
         public int LengthInSeconds { get; set; } = 0;

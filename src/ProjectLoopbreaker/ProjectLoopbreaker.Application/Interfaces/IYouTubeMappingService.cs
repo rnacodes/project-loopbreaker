@@ -7,7 +7,8 @@ namespace ProjectLoopbreaker.Application.Interfaces
     {
         Video MapVideoToEntity(YouTubeVideoDto videoDto);
         Video MapPlaylistToEntity(YouTubePlaylistDto playlistDto);
-        Video MapChannelToEntity(YouTubeChannelDto channelDto);
+        Video MapChannelToEntity(YouTubeChannelDto channelDto); // Deprecated - use MapChannelToYouTubeChannelEntity
+        YouTubeChannel MapChannelToYouTubeChannelEntity(YouTubeChannelDto channelDto);
         Video MapPlaylistItemToVideoEntity(YouTubePlaylistItemDto playlistItemDto, YouTubeVideoDto? videoDetails = null);
         List<Video> MapPlaylistItemsToVideoEntities(List<YouTubePlaylistItemDto> playlistItems, List<YouTubeVideoDto>? videoDetails = null);
     }

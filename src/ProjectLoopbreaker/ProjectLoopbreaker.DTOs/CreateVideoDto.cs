@@ -68,9 +68,11 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("platform")]
         public required string Platform { get; set; }
 
-        [StringLength(200)]
-        [JsonPropertyName("channelName")]
-        public string? ChannelName { get; set; }
+        /// <summary>
+        /// Foreign Key to YouTubeChannel entity (for YouTube videos only)
+        /// </summary>
+        [JsonPropertyName("channelId")]
+        public Guid? ChannelId { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Length must be a positive number")]
         [JsonPropertyName("lengthInSeconds")]

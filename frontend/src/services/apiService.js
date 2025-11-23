@@ -722,6 +722,106 @@ export const importYouTubeChannel = async (channelId) => {
     }
 };
 
+// YouTube Channel Management API calls (new channel entity endpoints)
+export const getAllYouTubeChannels = async () => {
+    try {
+        const response = await apiClient.get('/youtubechannel');
+        return response.data;
+    } catch (error) {
+        console.error('Error getting all YouTube channels:', error);
+        throw error;
+    }
+};
+
+export const getYouTubeChannelById = async (id) => {
+    try {
+        const response = await apiClient.get(`/youtubechannel/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error getting YouTube channel by ID:', error);
+        throw error;
+    }
+};
+
+export const getYouTubeChannelByExternalId = async (externalId) => {
+    try {
+        const response = await apiClient.get(`/youtubechannel/by-external/${externalId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error getting YouTube channel by external ID:', error);
+        throw error;
+    }
+};
+
+export const getYouTubeChannelVideos = async (channelId) => {
+    try {
+        const response = await apiClient.get(`/youtubechannel/${channelId}/videos`);
+        return response.data;
+    } catch (error) {
+        console.error('Error getting YouTube channel videos:', error);
+        throw error;
+    }
+};
+
+export const createYouTubeChannel = async (channelData) => {
+    try {
+        const response = await apiClient.post('/youtubechannel', channelData);
+        return response.data;
+    } catch (error) {
+        console.error('Error creating YouTube channel:', error);
+        throw error;
+    }
+};
+
+export const updateYouTubeChannel = async (id, channelData) => {
+    try {
+        const response = await apiClient.put(`/youtubechannel/${id}`, channelData);
+        return response.data;
+    } catch (error) {
+        console.error('Error updating YouTube channel:', error);
+        throw error;
+    }
+};
+
+export const deleteYouTubeChannel = async (id) => {
+    try {
+        await apiClient.delete(`/youtubechannel/${id}`);
+    } catch (error) {
+        console.error('Error deleting YouTube channel:', error);
+        throw error;
+    }
+};
+
+export const importYouTubeChannelEntity = async (channelId) => {
+    try {
+        const response = await apiClient.post(`/youtubechannel/import/${channelId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error importing YouTube channel entity:', error);
+        throw error;
+    }
+};
+
+export const syncYouTubeChannelMetadata = async (id) => {
+    try {
+        const response = await apiClient.post(`/youtubechannel/${id}/sync`);
+        return response.data;
+    } catch (error) {
+        console.error('Error syncing YouTube channel metadata:', error);
+        throw error;
+    }
+};
+
+export const checkYouTubeChannelExists = async (externalId) => {
+    try {
+        const response = await apiClient.get(`/youtubechannel/exists/${externalId}`);
+        return response.data.exists;
+    } catch (error) {
+        console.error('Error checking if YouTube channel exists:', error);
+        throw error;
+    }
+};
+
 export const importFromYouTubeUrl = async (url) => {
     try {
         const response = await apiClient.post('/youtube/import/url', { url });

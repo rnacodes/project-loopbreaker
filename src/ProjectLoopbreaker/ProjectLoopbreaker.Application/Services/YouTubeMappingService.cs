@@ -18,7 +18,6 @@ namespace ProjectLoopbreaker.Application.Services
                 Description = videoDto.Snippet.Description,
                 Link = $"https://www.youtube.com/watch?v={videoDto.Id}",
                 Platform = "YouTube",
-                ChannelName = videoDto.Snippet.ChannelTitle,
                 ExternalId = videoDto.Id,
                 MediaType = MediaType.Video,
                 VideoType = VideoType.Episode, // Individual videos are episodes
@@ -41,7 +40,6 @@ namespace ProjectLoopbreaker.Application.Services
                 Description = playlistDto.Snippet.Description,
                 Link = $"https://www.youtube.com/playlist?list={playlistDto.Id}",
                 Platform = "YouTube",
-                ChannelName = playlistDto.Snippet.ChannelTitle,
                 ExternalId = playlistDto.Id,
                 MediaType = MediaType.Video,
                 VideoType = VideoType.Series, // Playlists are series
@@ -54,6 +52,8 @@ namespace ProjectLoopbreaker.Application.Services
 
         public Video MapChannelToEntity(YouTubeChannelDto channelDto)
         {
+            // NOTE: This method is deprecated and will be removed in a future version
+            // Use MapChannelToYouTubeChannelEntity instead
             if (channelDto?.Snippet == null)
                 throw new ArgumentException("Channel DTO or snippet cannot be null", nameof(channelDto));
 
@@ -63,13 +63,54 @@ namespace ProjectLoopbreaker.Application.Services
                 Description = channelDto.Snippet.Description,
                 Link = $"https://www.youtube.com/channel/{channelDto.Id}",
                 Platform = "YouTube",
-                ChannelName = channelDto.Snippet.Title,
                 ExternalId = channelDto.Id,
                 MediaType = MediaType.Video,
                 VideoType = VideoType.Channel, // Channels are channels
                 Thumbnail = GetBestThumbnailUrl(channelDto.Snippet.Thumbnails),
                 DateAdded = DateTime.UtcNow
             };
+
+            return channel;
+        }
+
+        public YouTubeChannel MapChannelToYouTubeChannelEntity(YouTubeChannelDto channelDto)
+        {
+            if (channelDto?.Snippet == null)
+                throw new ArgumentException("Channel DTO or snippet cannot be null", nameof(channelDto));
+
+            var channel = new YouTubeChannel
+            {
+                Title = channelDto.Snippet.Title ?? "Unknown Channel",
+                Description = channelDto.Snippet.Description,
+                Link = $"https://www.youtube.com/channel/{channelDto.Id}",
+                ChannelExternalId = channelDto.Id ?? throw new ArgumentException("Channel ID cannot be null"),
+                CustomUrl = channelDto.Snippet.CustomUrl,
+                MediaType = MediaType.Channel,
+                Thumbnail = GetBestThumbnailUrl(channelDto.Snippet.Thumbnails),
+                Country = channelDto.Snippet.Country,
+                PublishedAt = channelDto.Snippet.PublishedAt,
+                DateAdded = DateTime.UtcNow,
+                LastSyncedAt = DateTime.UtcNow
+            };
+
+            // Add statistics if available
+            if (channelDto.Statistics != null)
+            {
+                if (long.TryParse(channelDto.Statistics.SubscriberCount, out var subscriberCount))
+                    channel.SubscriberCount = subscriberCount;
+                    
+                if (long.TryParse(channelDto.Statistics.VideoCount, out var videoCount))
+                    channel.VideoCount = videoCount;
+                    
+                if (long.TryParse(channelDto.Statistics.ViewCount, out var viewCount))
+                    channel.ViewCount = viewCount;
+            }
+
+            // Add uploads playlist ID if available
+            if (channelDto.ContentDetails?.RelatedPlaylists?.Uploads != null)
+            {
+                channel.UploadsPlaylistId = channelDto.ContentDetails.RelatedPlaylists.Uploads;
+            }
 
             return channel;
         }
@@ -87,7 +128,6 @@ namespace ProjectLoopbreaker.Application.Services
                 Description = playlistItemDto.Snippet.Description,
                 Link = $"https://www.youtube.com/watch?v={videoId}",
                 Platform = "YouTube",
-                ChannelName = playlistItemDto.Snippet.ChannelTitle,
                 ExternalId = videoId,
                 MediaType = MediaType.Video,
                 VideoType = VideoType.Episode, // Playlist items are episodes

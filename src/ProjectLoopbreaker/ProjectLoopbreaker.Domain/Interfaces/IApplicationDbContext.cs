@@ -15,6 +15,7 @@ namespace ProjectLoopbreaker.Domain.Interfaces
         IQueryable<Movie> Movies { get; }
         IQueryable<TvShow> TvShows { get; }
         IQueryable<Video> Videos { get; }
+        IQueryable<YouTubeChannel> YouTubeChannels { get; }
         IQueryable<Article> Articles { get; }
         IQueryable<Topic> Topics { get; }
         IQueryable<Genre> Genres { get; }

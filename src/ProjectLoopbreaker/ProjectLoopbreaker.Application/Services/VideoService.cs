@@ -55,19 +55,20 @@ namespace ProjectLoopbreaker.Application.Services
             }
         }
 
-        public async Task<IEnumerable<Video>> GetVideosByChannelAsync(string channelName)
+        public async Task<IEnumerable<Video>> GetVideosByChannelAsync(Guid channelId)
         {
             try
             {
                 return await _context.Videos
                     .Include(v => v.Topics)
                     .Include(v => v.Genres)
-                    .Where(v => v.ChannelName != null && v.ChannelName.ToLower() == channelName.ToLower())
+                    .Include(v => v.Channel)
+                    .Where(v => v.ChannelId == channelId)
                     .ToListAsync();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while retrieving videos by channel {ChannelName}", channelName);
+                _logger.LogError(ex, "Error occurred while retrieving videos by channel {ChannelId}", channelId);
                 throw;
             }
         }
@@ -110,7 +111,7 @@ namespace ProjectLoopbreaker.Application.Services
                     VideoType = dto.VideoType,
                     ParentVideoId = dto.ParentVideoId,
                     Platform = dto.Platform,
-                    ChannelName = dto.ChannelName,
+                    ChannelId = dto.ChannelId,
                     LengthInSeconds = dto.LengthInSeconds,
                     ExternalId = dto.ExternalId
                 };
@@ -186,7 +187,7 @@ namespace ProjectLoopbreaker.Application.Services
                 video.VideoType = dto.VideoType;
                 video.ParentVideoId = dto.ParentVideoId;
                 video.Platform = dto.Platform;
-                video.ChannelName = dto.ChannelName;
+                video.ChannelId = dto.ChannelId;
                 video.LengthInSeconds = dto.LengthInSeconds;
                 video.ExternalId = dto.ExternalId;
 
@@ -262,7 +263,7 @@ namespace ProjectLoopbreaker.Application.Services
         public async Task<Video> SaveVideoAsync(Video video, bool updateIfExists = true)
         {
             // Check if a video with the same title already exists
-            var existingVideo = await GetVideoByTitleAsync(video.Title, video.ChannelName);
+            var existingVideo = await GetVideoByTitleAsync(video.Title, video.ChannelId);
 
             if (existingVideo != null)
             {
@@ -273,7 +274,7 @@ namespace ProjectLoopbreaker.Application.Services
                     existingVideo.Notes = video.Notes ?? existingVideo.Notes;
                     existingVideo.Thumbnail = video.Thumbnail ?? existingVideo.Thumbnail;
                     existingVideo.Platform = video.Platform ?? existingVideo.Platform;
-                    existingVideo.ChannelName = video.ChannelName ?? existingVideo.ChannelName;
+                    existingVideo.ChannelId = video.ChannelId ?? existingVideo.ChannelId;
                     existingVideo.LengthInSeconds = video.LengthInSeconds > 0 ? video.LengthInSeconds : existingVideo.LengthInSeconds;
                     // Don't overwrite these if they exist
                     existingVideo.Description = existingVideo.Description ?? video.Description;
@@ -323,17 +324,17 @@ namespace ProjectLoopbreaker.Application.Services
             return savedSeries;
         }
 
-        public async Task<bool> VideoExistsAsync(string title, string? channelName = null)
+        public async Task<bool> VideoExistsAsync(string title, Guid? channelId = null)
         {
             var query = _context.Videos.AsQueryable();
 
             // Always check title (case-insensitive)
             query = query.Where(v => v.Title.ToLower() == title.ToLower());
 
-            // If channel name is provided, also check that
-            if (!string.IsNullOrEmpty(channelName))
+            // If channel ID is provided, also check that
+            if (channelId.HasValue)
             {
-                query = query.Where(v => v.ChannelName.ToLower() == channelName.ToLower());
+                query = query.Where(v => v.ChannelId == channelId.Value);
             }
 
             return await query.AnyAsync();
@@ -348,17 +349,17 @@ namespace ProjectLoopbreaker.Application.Services
                     e.Title.ToLower() == episodeTitle.ToLower());
         }
 
-        public async Task<Video> GetVideoByTitleAsync(string title, string? channelName = null)
+        public async Task<Video> GetVideoByTitleAsync(string title, Guid? channelId = null)
         {
             var query = _context.Videos.AsQueryable();
 
             // Always check title (case-insensitive)
             query = query.Where(v => v.Title.ToLower() == title.ToLower());
 
-            // If channel name is provided, also check that
-            if (!string.IsNullOrEmpty(channelName))
+            // If channel ID is provided, also check that
+            if (channelId.HasValue)
             {
-                query = query.Where(v => v.ChannelName.ToLower() == channelName.ToLower());
+                query = query.Where(v => v.ChannelId == channelId.Value);
             }
 
             return await query.FirstOrDefaultAsync();

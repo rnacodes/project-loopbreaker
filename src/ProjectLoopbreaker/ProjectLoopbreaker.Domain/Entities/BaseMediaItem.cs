@@ -58,6 +58,7 @@ namespace ProjectLoopbreaker.Domain.Entities
         {
         Article,
         Book,
+        Channel,
         Document,
         Movie,
         Music,

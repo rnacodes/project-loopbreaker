@@ -17,6 +17,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<Movie> Movies { get; set; }
         public DbSet<TvShow> TvShows { get; set; }
         public DbSet<Video> Videos { get; set; }
+        public DbSet<YouTubeChannel> YouTubeChannels { get; set; }
         public DbSet<Article> Articles { get; set; }
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Genre> Genres { get; set; }
@@ -30,6 +31,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         IQueryable<Movie> IApplicationDbContext.Movies => Movies;
         IQueryable<TvShow> IApplicationDbContext.TvShows => TvShows;
         IQueryable<Video> IApplicationDbContext.Videos => Videos;
+        IQueryable<YouTubeChannel> IApplicationDbContext.YouTubeChannels => YouTubeChannels;
         IQueryable<Article> IApplicationDbContext.Articles => Articles;
         IQueryable<Topic> IApplicationDbContext.Topics => Topics;
         IQueryable<Genre> IApplicationDbContext.Genres => Genres;
@@ -203,6 +205,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             modelBuilder.Entity<Movie>().ToTable("Movies");
             modelBuilder.Entity<TvShow>().ToTable("TvShows");
             modelBuilder.Entity<Video>().ToTable("Videos");
+            modelBuilder.Entity<YouTubeChannel>().ToTable("YouTubeChannels");
             modelBuilder.Entity<Article>().ToTable("Articles");
 
             // Configure PodcastSeries specific properties
@@ -370,10 +373,6 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                     .HasMaxLength(100)
                     .IsRequired();
                     
-                entity.Property(e => e.ChannelName)
-                    .HasMaxLength(200)
-                    .IsRequired();
-                    
                 entity.Property(e => e.LengthInSeconds)
                     .HasDefaultValue(0);
                     
@@ -391,12 +390,44 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                     .HasForeignKey(e => e.ParentVideoId)
                     .OnDelete(DeleteBehavior.Restrict); // Prevent cascade delete to avoid orphaned episodes
                     
+                // Configure relationship with YouTubeChannel
+                entity.HasOne(e => e.Channel)
+                    .WithMany(c => c.Videos)
+                    .HasForeignKey(e => e.ChannelId)
+                    .OnDelete(DeleteBehavior.SetNull); // When channel deleted, videos remain but ChannelId becomes null
+                    
                 // Create indexes for better query performance
                 entity.HasIndex(e => e.VideoType);
                 entity.HasIndex(e => e.ParentVideoId);
                 entity.HasIndex(e => e.ExternalId);
                 entity.HasIndex(e => e.Platform);
-                entity.HasIndex(e => e.ChannelName);
+                entity.HasIndex(e => e.ChannelId);
+            });
+
+            // Configure YouTubeChannel specific properties
+            modelBuilder.Entity<YouTubeChannel>(entity =>
+            {
+                entity.Property(e => e.ChannelExternalId)
+                    .HasMaxLength(100)
+                    .IsRequired();
+                    
+                entity.Property(e => e.CustomUrl)
+                    .HasMaxLength(200);
+                    
+                entity.Property(e => e.UploadsPlaylistId)
+                    .HasMaxLength(100);
+                    
+                entity.Property(e => e.Country)
+                    .HasMaxLength(10);
+                    
+                // Create unique index on ChannelExternalId to prevent duplicate channel imports
+                entity.HasIndex(e => e.ChannelExternalId)
+                    .IsUnique();
+                    
+                // Create indexes for better query performance
+                entity.HasIndex(e => e.PublishedAt);
+                entity.HasIndex(e => e.LastSyncedAt);
+                entity.HasIndex(e => e.SubscriberCount);
             });
 
             // Configure Article specific properties

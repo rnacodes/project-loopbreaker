@@ -25,32 +25,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             try
             {
                 var videos = await _videoService.GetAllVideosAsync();
-                
-                var response = videos.Select(v => new VideoResponseDto
-                {
-                    Id = v.Id,
-                    Title = v.Title,
-                    Description = v.Description,
-                    MediaType = v.MediaType,
-                    Status = v.Status,
-                    DateAdded = v.DateAdded,
-                    Link = v.Link,
-                    Thumbnail = v.Thumbnail,
-                    VideoType = v.VideoType,
-                    ParentVideoId = v.ParentVideoId,
-                    Platform = v.Platform,
-                    ChannelName = v.ChannelName,
-                    LengthInSeconds = v.LengthInSeconds,
-                    ExternalId = v.ExternalId,
-                    Rating = v.Rating,
-                    OwnershipStatus = v.OwnershipStatus,
-                    DateCompleted = v.DateCompleted,
-                    Notes = v.Notes,
-                    RelatedNotes = v.RelatedNotes,
-                    Topics = v.Topics.Select(t => t.Name).ToArray(),
-                    Genres = v.Genres.Select(g => g.Name).ToArray()
-                }).ToList();
-
+                var response = videos.Select(MapToResponseDto).ToList();
                 return Ok(response);
             }
             catch (Exception ex)
@@ -67,32 +42,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             try
             {
                 var series = await _videoService.GetVideoSeriesAsync();
-                
-                var response = series.Select(v => new VideoResponseDto
-                {
-                    Id = v.Id,
-                    Title = v.Title,
-                    Description = v.Description,
-                    MediaType = v.MediaType,
-                    Status = v.Status,
-                    DateAdded = v.DateAdded,
-                    Link = v.Link,
-                    Thumbnail = v.Thumbnail,
-                    VideoType = v.VideoType,
-                    ParentVideoId = v.ParentVideoId,
-                    Platform = v.Platform,
-                    ChannelName = v.ChannelName,
-                    LengthInSeconds = v.LengthInSeconds,
-                    ExternalId = v.ExternalId,
-                    Rating = v.Rating,
-                    OwnershipStatus = v.OwnershipStatus,
-                    DateCompleted = v.DateCompleted,
-                    Notes = v.Notes,
-                    RelatedNotes = v.RelatedNotes,
-                    Topics = v.Topics.Select(t => t.Name).ToArray(),
-                    Genres = v.Genres.Select(g => g.Name).ToArray()
-                }).ToList();
-
+                var response = series.Select(MapToResponseDto).ToList();
                 return Ok(response);
             }
             catch (Exception ex)
@@ -115,32 +65,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return NotFound($"Video with ID {id} not found.");
                 }
 
-                var response = new VideoResponseDto
-                {
-                    Id = video.Id,
-                    Title = video.Title,
-                    Description = video.Description,
-                    MediaType = video.MediaType,
-                    Status = video.Status,
-                    DateAdded = video.DateAdded,
-                    Link = video.Link,
-                    Thumbnail = video.Thumbnail,
-                    VideoType = video.VideoType,
-                    ParentVideoId = video.ParentVideoId,
-                    Platform = video.Platform,
-                    ChannelName = video.ChannelName,
-                    LengthInSeconds = video.LengthInSeconds,
-                    ExternalId = video.ExternalId,
-                    Rating = video.Rating,
-                    OwnershipStatus = video.OwnershipStatus,
-                    DateCompleted = video.DateCompleted,
-                    Notes = video.Notes,
-                    RelatedNotes = video.RelatedNotes,
-                    Topics = video.Topics.Select(t => t.Name).ToArray(),
-                    Genres = video.Genres.Select(g => g.Name).ToArray()
-                };
-
-                return Ok(response);
+                return Ok(MapToResponseDto(video));
             }
             catch (Exception ex)
             {
@@ -149,44 +74,19 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        // GET: api/video/channel/{channelName}
-        [HttpGet("channel/{channelName}")]
-        public async Task<ActionResult<IEnumerable<VideoResponseDto>>> GetVideosByChannel(string channelName)
+        // GET: api/video/channel/{channelId}
+        [HttpGet("channel/{channelId}")]
+        public async Task<ActionResult<IEnumerable<VideoResponseDto>>> GetVideosByChannel(Guid channelId)
         {
             try
             {
-                var videos = await _videoService.GetVideosByChannelAsync(channelName);
-                
-                var response = videos.Select(v => new VideoResponseDto
-                {
-                    Id = v.Id,
-                    Title = v.Title,
-                    Description = v.Description,
-                    MediaType = v.MediaType,
-                    Status = v.Status,
-                    DateAdded = v.DateAdded,
-                    Link = v.Link,
-                    Thumbnail = v.Thumbnail,
-                    VideoType = v.VideoType,
-                    ParentVideoId = v.ParentVideoId,
-                    Platform = v.Platform,
-                    ChannelName = v.ChannelName,
-                    LengthInSeconds = v.LengthInSeconds,
-                    ExternalId = v.ExternalId,
-                    Rating = v.Rating,
-                    OwnershipStatus = v.OwnershipStatus,
-                    DateCompleted = v.DateCompleted,
-                    Notes = v.Notes,
-                    RelatedNotes = v.RelatedNotes,
-                    Topics = v.Topics.Select(t => t.Name).ToArray(),
-                    Genres = v.Genres.Select(g => g.Name).ToArray()
-                }).ToList();
-
+                var videos = await _videoService.GetVideosByChannelAsync(channelId);
+                var response = videos.Select(MapToResponseDto).ToList();
                 return Ok(response);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while retrieving videos by channel {ChannelName}", channelName);
+                _logger.LogError(ex, "Error occurred while retrieving videos by channel {ChannelId}", channelId);
                 return StatusCode(500, new { error = "Failed to retrieve videos by channel", details = ex.Message });
             }
         }
@@ -203,32 +103,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 }
 
                 var video = await _videoService.CreateVideoAsync(dto);
-
-                var response = new VideoResponseDto
-                {
-                    Id = video.Id,
-                    Title = video.Title,
-                    Description = video.Description,
-                    MediaType = video.MediaType,
-                    Status = video.Status,
-                    DateAdded = video.DateAdded,
-                    Link = video.Link,
-                    Thumbnail = video.Thumbnail,
-                    VideoType = video.VideoType,
-                    ParentVideoId = video.ParentVideoId,
-                    Platform = video.Platform,
-                    ChannelName = video.ChannelName,
-                    LengthInSeconds = video.LengthInSeconds,
-                    ExternalId = video.ExternalId,
-                    Rating = video.Rating,
-                    OwnershipStatus = video.OwnershipStatus,
-                    DateCompleted = video.DateCompleted,
-                    Notes = video.Notes,
-                    RelatedNotes = video.RelatedNotes,
-                    Topics = video.Topics.Select(t => t.Name).ToArray(),
-                    Genres = video.Genres.Select(g => g.Name).ToArray()
-                };
-
+                var response = MapToResponseDto(video);
                 return CreatedAtAction(nameof(GetVideo), new { id = video.Id }, response);
             }
             catch (Exception ex)
@@ -250,32 +125,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 }
 
                 var video = await _videoService.UpdateVideoAsync(id, dto);
-
-                var response = new VideoResponseDto
-                {
-                    Id = video.Id,
-                    Title = video.Title,
-                    Description = video.Description,
-                    MediaType = video.MediaType,
-                    Status = video.Status,
-                    DateAdded = video.DateAdded,
-                    Link = video.Link,
-                    Thumbnail = video.Thumbnail,
-                    VideoType = video.VideoType,
-                    ParentVideoId = video.ParentVideoId,
-                    Platform = video.Platform,
-                    ChannelName = video.ChannelName,
-                    LengthInSeconds = video.LengthInSeconds,
-                    ExternalId = video.ExternalId,
-                    Rating = video.Rating,
-                    OwnershipStatus = video.OwnershipStatus,
-                    DateCompleted = video.DateCompleted,
-                    Notes = video.Notes,
-                    RelatedNotes = video.RelatedNotes,
-                    Topics = video.Topics.Select(t => t.Name).ToArray(),
-                    Genres = video.Genres.Select(g => g.Name).ToArray()
-                };
-
+                var response = MapToResponseDto(video);
                 return Ok(response);
             }
             catch (ArgumentException ex)
@@ -310,6 +160,46 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 _logger.LogError(ex, "Error occurred while deleting video with ID {Id}", id);
                 return StatusCode(500, new { error = "Failed to delete video", details = ex.Message });
             }
+        }
+
+        /// <summary>
+        /// Helper method to map Video entity to VideoResponseDto
+        /// </summary>
+        private VideoResponseDto MapToResponseDto(Video video)
+        {
+            return new VideoResponseDto
+            {
+                Id = video.Id,
+                Title = video.Title,
+                Description = video.Description,
+                MediaType = video.MediaType,
+                Status = video.Status,
+                DateAdded = video.DateAdded,
+                Link = video.Link,
+                Thumbnail = video.Thumbnail,
+                VideoType = video.VideoType,
+                ParentVideoId = video.ParentVideoId,
+                Platform = video.Platform,
+                ChannelId = video.ChannelId,
+                Channel = video.Channel != null ? new YouTubeChannelInfoDto
+                {
+                    Id = video.Channel.Id,
+                    Title = video.Channel.Title,
+                    Thumbnail = video.Channel.Thumbnail,
+                    ChannelExternalId = video.Channel.ChannelExternalId,
+                    CustomUrl = video.Channel.CustomUrl,
+                    SubscriberCount = video.Channel.SubscriberCount
+                } : null,
+                LengthInSeconds = video.LengthInSeconds,
+                ExternalId = video.ExternalId,
+                Rating = video.Rating,
+                OwnershipStatus = video.OwnershipStatus,
+                DateCompleted = video.DateCompleted,
+                Notes = video.Notes,
+                RelatedNotes = video.RelatedNotes,
+                Topics = video.Topics.Select(t => t.Name).ToArray(),
+                Genres = video.Genres.Select(g => g.Name).ToArray()
+            };
         }
     }
 }

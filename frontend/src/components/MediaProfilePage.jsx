@@ -134,7 +134,8 @@ function MediaProfilePage() {
         });
         console.log('Video specific fields:', {
           platform: detailedMedia.platform,
-          channelName: detailedMedia.channelName,
+          channelId: detailedMedia.channelId,
+          channel: detailedMedia.channel,
           lengthInSeconds: detailedMedia.lengthInSeconds,
           videoType: detailedMedia.videoType,
           externalId: detailedMedia.externalId,
@@ -1049,12 +1050,36 @@ function MediaProfilePage() {
                   </Box>
                 )}
                 
-                {mediaItem.channelName && (
+                {mediaItem.channel && (
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
                       <strong>Channel:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.channelName}</Typography>
+                    <Link
+                      component="button"
+                      variant="body1"
+                      onClick={() => navigate(`/youtube-channel/${mediaItem.channel.id}`)}
+                      sx={{ 
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        '&:hover': { 
+                          textDecoration: 'underline',
+                          color: 'primary.light'
+                        }
+                      }}
+                    >
+                      {mediaItem.channel.title}
+                      {mediaItem.channel.subscriberCount && (
+                        <Typography 
+                          component="span" 
+                          variant="body2" 
+                          color="text.secondary"
+                          sx={{ ml: 1 }}
+                        >
+                          ({(mediaItem.channel.subscriberCount / 1000000).toFixed(1)}M subscribers)
+                        </Typography>
+                      )}
+                    </Link>
                   </Box>
                 )}
                 
@@ -1178,7 +1203,7 @@ function MediaProfilePage() {
               (mediaItem.mediaType === 'Book' && !mediaItem.isbn && !mediaItem.asin && !mediaItem.format && mediaItem.partOfSeries === undefined) ||
               (mediaItem.mediaType === 'Movie' && !mediaItem.director && !mediaItem.cast && !mediaItem.releaseYear && !mediaItem.runtimeMinutes && !mediaItem.mpaaRating && !mediaItem.tmdbRating) ||
               (mediaItem.mediaType === 'TVShow' && !mediaItem.creator && !mediaItem.cast && !mediaItem.firstAirYear && !mediaItem.numberOfSeasons && !mediaItem.contentRating) ||
-              (mediaItem.mediaType === 'Video' && !mediaItem.platform && !mediaItem.channelName && !mediaItem.lengthInSeconds && mediaItem.videoType === undefined && !mediaItem.externalId) ||
+              (mediaItem.mediaType === 'Video' && !mediaItem.platform && !mediaItem.channel && !mediaItem.lengthInSeconds && mediaItem.videoType === undefined && !mediaItem.externalId) ||
               (mediaItem.mediaType === 'Article' && !mediaItem.author && !mediaItem.publication && !mediaItem.publicationDate && !mediaItem.originalUrl && !mediaItem.readingProgress && !mediaItem.estimatedReadingTimeMinutes && !mediaItem.wordCount)) && (
               <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                 No specific {mediaItem.mediaType.toLowerCase()} details available

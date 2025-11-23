@@ -74,6 +74,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 MediaType.Movie => await CreateMovieAsync(dto),
                 MediaType.TVShow => await CreateTvShowAsync(dto),
                 MediaType.Book => await CreateBookAsync(dto),
+                MediaType.Channel => await CreateYouTubeChannelAsync(dto),
                 // For any other types, return an error
                 _ => throw new NotSupportedException($"Media type '{dto.MediaType}' is not yet supported. Please implement a concrete class for this media type.")
             };
@@ -223,7 +224,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 RelatedNotes = dto.RelatedNotes,
                 Thumbnail = dto.Thumbnail,
                 Platform = "YouTube", // Default platform for videos created via MediaController
-                ChannelName = null, // Will be set by frontend or YouTube import
+                ChannelId = null, // Will be set by frontend or YouTube import
                 VideoType = VideoType.Series // Default to Series for now
             };
 
@@ -260,6 +261,33 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             await AddGenresToMediaItemAsync(article, dto.Genres);
 
             return article;
+        }
+
+        private async Task<YouTubeChannel> CreateYouTubeChannelAsync(CreateMediaItemDto dto)
+        {
+            var channel = new YouTubeChannel
+            {
+                Title = dto.Title,
+                MediaType = MediaType.Channel,
+                Link = dto.Link,
+                Notes = dto.Notes,
+                Status = dto.Status,
+                DateAdded = DateTime.UtcNow,
+                DateCompleted = dto.DateCompleted?.ToUniversalTime(),
+                Rating = dto.Rating,
+                OwnershipStatus = dto.OwnershipStatus,
+                Description = dto.Description,
+                RelatedNotes = dto.RelatedNotes,
+                Thumbnail = dto.Thumbnail,
+                ChannelExternalId = "", // This should be set when importing from YouTube API
+                LastSyncedAt = DateTime.UtcNow
+            };
+
+            // Use helper methods to add Topics and Genres with proper change tracking
+            await AddTopicsToMediaItemAsync(channel, dto.Topics);
+            await AddGenresToMediaItemAsync(channel, dto.Genres);
+
+            return channel;
         }
 
         private async Task<Movie> CreateMovieAsync(CreateMediaItemDto dto)

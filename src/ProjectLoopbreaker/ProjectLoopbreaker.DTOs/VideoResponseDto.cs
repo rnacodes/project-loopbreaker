@@ -38,8 +38,17 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("platform")]
         public string Platform { get; set; } = string.Empty;
         
-        [JsonPropertyName("channelName")]
-        public string? ChannelName { get; set; }
+        /// <summary>
+        /// Foreign Key to YouTubeChannel entity (for YouTube videos only)
+        /// </summary>
+        [JsonPropertyName("channelId")]
+        public Guid? ChannelId { get; set; }
+        
+        /// <summary>
+        /// Optional nested channel information for convenience
+        /// </summary>
+        [JsonPropertyName("channel")]
+        public YouTubeChannelInfoDto? Channel { get; set; }
         
         [JsonPropertyName("lengthInSeconds")]
         public int LengthInSeconds { get; set; }
