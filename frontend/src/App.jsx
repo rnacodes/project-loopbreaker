@@ -23,6 +23,7 @@ import UploadMediaPage from './components/UploadMediaPage';
 import YouTubeCallback from './pages/YouTubeCallback';
 import InstapaperAuthPage from './components/InstapaperAuthPage';
 import InstapaperImportPage from './components/InstapaperImportPage';
+import ReadwiseSyncPage from './components/ReadwiseSyncPage';
 import ArticlesPage from './components/ArticlesPage';
 import SourceDirectoryPage from './components/SourceDirectoryPage';
 import YouTubeChannelList from './components/YouTubeChannelList';
@@ -62,6 +63,7 @@ function App() {
           <Route path="/youtube/callback" element={<YouTubeCallback />} />
           <Route path="/instapaper/auth" element={<InstapaperAuthPage />} />
           <Route path="/instapaper/import" element={<InstapaperImportPage />} />
+          <Route path="/readwise-sync" element={<ReadwiseSyncPage />} />
           <Route path="/articles" element={<ArticlesPage />} />
           <Route path="/sources" element={<SourceDirectoryPage />} />
           <Route path="/youtube-channels" element={<YouTubeChannelList />} />
