@@ -96,7 +96,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var podcastId = "test-podcast-id";
-            var expectedResult = CreatePodcastSeriesDto();
+            var expectedResult = CreateListenNotesPodcastSeriesDto();
             
             _mockListenNotesApiClient
                 .Setup(x => x.GetPodcastByIdAsync(podcastId))
@@ -159,7 +159,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var episodeId = "test-episode-id";
-            var expectedResult = CreatePodcastEpisodeDto();
+            var expectedResult = CreateListenNotesPodcastEpisodeDto();
             
             _mockListenNotesApiClient
                 .Setup(x => x.GetEpisodeByIdAsync(episodeId))
@@ -308,78 +308,79 @@ namespace ProjectLoopbreaker.UnitTests.Application
         #region Import Operations Tests
 
         [Fact]
-        public async Task ImportPodcastAsync_ShouldReturnNewPodcast_WhenPodcastDoesNotExist()
+        public async Task ImportPodcastSeriesAsync_ShouldReturnNewPodcastSeries_WhenPodcastDoesNotExist()
         {
             // Arrange
             var podcastId = "test-podcast-id";
-            var podcastDto = CreatePodcastSeriesDto();
-            var createPodcastDto = CreatePodcastDto();
-            var expectedPodcast = CreatePodcast();
+            var podcastDto = CreateListenNotesPodcastSeriesDto();
+            var createPodcastSeriesDto = CreatePodcastSeriesDto();
+            var expectedPodcastSeries = CreatePodcastSeries();
 
             _mockListenNotesApiClient
                 .Setup(x => x.GetPodcastByIdAsync(podcastId))
                 .ReturnsAsync(podcastDto);
 
             _mockPodcastService
-                .Setup(x => x.GetPodcastByTitleAsync(podcastDto.Title, podcastDto.Publisher))
-                .ReturnsAsync((Podcast?)null);
+                .Setup(x => x.GetPodcastSeriesByTitleAsync(podcastDto.Title, podcastDto.Publisher))
+                .ReturnsAsync((PodcastSeries?)null);
 
             _mockPodcastMappingService
-                .Setup(x => x.MapFromListenNotesDto(podcastDto))
-                .Returns(createPodcastDto);
+                .Setup(x => x.MapFromListenNotesSeriesDto(podcastDto))
+                .Returns(createPodcastSeriesDto);
 
             _mockPodcastService
-                .Setup(x => x.CreatePodcastAsync(createPodcastDto))
-                .ReturnsAsync(expectedPodcast);
+                .Setup(x => x.CreatePodcastSeriesAsync(createPodcastSeriesDto))
+                .ReturnsAsync(expectedPodcastSeries);
 
             // Act
-            var result = await _listenNotesService.ImportPodcastAsync(podcastId);
+            var result = await _listenNotesService.ImportPodcastSeriesAsync(podcastId);
 
             // Assert
             result.Should().NotBeNull();
-            result.Should().BeEquivalentTo(expectedPodcast);
+            result.Should().BeEquivalentTo(expectedPodcastSeries);
             _mockListenNotesApiClient.Verify(x => x.GetPodcastByIdAsync(podcastId), Times.Once);
-            _mockPodcastService.Verify(x => x.GetPodcastByTitleAsync(podcastDto.Title, podcastDto.Publisher), Times.Once);
-            _mockPodcastMappingService.Verify(x => x.MapFromListenNotesDto(podcastDto), Times.Once);
-            _mockPodcastService.Verify(x => x.CreatePodcastAsync(createPodcastDto), Times.Once);
+            _mockPodcastService.Verify(x => x.GetPodcastSeriesByTitleAsync(podcastDto.Title, podcastDto.Publisher), Times.Once);
+            _mockPodcastMappingService.Verify(x => x.MapFromListenNotesSeriesDto(podcastDto), Times.Once);
+            _mockPodcastService.Verify(x => x.CreatePodcastSeriesAsync(createPodcastSeriesDto), Times.Once);
         }
 
         [Fact]
-        public async Task ImportPodcastAsync_ShouldReturnExistingPodcast_WhenPodcastAlreadyExists()
+        public async Task ImportPodcastSeriesAsync_ShouldReturnExistingPodcastSeries_WhenPodcastAlreadyExists()
         {
             // Arrange
             var podcastId = "test-podcast-id";
-            var podcastDto = CreatePodcastSeriesDto();
-            var existingPodcast = CreatePodcast();
+            var podcastDto = CreateListenNotesPodcastSeriesDto();
+            var existingPodcastSeries = CreatePodcastSeries();
 
             _mockListenNotesApiClient
                 .Setup(x => x.GetPodcastByIdAsync(podcastId))
                 .ReturnsAsync(podcastDto);
 
             _mockPodcastService
-                .Setup(x => x.GetPodcastByTitleAsync(podcastDto.Title, podcastDto.Publisher))
-                .ReturnsAsync(existingPodcast);
+                .Setup(x => x.GetPodcastSeriesByTitleAsync(podcastDto.Title, podcastDto.Publisher))
+                .ReturnsAsync(existingPodcastSeries);
 
             // Act
-            var result = await _listenNotesService.ImportPodcastAsync(podcastId);
+            var result = await _listenNotesService.ImportPodcastSeriesAsync(podcastId);
 
             // Assert
             result.Should().NotBeNull();
-            result.Should().BeEquivalentTo(existingPodcast);
+            result.Should().BeEquivalentTo(existingPodcastSeries);
             _mockListenNotesApiClient.Verify(x => x.GetPodcastByIdAsync(podcastId), Times.Once);
-            _mockPodcastService.Verify(x => x.GetPodcastByTitleAsync(podcastDto.Title, podcastDto.Publisher), Times.Once);
-            _mockPodcastMappingService.Verify(x => x.MapFromListenNotesDto(It.IsAny<PodcastSeriesDto>()), Times.Never);
-            _mockPodcastService.Verify(x => x.CreatePodcastAsync(It.IsAny<CreatePodcastDto>()), Times.Never);
+            _mockPodcastService.Verify(x => x.GetPodcastSeriesByTitleAsync(podcastDto.Title, podcastDto.Publisher), Times.Once);
+            _mockPodcastMappingService.Verify(x => x.MapFromListenNotesSeriesDto(It.IsAny<PodcastSeriesDto>()), Times.Never);
+            _mockPodcastService.Verify(x => x.CreatePodcastSeriesAsync(It.IsAny<CreatePodcastSeriesDto>()), Times.Never);
         }
 
         [Fact]
-        public async Task ImportPodcastEpisodeAsync_ShouldReturnNewPodcast_WhenEpisodeDoesNotExist()
+        public async Task ImportPodcastEpisodeAsync_ShouldReturnNewPodcastEpisode_WhenEpisodeDoesNotExist()
         {
             // Arrange
             var episodeId = "test-episode-id";
-            var episodeDto = CreatePodcastEpisodeDto();
-            var createPodcastDto = CreatePodcastDto();
-            var expectedPodcast = CreatePodcast();
+            var seriesId = Guid.NewGuid();
+            var episodeDto = CreateListenNotesPodcastEpisodeDto();
+            var createPodcastEpisodeDto = CreatePodcastEpisodeDto();
+            var expectedPodcastEpisode = CreatePodcastEpisode();
 
             _mockListenNotesApiClient
                 .Setup(x => x.GetEpisodeByIdAsync(episodeId))
@@ -387,36 +388,38 @@ namespace ProjectLoopbreaker.UnitTests.Application
 
             _mockPodcastMappingService
                 .Setup(x => x.MapFromListenNotesEpisodeDto(episodeDto))
-                .Returns(createPodcastDto);
+                .Returns(createPodcastEpisodeDto);
 
             _mockPodcastService
-                .Setup(x => x.GetPodcastByTitleAsync(createPodcastDto.Title, null))
-                .ReturnsAsync((Podcast?)null);
+                .Setup(x => x.GetEpisodesBySeriesIdAsync(seriesId))
+                .ReturnsAsync(new List<PodcastEpisode>());
 
             _mockPodcastService
-                .Setup(x => x.CreatePodcastAsync(createPodcastDto))
-                .ReturnsAsync(expectedPodcast);
+                .Setup(x => x.CreatePodcastEpisodeAsync(It.IsAny<CreatePodcastEpisodeDto>()))
+                .ReturnsAsync(expectedPodcastEpisode);
 
             // Act
-            var result = await _listenNotesService.ImportPodcastEpisodeAsync(episodeId);
+            var result = await _listenNotesService.ImportPodcastEpisodeAsync(episodeId, seriesId);
 
             // Assert
             result.Should().NotBeNull();
-            result.Should().BeEquivalentTo(expectedPodcast);
+            result.Should().BeEquivalentTo(expectedPodcastEpisode);
             _mockListenNotesApiClient.Verify(x => x.GetEpisodeByIdAsync(episodeId), Times.Once);
             _mockPodcastMappingService.Verify(x => x.MapFromListenNotesEpisodeDto(episodeDto), Times.Once);
-            _mockPodcastService.Verify(x => x.GetPodcastByTitleAsync(createPodcastDto.Title, null), Times.Once);
-            _mockPodcastService.Verify(x => x.CreatePodcastAsync(createPodcastDto), Times.Once);
+            _mockPodcastService.Verify(x => x.GetEpisodesBySeriesIdAsync(seriesId), Times.Once);
+            _mockPodcastService.Verify(x => x.CreatePodcastEpisodeAsync(It.IsAny<CreatePodcastEpisodeDto>()), Times.Once);
         }
 
         [Fact]
-        public async Task ImportPodcastEpisodeAsync_ShouldReturnExistingPodcast_WhenEpisodeAlreadyExists()
+        public async Task ImportPodcastEpisodeAsync_ShouldReturnExistingPodcastEpisode_WhenEpisodeAlreadyExists()
         {
             // Arrange
             var episodeId = "test-episode-id";
-            var episodeDto = CreatePodcastEpisodeDto();
-            var createPodcastDto = CreatePodcastDto();
-            var existingPodcast = CreatePodcast();
+            var seriesId = Guid.NewGuid();
+            var episodeDto = CreateListenNotesPodcastEpisodeDto();
+            var createPodcastEpisodeDto = CreatePodcastEpisodeDto();
+            var existingPodcastEpisode = CreatePodcastEpisode();
+            existingPodcastEpisode.ExternalId = episodeId;
 
             _mockListenNotesApiClient
                 .Setup(x => x.GetEpisodeByIdAsync(episodeId))
@@ -424,22 +427,22 @@ namespace ProjectLoopbreaker.UnitTests.Application
 
             _mockPodcastMappingService
                 .Setup(x => x.MapFromListenNotesEpisodeDto(episodeDto))
-                .Returns(createPodcastDto);
+                .Returns(createPodcastEpisodeDto);
 
             _mockPodcastService
-                .Setup(x => x.GetPodcastByTitleAsync(createPodcastDto.Title, null))
-                .ReturnsAsync(existingPodcast);
+                .Setup(x => x.GetEpisodesBySeriesIdAsync(seriesId))
+                .ReturnsAsync(new List<PodcastEpisode> { existingPodcastEpisode });
 
             // Act
-            var result = await _listenNotesService.ImportPodcastEpisodeAsync(episodeId);
+            var result = await _listenNotesService.ImportPodcastEpisodeAsync(episodeId, seriesId);
 
             // Assert
             result.Should().NotBeNull();
-            result.Should().BeEquivalentTo(existingPodcast);
+            result.Should().BeEquivalentTo(existingPodcastEpisode);
             _mockListenNotesApiClient.Verify(x => x.GetEpisodeByIdAsync(episodeId), Times.Once);
             _mockPodcastMappingService.Verify(x => x.MapFromListenNotesEpisodeDto(episodeDto), Times.Once);
-            _mockPodcastService.Verify(x => x.GetPodcastByTitleAsync(createPodcastDto.Title, null), Times.Once);
-            _mockPodcastService.Verify(x => x.CreatePodcastAsync(It.IsAny<CreatePodcastDto>()), Times.Never);
+            _mockPodcastService.Verify(x => x.GetEpisodesBySeriesIdAsync(seriesId), Times.Once);
+            _mockPodcastService.Verify(x => x.CreatePodcastEpisodeAsync(It.IsAny<CreatePodcastEpisodeDto>()), Times.Never);
         }
 
         #endregion
@@ -466,7 +469,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             };
         }
 
-        private static PodcastSeriesDto CreatePodcastSeriesDto()
+        private static PodcastSeriesDto CreateListenNotesPodcastSeriesDto()
         {
             return new PodcastSeriesDto
             {
@@ -480,7 +483,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             };
         }
 
-        private static PodcastEpisodeDto CreatePodcastEpisodeDto()
+        private static PodcastEpisodeDto CreateListenNotesPodcastEpisodeDto()
         {
             return new PodcastEpisodeDto
             {
@@ -562,31 +565,57 @@ namespace ProjectLoopbreaker.UnitTests.Application
             };
         }
 
-        private static CreatePodcastDto CreatePodcastDto()
+        private static CreatePodcastSeriesDto CreatePodcastSeriesDto()
         {
-            return new CreatePodcastDto
+            return new CreatePodcastSeriesDto
             {
                 Title = "Test Podcast",
-                MediaType = MediaType.Podcast,
-                PodcastType = PodcastType.Series,
                 Publisher = "Test Publisher",
-                Notes = "Test Description",
-                Status = Status.Uncharted
+                Description = "Test Description",
+                Status = Status.Uncharted,
+                IsSubscribed = false
             };
         }
 
-        private static Podcast CreatePodcast()
+        private static PodcastSeries CreatePodcastSeries()
         {
-            return new Podcast
+            return new PodcastSeries
             {
                 Id = Guid.NewGuid(),
                 Title = "Test Podcast",
                 MediaType = MediaType.Podcast,
-                PodcastType = PodcastType.Series,
                 Publisher = "Test Publisher",
-                Notes = "Test Description",
+                Description = "Test Description",
                 Status = Status.Uncharted,
-                DateAdded = DateTime.UtcNow
+                DateAdded = DateTime.UtcNow,
+                IsSubscribed = false
+            };
+        }
+
+        private static CreatePodcastEpisodeDto CreatePodcastEpisodeDto()
+        {
+            return new CreatePodcastEpisodeDto
+            {
+                Title = "Test Episode",
+                SeriesId = Guid.NewGuid(),
+                Description = "Test Episode Description",
+                Status = Status.Uncharted,
+                AudioLink = "https://example.com/audio.mp3"
+            };
+        }
+
+        private static PodcastEpisode CreatePodcastEpisode()
+        {
+            return new PodcastEpisode
+            {
+                Id = Guid.NewGuid(),
+                Title = "Test Episode",
+                MediaType = MediaType.Podcast,
+                SeriesId = Guid.NewGuid(),
+                Description = "Test Episode Description",
+                Status = Status.Uncharted,
+                DateAdded = DateTime.UtcNow,
+                AudioLink = "https://example.com/audio.mp3"
             };
         }
 

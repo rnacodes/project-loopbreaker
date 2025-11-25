@@ -368,7 +368,7 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                 .ReturnsAsync(response);
         }
 
-        private void VerifyHttpRequest(string method, string expectedUri)
+        private void VerifyHttpRequest(string method, string expectedUriPart)
         {
             _mockHttpMessageHandler
                 .Protected()
@@ -377,7 +377,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                     Times.Once(),
                     ItExpr.Is<HttpRequestMessage>(req =>
                         req.Method == HttpMethod.Parse(method) &&
-                        req.RequestUri!.ToString().Contains(expectedUri)),
+                        (req.RequestUri!.ToString().Contains(expectedUriPart) ||
+                         req.RequestUri!.ToString().StartsWith("https://listen-api.listennotes.com/api/v2/" + expectedUriPart))),
                     ItExpr.IsAny<CancellationToken>());
         }
 

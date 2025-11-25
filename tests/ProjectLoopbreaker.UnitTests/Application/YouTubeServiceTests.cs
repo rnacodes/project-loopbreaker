@@ -19,6 +19,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
         private readonly Mock<IYouTubeApiClient> _mockApiClient;
         private readonly Mock<IYouTubeMappingService> _mockMappingService;
         private readonly Mock<IVideoService> _mockVideoService;
+        private readonly Mock<IYouTubeChannelService> _mockChannelService;
         private readonly Mock<ILogger<YouTubeService>> _mockLogger;
         private readonly YouTubeService _service;
 
@@ -27,12 +28,14 @@ namespace ProjectLoopbreaker.UnitTests.Application
             _mockApiClient = new Mock<IYouTubeApiClient>();
             _mockMappingService = new Mock<IYouTubeMappingService>();
             _mockVideoService = new Mock<IVideoService>();
+            _mockChannelService = new Mock<IYouTubeChannelService>();
             _mockLogger = new Mock<ILogger<YouTubeService>>();
 
             _service = new YouTubeService(
                 _mockApiClient.Object,
                 _mockMappingService.Object,
                 _mockVideoService.Object,
+                _mockChannelService.Object,
                 _mockLogger.Object);
         }
 

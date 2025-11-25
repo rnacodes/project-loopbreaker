@@ -1,42 +1,23 @@
 using Xunit;
-using Moq;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Microsoft.EntityFrameworkCore;
+using Moq;
 using ProjectLoopbreaker.Application.Services;
-using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.DTOs;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Linq.Expressions;
+using ProjectLoopbreaker.UnitTests.TestHelpers;
 
 namespace ProjectLoopbreaker.UnitTests.Application
 {
-    public class VideoServiceTests
+    public class VideoServiceTests : InMemoryDbTestBase
     {
-        private readonly Mock<IApplicationDbContext> _mockContext;
         private readonly Mock<ILogger<VideoService>> _mockLogger;
-        private readonly Mock<DbSet<Video>> _mockVideoSet;
-        private readonly Mock<DbSet<Topic>> _mockTopicSet;
-        private readonly Mock<DbSet<Genre>> _mockGenreSet;
         private readonly VideoService _service;
 
         public VideoServiceTests()
         {
-            _mockContext = new Mock<IApplicationDbContext>();
             _mockLogger = new Mock<ILogger<VideoService>>();
-            _mockVideoSet = new Mock<DbSet<Video>>();
-            _mockTopicSet = new Mock<DbSet<Topic>>();
-            _mockGenreSet = new Mock<DbSet<Genre>>();
-
-            _mockContext.Setup(c => c.Videos).Returns(_mockVideoSet.Object);
-            _mockContext.Setup(c => c.Topics).Returns(_mockTopicSet.Object);
-            _mockContext.Setup(c => c.Genres).Returns(_mockGenreSet.Object);
-
-            _service = new VideoService(_mockContext.Object, _mockLogger.Object);
+            _service = new VideoService(Context, _mockLogger.Object);
         }
 
         #region GetAllVideosAsync Tests
@@ -49,12 +30,9 @@ namespace ProjectLoopbreaker.UnitTests.Application
             {
                 new Video { Id = Guid.NewGuid(), Title = "Video 1", Platform = "YouTube", Topics = new List<Topic>(), Genres = new List<Genre>() },
                 new Video { Id = Guid.NewGuid(), Title = "Video 2", Platform = "Vimeo", Topics = new List<Topic>(), Genres = new List<Genre>() }
-            }.AsQueryable();
-
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Provider).Returns(videos.Provider);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Expression).Returns(videos.Expression);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.ElementType).Returns(videos.ElementType);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.GetEnumerator()).Returns(videos.GetEnumerator());
+            };
+            Context.Videos.AddRange(videos);
+            await Context.SaveChangesAsync();
 
             // Act
             var result = await _service.GetAllVideosAsync();
@@ -69,11 +47,11 @@ namespace ProjectLoopbreaker.UnitTests.Application
         public async Task GetAllVideosAsync_WhenExceptionOccurs_ShouldLogErrorAndThrow()
         {
             // Arrange
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Provider).Throws(new Exception("Database error"));
+            // Dispose the context to force an exception
+            Context.Dispose();
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() => _service.GetAllVideosAsync());
-            exception.Message.Should().Be("Database error");
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => _service.GetAllVideosAsync());
         }
 
         #endregion
@@ -86,12 +64,8 @@ namespace ProjectLoopbreaker.UnitTests.Application
             // Arrange
             var videoId = Guid.NewGuid();
             var video = new Video { Id = videoId, Title = "Test Video", Platform = "YouTube", Topics = new List<Topic>(), Genres = new List<Genre>() };
-            var videos = new List<Video> { video }.AsQueryable();
-
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Provider).Returns(videos.Provider);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Expression).Returns(videos.Expression);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.ElementType).Returns(videos.ElementType);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.GetEnumerator()).Returns(videos.GetEnumerator());
+            Context.Videos.Add(video);
+            await Context.SaveChangesAsync();
 
             // Act
             var result = await _service.GetVideoByIdAsync(videoId);
@@ -107,12 +81,6 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var videoId = Guid.NewGuid();
-            var videos = new List<Video>().AsQueryable();
-
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Provider).Returns(videos.Provider);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Expression).Returns(videos.Expression);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.ElementType).Returns(videos.ElementType);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.GetEnumerator()).Returns(videos.GetEnumerator());
 
             // Act
             var result = await _service.GetVideoByIdAsync(videoId);
@@ -139,21 +107,12 @@ namespace ProjectLoopbreaker.UnitTests.Application
                 Genres = new[] { "educational", "tutorial" }
             };
 
+            // Pre-create one topic and genre to test reuse
             var existingTopic = new Topic { Name = "technology" };
             var existingGenre = new Genre { Name = "educational" };
-
-            var topics = new List<Topic> { existingTopic }.AsQueryable();
-            var genres = new List<Genre> { existingGenre }.AsQueryable();
-
-            _mockTopicSet.As<IQueryable<Topic>>().Setup(m => m.Provider).Returns(topics.Provider);
-            _mockTopicSet.As<IQueryable<Topic>>().Setup(m => m.Expression).Returns(topics.Expression);
-            _mockTopicSet.As<IQueryable<Topic>>().Setup(m => m.ElementType).Returns(topics.ElementType);
-            _mockTopicSet.As<IQueryable<Topic>>().Setup(m => m.GetEnumerator()).Returns(topics.GetEnumerator());
-
-            _mockGenreSet.As<IQueryable<Genre>>().Setup(m => m.Provider).Returns(genres.Provider);
-            _mockGenreSet.As<IQueryable<Genre>>().Setup(m => m.Expression).Returns(genres.Expression);
-            _mockGenreSet.As<IQueryable<Genre>>().Setup(m => m.ElementType).Returns(genres.ElementType);
-            _mockGenreSet.As<IQueryable<Genre>>().Setup(m => m.GetEnumerator()).Returns(genres.GetEnumerator());
+            Context.Topics.Add(existingTopic);
+            Context.Genres.Add(existingGenre);
+            await Context.SaveChangesAsync();
 
             // Act
             var result = await _service.CreateVideoAsync(dto);
@@ -167,8 +126,9 @@ namespace ProjectLoopbreaker.UnitTests.Application
             result.Topics.Should().HaveCount(2);
             result.Genres.Should().HaveCount(2);
             
-            _mockContext.Verify(c => c.Add(It.IsAny<Video>()), Times.Once);
-            _mockContext.Verify(c => c.SaveChangesAsync(default), Times.Once);
+            // Verify saved to database
+            var savedVideo = await Context.Videos.FindAsync(result.Id);
+            savedVideo.Should().NotBeNull();
         }
 
         [Fact]
@@ -187,19 +147,12 @@ namespace ProjectLoopbreaker.UnitTests.Application
 
             var existingTopic = new Topic { Name = "technology" };
             var existingGenre = new Genre { Name = "educational" };
+            Context.Topics.Add(existingTopic);
+            Context.Genres.Add(existingGenre);
+            await Context.SaveChangesAsync();
 
-            var topics = new List<Topic> { existingTopic }.AsQueryable();
-            var genres = new List<Genre> { existingGenre }.AsQueryable();
-
-            _mockTopicSet.As<IQueryable<Topic>>().Setup(m => m.Provider).Returns(topics.Provider);
-            _mockTopicSet.As<IQueryable<Topic>>().Setup(m => m.Expression).Returns(topics.Expression);
-            _mockTopicSet.As<IQueryable<Topic>>().Setup(m => m.ElementType).Returns(topics.ElementType);
-            _mockTopicSet.As<IQueryable<Topic>>().Setup(m => m.GetEnumerator()).Returns(topics.GetEnumerator());
-
-            _mockGenreSet.As<IQueryable<Genre>>().Setup(m => m.Provider).Returns(genres.Provider);
-            _mockGenreSet.As<IQueryable<Genre>>().Setup(m => m.Expression).Returns(genres.Expression);
-            _mockGenreSet.As<IQueryable<Genre>>().Setup(m => m.ElementType).Returns(genres.ElementType);
-            _mockGenreSet.As<IQueryable<Genre>>().Setup(m => m.GetEnumerator()).Returns(genres.GetEnumerator());
+            var initialTopicCount = Context.Topics.Count();
+            var initialGenreCount = Context.Genres.Count();
 
             // Act
             var result = await _service.CreateVideoAsync(dto);
@@ -209,6 +162,10 @@ namespace ProjectLoopbreaker.UnitTests.Application
             result.Genres.Should().HaveCount(1);
             result.Topics.First().Name.Should().Be("technology");
             result.Genres.First().Name.Should().Be("educational");
+            
+            // Verify no duplicates were created
+            Context.Topics.Count().Should().Be(initialTopicCount);
+            Context.Genres.Count().Should().Be(initialGenreCount);
         }
 
         #endregion
@@ -228,6 +185,8 @@ namespace ProjectLoopbreaker.UnitTests.Application
                 Topics = new List<Topic>(),
                 Genres = new List<Genre>()
             };
+            Context.Videos.Add(existingVideo);
+            await Context.SaveChangesAsync();
 
             var dto = new CreateVideoDto
             {
@@ -236,26 +195,6 @@ namespace ProjectLoopbreaker.UnitTests.Application
                 VideoType = VideoType.Episode,
                 Status = Status.ActivelyExploring
             };
-
-            var videos = new List<Video> { existingVideo }.AsQueryable();
-
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Provider).Returns(videos.Provider);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Expression).Returns(videos.Expression);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.ElementType).Returns(videos.ElementType);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.GetEnumerator()).Returns(videos.GetEnumerator());
-
-            var emptyTopics = new List<Topic>().AsQueryable();
-            var emptyGenres = new List<Genre>().AsQueryable();
-
-            _mockTopicSet.As<IQueryable<Topic>>().Setup(m => m.Provider).Returns(emptyTopics.Provider);
-            _mockTopicSet.As<IQueryable<Topic>>().Setup(m => m.Expression).Returns(emptyTopics.Expression);
-            _mockTopicSet.As<IQueryable<Topic>>().Setup(m => m.ElementType).Returns(emptyTopics.ElementType);
-            _mockTopicSet.As<IQueryable<Topic>>().Setup(m => m.GetEnumerator()).Returns(emptyTopics.GetEnumerator());
-
-            _mockGenreSet.As<IQueryable<Genre>>().Setup(m => m.Provider).Returns(emptyGenres.Provider);
-            _mockGenreSet.As<IQueryable<Genre>>().Setup(m => m.Expression).Returns(emptyGenres.Expression);
-            _mockGenreSet.As<IQueryable<Genre>>().Setup(m => m.ElementType).Returns(emptyGenres.ElementType);
-            _mockGenreSet.As<IQueryable<Genre>>().Setup(m => m.GetEnumerator()).Returns(emptyGenres.GetEnumerator());
 
             // Act
             var result = await _service.UpdateVideoAsync(videoId, dto);
@@ -267,7 +206,10 @@ namespace ProjectLoopbreaker.UnitTests.Application
             result.VideoType.Should().Be(VideoType.Episode);
             result.Status.Should().Be(Status.ActivelyExploring);
             
-            _mockContext.Verify(c => c.SaveChangesAsync(default), Times.Once);
+            // Verify updated in database
+            var updatedVideo = await Context.Videos.FindAsync(videoId);
+            updatedVideo.Should().NotBeNull();
+            updatedVideo!.Title.Should().Be("Updated Title");
         }
 
         [Fact]
@@ -276,12 +218,6 @@ namespace ProjectLoopbreaker.UnitTests.Application
             // Arrange
             var videoId = Guid.NewGuid();
             var dto = new CreateVideoDto { Title = "Test", Platform = "YouTube", VideoType = VideoType.Series, Status = Status.Uncharted };
-            var videos = new List<Video>().AsQueryable();
-
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Provider).Returns(videos.Provider);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Expression).Returns(videos.Expression);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.ElementType).Returns(videos.ElementType);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.GetEnumerator()).Returns(videos.GetEnumerator());
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateVideoAsync(videoId, dto));
@@ -298,20 +234,18 @@ namespace ProjectLoopbreaker.UnitTests.Application
             // Arrange
             var videoId = Guid.NewGuid();
             var video = new Video { Id = videoId, Title = "Test Video", Platform = "YouTube", Topics = new List<Topic>(), Genres = new List<Genre>() };
-            var videos = new List<Video> { video }.AsQueryable();
-
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Provider).Returns(videos.Provider);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Expression).Returns(videos.Expression);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.ElementType).Returns(videos.ElementType);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.GetEnumerator()).Returns(videos.GetEnumerator());
+            Context.Videos.Add(video);
+            await Context.SaveChangesAsync();
 
             // Act
             var result = await _service.DeleteVideoAsync(videoId);
 
             // Assert
             result.Should().BeTrue();
-            _mockContext.Verify(c => c.Remove(video), Times.Once);
-            _mockContext.Verify(c => c.SaveChangesAsync(default), Times.Once);
+            
+            // Verify deleted from database
+            var deletedVideo = await Context.Videos.FindAsync(videoId);
+            deletedVideo.Should().BeNull();
         }
 
         [Fact]
@@ -319,20 +253,12 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var videoId = Guid.NewGuid();
-            var videos = new List<Video>().AsQueryable();
-
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Provider).Returns(videos.Provider);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Expression).Returns(videos.Expression);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.ElementType).Returns(videos.ElementType);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.GetEnumerator()).Returns(videos.GetEnumerator());
 
             // Act
             var result = await _service.DeleteVideoAsync(videoId);
 
             // Assert
             result.Should().BeFalse();
-            _mockContext.Verify(c => c.Remove(It.IsAny<Video>()), Times.Never);
-            _mockContext.Verify(c => c.SaveChangesAsync(default), Times.Never);
         }
 
         #endregion
@@ -343,26 +269,24 @@ namespace ProjectLoopbreaker.UnitTests.Application
         public async Task GetVideosByChannelAsync_WithValidChannel_ShouldReturnVideos()
         {
             // Arrange
-            var channelName = "TestChannel";
+            var channelId = Guid.NewGuid();
+            var otherChannelId = Guid.NewGuid();
             var videos = new List<Video>
             {
-                new Video { Id = Guid.NewGuid(), Title = "Video 1", Platform = "YouTube", ChannelName = "TestChannel", Topics = new List<Topic>(), Genres = new List<Genre>() },
-                new Video { Id = Guid.NewGuid(), Title = "Video 2", Platform = "YouTube", ChannelName = "OtherChannel", Topics = new List<Topic>(), Genres = new List<Genre>() },
-                new Video { Id = Guid.NewGuid(), Title = "Video 3", Platform = "YouTube", ChannelName = "testchannel", Topics = new List<Topic>(), Genres = new List<Genre>() }
-            }.AsQueryable();
-
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Provider).Returns(videos.Provider);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Expression).Returns(videos.Expression);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.ElementType).Returns(videos.ElementType);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.GetEnumerator()).Returns(videos.GetEnumerator());
+                new Video { Id = Guid.NewGuid(), Title = "Video 1", Platform = "YouTube", ChannelId = channelId, Topics = new List<Topic>(), Genres = new List<Genre>() },
+                new Video { Id = Guid.NewGuid(), Title = "Video 2", Platform = "YouTube", ChannelId = otherChannelId, Topics = new List<Topic>(), Genres = new List<Genre>() },
+                new Video { Id = Guid.NewGuid(), Title = "Video 3", Platform = "YouTube", ChannelId = channelId, Topics = new List<Topic>(), Genres = new List<Genre>() }
+            };
+            Context.Videos.AddRange(videos);
+            await Context.SaveChangesAsync();
 
             // Act
-            var result = await _service.GetVideosByChannelAsync(channelName);
+            var result = await _service.GetVideosByChannelAsync(channelId);
 
             // Assert
             result.Should().NotBeNull();
-            result.Should().HaveCount(2); // Case-insensitive match
-            result.All(v => v.ChannelName.ToLower() == channelName.ToLower()).Should().BeTrue();
+            result.Should().HaveCount(2);
+            result.All(v => v.ChannelId == channelId).Should().BeTrue();
         }
 
         #endregion
@@ -378,12 +302,9 @@ namespace ProjectLoopbreaker.UnitTests.Application
                 new Video { Id = Guid.NewGuid(), Title = "Series 1", Platform = "YouTube", VideoType = VideoType.Series, Topics = new List<Topic>(), Genres = new List<Genre>() },
                 new Video { Id = Guid.NewGuid(), Title = "Episode 1", Platform = "YouTube", VideoType = VideoType.Episode, Topics = new List<Topic>(), Genres = new List<Genre>() },
                 new Video { Id = Guid.NewGuid(), Title = "Series 2", Platform = "YouTube", VideoType = VideoType.Series, Topics = new List<Topic>(), Genres = new List<Genre>() }
-            }.AsQueryable();
-
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Provider).Returns(videos.Provider);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Expression).Returns(videos.Expression);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.ElementType).Returns(videos.ElementType);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.GetEnumerator()).Returns(videos.GetEnumerator());
+            };
+            Context.Videos.AddRange(videos);
+            await Context.SaveChangesAsync();
 
             // Act
             var result = await _service.GetVideoSeriesAsync();
@@ -403,19 +324,13 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var title = "Test Video";
-            var channelName = "Test Channel";
-            var videos = new List<Video>
-            {
-                new Video { Id = Guid.NewGuid(), Title = "Test Video", Platform = "YouTube", ChannelName = "Test Channel", Topics = new List<Topic>(), Genres = new List<Genre>() }
-            }.AsQueryable();
-
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Provider).Returns(videos.Provider);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Expression).Returns(videos.Expression);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.ElementType).Returns(videos.ElementType);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.GetEnumerator()).Returns(videos.GetEnumerator());
+            var channelId = Guid.NewGuid();
+            var video = new Video { Id = Guid.NewGuid(), Title = "Test Video", Platform = "YouTube", ChannelId = channelId, Topics = new List<Topic>(), Genres = new List<Genre>() };
+            Context.Videos.Add(video);
+            await Context.SaveChangesAsync();
 
             // Act
-            var result = await _service.VideoExistsAsync(title, channelName);
+            var result = await _service.VideoExistsAsync(title, channelId);
 
             // Assert
             result.Should().BeTrue();
@@ -426,16 +341,10 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var title = "Non-existing Video";
-            var channelName = "Test Channel";
-            var videos = new List<Video>().AsQueryable();
-
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Provider).Returns(videos.Provider);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.Expression).Returns(videos.Expression);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.ElementType).Returns(videos.ElementType);
-            _mockVideoSet.As<IQueryable<Video>>().Setup(m => m.GetEnumerator()).Returns(videos.GetEnumerator());
+            var channelId = Guid.NewGuid();
 
             // Act
-            var result = await _service.VideoExistsAsync(title, channelName);
+            var result = await _service.VideoExistsAsync(title, channelId);
 
             // Assert
             result.Should().BeFalse();

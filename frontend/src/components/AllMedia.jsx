@@ -1,3 +1,6 @@
+//TODO: Make the multi-select buttons more mobile-friendly
+//TODO: Change color of non-active selection buttons to white outline
+//TODO: Change color of Cards/List viewer from dark purple outline to white
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {

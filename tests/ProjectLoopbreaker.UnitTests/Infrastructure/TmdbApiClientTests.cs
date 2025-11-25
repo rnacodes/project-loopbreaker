@@ -370,7 +370,7 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                 .ReturnsAsync(response);
         }
 
-        private void VerifyHttpRequest(string method, string expectedUri)
+        private void VerifyHttpRequest(string method, string expectedUriStart)
         {
             _mockHttpMessageHandler
                 .Protected()
@@ -379,7 +379,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                     Times.Once(),
                     ItExpr.Is<HttpRequestMessage>(req =>
                         req.Method.ToString() == method &&
-                        req.RequestUri!.ToString().Contains(expectedUri)),
+                        (req.RequestUri!.ToString().Contains(expectedUriStart) || 
+                         req.RequestUri!.ToString().StartsWith("https://api.themoviedb.org/3/" + expectedUriStart))),
                     ItExpr.IsAny<CancellationToken>());
         }
 

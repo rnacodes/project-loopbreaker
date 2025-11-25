@@ -1,37 +1,23 @@
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using ProjectLoopbreaker.Application.Services;
 using ProjectLoopbreaker.Domain.Entities;
-using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.UnitTests.TestData;
+using ProjectLoopbreaker.UnitTests.TestHelpers;
 
 namespace ProjectLoopbreaker.UnitTests.Application
 {
-    public class BookServiceTests
+    public class BookServiceTests : InMemoryDbTestBase
     {
-        private readonly Mock<IApplicationDbContext> _mockContext;
         private readonly Mock<ILogger<BookService>> _mockLogger;
         private readonly BookService _bookService;
-        private readonly Mock<DbSet<Book>> _mockBooks;
-        private readonly Mock<DbSet<Topic>> _mockTopics;
-        private readonly Mock<DbSet<Genre>> _mockGenres;
 
         public BookServiceTests()
         {
-            _mockContext = new Mock<IApplicationDbContext>();
             _mockLogger = new Mock<ILogger<BookService>>();
-            _bookService = new BookService(_mockContext.Object, _mockLogger.Object);
-
-            _mockBooks = new Mock<DbSet<Book>>();
-            _mockTopics = new Mock<DbSet<Topic>>();
-            _mockGenres = new Mock<DbSet<Genre>>();
-
-            _mockContext.Setup(c => c.Books).Returns(_mockBooks.Object);
-            _mockContext.Setup(c => c.Topics).Returns(_mockTopics.Object);
-            _mockContext.Setup(c => c.Genres).Returns(_mockGenres.Object);
+            _bookService = new BookService(Context, _mockLogger.Object);
         }
 
         [Fact]
@@ -39,16 +25,8 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var books = TestDataFactory.CreateBooks(3);
-            var queryableBooks = books.AsQueryable();
-            
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Provider).Returns(queryableBooks.Provider);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Expression).Returns(queryableBooks.Expression);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.ElementType).Returns(queryableBooks.ElementType);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.GetEnumerator()).Returns(queryableBooks.GetEnumerator());
+            Context.Books.AddRange(books);
+            await Context.SaveChangesAsync();
 
             // Act
             var result = await _bookService.GetAllBooksAsync();
@@ -63,16 +41,8 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var book = TestDataFactory.CreateBook("Test Book", "Test Author");
-            var queryableBooks = new[] { book }.AsQueryable();
-            
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Provider).Returns(queryableBooks.Provider);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Expression).Returns(queryableBooks.Expression);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.ElementType).Returns(queryableBooks.ElementType);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.GetEnumerator()).Returns(queryableBooks.GetEnumerator());
+            Context.Books.Add(book);
+            await Context.SaveChangesAsync();
 
             // Act
             var result = await _bookService.GetBookByIdAsync(book.Id);
@@ -87,16 +57,6 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var nonExistentId = Guid.NewGuid();
-            var queryableBooks = new List<Book>().AsQueryable();
-            
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Provider).Returns(queryableBooks.Provider);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Expression).Returns(queryableBooks.Expression);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.ElementType).Returns(queryableBooks.ElementType);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.GetEnumerator()).Returns(queryableBooks.GetEnumerator());
 
             // Act
             var result = await _bookService.GetBookByIdAsync(nonExistentId);
@@ -116,16 +76,8 @@ namespace ProjectLoopbreaker.UnitTests.Application
                 TestDataFactory.CreateBook("Book 2", author),
                 TestDataFactory.CreateBook("Book 3", "Other Author")
             };
-            var queryableBooks = books.AsQueryable();
-            
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Provider).Returns(queryableBooks.Provider);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Expression).Returns(queryableBooks.Expression);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.ElementType).Returns(queryableBooks.ElementType);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.GetEnumerator()).Returns(queryableBooks.GetEnumerator());
+            Context.Books.AddRange(books);
+            await Context.SaveChangesAsync();
 
             // Act
             var result = await _bookService.GetBooksByAuthorAsync(author);
@@ -149,16 +101,8 @@ namespace ProjectLoopbreaker.UnitTests.Application
             books[1].PartOfSeries = true;
             books[2].PartOfSeries = false;
 
-            var queryableBooks = books.AsQueryable();
-            
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Provider).Returns(queryableBooks.Provider);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Expression).Returns(queryableBooks.Expression);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.ElementType).Returns(queryableBooks.ElementType);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.GetEnumerator()).Returns(queryableBooks.GetEnumerator());
+            Context.Books.AddRange(books);
+            await Context.SaveChangesAsync();
 
             // Act
             var result = await _bookService.GetBookSeriesAsync();
@@ -173,39 +117,6 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var dto = TestDataFactory.CreateBookDto("New Book", "New Author");
-            var queryableBooks = new List<Book>().AsQueryable();
-            var queryableTopics = new List<Topic>().AsQueryable();
-            var queryableGenres = new List<Genre>().AsQueryable();
-            
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Provider).Returns(queryableBooks.Provider);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Expression).Returns(queryableBooks.Expression);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.ElementType).Returns(queryableBooks.ElementType);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.GetEnumerator()).Returns(queryableBooks.GetEnumerator());
-
-            _mockTopics.As<IQueryable<Topic>>()
-                .Setup(m => m.Provider).Returns(queryableTopics.Provider);
-            _mockTopics.As<IQueryable<Topic>>()
-                .Setup(m => m.Expression).Returns(queryableTopics.Expression);
-            _mockTopics.As<IQueryable<Topic>>()
-                .Setup(m => m.ElementType).Returns(queryableTopics.ElementType);
-            _mockTopics.As<IQueryable<Topic>>()
-                .Setup(m => m.GetEnumerator()).Returns(queryableTopics.GetEnumerator());
-
-            _mockGenres.As<IQueryable<Genre>>()
-                .Setup(m => m.Provider).Returns(queryableGenres.Provider);
-            _mockGenres.As<IQueryable<Genre>>()
-                .Setup(m => m.Expression).Returns(queryableGenres.Expression);
-            _mockGenres.As<IQueryable<Genre>>()
-                .Setup(m => m.ElementType).Returns(queryableGenres.ElementType);
-            _mockGenres.As<IQueryable<Genre>>()
-                .Setup(m => m.GetEnumerator()).Returns(queryableGenres.GetEnumerator());
-
-            _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(1);
 
             // Act
             var result = await _bookService.CreateBookAsync(dto);
@@ -215,8 +126,11 @@ namespace ProjectLoopbreaker.UnitTests.Application
             result.Title.Should().Be(dto.Title);
             result.Author.Should().Be(dto.Author);
             result.MediaType.Should().Be(MediaType.Book);
-            _mockContext.Verify(c => c.Add(It.IsAny<Book>()), Times.Once);
-            _mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            
+            // Verify the book was saved to the database
+            var savedBook = await Context.Books.FindAsync(result.Id);
+            savedBook.Should().NotBeNull();
+            savedBook!.Title.Should().Be(dto.Title);
         }
 
         [Fact]
@@ -236,42 +150,20 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var existingBook = TestDataFactory.CreateBook("Existing Book", "Existing Author");
+            Context.Books.Add(existingBook);
+            await Context.SaveChangesAsync();
+
             var dto = TestDataFactory.CreateBookDto("Existing Book", "Existing Author");
-            var queryableBooks = new[] { existingBook }.AsQueryable();
-            
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Provider).Returns(queryableBooks.Provider);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Expression).Returns(queryableBooks.Expression);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.ElementType).Returns(queryableBooks.ElementType);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.GetEnumerator()).Returns(queryableBooks.GetEnumerator());
-
-            _mockTopics.As<IQueryable<Topic>>()
-                .Setup(m => m.Provider).Returns(new List<Topic>().AsQueryable().Provider);
-            _mockTopics.As<IQueryable<Topic>>()
-                .Setup(m => m.Expression).Returns(new List<Topic>().AsQueryable().Expression);
-            _mockTopics.As<IQueryable<Topic>>()
-                .Setup(m => m.ElementType).Returns(new List<Topic>().AsQueryable().ElementType);
-            _mockTopics.As<IQueryable<Topic>>()
-                .Setup(m => m.GetEnumerator()).Returns(new List<Topic>().AsQueryable().GetEnumerator());
-
-            _mockGenres.As<IQueryable<Genre>>()
-                .Setup(m => m.Provider).Returns(new List<Genre>().AsQueryable().Provider);
-            _mockGenres.As<IQueryable<Genre>>()
-                .Setup(m => m.Expression).Returns(new List<Genre>().AsQueryable().Expression);
-            _mockGenres.As<IQueryable<Genre>>()
-                .Setup(m => m.ElementType).Returns(new List<Genre>().AsQueryable().ElementType);
-            _mockGenres.As<IQueryable<Genre>>()
-                .Setup(m => m.GetEnumerator()).Returns(new List<Genre>().AsQueryable().GetEnumerator());
 
             // Act
             var result = await _bookService.CreateBookAsync(dto);
 
             // Assert
             result.Should().BeEquivalentTo(existingBook);
-            _mockContext.Verify(c => c.Add(It.IsAny<Book>()), Times.Never);
+            
+            // Verify no duplicate was created
+            var allBooks = Context.Books.ToList();
+            allBooks.Should().HaveCount(1);
         }
 
         [Fact]
@@ -279,47 +171,24 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var existingBook = TestDataFactory.CreateBook("Original Title", "Original Author");
+            Context.Books.Add(existingBook);
+            await Context.SaveChangesAsync();
+
             var dto = TestDataFactory.CreateBookDto("Updated Title", "Updated Author");
-            var queryableBooks = new[] { existingBook }.AsQueryable();
-            
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Provider).Returns(queryableBooks.Provider);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Expression).Returns(queryableBooks.Expression);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.ElementType).Returns(queryableBooks.ElementType);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.GetEnumerator()).Returns(queryableBooks.GetEnumerator());
-
-            _mockTopics.As<IQueryable<Topic>>()
-                .Setup(m => m.Provider).Returns(new List<Topic>().AsQueryable().Provider);
-            _mockTopics.As<IQueryable<Topic>>()
-                .Setup(m => m.Expression).Returns(new List<Topic>().AsQueryable().Expression);
-            _mockTopics.As<IQueryable<Topic>>()
-                .Setup(m => m.ElementType).Returns(new List<Topic>().AsQueryable().ElementType);
-            _mockTopics.As<IQueryable<Topic>>()
-                .Setup(m => m.GetEnumerator()).Returns(new List<Topic>().AsQueryable().GetEnumerator());
-
-            _mockGenres.As<IQueryable<Genre>>()
-                .Setup(m => m.Provider).Returns(new List<Genre>().AsQueryable().Provider);
-            _mockGenres.As<IQueryable<Genre>>()
-                .Setup(m => m.Expression).Returns(new List<Genre>().AsQueryable().Expression);
-            _mockGenres.As<IQueryable<Genre>>()
-                .Setup(m => m.ElementType).Returns(new List<Genre>().AsQueryable().ElementType);
-            _mockGenres.As<IQueryable<Genre>>()
-                .Setup(m => m.GetEnumerator()).Returns(new List<Genre>().AsQueryable().GetEnumerator());
-
-            _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(1);
 
             // Act
             var result = await _bookService.UpdateBookAsync(existingBook.Id, dto);
 
             // Assert
             result.Should().NotBeNull();
-            result.Title.Should().Be(dto.Title);
-            result.Author.Should().Be(dto.Author);
-            _mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            result.Title.Should().Be("Updated Title");
+            result.Author.Should().Be("Updated Author");
+            
+            // Verify the book was updated in the database
+            var updatedBook = await Context.Books.FindAsync(existingBook.Id);
+            updatedBook.Should().NotBeNull();
+            updatedBook!.Title.Should().Be("Updated Title");
+            updatedBook.Author.Should().Be("Updated Author");
         }
 
         [Fact]
@@ -328,16 +197,6 @@ namespace ProjectLoopbreaker.UnitTests.Application
             // Arrange
             var nonExistentId = Guid.NewGuid();
             var dto = TestDataFactory.CreateBookDto("Updated Title", "Updated Author");
-            var queryableBooks = new List<Book>().AsQueryable();
-            
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Provider).Returns(queryableBooks.Provider);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Expression).Returns(queryableBooks.Expression);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.ElementType).Returns(queryableBooks.ElementType);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.GetEnumerator()).Returns(queryableBooks.GetEnumerator());
 
             // Act & Assert
             await _bookService.Invoking(s => s.UpdateBookAsync(nonExistentId, dto))
@@ -350,18 +209,18 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var book = TestDataFactory.CreateBook("Book to Delete", "Author");
-            _mockContext.Setup(c => c.FindAsync<Book>(book.Id, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(book);
-            _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(1);
+            Context.Books.Add(book);
+            await Context.SaveChangesAsync();
 
             // Act
             var result = await _bookService.DeleteBookAsync(book.Id);
 
             // Assert
             result.Should().BeTrue();
-            _mockContext.Verify(c => c.Remove(book), Times.Once);
-            _mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+            
+            // Verify the book was removed from the database
+            var deletedBook = await Context.Books.FindAsync(book.Id);
+            deletedBook.Should().BeNull();
         }
 
         [Fact]
@@ -369,15 +228,12 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var nonExistentId = Guid.NewGuid();
-            _mockContext.Setup(c => c.FindAsync<Book>(nonExistentId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Book?)null);
 
             // Act
             var result = await _bookService.DeleteBookAsync(nonExistentId);
 
             // Assert
             result.Should().BeFalse();
-            _mockContext.Verify(c => c.Remove(It.IsAny<Book>()), Times.Never);
         }
 
         [Fact]
@@ -385,16 +241,8 @@ namespace ProjectLoopbreaker.UnitTests.Application
         {
             // Arrange
             var book = TestDataFactory.CreateBook("Existing Book", "Existing Author");
-            var queryableBooks = new[] { book }.AsQueryable();
-            
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Provider).Returns(queryableBooks.Provider);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Expression).Returns(queryableBooks.Expression);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.ElementType).Returns(queryableBooks.ElementType);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.GetEnumerator()).Returns(queryableBooks.GetEnumerator());
+            Context.Books.Add(book);
+            await Context.SaveChangesAsync();
 
             // Act
             var result = await _bookService.BookExistsAsync("Existing Book", "Existing Author");
@@ -407,16 +255,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
         public async Task BookExistsAsync_ShouldReturnFalse_WhenBookDoesNotExist()
         {
             // Arrange
-            var queryableBooks = new List<Book>().AsQueryable();
-            
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Provider).Returns(queryableBooks.Provider);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.Expression).Returns(queryableBooks.Expression);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.ElementType).Returns(queryableBooks.ElementType);
-            _mockBooks.As<IQueryable<Book>>()
-                .Setup(m => m.GetEnumerator()).Returns(queryableBooks.GetEnumerator());
+            // No books in database
 
             // Act
             var result = await _bookService.BookExistsAsync("Non-existent Book", "Non-existent Author");

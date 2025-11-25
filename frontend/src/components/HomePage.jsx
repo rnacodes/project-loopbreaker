@@ -1,3 +1,5 @@
+//TODO: Update homepage to have the actual components instead of mock ones (such as actual mixlists and the actual upload form)
+//TODO: update homepage to link to the correct media type from each media icon
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedia, CardContent, Button, SpeedDial, SpeedDialIcon, SpeedDialAction, useTheme, CircularProgress } from '@mui/material';

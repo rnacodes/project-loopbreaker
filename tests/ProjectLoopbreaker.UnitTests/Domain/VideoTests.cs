@@ -53,7 +53,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
                 Platform = "YouTube",
                 VideoType = VideoType.Episode,
                 ParentVideoId = parentVideoId,
-                ChannelName = "Test Channel",
+                ChannelId = Guid.NewGuid(),
                 LengthInSeconds = 3600,
                 ExternalId = "external123",
                 MediaType = MediaType.Video,
@@ -75,7 +75,7 @@ namespace ProjectLoopbreaker.UnitTests.Domain
             video.Platform.Should().Be("YouTube");
             video.VideoType.Should().Be(VideoType.Episode);
             video.ParentVideoId.Should().Be(parentVideoId);
-            video.ChannelName.Should().Be("Test Channel");
+            video.ChannelId.Should().NotBeNull();
             video.LengthInSeconds.Should().Be(3600);
             video.ExternalId.Should().Be("external123");
             video.MediaType.Should().Be(MediaType.Video);
