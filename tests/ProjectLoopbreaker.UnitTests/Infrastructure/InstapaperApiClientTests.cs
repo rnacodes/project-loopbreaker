@@ -96,6 +96,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
             // Arrange
             _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
             _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockConfigSection.Setup(x => x["AccessToken"]).Returns("test-access-token");
+            _mockConfigSection.Setup(x => x["AccessTokenSecret"]).Returns("test-access-secret");
 
             var client = new InstapaperApiClient(_httpClient, _mockLogger.Object, _mockConfiguration.Object);
 
@@ -136,6 +138,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
             // Arrange
             _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
             _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockConfigSection.Setup(x => x["AccessToken"]).Returns("test-access-token");
+            _mockConfigSection.Setup(x => x["AccessTokenSecret"]).Returns("test-access-secret");
 
             var client = new InstapaperApiClient(_httpClient, _mockLogger.Object, _mockConfiguration.Object);
 
@@ -172,6 +176,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
             // Arrange
             _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
             _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockConfigSection.Setup(x => x["AccessToken"]).Returns("test-access-token");
+            _mockConfigSection.Setup(x => x["AccessTokenSecret"]).Returns("test-access-secret");
 
             var client = new InstapaperApiClient(_httpClient, _mockLogger.Object, _mockConfiguration.Object);
 
@@ -210,6 +216,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
             // Arrange
             _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
             _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockConfigSection.Setup(x => x["AccessToken"]).Returns("test-access-token");
+            _mockConfigSection.Setup(x => x["AccessTokenSecret"]).Returns("test-access-secret");
 
             var client = new InstapaperApiClient(_httpClient, _mockLogger.Object, _mockConfiguration.Object);
             var testUrl = "https://example.com";
@@ -231,6 +239,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
             // Arrange
             _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
             _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockConfigSection.Setup(x => x["AccessToken"]).Returns("test-access-token");
+            _mockConfigSection.Setup(x => x["AccessTokenSecret"]).Returns("test-access-secret");
 
             var client = new InstapaperApiClient(_httpClient, _mockLogger.Object, _mockConfiguration.Object);
             var testUrl = "https://example.com";
@@ -247,4 +257,5 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
         #endregion
     }
 }
+
 

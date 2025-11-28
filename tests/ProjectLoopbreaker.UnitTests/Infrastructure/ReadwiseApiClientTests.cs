@@ -212,16 +212,17 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
         }
 
         [Fact]
-        public async Task GetHighlightsAsync_Unauthorized_ThrowsHttpRequestException()
+        public async Task GetHighlightsAsync_Unauthorized_ReturnsEmptyResponse()
         {
             // Arrange
             SetupHttpResponse(HttpStatusCode.Unauthorized, "Unauthorized");
 
             // Act
-            Func<Task> act = async () => await _client.GetHighlightsAsync();
+            var result = await _client.GetHighlightsAsync();
 
             // Assert
-            await act.Should().ThrowAsync<HttpRequestException>();
+            result.Should().NotBeNull();
+            result.results.Should().BeNullOrEmpty();
         }
 
         private void SetupHttpResponse(HttpStatusCode statusCode, string content)

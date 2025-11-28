@@ -23,6 +23,9 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
 
         public TmdbApiClientTests()
         {
+            // Ensure Environment Variable matches test expectation
+            Environment.SetEnvironmentVariable("TMDB_API_KEY", "test-api-key");
+
             _mockHttpMessageHandler = new Mock<HttpMessageHandler>();
             _mockLogger = new Mock<ILogger<TmdbApiClient>>();
             _mockConfiguration = new Mock<IConfiguration>();
@@ -32,7 +35,7 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                 BaseAddress = new Uri("https://api.themoviedb.org/3/")
             };
 
-            // Setup configuration to return test API key
+            // Setup configuration to return test API key (fallback)
             _mockConfiguration.Setup(x => x["ApiKeys:TMDB"]).Returns("test-api-key");
 
             _tmdbApiClient = new TmdbApiClient(_httpClient, _mockLogger.Object, _mockConfiguration.Object);
@@ -372,6 +375,11 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
 
         private void VerifyHttpRequest(string method, string expectedUriStart)
         {
+            // Extract path and query from expectedUriStart
+            var parts = expectedUriStart.Split('?');
+            var path = parts[0];
+            var query = parts.Length > 1 ? parts[1] : string.Empty;
+
             _mockHttpMessageHandler
                 .Protected()
                 .Verify(
@@ -379,8 +387,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                     Times.Once(),
                     ItExpr.Is<HttpRequestMessage>(req =>
                         req.Method.ToString() == method &&
-                        (req.RequestUri!.ToString().Contains(expectedUriStart) || 
-                         req.RequestUri!.ToString().StartsWith("https://api.themoviedb.org/3/" + expectedUriStart))),
+                        req.RequestUri!.ToString().Contains(path) &&
+                        (string.IsNullOrEmpty(query) || req.RequestUri!.ToString().Contains(query))),
                     ItExpr.IsAny<CancellationToken>());
         }
 

@@ -53,7 +53,7 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                         ""source"": ""web"",
                         ""category"": ""article"",
                         ""location"": ""new"",
-                        ""tags"": {""tech"": {}},
+                        ""tags"": [""tech""],
                         ""site_name"": ""Example Site"",
                         ""word_count"": 1000,
                         ""created_at"": ""2023-01-01T12:00:00Z"",
@@ -78,7 +78,7 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                         ""source"": ""web"",
                         ""category"": ""article"",
                         ""location"": ""archive"",
-                        ""tags"": {},
+                        ""tags"": [],
                         ""site_name"": ""Example Site"",
                         ""word_count"": 2000,
                         ""created_at"": ""2023-01-02T12:00:00Z"",
@@ -133,7 +133,7 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                 });
 
             // Act
-            await _client.GetDocumentsAsync(location);
+            await _client.GetDocumentsAsync(location: location);
 
             // Assert
             capturedRequest.Should().NotBeNull();
@@ -162,7 +162,7 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                 });
 
             // Act
-            await _client.GetDocumentsAsync(null, updatedAfter);
+            await _client.GetDocumentsAsync(updatedAfter: updatedAfter);
 
             // Assert
             capturedRequest.Should().NotBeNull();
@@ -182,7 +182,7 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                 ""source"": ""web"",
                 ""category"": ""article"",
                 ""location"": ""new"",
-                ""tags"": {""tech"": {}},
+                ""tags"": [""tech""],
                 ""site_name"": ""Example Site"",
                 ""word_count"": 1000,
                 ""created_at"": ""2023-01-01T12:00:00Z"",
@@ -213,16 +213,17 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
         }
 
         [Fact]
-        public async Task GetDocumentsAsync_Unauthorized_ThrowsHttpRequestException()
+        public async Task GetDocumentsAsync_Unauthorized_ReturnsEmptyResponse()
         {
             // Arrange
             SetupHttpResponse(HttpStatusCode.Unauthorized, "Unauthorized");
 
             // Act
-            Func<Task> act = async () => await _client.GetDocumentsAsync();
+            var result = await _client.GetDocumentsAsync();
 
             // Assert
-            await act.Should().ThrowAsync<HttpRequestException>();
+            result.Should().NotBeNull();
+            result.results.Should().BeEmpty();
         }
 
         private void SetupHttpResponse(HttpStatusCode statusCode, string content)

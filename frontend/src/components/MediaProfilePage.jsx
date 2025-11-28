@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import {
     Box, Typography, Button, Card, CardContent, CardMedia,
-    Chip, Divider, Paper, Link, IconButton,
+    Chip, Divider, Paper, Link, IconButton, Fab,
     Dialog, DialogTitle, DialogContent, DialogActions,
     List, ListItem, ListItemText, Collapse, Snackbar, Alert,
     CircularProgress, Accordion, AccordionSummary, AccordionDetails
@@ -34,6 +36,9 @@ function MediaProfilePage() {
 
   const { id } = useParams();
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -366,86 +371,162 @@ function MediaProfilePage() {
       display: 'flex', 
       justifyContent: 'center', 
       alignItems: 'flex-start',
-      py: 4,
-      px: 2
+      py: { xs: 2, sm: 4 },
+      px: { xs: 1, sm: 2 }
     }}>
       <Box sx={{ 
         width: '100%',
         maxWidth: '900px',
         backgroundColor: 'background.paper',
-        borderRadius: '16px',
-        p: 4,
+        borderRadius: { xs: '8px', sm: '16px' },
+        p: { xs: 2, sm: 3, md: 4 },
         boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
       }}>
         {/* Header with back button and edit button */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Box sx={{ 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'flex-start', sm: 'center' }, 
+          justifyContent: 'space-between', 
+          gap: { xs: 2, sm: 0 },
+          mb: 3 
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
             <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
               <ArrowBack />
             </IconButton>
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+            <Typography 
+              variant="h4" 
+              component="h1" 
+              sx={{ 
+                fontWeight: 'bold',
+                fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
+              }}
+            >
               Media Profile
             </Typography>
           </Box>
 
-          <Button
-            onClick={() => navigate(`/media/${id}/edit`)}
-            startIcon={<Edit />}
-            variant="contained"
-            size="large"
-          >
-            Edit Media
-          </Button>
+          {!isMobile && (
+            <Button
+              onClick={() => navigate(`/media/${id}/edit`)}
+              startIcon={<Edit />}
+              variant="contained"
+              size={isTablet ? "medium" : "large"}
+            >
+              Edit Media
+            </Button>
+          )}
         </Box>
 
         <Card sx={{ overflow: 'hidden', borderRadius: 2 }}>
-          <CardContent sx={{ p: 4 }}>
-            {/* Main content with thumbnail on the right */}
-            <Box sx={{ display: 'flex', gap: 4, alignItems: 'flex-start' }}>
-              {/* Left side - Media information */}
-              <Box sx={{ flex: 1 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+            {/* Main content with responsive layout */}
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', md: 'row' },
+              gap: { xs: 3, md: 4 }, 
+              alignItems: { xs: 'center', md: 'flex-start' }
+            }}>
+              {/* Media information */}
+              <Box sx={{ flex: 1, width: '100%', order: { xs: 2, md: 1 } }}>
                 {/* Title and Type */}
                 <Box sx={{ mb: 3 }}>
-                  <Typography variant="h3" component="h2" gutterBottom sx={{ fontWeight: 'bold', fontSize: '2.5rem' }}>
+                  <Typography 
+                    variant="h3" 
+                    component="h2" 
+                    gutterBottom 
+                    sx={{ 
+                      fontWeight: 'bold', 
+                      fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' },
+                      textAlign: { xs: 'center', md: 'left' }
+                    }}
+                  >
                     {mediaItem.title || 'Untitled Media'}
                   </Typography>
                   
                   {/* Author for books */}
                   {mediaItem.mediaType === 'Book' && mediaItem.author && (
-                    <Typography variant="h5" component="h3" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'normal' }}>
+                    <Typography 
+                      variant="h5" 
+                      component="h3" 
+                      sx={{ 
+                        mb: 2, 
+                        color: 'text.secondary', 
+                        fontWeight: 'normal',
+                        fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' },
+                        textAlign: { xs: 'center', md: 'left' }
+                      }}
+                    >
                       by {mediaItem.author}
                     </Typography>
                   )}
                   
                   {/* Author for articles */}
                   {mediaItem.mediaType === 'Article' && mediaItem.author && (
-                    <Typography variant="h5" component="h3" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'normal' }}>
+                    <Typography 
+                      variant="h5" 
+                      component="h3" 
+                      sx={{ 
+                        mb: 2, 
+                        color: 'text.secondary', 
+                        fontWeight: 'normal',
+                        fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' },
+                        textAlign: { xs: 'center', md: 'left' }
+                      }}
+                    >
                       by {mediaItem.author}
                     </Typography>
                   )}
                   
                   {/* Director for movies */}
                   {mediaItem.mediaType === 'Movie' && mediaItem.director && (
-                    <Typography variant="h5" component="h3" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'normal' }}>
+                    <Typography 
+                      variant="h5" 
+                      component="h3" 
+                      sx={{ 
+                        mb: 2, 
+                        color: 'text.secondary', 
+                        fontWeight: 'normal',
+                        fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' },
+                        textAlign: { xs: 'center', md: 'left' }
+                      }}
+                    >
                       Directed by {mediaItem.director}
                     </Typography>
                   )}
                   
                   {/* Creator for TV shows */}
                   {mediaItem.mediaType === 'TVShow' && mediaItem.creator && (
-                    <Typography variant="h5" component="h3" sx={{ mb: 2, color: 'text.secondary', fontWeight: 'normal' }}>
+                    <Typography 
+                      variant="h5" 
+                      component="h3" 
+                      sx={{ 
+                        mb: 2, 
+                        color: 'text.secondary', 
+                        fontWeight: 'normal',
+                        fontSize: { xs: '1.1rem', sm: '1.3rem', md: '1.5rem' },
+                        textAlign: { xs: 'center', md: 'left' }
+                      }}
+                    >
                       Created by {mediaItem.creator}
                     </Typography>
                   )}
                   
-                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    gap: 1, 
+                    flexWrap: 'wrap', 
+                    mb: 2,
+                    justifyContent: { xs: 'center', md: 'flex-start' }
+                  }}>
                     <Chip
                       label={mediaItem.mediaType || 'Unknown'}
                       sx={{
                         backgroundColor: getMediaTypeColor(mediaItem.mediaType),
                         color: 'white',
                         fontWeight: 'bold',
-                        fontSize: '1rem'
+                        fontSize: { xs: '0.875rem', sm: '1rem' }
                       }}
                     />
                     {/* Podcast Type Display */}
@@ -456,7 +537,7 @@ function MediaProfilePage() {
                           backgroundColor: 'rgba(255, 255, 255, 0.2)',
                           color: 'white',
                           fontWeight: 'bold',
-                          fontSize: '1rem'
+                          fontSize: { xs: '0.875rem', sm: '1rem' }
                         }}
                       />
                     )}
@@ -467,7 +548,7 @@ function MediaProfilePage() {
                           backgroundColor: getStatusColor(mediaItem.status),
                           color: 'white',
                           fontWeight: 'bold',
-                          fontSize: '1rem'
+                          fontSize: { xs: '0.875rem', sm: '1rem' }
                         }}
                       />
                     )}
@@ -636,14 +717,23 @@ function MediaProfilePage() {
                 </Box>
               </Box>
 
-              {/* Right side - Thumbnail and dates */}
-              <Box sx={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {/* Thumbnail and dates - appears above content on mobile */}
+              <Box sx={{ 
+                flexShrink: 0, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center',
+                order: { xs: 1, md: 2 },
+                width: { xs: '100%', md: 'auto' }
+              }}>
                 {mediaItem.thumbnail && (
                   <CardMedia
                     component="img"
                     sx={{ 
-                      width: 180, 
-                      height: 270, 
+                      width: { xs: '100%', sm: 250, md: 180 },
+                      maxWidth: { xs: 300, sm: 250, md: 180 },
+                      height: { xs: 'auto', sm: 375, md: 270 },
+                      aspectRatio: { xs: '2/3', sm: 'auto' },
                       objectFit: 'cover',
                       borderRadius: 1,
                       boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
@@ -658,9 +748,20 @@ function MediaProfilePage() {
                 )}
                 
                 {/* Date Information */}
-                <Box sx={{ textAlign: 'center', minWidth: 180 }}>
+                <Box sx={{ 
+                  textAlign: 'center', 
+                  width: '100%',
+                  minWidth: { sm: 180 }
+                }}>
                   {mediaItem.dateAdded && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      sx={{ 
+                        mb: 0.5,
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                      }}
+                    >
                       <strong>Added:</strong> {new Date(mediaItem.dateAdded).toLocaleDateString('en-US', { 
                         month: '2-digit', 
                         day: '2-digit', 
@@ -669,7 +770,13 @@ function MediaProfilePage() {
                     </Typography>
                   )}
                   {mediaItem.dateCompleted && (
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary"
+                      sx={{ 
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                      }}
+                    >
                       <strong>Completed:</strong> {new Date(mediaItem.dateCompleted).toLocaleDateString('en-US', { 
                         month: '2-digit', 
                         day: '2-digit', 
@@ -685,8 +792,15 @@ function MediaProfilePage() {
 
         {/* Media Type Specific Properties Section */}
         <Card sx={{ mt: 3, overflow: 'hidden', borderRadius: 2 }}>
-          <CardContent sx={{ p: 4 }}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3 }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+            <Typography 
+              variant="h5" 
+              sx={{ 
+                fontWeight: 'bold', 
+                mb: 3,
+                fontSize: { xs: '1.25rem', sm: '1.5rem' }
+              }}
+            >
               {mediaItem.mediaType} Details
             </Typography>
             
@@ -694,39 +808,59 @@ function MediaProfilePage() {
             {mediaItem.mediaType === 'Podcast' && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {mediaItem.podcastType && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Type:</strong>
                     </Typography>
-                    <Typography variant="body1">
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {mediaItem.podcastType === 'Series' || mediaItem.podcastType === 0 ? 'Podcast Series' : 'Podcast Episode'}
                     </Typography>
                   </Box>
                 )}
                 
                 {mediaItem.durationInSeconds !== undefined && mediaItem.durationInSeconds !== null && mediaItem.durationInSeconds > 0 && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Duration:</strong>
                     </Typography>
-                    <Typography variant="body1">
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {Math.floor(mediaItem.durationInSeconds / 60)}:{(mediaItem.durationInSeconds % 60).toString().padStart(2, '0')}
                     </Typography>
                   </Box>
                 )}
                 
                 {mediaItem.publisher && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Publisher:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.publisher}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.publisher}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.audioLink && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Audio Link:</strong>
                     </Typography>
                     <Link
@@ -736,6 +870,7 @@ function MediaProfilePage() {
                       sx={{ 
                         color: '#ffffff',
                         textDecoration: 'none',
+                        fontSize: { xs: '0.9rem', sm: '1rem' },
                         '&:hover': { 
                           textDecoration: 'underline',
                           color: '#e3f2fd'
@@ -749,11 +884,16 @@ function MediaProfilePage() {
                 )}
                 
                 {mediaItem.releaseDate && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Release Date:</strong>
                     </Typography>
-                    <Typography variant="body1">
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {new Date(mediaItem.releaseDate).toLocaleDateString('en-US', { 
                         year: 'numeric', 
                         month: 'long', 
@@ -769,47 +909,72 @@ function MediaProfilePage() {
             {mediaItem.mediaType === 'Book' && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {mediaItem.isbn && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>ISBN:</strong>
                     </Typography>
-                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.isbn}</Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.isbn}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.asin && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>ASIN:</strong>
                     </Typography>
-                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.asin}</Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.asin}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.format && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Format:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.format}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.format}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.partOfSeries !== undefined && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Part of Series:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.partOfSeries ? 'Yes' : 'No'}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.partOfSeries ? 'Yes' : 'No'}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.goodreadsRating && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Goodreads Rating:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.goodreadsRating} / 5</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.goodreadsRating} / 5</Typography>
                   </Box>
                 )}
               </Box>
@@ -819,112 +984,172 @@ function MediaProfilePage() {
             {mediaItem.mediaType === 'Movie' && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {mediaItem.director && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Director:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.director}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.director}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.cast && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Cast:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.cast}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.cast}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.releaseYear && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Release Year:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.releaseYear}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.releaseYear}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.runtimeMinutes && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Runtime:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.runtimeMinutes} minutes</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.runtimeMinutes} minutes</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.mpaaRating && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>MPAA Rating:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.mpaaRating}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.mpaaRating}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.tmdbRating && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>TMDB Rating:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.tmdbRating}/10</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.tmdbRating}/10</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.imdbId && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>IMDB ID:</strong>
                     </Typography>
-                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.imdbId}</Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.imdbId}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.tmdbId && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>TMDB ID:</strong>
                     </Typography>
-                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.tmdbId}</Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.tmdbId}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.tagline && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Tagline:</strong>
                     </Typography>
-                    <Typography variant="body1" sx={{ fontStyle: 'italic' }}>"{mediaItem.tagline}"</Typography>
+                    <Typography variant="body1" sx={{ fontStyle: 'italic', fontSize: { xs: '0.9rem', sm: '1rem' } }}>"{mediaItem.tagline}"</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.homepage && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Homepage:</strong>
                     </Typography>
-                    <Link href={mediaItem.homepage} target="_blank" rel="noopener noreferrer">
+                    <Link href={mediaItem.homepage} target="_blank" rel="noopener noreferrer" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {mediaItem.homepage}
                     </Link>
                   </Box>
                 )}
                 
                 {mediaItem.originalLanguage && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Original Language:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.originalLanguage}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.originalLanguage}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.originalTitle && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Original Title:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.originalTitle}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.originalTitle}</Typography>
                   </Box>
                 )}
               </Box>
@@ -934,122 +1159,187 @@ function MediaProfilePage() {
             {mediaItem.mediaType === 'TVShow' && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {mediaItem.creator && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Creator:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.creator}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.creator}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.cast && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Cast:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.cast}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.cast}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.firstAirYear && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>First Air Year:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.firstAirYear}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.firstAirYear}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.lastAirYear && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Last Air Year:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.lastAirYear}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.lastAirYear}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.numberOfSeasons && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Seasons:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.numberOfSeasons}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.numberOfSeasons}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.numberOfEpisodes && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Episodes:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.numberOfEpisodes}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.numberOfEpisodes}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.contentRating && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Content Rating:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.contentRating}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.contentRating}</Typography>
                   </Box>
                 )}
                 
                 
                 {mediaItem.tmdbRating && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>TMDB Rating:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.tmdbRating}/10</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.tmdbRating}/10</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.tmdbId && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>TMDB ID:</strong>
                     </Typography>
-                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.tmdbId}</Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.tmdbId}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.tagline && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Tagline:</strong>
                     </Typography>
-                    <Typography variant="body1" sx={{ fontStyle: 'italic' }}>"{mediaItem.tagline}"</Typography>
+                    <Typography variant="body1" sx={{ fontStyle: 'italic', fontSize: { xs: '0.9rem', sm: '1rem' } }}>"{mediaItem.tagline}"</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.homepage && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Homepage:</strong>
                     </Typography>
-                    <Link href={mediaItem.homepage} target="_blank" rel="noopener noreferrer">
+                    <Link href={mediaItem.homepage} target="_blank" rel="noopener noreferrer" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {mediaItem.homepage}
                     </Link>
                   </Box>
                 )}
                 
                 {mediaItem.originalLanguage && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Original Language:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.originalLanguage}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.originalLanguage}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.originalName && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Original Name:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.originalName}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.originalName}</Typography>
                   </Box>
                 )}
               </Box>
@@ -1059,20 +1349,30 @@ function MediaProfilePage() {
             {mediaItem.mediaType === 'Video' && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {mediaItem.platform && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Platform:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.platform}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.platform}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.videoType !== undefined && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Video Type:</strong>
                     </Typography>
-                    <Typography variant="body1">
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {mediaItem.videoType === 'Series' || mediaItem.videoType === 0 ? 'Series' : 
                        mediaItem.videoType === 'Episode' || mediaItem.videoType === 1 ? 'Episode' : 
                        mediaItem.videoType === 'Channel' || mediaItem.videoType === 2 ? 'Channel' : 
@@ -1082,8 +1382,13 @@ function MediaProfilePage() {
                 )}
                 
                 {mediaItem.channel && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Channel:</strong>
                     </Typography>
                     <Link
@@ -1093,6 +1398,7 @@ function MediaProfilePage() {
                       sx={{ 
                         textAlign: 'left',
                         cursor: 'pointer',
+                        fontSize: { xs: '0.9rem', sm: '1rem' },
                         '&:hover': { 
                           textDecoration: 'underline',
                           color: 'primary.light'
@@ -1105,7 +1411,7 @@ function MediaProfilePage() {
                           component="span" 
                           variant="body2" 
                           color="text.secondary"
-                          sx={{ ml: 1 }}
+                          sx={{ ml: 1, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
                         >
                           ({(mediaItem.channel.subscriberCount / 1000000).toFixed(1)}M subscribers)
                         </Typography>
@@ -1115,11 +1421,16 @@ function MediaProfilePage() {
                 )}
                 
                 {mediaItem.lengthInSeconds !== undefined && mediaItem.lengthInSeconds !== null && mediaItem.lengthInSeconds > 0 && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Duration:</strong>
                     </Typography>
-                    <Typography variant="body1">
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {Math.floor(mediaItem.lengthInSeconds / 3600) > 0 && `${Math.floor(mediaItem.lengthInSeconds / 3600)}:`}
                       {Math.floor((mediaItem.lengthInSeconds % 3600) / 60).toString().padStart(2, '0')}:
                       {(mediaItem.lengthInSeconds % 60).toString().padStart(2, '0')}
@@ -1128,20 +1439,30 @@ function MediaProfilePage() {
                 )}
                 
                 {mediaItem.externalId && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>External ID:</strong>
                     </Typography>
-                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.externalId}</Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.externalId}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.parentVideoId && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '120px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Parent Video ID:</strong>
                     </Typography>
-                    <Typography variant="body1" sx={{ fontFamily: 'monospace' }}>{mediaItem.parentVideoId}</Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.parentVideoId}</Typography>
                   </Box>
                 )}
               </Box>
@@ -1151,29 +1472,44 @@ function MediaProfilePage() {
             {mediaItem.mediaType === 'Article' && (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {mediaItem.author && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '180px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Author:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.author}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.author}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.publication && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '180px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Publication:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.publication}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.publication}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.publicationDate && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '180px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Publication Date:</strong>
                     </Typography>
-                    <Typography variant="body1">
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {new Date(mediaItem.publicationDate).toLocaleDateString('en-US', { 
                         year: 'numeric', 
                         month: 'long', 
@@ -1184,28 +1520,43 @@ function MediaProfilePage() {
                 )}
                 
                 {mediaItem.estimatedReadingTimeMinutes > 0 && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '180px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Est. Reading Time:</strong>
                     </Typography>
-                    <Typography variant="body1">
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {mediaItem.estimatedReadingTimeMinutes} {mediaItem.estimatedReadingTimeMinutes === 1 ? 'minute' : 'minutes'}
                     </Typography>
                   </Box>
                 )}
                 
                 {mediaItem.wordCount > 0 && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '180px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Word Count:</strong>
                     </Typography>
-                    <Typography variant="body1">{mediaItem.wordCount.toLocaleString()}</Typography>
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>{mediaItem.wordCount.toLocaleString()}</Typography>
                   </Box>
                 )}
                 
                 {mediaItem.isStarred && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '180px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Starred:</strong>
                     </Typography>
                     <Star sx={{ color: '#FFD700', fontSize: 20 }} />
@@ -1213,11 +1564,16 @@ function MediaProfilePage() {
                 )}
                 
                 {mediaItem.savedToInstapaperDate && (
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body1" sx={{ mr: 1, minWidth: '180px' }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 0.5, sm: 0 }
+                  }}>
+                    <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '180px' }, fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       <strong>Saved to Instapaper:</strong>
                     </Typography>
-                    <Typography variant="body1">
+                    <Typography variant="body1" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {new Date(mediaItem.savedToInstapaperDate).toLocaleDateString('en-US', { 
                         year: 'numeric', 
                         month: 'long', 
@@ -1252,26 +1608,38 @@ function MediaProfilePage() {
               id="related-notes-header"
               sx={{
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                px: { xs: 2, sm: 3 },
                 '&:hover': {
                   backgroundColor: 'rgba(255, 255, 255, 0.1)'
                 }
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Notes sx={{ mr: 1, color: '#ffffff' }} />
-                <Typography variant="h6" sx={{ fontWeight: 'bold', color: '#ffffff' }}>
+                <Notes sx={{ mr: 1, color: '#ffffff', fontSize: { xs: 20, sm: 24 } }} />
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    color: '#ffffff',
+                    fontSize: { xs: '1rem', sm: '1.25rem' }
+                  }}
+                >
                   Related Notes
                 </Typography>
               </Box>
             </AccordionSummary>
-            <AccordionDetails sx={{ backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
+            <AccordionDetails sx={{ 
+              backgroundColor: 'rgba(255, 255, 255, 0.02)',
+              p: { xs: 2, sm: 3 }
+            }}>
               {mediaItem.relatedNotes && mediaItem.relatedNotes.trim() ? (
                 <Typography 
                   variant="body1" 
                   sx={{ 
                     color: '#ffffff',
                     whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word'
+                    wordBreak: 'break-word',
+                    fontSize: { xs: '0.9rem', sm: '1rem' }
                   }}
                 >
                   {mediaItem.relatedNotes}
@@ -1281,7 +1649,8 @@ function MediaProfilePage() {
                   variant="body2" 
                   sx={{ 
                     color: 'text.secondary',
-                    fontStyle: 'italic'
+                    fontStyle: 'italic',
+                    fontSize: { xs: '0.85rem', sm: '0.875rem' }
                   }}
                 >
                   No notes added
@@ -1293,17 +1662,36 @@ function MediaProfilePage() {
 
         {/* Mixlists Section */}
         <Card sx={{ mt: 3, overflow: 'hidden', borderRadius: 2 }}>
-          <CardContent sx={{ p: 4 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+          <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between', 
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              gap: { xs: 2, sm: 0 },
+              mb: 3 
+            }}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 'bold',
+                  fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                }}
+              >
                 Mixlists
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: { xs: 'column', sm: 'row' },
+                gap: 1,
+                width: { xs: '100%', sm: 'auto' }
+              }}>
                 <Button
                   variant="outlined"
                   size="small"
                   startIcon={<PlaylistAdd />}
                   onClick={() => setAddToMixlistDialog(true)}
+                  fullWidth={isMobile}
                   sx={{ 
                     borderColor: 'white',
                     color: 'white',
@@ -1319,6 +1707,7 @@ function MediaProfilePage() {
                   variant="contained"
                   size="small"
                   onClick={handleCreateNewMixlist}
+                  fullWidth={isMobile}
                   sx={{ 
                     backgroundColor: 'white',
                     color: 'black',
@@ -1340,15 +1729,25 @@ function MediaProfilePage() {
                   sx={{ 
                     display: 'flex', 
                     gap: 2, 
-                    overflow: 'hidden',
-                    scrollBehavior: 'smooth'
+                    overflowX: 'auto',
+                    overflowY: 'hidden',
+                    scrollBehavior: 'smooth',
+                    pb: 1,
+                    '&::-webkit-scrollbar': {
+                      height: '8px'
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                      backgroundColor: 'rgba(255,255,255,0.3)',
+                      borderRadius: '4px'
+                    }
                   }}
                 >
                   {currentMixlists.map((mixlist, index) => (
                     <Card 
                       key={mixlist.id} 
                       sx={{ 
-                        minWidth: 280,
+                        minWidth: { xs: '85%', sm: 280 },
+                        maxWidth: { xs: '85%', sm: 'none' },
                         flexShrink: 0,
                         cursor: 'pointer',
                         transition: 'transform 0.2s ease-in-out',
@@ -1359,12 +1758,26 @@ function MediaProfilePage() {
                       }}
                       onClick={() => navigate(`/mixlist/${mixlist.id}`)}
                     >
-                      <CardContent sx={{ p: 3 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>
+                      <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                        <Typography 
+                          variant="h6" 
+                          sx={{ 
+                            fontWeight: 'bold', 
+                            mb: 1,
+                            fontSize: { xs: '1rem', sm: '1.25rem' }
+                          }}
+                        >
                           {mixlist.name || `Mixlist ${mixlist.id}`}
                         </Typography>
                         {mixlist.description && (
-                          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                          <Typography 
+                            variant="body2" 
+                            color="text.secondary" 
+                            sx={{ 
+                              mb: 2,
+                              fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                            }}
+                          >
                             {mixlist.description}
                           </Typography>
                         )}
@@ -1399,15 +1812,28 @@ function MediaProfilePage() {
               mt: 3,
               backgroundColor: 'rgba(255, 255, 255, 0.05)',
               backdropFilter: 'blur(10px)',
-              borderRadius: '16px',
+              borderRadius: { xs: '8px', sm: '16px' },
               boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
               border: '1px solid rgba(255, 255, 255, 0.1)'
             }}
           >
-            <CardContent sx={{ p: 4 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <Notes sx={{ fontSize: 32, mr: 1, color: '#FFD700' }} />
-                <Typography variant="h5" sx={{ fontWeight: 'bold', color: '#ffffff' }}>
+            <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                mb: 3,
+                flexWrap: 'wrap',
+                gap: 1
+              }}>
+                <Notes sx={{ fontSize: { xs: 24, sm: 32 }, mr: 1, color: '#FFD700' }} />
+                <Typography 
+                  variant="h5" 
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    color: '#ffffff',
+                    fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                  }}
+                >
                   Highlights
                 </Typography>
                 {!highlightsLoading && highlights.length > 0 && (
@@ -1415,7 +1841,7 @@ function MediaProfilePage() {
                     label={highlights.length}
                     size="small"
                     sx={{
-                      ml: 2,
+                      ml: { xs: 0, sm: 2 },
                       backgroundColor: 'rgba(255, 215, 0, 0.2)',
                       color: '#FFD700',
                       fontWeight: 'bold'
@@ -1438,15 +1864,15 @@ function MediaProfilePage() {
                       key={highlight.id || index}
                       elevation={2}
                       sx={{
-                        p: 3,
+                        p: { xs: 2, sm: 3 },
                         backgroundColor: 'rgba(255, 255, 255, 0.03)',
                         border: '1px solid rgba(255, 215, 0, 0.2)',
-                        borderLeft: '4px solid #FFD700',
+                        borderLeft: { xs: '3px solid #FFD700', sm: '4px solid #FFD700' },
                         borderRadius: 2,
                         transition: 'all 0.2s ease',
                         '&:hover': {
                           backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                          transform: 'translateX(4px)',
+                          transform: { xs: 'none', sm: 'translateX(4px)' },
                           boxShadow: '0 4px 12px rgba(255, 215, 0, 0.2)'
                         }
                       }}
@@ -1454,20 +1880,20 @@ function MediaProfilePage() {
                       <Typography
                         variant="body1"
                         sx={{
-                          fontSize: '1.05rem',
+                          fontSize: { xs: '0.95rem', sm: '1.05rem' },
                           lineHeight: 1.7,
                           color: '#ffffff',
                           mb: 2,
                           fontStyle: 'italic',
                           '&::before': {
                             content: '"""',
-                            fontSize: '1.5rem',
+                            fontSize: { xs: '1.2rem', sm: '1.5rem' },
                             color: '#FFD700',
                             marginRight: '0.5rem'
                           },
                           '&::after': {
                             content: '"""',
-                            fontSize: '1.5rem',
+                            fontSize: { xs: '1.2rem', sm: '1.5rem' },
                             color: '#FFD700',
                             marginLeft: '0.5rem'
                           }
@@ -1480,7 +1906,7 @@ function MediaProfilePage() {
                         <Box
                           sx={{
                             mt: 2,
-                            p: 2,
+                            p: { xs: 1.5, sm: 2 },
                             backgroundColor: 'rgba(100, 150, 255, 0.1)',
                             borderLeft: '3px solid #6496FF',
                             borderRadius: 1
@@ -1491,7 +1917,7 @@ function MediaProfilePage() {
                             sx={{
                               color: '#B0C4DE',
                               fontStyle: 'normal',
-                              fontSize: '0.95rem'
+                              fontSize: { xs: '0.85rem', sm: '0.95rem' }
                             }}
                           >
                             <strong style={{ color: '#6496FF' }}>Note:</strong> {highlight.note}
@@ -1654,6 +2080,23 @@ function MediaProfilePage() {
             {snackbar.message}
           </Alert>
         </Snackbar>
+
+        {/* Floating Action Button for Edit on Mobile */}
+        {isMobile && (
+          <Fab
+            color="primary"
+            aria-label="edit"
+            onClick={() => navigate(`/media/${id}/edit`)}
+            sx={{
+              position: 'fixed',
+              bottom: 16,
+              right: 16,
+              zIndex: 1000
+            }}
+          >
+            <Edit />
+          </Fab>
+        )}
       </Box>
     </Box>
   );

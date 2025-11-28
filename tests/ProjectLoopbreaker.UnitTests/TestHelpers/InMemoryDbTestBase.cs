@@ -33,9 +33,15 @@ namespace ProjectLoopbreaker.UnitTests.TestHelpers
         /// </summary>
         public void Dispose()
         {
-            Context.Database.EnsureDeleted();
-            Context.Dispose();
+            try
+            {
+                Context.Database.EnsureDeleted();
+                Context.Dispose();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Context already disposed, ignore
+            }
         }
     }
 }
-

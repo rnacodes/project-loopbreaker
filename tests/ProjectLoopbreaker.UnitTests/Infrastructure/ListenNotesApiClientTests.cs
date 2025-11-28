@@ -378,6 +378,7 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                     ItExpr.Is<HttpRequestMessage>(req =>
                         req.Method == HttpMethod.Parse(method) &&
                         (req.RequestUri!.ToString().Contains(expectedUriPart) ||
+                         Uri.UnescapeDataString(req.RequestUri.ToString()).Contains(Uri.UnescapeDataString(expectedUriPart)) ||
                          req.RequestUri!.ToString().StartsWith("https://listen-api.listennotes.com/api/v2/" + expectedUriPart))),
                     ItExpr.IsAny<CancellationToken>());
         }

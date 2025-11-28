@@ -1,4 +1,5 @@
 using AutoFixture;
+using AutoFixture.Kernel;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.Shared.DTOs.TMDB;
@@ -7,148 +8,178 @@ namespace ProjectLoopbreaker.UnitTests.TestData
 {
     public static class TestDataFactory
     {
+        // Keep a minimal fixture instance for TMDB DTO creation only (used later in the file)
+        // All entity and DTO creation now uses manual factory methods to avoid circular reference issues
         private static readonly Fixture _fixture = new();
-
-        static TestDataFactory()
-        {
-            _fixture.Customize<BaseMediaItem>(c => c
-                .Without(x => x.Id)
-                .Without(x => x.Topics)
-                .Without(x => x.Genres)
-                .Without(x => x.Mixlists)
-                .Do(x => x.Id = Guid.NewGuid()));
-
-            _fixture.Customize<Book>(c => c
-                .Without(x => x.Id)
-                .Without(x => x.Topics)
-                .Without(x => x.Genres)
-                .Without(x => x.Mixlists)
-                .Do(x => x.Id = Guid.NewGuid()));
-
-            _fixture.Customize<Podcast>(c => c
-                .Without(x => x.Id)
-                .Without(x => x.Topics)
-                .Without(x => x.Genres)
-                .Without(x => x.Mixlists)
-                .Without(x => x.ParentPodcast)
-                .Without(x => x.Episodes)
-                .Do(x => x.Id = Guid.NewGuid()));
-
-            _fixture.Customize<Mixlist>(c => c
-                .Without(x => x.Id)
-                .Without(x => x.MediaItems)
-                .Do(x => x.Id = Guid.NewGuid()));
-
-            _fixture.Customize<Topic>(c => c
-                .Without(x => x.Id)
-                .Without(x => x.MediaItems)
-                .Do(x => x.Id = Guid.NewGuid()));
-
-            _fixture.Customize<Genre>(c => c
-                .Without(x => x.Id)
-                .Without(x => x.MediaItems)
-                .Do(x => x.Id = Guid.NewGuid()));
-        }
 
         public static Book CreateBook(string? title = null, string? author = null)
         {
-            var book = _fixture.Create<Book>();
-            if (title != null) book.Title = title;
-            if (author != null) book.Author = author;
-            return book;
+            return new Book
+            {
+                Id = Guid.NewGuid(),
+                Title = title ?? "Test Book",
+                Author = author ?? "Test Author",
+                MediaType = MediaType.Book,
+                Status = Status.Uncharted,
+                DateAdded = DateTime.UtcNow,
+                Topics = new List<Topic>(),
+                Genres = new List<Genre>(),
+                Mixlists = new List<Mixlist>(),
+                Highlights = new List<Highlight>()
+            };
         }
 
         public static Podcast CreatePodcastSeries(string? title = null, string? publisher = null)
         {
-            var podcast = _fixture.Create<Podcast>();
-            podcast.PodcastType = PodcastType.Series;
-            if (title != null) podcast.Title = title;
-            if (publisher != null) podcast.Publisher = publisher;
-            return podcast;
+            return new Podcast
+            {
+                Id = Guid.NewGuid(),
+                Title = title ?? "Test Podcast Series",
+                Publisher = publisher ?? "Test Publisher",
+                PodcastType = PodcastType.Series,
+                MediaType = MediaType.Podcast,
+                Status = Status.Uncharted,
+                DateAdded = DateTime.UtcNow,
+                Topics = new List<Topic>(),
+                Genres = new List<Genre>(),
+                Mixlists = new List<Mixlist>(),
+                Episodes = new List<Podcast>()
+            };
         }
 
         public static Podcast CreatePodcastEpisode(string? title = null, Guid? parentId = null)
         {
-            var podcast = _fixture.Create<Podcast>();
-            podcast.PodcastType = PodcastType.Episode;
-            if (title != null) podcast.Title = title;
-            if (parentId.HasValue) podcast.ParentPodcastId = parentId.Value;
-            return podcast;
+            return new Podcast
+            {
+                Id = Guid.NewGuid(),
+                Title = title ?? "Test Podcast Episode",
+                Publisher = "Test Publisher",
+                PodcastType = PodcastType.Episode,
+                MediaType = MediaType.Podcast,
+                Status = Status.Uncharted,
+                DateAdded = DateTime.UtcNow,
+                ParentPodcastId = parentId,
+                Topics = new List<Topic>(),
+                Genres = new List<Genre>(),
+                Mixlists = new List<Mixlist>(),
+                Episodes = new List<Podcast>()
+            };
         }
 
         public static Mixlist CreateMixlist(string? name = null)
         {
-            var mixlist = _fixture.Create<Mixlist>();
-            if (name != null) mixlist.Name = name;
-            return mixlist;
+            return new Mixlist
+            {
+                Id = Guid.NewGuid(),
+                Name = name ?? "Test Mixlist",
+                Description = "Test mixlist description",
+                DateCreated = DateTime.UtcNow,
+                MediaItems = new List<BaseMediaItem>()
+            };
         }
 
         public static Topic CreateTopic(string? name = null)
         {
-            var topic = _fixture.Create<Topic>();
-            if (name != null) topic.Name = name;
-            return topic;
+            return new Topic
+            {
+                Id = Guid.NewGuid(),
+                Name = name ?? "test topic",  // lowercase per project standards
+                MediaItems = new List<BaseMediaItem>()
+            };
         }
 
         public static Genre CreateGenre(string? name = null)
         {
-            var genre = _fixture.Create<Genre>();
-            if (name != null) genre.Name = name;
-            return genre;
+            return new Genre
+            {
+                Id = Guid.NewGuid(),
+                Name = name ?? "test genre",  // lowercase per project standards
+                MediaItems = new List<BaseMediaItem>()
+            };
         }
 
         public static CreateBookDto CreateBookDto(string? title = null, string? author = null)
         {
-            var dto = _fixture.Create<CreateBookDto>();
-            if (title != null) dto.Title = title;
-            if (author != null) dto.Author = author;
-            return dto;
+            return new CreateBookDto
+            {
+                Title = title ?? "Test Book",
+                Author = author ?? "Test Author",
+                MediaType = MediaType.Book,
+                Status = Status.Uncharted,
+                Format = BookFormat.Digital,
+                PartOfSeries = false,
+                Topics = Array.Empty<string>(),
+                Genres = Array.Empty<string>()
+            };
         }
 
         public static CreatePodcastDto CreatePodcastDto(string? title = null, PodcastType? type = null)
         {
-            var dto = _fixture.Create<CreatePodcastDto>();
-            if (title != null) dto.Title = title;
-            if (type.HasValue) dto.PodcastType = type.Value;
-            return dto;
+            return new CreatePodcastDto
+            {
+                Title = title ?? "Test Podcast",
+                Publisher = "Test Publisher",
+                PodcastType = type ?? PodcastType.Series,
+                MediaType = MediaType.Podcast,
+                Status = Status.Uncharted,
+                Topics = Array.Empty<string>(),
+                Genres = Array.Empty<string>()
+            };
         }
 
         public static CreateMixlistDto CreateMixlistDto(string? name = null)
         {
-            var dto = _fixture.Create<CreateMixlistDto>();
-            if (name != null) dto.Name = name;
-            return dto;
+            return new CreateMixlistDto
+            {
+                Name = name ?? "Test Mixlist",
+                Description = "Test mixlist description"
+            };
         }
 
         public static CreateTopicDto CreateTopicDto(string? name = null)
         {
-            var dto = _fixture.Create<CreateTopicDto>();
-            if (name != null) dto.Name = name;
-            return dto;
+            return new CreateTopicDto
+            {
+                Name = name ?? "test topic"  // lowercase per project standards
+            };
         }
 
         public static CreateGenreDto CreateGenreDto(string? name = null)
         {
-            var dto = _fixture.Create<CreateGenreDto>();
-            if (name != null) dto.Name = name;
-            return dto;
+            return new CreateGenreDto
+            {
+                Name = name ?? "test genre"  // lowercase per project standards
+            };
         }
 
         public static List<Book> CreateBooks(int count)
         {
-            return _fixture.CreateMany<Book>(count).ToList();
+            var books = new List<Book>();
+            for (int i = 0; i < count; i++)
+            {
+                books.Add(CreateBook($"Test Book {i + 1}", $"Test Author {i + 1}"));
+            }
+            return books;
         }
 
         public static List<Podcast> CreatePodcastSeries(int count)
         {
-            return _fixture.CreateMany<Podcast>(count)
-                .Select(p => { p.PodcastType = PodcastType.Series; return p; })
-                .ToList();
+            var podcasts = new List<Podcast>();
+            for (int i = 0; i < count; i++)
+            {
+                podcasts.Add(CreatePodcastSeries($"Test Podcast {i + 1}", $"Test Publisher {i + 1}"));
+            }
+            return podcasts;
         }
 
         public static List<Mixlist> CreateMixlists(int count)
         {
-            return _fixture.CreateMany<Mixlist>(count).ToList();
+            var mixlists = new List<Mixlist>();
+            for (int i = 0; i < count; i++)
+            {
+                mixlists.Add(CreateMixlist($"Test Mixlist {i + 1}"));
+            }
+            return mixlists;
         }
 
         // TMDB Test Data Factory Methods
@@ -250,38 +281,63 @@ namespace ProjectLoopbreaker.UnitTests.TestData
 
         public static Movie CreateMovie(string? title = null, int? releaseYear = null, string? tmdbId = null)
         {
-            var movie = _fixture.Create<Movie>();
-            if (title != null) movie.Title = title;
-            if (releaseYear.HasValue) movie.ReleaseYear = releaseYear.Value;
-            if (tmdbId != null) movie.TmdbId = tmdbId;
-            return movie;
+            return new Movie
+            {
+                Id = Guid.NewGuid(),
+                Title = title ?? "Test Movie",
+                ReleaseYear = releaseYear ?? 2020,
+                TmdbId = tmdbId ?? "12345",
+                MediaType = MediaType.Movie,
+                Status = Status.Uncharted,
+                DateAdded = DateTime.UtcNow,
+                Topics = new List<Topic>(),
+                Genres = new List<Genre>(),
+                Mixlists = new List<Mixlist>()
+            };
         }
 
         public static TvShow CreateTvShow(string? title = null, int? firstAirYear = null, string? tmdbId = null)
         {
-            var tvShow = _fixture.Create<TvShow>();
-            if (title != null) tvShow.Title = title;
-            if (firstAirYear.HasValue) tvShow.FirstAirYear = firstAirYear.Value;
-            if (tmdbId != null) tvShow.TmdbId = tmdbId;
-            return tvShow;
+            return new TvShow
+            {
+                Id = Guid.NewGuid(),
+                Title = title ?? "Test TV Show",
+                FirstAirYear = firstAirYear ?? 2020,
+                TmdbId = tmdbId ?? "12345",
+                MediaType = MediaType.TVShow,
+                Status = Status.Uncharted,
+                DateAdded = DateTime.UtcNow,
+                Topics = new List<Topic>(),
+                Genres = new List<Genre>(),
+                Mixlists = new List<Mixlist>()
+            };
         }
 
         public static CreateMovieDto CreateMovieDto(string? title = null, int? releaseYear = null)
         {
-            var dto = _fixture.Create<CreateMovieDto>();
-            dto.MediaType = MediaType.Movie;
-            if (title != null) dto.Title = title;
-            if (releaseYear.HasValue) dto.ReleaseYear = releaseYear.Value;
-            return dto;
+            return new CreateMovieDto
+            {
+                Title = title ?? "Test Movie",
+                ReleaseYear = releaseYear ?? 2020,
+                MediaType = MediaType.Movie,
+                Status = Status.Uncharted,
+                Topics = Array.Empty<string>(),
+                Genres = Array.Empty<string>()
+            };
         }
 
         public static CreateTvShowDto CreateTvShowDto(string? title = null, int? firstAirYear = null)
         {
-            var dto = _fixture.Create<CreateTvShowDto>();
-            dto.MediaType = MediaType.TVShow;
-            if (title != null) dto.Title = title;
-            if (firstAirYear.HasValue) dto.FirstAirYear = firstAirYear.Value;
-            return dto;
+            return new CreateTvShowDto
+            {
+                Title = title ?? "Test TV Show",
+                FirstAirYear = firstAirYear ?? 2020,
+                MediaType = MediaType.TVShow,
+                Status = Status.Uncharted,
+                Topics = Array.Empty<string>(),
+                Genres = Array.Empty<string>()
+            };
         }
     }
 }
+
