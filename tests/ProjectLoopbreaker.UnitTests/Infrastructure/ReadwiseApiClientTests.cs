@@ -80,7 +80,7 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                         ""highlighted_at"": ""2023-01-01T12:00:00Z"",
                         ""url"": ""https://readwise.io/highlights/1"",
                         ""book_id"": 123,
-                        ""tags"": [{""name"": ""important""}]
+                        ""tags"": [""important""]
                     },
                     {
                         ""id"": 2,

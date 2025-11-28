@@ -175,29 +175,34 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
             // Arrange
             var documentId = "doc-123";
             var responseJson = @"{
-                ""id"": ""doc-123"",
-                ""url"": ""https://example.com/article"",
-                ""title"": ""Test Article"",
-                ""author"": ""Test Author"",
-                ""source"": ""web"",
-                ""category"": ""article"",
-                ""location"": ""new"",
-                ""tags"": [""tech""],
-                ""site_name"": ""Example Site"",
-                ""word_count"": 1000,
-                ""created_at"": ""2023-01-01T12:00:00Z"",
-                ""updated_at"": ""2023-01-01T12:00:00Z"",
-                ""notes"": ""Test note"",
-                ""summary"": ""Test summary"",
-                ""image_url"": ""https://example.com/image.jpg"",
-                ""content"": ""<html><body>Full content here</body></html>"",
-                ""source_url"": ""https://example.com/article"",
-                ""published_date"": ""2023-01-01"",
-                ""first_opened_at"": ""2023-01-01T12:00:00Z"",
-                ""last_opened_at"": ""2023-01-01T12:00:00Z"",
-                ""reading_progress"": 0.5,
-                ""parent_id"": null,
-                ""reading_time_minutes"": 5
+                ""count"": 1,
+                ""results"": [
+                    {
+                        ""id"": ""doc-123"",
+                        ""url"": ""https://example.com/article"",
+                        ""title"": ""Test Article"",
+                        ""author"": ""Test Author"",
+                        ""source"": ""web"",
+                        ""category"": ""article"",
+                        ""location"": ""new"",
+                        ""tags"": [""tech""],
+                        ""site_name"": ""Example Site"",
+                        ""word_count"": 1000,
+                        ""created_at"": ""2023-01-01T12:00:00Z"",
+                        ""updated_at"": ""2023-01-01T12:00:00Z"",
+                        ""notes"": ""Test note"",
+                        ""summary"": ""Test summary"",
+                        ""image_url"": ""https://example.com/image.jpg"",
+                        ""content"": ""<html><body>Full content here</body></html>"",
+                        ""source_url"": ""https://example.com/article"",
+                        ""published_date"": ""2023-01-01"",
+                        ""first_opened_at"": ""2023-01-01T12:00:00Z"",
+                        ""last_opened_at"": ""2023-01-01T12:00:00Z"",
+                        ""reading_progress"": 0.5,
+                        ""parent_id"": null,
+                        ""reading_time_minutes"": 5
+                    }
+                ]
             }";
 
             SetupHttpResponse(HttpStatusCode.OK, responseJson);

@@ -27,9 +27,12 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
             // Reuse same token as Readwise API
             _apiToken = _configuration["ApiKeys:Readwise"];
 
-            _httpClient.BaseAddress = new Uri("https://readwise.io/api/v3/");
+            if (_httpClient.BaseAddress == null)
+            {
+                _httpClient.BaseAddress = new Uri("https://readwise.io/api/v3/");
+            }
             
-            if (!string.IsNullOrEmpty(_apiToken))
+            if (!string.IsNullOrEmpty(_apiToken) && _httpClient.DefaultRequestHeaders.Authorization == null)
             {
                 _httpClient.DefaultRequestHeaders.Authorization = 
                     new AuthenticationHeaderValue("Token", _apiToken);

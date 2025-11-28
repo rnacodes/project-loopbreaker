@@ -31,6 +31,14 @@ namespace ProjectLoopbreaker.UnitTests.Application
             _mockChannelService = new Mock<IYouTubeChannelService>();
             _mockLogger = new Mock<ILogger<YouTubeService>>();
 
+            _mockApiClient
+                .Setup(x => x.GetChannelByUsernameAsync(It.IsAny<string>()))
+                .ReturnsAsync((YouTubeChannelDto?)null);
+
+            _mockChannelService
+                .Setup(x => x.GetChannelByExternalIdAsync(It.IsAny<string>()))
+                .ReturnsAsync((YouTubeChannel?)null);
+
             _service = new YouTubeService(
                 _mockApiClient.Object,
                 _mockMappingService.Object,
@@ -162,6 +170,9 @@ namespace ProjectLoopbreaker.UnitTests.Application
                 .Setup(x => x.GetVideoDetailsAsync(videoId))
                 .ReturnsAsync(videoDto);
 
+            // Setup for channel service calls
+            _mockChannelService.Setup(x => x.GetChannelByExternalIdAsync(It.IsAny<string>())).ReturnsAsync((YouTubeChannel?)null);
+
             _mockMappingService
                 .Setup(x => x.MapVideoToEntity(videoDto))
                 .Returns(mappedVideo);
@@ -282,6 +293,10 @@ namespace ProjectLoopbreaker.UnitTests.Application
                 .Setup(x => x.GetVideosAsync(It.IsAny<List<string>>()))
                 .ReturnsAsync(videoDetails);
 
+            // Setup for AutoLinkChannelToVideo to prevent NullReferenceException
+            _mockChannelService.Setup(x => x.GetChannelByExternalIdAsync(It.IsAny<string>())).ReturnsAsync((YouTubeChannel?)null);
+            _mockChannelService.Setup(x => x.ImportChannelFromYouTubeAsync(It.IsAny<string>())).ReturnsAsync(new YouTubeChannel { Id = Guid.NewGuid(), Title = "Imported Channel", ChannelExternalId = "channel_id", MediaType = MediaType.Channel });
+
             _mockMappingService
                 .Setup(x => x.MapVideoToEntity(videoDetails[0]))
                 .Returns(mappedVideos[0]);
@@ -289,6 +304,10 @@ namespace ProjectLoopbreaker.UnitTests.Application
             _mockMappingService
                 .Setup(x => x.MapVideoToEntity(videoDetails[1]))
                 .Returns(mappedVideos[1]);
+
+            _mockMappingService
+                .Setup(x => x.MapPlaylistItemsToVideoEntities(It.IsAny<List<YouTubePlaylistItemDto>>(), It.IsAny<List<YouTubeVideoDto>>()))
+                .Returns(mappedVideos);
 
             _mockVideoService
                 .Setup(x => x.SaveVideoAsync(mappedVideos[0], true))
@@ -339,12 +358,12 @@ namespace ProjectLoopbreaker.UnitTests.Application
         public async Task ImportFromUrlAsync_WithVideoUrl_ShouldImportVideo()
         {
             // Arrange
-            var videoUrl = "https://www.youtube.com/watch?v=test_video_id";
-            var videoId = "test_video_id";
+            var videoId = "test_video1"; // Must be 11 chars for regex match
+            var videoUrl = $"https://www.youtube.com/watch?v={videoId}";
             var videoDto = new YouTubeVideoDto
             {
                 Id = videoId,
-                Snippet = new YouTubeVideoSnippetDto { Title = "Test Video" }
+                Snippet = new YouTubeVideoSnippetDto { Title = "Test Video", ChannelId = "channel_id" }
             };
             var mappedVideo = new Video { Title = "Test Video", MediaType = MediaType.Video, Platform = "YouTube" };
             var savedVideo = new Video { Id = Guid.NewGuid(), Title = "Test Video", MediaType = MediaType.Video, Platform = "YouTube" };
@@ -352,6 +371,10 @@ namespace ProjectLoopbreaker.UnitTests.Application
             _mockApiClient
                 .Setup(x => x.GetVideoDetailsAsync(videoId))
                 .ReturnsAsync(videoDto);
+
+            // Setup for channel service calls
+            _mockChannelService.Setup(x => x.GetChannelByExternalIdAsync(It.IsAny<string>())).ReturnsAsync((YouTubeChannel?)null);
+            _mockChannelService.Setup(x => x.ImportChannelFromYouTubeAsync(It.IsAny<string>())).ReturnsAsync(new YouTubeChannel { Id = Guid.NewGuid(), Title = "Imported Channel", ChannelExternalId = "channel_id", MediaType = MediaType.Channel });
 
             _mockMappingService
                 .Setup(x => x.MapVideoToEntity(videoDto))
@@ -380,7 +403,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             var exception = await Assert.ThrowsAsync<ArgumentException>(
                 () => _service.ImportFromUrlAsync(invalidUrl));
 
-            exception.Message.Should().Contain("Invalid YouTube URL");
+            exception.Message.Should().Contain("Unable to extract valid YouTube ID from URL");
         }
 
         #endregion

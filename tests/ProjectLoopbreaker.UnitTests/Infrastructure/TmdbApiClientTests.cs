@@ -380,6 +380,9 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
             var path = parts[0];
             var query = parts.Length > 1 ? parts[1] : string.Empty;
 
+            // Normalize query components for comparison (handles order differences)
+            var expectedQueryParams = query.Split('&').Where(x => !string.IsNullOrEmpty(x)).OrderBy(x => x).ToList();
+
             _mockHttpMessageHandler
                 .Protected()
                 .Verify(
@@ -388,8 +391,21 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                     ItExpr.Is<HttpRequestMessage>(req =>
                         req.Method.ToString() == method &&
                         req.RequestUri!.ToString().Contains(path) &&
-                        (string.IsNullOrEmpty(query) || req.RequestUri!.ToString().Contains(query))),
+                        CheckQueryParams(req.RequestUri!.Query, expectedQueryParams)),
                     ItExpr.IsAny<CancellationToken>());
+        }
+
+        private bool CheckQueryParams(string actualQuery, List<string> expectedQueryParams)
+        {
+            if (string.IsNullOrEmpty(actualQuery) && expectedQueryParams.Count == 0) return true;
+            if (string.IsNullOrEmpty(actualQuery)) return false;
+
+            var actualParams = actualQuery.TrimStart('?').Split('&').Where(x => !string.IsNullOrEmpty(x)).OrderBy(x => x).ToList();
+            
+            // Check if all expected params are present in actual params
+            return expectedQueryParams.All(expected => actualParams.Any(actual => 
+                string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase) || 
+                string.Equals(Uri.UnescapeDataString(actual), Uri.UnescapeDataString(expected), StringComparison.OrdinalIgnoreCase)));
         }
 
         #endregion
