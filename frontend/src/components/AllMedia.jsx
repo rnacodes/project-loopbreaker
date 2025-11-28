@@ -1,6 +1,3 @@
-//TODO: Make the multi-select buttons more mobile-friendly
-//TODO: Change color of non-active selection buttons to white outline
-//TODO: Change color of Cards/List viewer from dark purple outline to white
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import {
@@ -124,7 +121,7 @@ function AllMedia() {
   };
 
   const renderCardView = () => (
-    <Grid container spacing={3} sx={{ mt: 2 }}>
+    <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mt: { xs: 1, sm: 2 } }}>
       {mediaItems.map((item) => (
         <Grid item xs={12} sm={6} md={4} key={item.id}>
           <Card 
@@ -135,8 +132,11 @@ function AllMedia() {
               flexDirection: 'column',
               position: 'relative',
               '&:hover': {
-                transform: 'translateY(-2px)',
+                transform: { xs: 'none', sm: 'translateY(-2px)' },
                 boxShadow: 4
+              },
+              '&:active': {
+                transform: 'scale(0.98)'
               },
               transition: 'all 0.2s ease-in-out'
             }}
@@ -150,6 +150,8 @@ function AllMedia() {
                 }}
                 sx={{ 
                   bgcolor: 'background.paper',
+                  width: { xs: 40, sm: 42 },
+                  height: { xs: 40, sm: 42 },
                   '&:hover': { bgcolor: 'background.paper' }
                 }}
               />
@@ -160,23 +162,43 @@ function AllMedia() {
               sx={{ 
                 flexGrow: 1,
                 textDecoration: 'none',
-                pt: 6
+                pt: { xs: 7, sm: 6 },
+                p: { xs: 2, sm: 2 }
               }}
             >
-              <Typography variant="h6" component="div" gutterBottom>
+              <Typography 
+                variant="h6" 
+                component="div" 
+                gutterBottom
+                sx={{ fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' } }}
+              >
                 {item.title || item.Title}
               </Typography>
               <Chip 
                 label={item.mediaType || item.MediaType} 
                 size="small" 
-                sx={{ mb: 1 }}
+                sx={{ 
+                  mb: 1,
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                  height: { xs: '22px', sm: '24px' }
+                }}
               />
               {(item.rating || item.Rating) && (
-                <Typography variant="body2" sx={{ mb: 1 }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    mb: 1,
+                    fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                  }}
+                >
                   Rating: {item.rating || item.Rating}
                 </Typography>
               )}
-              <Typography variant="body2" color="text.secondary">
+              <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+              >
                 {item.status || item.Status || 'No status set'}
               </Typography>
               
@@ -190,7 +212,10 @@ function AllMedia() {
                       size="small"
                       color="primary"
                       variant="outlined"
-                      sx={{ fontSize: '0.7rem', height: '20px' }}
+                      sx={{ 
+                        fontSize: { xs: '0.65rem', sm: '0.7rem' }, 
+                        height: { xs: '18px', sm: '20px' } 
+                      }}
                     />
                   ))}
                   {(item.genres || item.Genres || []).map((genre, index) => (
@@ -200,7 +225,10 @@ function AllMedia() {
                       size="small"
                       color="secondary"
                       variant="outlined"
-                      sx={{ fontSize: '0.7rem', height: '20px' }}
+                      sx={{ 
+                        fontSize: { xs: '0.65rem', sm: '0.7rem' }, 
+                        height: { xs: '18px', sm: '20px' } 
+                      }}
                     />
                   ))}
                 </Box>
@@ -211,6 +239,7 @@ function AllMedia() {
                   variant="body2" 
                   sx={{ 
                     mt: 1,
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     display: '-webkit-box',
@@ -229,45 +258,89 @@ function AllMedia() {
   );
 
   const renderListView = () => (
-    <List sx={{ mt: 2 }}>
+    <List sx={{ mt: { xs: 1, sm: 2 } }}>
       {mediaItems.map((item, index) => (
         <React.Fragment key={item.id}>
           <ListItem 
             sx={{ 
               textDecoration: 'none',
+              px: { xs: 1, sm: 2 },
+              py: { xs: 1.5, sm: 2 },
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'flex-start', sm: 'center' },
               '&:hover': {
                 backgroundColor: 'action.hover'
+              },
+              '&:active': {
+                backgroundColor: 'action.selected'
               }
             }}
           >
             <Checkbox
               checked={selectedItems.has(item.id)}
               onChange={() => handleSelectItem(item.id)}
-              sx={{ mr: 2 }}
+              sx={{ 
+                mr: { xs: 0, sm: 2 },
+                mb: { xs: 1, sm: 0 },
+                width: { xs: 40, sm: 42 },
+                height: { xs: 40, sm: 42 }
+              }}
             />
             <ListItemText
               component={Link}
               to={`/media/${item.id}`}
-              sx={{ textDecoration: 'none', color: 'inherit' }}
+              sx={{ 
+                textDecoration: 'none', 
+                color: 'inherit',
+                flex: 1,
+                width: { xs: '100%', sm: 'auto' }
+              }}
               primary={
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                  <Typography variant="h6" component="div">
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'flex-start', sm: 'center' }, 
+                  gap: 1, 
+                  mb: 0.5 
+                }}>
+                  <Typography 
+                    variant="h6" 
+                    component="div"
+                    sx={{ fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' } }}
+                  >
                     {item.title || item.Title}
                   </Typography>
                   <Chip 
                     label={item.mediaType || item.MediaType} 
-                    size="small" 
+                    size="small"
+                    sx={{ 
+                      fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                      height: { xs: '22px', sm: '24px' }
+                    }}
                   />
                 </Box>
               }
               secondary={
                 <Box>
                   {(item.rating || item.Rating) && (
-                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        mb: 0.5,
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                      }}
+                    >
                       Rating: {item.rating || item.Rating}
                     </Typography>
                   )}
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                  <Typography 
+                    variant="body2" 
+                    color="text.secondary" 
+                    sx={{ 
+                      mb: 0.5,
+                      fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                    }}
+                  >
                     {item.status || item.Status || 'No status set'}
                   </Typography>
                   
@@ -281,7 +354,10 @@ function AllMedia() {
                           size="small"
                           color="primary"
                           variant="outlined"
-                          sx={{ fontSize: '0.7rem', height: '20px' }}
+                          sx={{ 
+                            fontSize: { xs: '0.65rem', sm: '0.7rem' }, 
+                            height: { xs: '18px', sm: '20px' } 
+                          }}
                         />
                       ))}
                       {(item.genres || item.Genres || []).map((genre, index) => (
@@ -291,7 +367,10 @@ function AllMedia() {
                           size="small"
                           color="secondary"
                           variant="outlined"
-                          sx={{ fontSize: '0.7rem', height: '20px' }}
+                          sx={{ 
+                            fontSize: { xs: '0.65rem', sm: '0.7rem' }, 
+                            height: { xs: '18px', sm: '20px' } 
+                          }}
                         />
                       ))}
                     </Box>
@@ -301,6 +380,7 @@ function AllMedia() {
                     <Typography 
                       variant="body2" 
                       sx={{ 
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         display: '-webkit-box',
@@ -314,8 +394,15 @@ function AllMedia() {
                 </Box>
               }
             />
-            <ListItemSecondaryAction>
-              <IconButton edge="end" color="primary">
+            <ListItemSecondaryAction sx={{ display: { xs: 'none', sm: 'block' } }}>
+              <IconButton 
+                edge="end" 
+                color="primary"
+                sx={{
+                  width: { sm: 44 },
+                  height: { sm: 44 }
+                }}
+              >
                 <OpenInNew />
               </IconButton>
             </ListItemSecondaryAction>
@@ -328,9 +415,19 @@ function AllMedia() {
 
   if (loading) {
     return (
-      <Container maxWidth="lg">
-        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-          <CircularProgress />
+      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
+        <Box sx={{ 
+          mt: { xs: 3, sm: 4 }, 
+          display: 'flex', 
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 2
+        }}>
+          <CircularProgress size={60} />
+          <Typography variant="h6" color="text.secondary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+            Loading media...
+          </Typography>
         </Box>
       </Container>
     );
@@ -338,12 +435,21 @@ function AllMedia() {
 
   if (error) {
     return (
-      <Container maxWidth="lg">
-        <Box sx={{ mt: 4, textAlign: 'center' }}>
-          <Typography variant="h6" color="error" gutterBottom>
+      <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
+        <Box sx={{ mt: { xs: 3, sm: 4 }, textAlign: 'center', px: 2 }}>
+          <Typography 
+            variant="h6" 
+            color="error" 
+            gutterBottom
+            sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+          >
             {error}
           </Typography>
-          <Button variant="contained" onClick={() => window.location.reload()}>
+          <Button 
+            variant="contained" 
+            onClick={() => window.location.reload()}
+            sx={{ minHeight: '48px', px: 3 }}
+          >
             Retry
           </Button>
         </Box>
@@ -355,26 +461,68 @@ function AllMedia() {
   const pageTitle = mediaType ? `${mediaType} Media` : 'All Media';
 
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ mt: 4 }}>
+    <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 3, md: 4 } }}>
+      <Box sx={{ mt: { xs: 2, sm: 3, md: 4 } }}>
         {/* Header with View Toggle */}
-        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ 
+          mb: { xs: 2, sm: 3 }, 
+          display: 'flex', 
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: { xs: 2, sm: 0 }
+        }}>
           <Box>
-            <Typography variant="h4" component="h1" gutterBottom>
+            <Typography 
+              variant="h4" 
+              component="h1" 
+              gutterBottom
+              sx={{ fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' } }}
+            >
               {pageTitle}
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography 
+              variant="body1" 
+              color="text.secondary"
+              sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}
+            >
               {mediaItems.length} media item{mediaItems.length !== 1 ? 's' : ''} found
               {selectedItems.size > 0 && ` (${selectedItems.size} selected)`}
             </Typography>
           </Box>
           
           {/* View Mode Toggle */}
-          <ButtonGroup variant="outlined" aria-label="view mode">
+          <ButtonGroup 
+            variant="outlined" 
+            aria-label="view mode"
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              '& .MuiButton-root': {
+                color: 'white',
+                borderColor: 'white',
+                '&:hover': {
+                  borderColor: 'white',
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)'
+                },
+                '&.MuiButton-contained': {
+                  color: 'background.default',
+                  backgroundColor: 'white',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)'
+                  }
+                }
+              }
+            }}
+          >
             <Button
               onClick={() => handleViewModeChange('card')}
               variant={viewMode === 'card' ? 'contained' : 'outlined'}
               startIcon={<ViewModule />}
+              sx={{ 
+                flex: { xs: 1, sm: 'initial' },
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                minHeight: '44px'
+              }}
             >
               Cards
             </Button>
@@ -382,6 +530,11 @@ function AllMedia() {
               onClick={() => handleViewModeChange('list')}
               variant={viewMode === 'list' ? 'contained' : 'outlined'}
               startIcon={<ViewList />}
+              sx={{ 
+                flex: { xs: 1, sm: 'initial' },
+                fontSize: { xs: '0.875rem', sm: '1rem' },
+                minHeight: '44px'
+              }}
             >
               List
             </Button>
@@ -395,19 +548,36 @@ function AllMedia() {
               mb: 2, 
               bgcolor: 'background.paper',
               borderRadius: 1,
-              px: 2,
-              py: 1,
+              px: { xs: 1, sm: 2 },
+              py: { xs: 1, sm: 1 },
               display: 'flex',
-              gap: 2,
-              justifyContent: 'space-between'
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: { xs: 1, sm: 2 },
+              justifyContent: 'space-between',
+              alignItems: { xs: 'stretch', sm: 'center' }
             }}
           >
-            <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: 1,
+              width: { xs: '100%', sm: 'auto' }
+            }}>
               <Button
                 variant="outlined"
                 size="small"
                 onClick={handleSelectAll}
                 startIcon={<CheckBox />}
+                sx={{
+                  color: 'white',
+                  borderColor: 'white',
+                  minHeight: '44px',
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                  '&:hover': {
+                    borderColor: 'white',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)'
+                  }
+                }}
               >
                 Select All
               </Button>
@@ -417,6 +587,20 @@ function AllMedia() {
                 onClick={handleDeselectAll}
                 startIcon={<CheckBoxOutlineBlank />}
                 disabled={selectedItems.size === 0}
+                sx={{
+                  color: 'white',
+                  borderColor: 'white',
+                  minHeight: '44px',
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                  '&:hover': {
+                    borderColor: 'white',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)'
+                  },
+                  '&.Mui-disabled': {
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    color: 'rgba(255, 255, 255, 0.3)'
+                  }
+                }}
               >
                 Deselect All
               </Button>
@@ -428,6 +612,11 @@ function AllMedia() {
               onClick={() => setDeleteDialogOpen(true)}
               startIcon={<Delete />}
               disabled={selectedItems.size === 0}
+              sx={{
+                minHeight: '44px',
+                fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                width: { xs: '100%', sm: 'auto' }
+              }}
             >
               Delete Selected ({selectedItems.size})
             </Button>
@@ -448,30 +637,65 @@ function AllMedia() {
         </Box> */}
         
         {mediaItems.length === 0 ? (
-          <Box sx={{ textAlign: 'center', py: 4 }}>
-            <Typography variant="h6" color="text.secondary" gutterBottom>
+          <Box sx={{ textAlign: 'center', py: { xs: 4, sm: 6 }, px: 2 }}>
+            <Typography 
+              variant="h6" 
+              color="text.secondary" 
+              gutterBottom
+              sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+            >
               {mediaType ? `No ${mediaType} items found` : 'No media items found'}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              sx={{ 
+                mb: { xs: 2, sm: 3 },
+                fontSize: { xs: '0.875rem', sm: '0.875rem' }
+              }}
+            >
               {mediaType 
                 ? `Try adding some ${mediaType} items to your library` 
                 : 'Try adding some media items to your library'}
             </Typography>
-            <Button 
-              variant="contained" 
-              component={Link} 
-              to="/add-media"
-              sx={{ mr: 1 }}
-            >
-              Add Media
-            </Button>
-            <Button 
-              variant="outlined" 
-              component={Link} 
-              to="/import-media"
-            >
-              Import Media
-            </Button>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: { xs: 1, sm: 2 },
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}>
+              <Button 
+                variant="contained" 
+                component={Link} 
+                to="/add-media"
+                sx={{ 
+                  width: { xs: '100%', sm: 'auto' },
+                  maxWidth: { xs: '400px', sm: 'none' },
+                  minHeight: '44px'
+                }}
+              >
+                Add Media
+              </Button>
+              <Button 
+                variant="outlined" 
+                component={Link} 
+                to="/import-media"
+                sx={{ 
+                  width: { xs: '100%', sm: 'auto' },
+                  maxWidth: { xs: '400px', sm: 'none' },
+                  minHeight: '44px',
+                  color: 'white',
+                  borderColor: 'white',
+                  '&:hover': {
+                    borderColor: 'white',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)'
+                  }
+                }}
+              >
+                Import Media
+              </Button>
+            </Box>
           </Box>
         ) : (
           viewMode === 'card' ? renderCardView() : renderListView()

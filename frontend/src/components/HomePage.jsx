@@ -1,5 +1,3 @@
-//TODO: Update homepage to have the actual components instead of mock ones (such as actual mixlists and the actual upload form)
-//TODO: update homepage to link to the correct media type from each media icon
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedia, CardContent, Button, SpeedDial, SpeedDialIcon, SpeedDialAction, useTheme, CircularProgress } from '@mui/material';
@@ -90,8 +88,18 @@ import SimpleMediaCarousel from './shared/SimpleMediaCarousel';
 );
 
 const Section = ({ title, children }) => (
-    <Box sx={{ my: 6 }}>
-        {title && <Typography variant="h4">{title}</Typography>}
+    <Box sx={{ my: { xs: 3, sm: 4, md: 6 } }}>
+        {title && (
+            <Typography 
+                variant="h4" 
+                sx={{ 
+                    fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2.125rem' },
+                    mb: { xs: 2, sm: 3 }
+                }}
+            >
+                {title}
+            </Typography>
+        )}
         {children}
     </Box>
 );
@@ -113,15 +121,41 @@ const UploadArea = () => {
             onDragEnter={handleDragEnter} onDragLeave={handleDragLeave} onDragOver={handleDragOver} onDrop={handleDrop}
             sx={{
                 border: `3px dashed ${isDragging ? theme.palette.primary.main : theme.palette.text.secondary}`,
-                borderRadius: '16px', p: 4, textAlign: 'center',
+                borderRadius: '16px', 
+                p: { xs: 2, sm: 3, md: 4 }, 
+                textAlign: 'center',
                 backgroundColor: isDragging ? 'rgba(54, 39, 89, 0.1)' : 'transparent',
                 transition: 'border-color 0.3s ease, background-color 0.3s ease, transform 0.3s ease',
-                cursor: 'pointer', '&:hover': { transform: 'scale(1.02)', borderColor: theme.palette.primary.main }
+                cursor: 'pointer', 
+                minHeight: { xs: '150px', sm: '180px' },
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                '&:hover': { 
+                    transform: { xs: 'none', sm: 'scale(1.02)' }, 
+                    borderColor: theme.palette.primary.main 
+                },
+                '&:active': {
+                    transform: 'scale(0.98)'
+                }
             }}
         >
-            <CloudUpload sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color="text.primary">Upload new media list here</Typography>
-            <Typography variant="body2" color="text.secondary">Drag & Drop a file or click to select</Typography>
+            <CloudUpload sx={{ fontSize: { xs: 48, sm: 60 }, color: 'text.secondary', mb: 2 }} />
+            <Typography 
+                variant="h6" 
+                color="text.primary"
+                sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}
+            >
+                Upload new media list here
+            </Typography>
+            <Typography 
+                variant="body2" 
+                color="text.secondary"
+                sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
+            >
+                Drag & Drop a file or click to select
+            </Typography>
         </Box>
     );
 };
@@ -129,7 +163,15 @@ const UploadArea = () => {
 const FloatingMenu = () => (
     <SpeedDial
         ariaLabel="SpeedDial menu"
-        sx={{ position: 'fixed', bottom: 32, right: 32 }}
+        sx={{ 
+            position: 'fixed', 
+            bottom: { xs: 16, sm: 24, md: 32 }, 
+            right: { xs: 16, sm: 24, md: 32 },
+            '& .MuiFab-root': {
+                width: { xs: 48, sm: 56 },
+                height: { xs: 48, sm: 56 }
+            }
+        }}
         icon={<SpeedDialIcon />}
     >
         {speedDialActions.map((action) => (
@@ -137,6 +179,12 @@ const FloatingMenu = () => (
                 key={action.key}
                 icon={action.icon}
                 tooltipTitle={action.name}
+                sx={{
+                    '& .MuiSpeedDialAction-fab': {
+                        width: { xs: 40, sm: 44 },
+                        height: { xs: 40, sm: 44 }
+                    }
+                }}
             />
         ))}
     </SpeedDial>
@@ -269,18 +317,40 @@ export default function HomePage() {
       ) : mixlistsError ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
           <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="h6" color="error" sx={{ mb: 2 }}>{mixlistsError}</Typography>
-            <Button variant="contained" onClick={() => window.location.reload()}>
+            <Typography 
+                variant="h6" 
+                color="error" 
+                sx={{ 
+                    mb: 2,
+                    fontSize: { xs: '1rem', sm: '1.25rem' },
+                    px: 2
+                }}
+            >
+                {mixlistsError}
+            </Typography>
+            <Button 
+                variant="contained" 
+                onClick={() => window.location.reload()}
+                sx={{ minHeight: '44px', px: 3 }}
+            >
               Retry
             </Button>
           </Box>
         </Box>
       ) : (
-        <Container maxWidth="lg" sx={{ py: 4, mx: 'auto', px: { xs: 2, sm: 3 } }}>
+        <Container maxWidth="lg" sx={{ py: { xs: 2, sm: 3, md: 4 }, mx: 'auto', px: { xs: 2, sm: 3 } }}>
         
         {/* Header and Search Section */}
-        <Box sx={{ textAlign: 'center', my: 4 }}>
-          <Typography variant="h1">MediaVerse</Typography>
+        <Box sx={{ textAlign: 'center', my: { xs: 2, sm: 3, md: 4 }, px: { xs: 1, sm: 2 } }}>
+          <Typography 
+            variant="h1" 
+            sx={{ 
+              fontSize: { xs: '2.5rem', sm: '3.5rem', md: '4rem' },
+              mb: { xs: 2, sm: 3 }
+            }}
+          >
+            MediaVerse
+          </Typography>
           <SearchBar 
             placeholder="Your next adventure awaits..."
             onSearch={(query, results) => {
@@ -294,7 +364,7 @@ export default function HomePage() {
         {/* Media Icons and Actions Section */}
         <Section title="">
             {/* Alphabetized Icons */}
-            <Grid container spacing={2} justifyContent="center" sx={{ mt: 4, mb: 2, maxWidth: '900px', margin: 'auto' }}>
+            <Grid container spacing={{ xs: 1, sm: 2 }} justifyContent="center" sx={{ mt: { xs: 2, sm: 3, md: 4 }, mb: 2, maxWidth: '900px', margin: 'auto' }}>
               {mainMediaIcons.map((item) => (
                   <Grid item xs={4} sm={3} md={2} key={item.key} sx={{ textAlign: 'center' }}>
                       <Box 
@@ -303,150 +373,289 @@ export default function HomePage() {
                                   navigate('/articles');
                               } else if (item.key === 'books') {
                                   navigate('/all-media?mediaType=Book');
+                              } else if (item.key === 'courses') {
+                                  navigate('/all-media?mediaType=Course');
                               } else if (item.key === 'movies') {
                                   navigate('/all-media?mediaType=Movie');
+                              } else if (item.key === 'music') {
+                                  navigate('/all-media?mediaType=Music');
                               } else if (item.key === 'online_videos') {
                                   navigate('/all-media?mediaType=Video');
                               } else if (item.key === 'podcasts') {
                                   navigate('/all-media?mediaType=Podcast');
                               } else if (item.key === 'tv') {
                                   navigate('/all-media?mediaType=TVShow');
+                              } else if (item.key === 'games') {
+                                  navigate('/all-media?mediaType=VideoGame');
+                              } else if (item.key === 'websites') {
+                                  navigate('/all-media?mediaType=Website');
                               } else {
-                                  // For other media types, you can add navigation logic here
-                                  console.log(`Clicked on ${item.name}`);
+                                  navigate('/all-media');
                               }
                           }}
                           sx={{ 
                               display: 'flex', 
                               flexDirection: 'column', 
                               alignItems: 'center', 
+                              justifyContent: 'center',
                               cursor: 'pointer', 
-                              color: 'text.secondary', 
+                              color: 'text.secondary',
+                              minHeight: { xs: '60px', sm: '70px' },
+                              minWidth: { xs: '60px', sm: '70px' },
+                              p: { xs: 1, sm: 1.5 },
+                              borderRadius: '12px',
+                              transition: 'all 0.2s ease',
                               '&:hover': { 
                                   color: 'text.primary',
                                   transform: 'scale(1.05)',
-                                  transition: 'transform 0.2s ease'
-                              } 
+                                  backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                              },
+                              '&:active': {
+                                  transform: 'scale(0.98)'
+                              }
                           }}
                       >
-                          {item.icon}
-                          <Typography variant="caption" sx={{ mt: 0.5 }}>{item.name}</Typography>
+                          {React.cloneElement(item.icon, { 
+                              sx: { fontSize: { xs: 32, sm: 40 } } 
+                          })}
+                          <Typography 
+                              variant="caption" 
+                              sx={{ 
+                                  mt: 0.5,
+                                  fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                                  lineHeight: 1.2
+                              }}
+                          >
+                              {item.name}
+                          </Typography>
                       </Box>
                   </Grid>
               ))}
             </Grid>
             {/* Special, larger icons */}
-            <Grid container spacing={2} justifyContent="center" sx={{ mb: 4, maxWidth: '900px', margin: 'auto' }}>
+            <Grid container spacing={{ xs: 1, sm: 2 }} justifyContent="center" sx={{ mb: { xs: 2, sm: 3, md: 4 }, maxWidth: '900px', margin: 'auto' }}>
                 {specialMediaIcons.map((item) => (
                     <Grid item xs={6} sm={4} md={3} key={item.key} sx={{ textAlign: 'center' }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', color: 'text.secondary', '&:hover': { color: 'text.primary' } }}>
-                            {React.cloneElement(item.icon, { sx: { fontSize: 50 } })}
-                            <Typography variant="body2" sx={{ mt: 0.5 }}>{item.name}</Typography>
+                        <Box sx={{ 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            cursor: 'pointer', 
+                            color: 'text.secondary',
+                            minHeight: { xs: '70px', sm: '80px' },
+                            p: { xs: 1.5, sm: 2 },
+                            borderRadius: '12px',
+                            transition: 'all 0.2s ease',
+                            '&:hover': { 
+                                color: 'text.primary',
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                            },
+                            '&:active': {
+                                transform: 'scale(0.98)'
+                            }
+                        }}>
+                            {React.cloneElement(item.icon, { sx: { fontSize: { xs: 40, sm: 50 } } })}
+                            <Typography 
+                                variant="body2" 
+                                sx={{ 
+                                    mt: 0.5,
+                                    fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                                }}
+                            >
+                                {item.name}
+                            </Typography>
                         </Box>
                     </Grid>
                 ))}
             </Grid>
 
-            <Box sx={{ mt: 4, p: 3, backgroundColor: 'background.paper', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
-                <Grid container spacing={3} alignItems="center" justifyContent="center">
-                    <Grid item xs={12} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
+            <Box sx={{ 
+                mt: { xs: 2, sm: 3, md: 4 }, 
+                p: { xs: 2, sm: 3 }, 
+                backgroundColor: 'background.paper', 
+                borderRadius: '16px', 
+                boxShadow: '0 4px 12px rgba(0,0,0,0.3)' 
+            }}>
+                <Grid container spacing={{ xs: 2, sm: 3 }} alignItems="center" justifyContent="center">
+                    <Grid item xs={6} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
                         <Box 
                             onClick={handleSourceDirectory}
                             sx={{ 
                                 display: 'flex', 
                                 flexDirection: 'column', 
                                 alignItems: 'center', 
+                                justifyContent: 'center',
                                 cursor: 'pointer', 
                                 color: 'text.primary', 
-                                p: 2,
+                                p: { xs: 1.5, sm: 2 },
+                                minHeight: { xs: '100px', sm: '120px' },
+                                borderRadius: '12px',
+                                transition: 'all 0.2s ease',
                                 '&:hover': {
                                     transform: 'scale(1.05)',
-                                    transition: 'transform 0.2s ease'
+                                    backgroundColor: 'rgba(156, 39, 176, 0.1)'
+                                },
+                                '&:active': {
+                                    transform: 'scale(0.98)'
                                 }
                             }}
                         >
-                            <Apps sx={{ fontSize: 70, color: '#9C27B0' }} />
-                            <Typography variant="h5" sx={{ mt: 1 }}>Source Directory</Typography>
+                            <Apps sx={{ fontSize: { xs: 50, sm: 60, md: 70 }, color: '#9C27B0' }} />
+                            <Typography 
+                                variant="h5" 
+                                sx={{ 
+                                    mt: 1,
+                                    fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' },
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                Source Directory
+                            </Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
+                    <Grid item xs={6} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
                         <Box 
                             onClick={handleCreateMixlist}
                             sx={{ 
                                 display: 'flex', 
                                 flexDirection: 'column', 
                                 alignItems: 'center', 
+                                justifyContent: 'center',
                                 cursor: 'pointer', 
                                 color: 'text.primary', 
-                                p: 2,
+                                p: { xs: 1.5, sm: 2 },
+                                minHeight: { xs: '100px', sm: '120px' },
+                                borderRadius: '12px',
+                                transition: 'all 0.2s ease',
                                 '&:hover': {
                                     transform: 'scale(1.05)',
-                                    transition: 'transform 0.2s ease'
+                                    backgroundColor: 'rgba(105, 90, 140, 0.1)'
+                                },
+                                '&:active': {
+                                    transform: 'scale(0.98)'
                                 }
                             }}
                         >
-                            <AddCircleOutline sx={{ fontSize: 70, color: '#695a8c' }} />
-                            <Typography variant="h5" sx={{ mt: 1 }}>Create a Mixlist</Typography>
+                            <AddCircleOutline sx={{ fontSize: { xs: 50, sm: 60, md: 70 }, color: '#695a8c' }} />
+                            <Typography 
+                                variant="h5" 
+                                sx={{ 
+                                    mt: 1,
+                                    fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' },
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                Create a Mixlist
+                            </Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
+                    <Grid item xs={6} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
                         <Box 
                             onClick={handleImportMedia}
                             sx={{ 
                                 display: 'flex', 
                                 flexDirection: 'column', 
                                 alignItems: 'center', 
+                                justifyContent: 'center',
                                 cursor: 'pointer', 
                                 color: 'text.primary', 
-                                p: 2,
+                                p: { xs: 1.5, sm: 2 },
+                                minHeight: { xs: '100px', sm: '120px' },
+                                borderRadius: '12px',
+                                transition: 'all 0.2s ease',
                                 '&:hover': {
                                     transform: 'scale(1.05)',
-                                    transition: 'transform 0.2s ease'
+                                    backgroundColor: 'rgba(105, 90, 140, 0.1)'
+                                },
+                                '&:active': {
+                                    transform: 'scale(0.98)'
                                 }
                             }}
                         >
-                            <ImportExport sx={{ fontSize: 70, color: '#695a8c' }} />
-                            <Typography variant="h5" sx={{ mt: 1 }}>Import Media</Typography>
+                            <ImportExport sx={{ fontSize: { xs: 50, sm: 60, md: 70 }, color: '#695a8c' }} />
+                            <Typography 
+                                variant="h5" 
+                                sx={{ 
+                                    mt: 1,
+                                    fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' },
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                Import Media
+                            </Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
+                    <Grid item xs={6} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
                         <Box 
                             onClick={handleSearchByTopicOrGenre}
                             sx={{ 
                                 display: 'flex', 
                                 flexDirection: 'column', 
                                 alignItems: 'center', 
+                                justifyContent: 'center',
                                 cursor: 'pointer', 
                                 color: 'text.primary', 
-                                p: 2,
+                                p: { xs: 1.5, sm: 2 },
+                                minHeight: { xs: '100px', sm: '120px' },
+                                borderRadius: '12px',
+                                transition: 'all 0.2s ease',
                                 '&:hover': {
                                     transform: 'scale(1.05)',
-                                    transition: 'transform 0.2s ease'
+                                    backgroundColor: 'rgba(105, 90, 140, 0.1)'
+                                },
+                                '&:active': {
+                                    transform: 'scale(0.98)'
                                 }
                             }}
                         >
-                            <Topic sx={{ fontSize: 70, color: '#695a8c' }} />
-                            <Typography variant="h5" sx={{ mt: 1 }}>Browse Topics/Genres</Typography>
+                            <Topic sx={{ fontSize: { xs: 50, sm: 60, md: 70 }, color: '#695a8c' }} />
+                            <Typography 
+                                variant="h5" 
+                                sx={{ 
+                                    mt: 1,
+                                    fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' },
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                Browse Topics/Genres
+                            </Typography>
                         </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
+                    <Grid item xs={6} sm={6} md={2.4} sx={{ textAlign: 'center' }}>
                         <Box 
                             onClick={handleAddMedia}
                             sx={{ 
                                 display: 'flex', 
                                 flexDirection: 'column', 
                                 alignItems: 'center', 
+                                justifyContent: 'center',
                                 cursor: 'pointer', 
                                 color: 'text.primary', 
-                                p: 2,
+                                p: { xs: 1.5, sm: 2 },
+                                minHeight: { xs: '100px', sm: '120px' },
+                                borderRadius: '12px',
+                                transition: 'all 0.2s ease',
                                 '&:hover': {
                                     transform: 'scale(1.05)',
-                                    transition: 'transform 0.2s ease'
+                                    backgroundColor: 'rgba(105, 90, 140, 0.1)'
+                                },
+                                '&:active': {
+                                    transform: 'scale(0.98)'
                                 }
                             }}
                         >
-                            <BookmarkAdd sx={{ fontSize: 70, color: '#695a8c' }} />
-                            <Typography variant="h5" sx={{ mt: 1 }}>Add Media</Typography>
+                            <BookmarkAdd sx={{ fontSize: { xs: 50, sm: 60, md: 70 }, color: '#695a8c' }} />
+                            <Typography 
+                                variant="h5" 
+                                sx={{ 
+                                    mt: 1,
+                                    fontSize: { xs: '0.9rem', sm: '1.1rem', md: '1.25rem' },
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                Add Media
+                            </Typography>
                         </Box>
                     </Grid>
                 </Grid>
@@ -461,9 +670,22 @@ export default function HomePage() {
               <Typography variant="h6" color="text.secondary">Loading your active explorations...</Typography>
             </Box>
           ) : activelyExploringError ? (
-            <Box sx={{ textAlign: 'center', py: 6 }}>
-              <Typography variant="h6" color="error" sx={{ mb: 2 }}>{activelyExploringError}</Typography>
-              <Button variant="outlined" onClick={() => window.location.reload()}>
+            <Box sx={{ textAlign: 'center', py: { xs: 4, sm: 6 }, px: 2 }}>
+              <Typography 
+                  variant="h6" 
+                  color="error" 
+                  sx={{ 
+                      mb: 2,
+                      fontSize: { xs: '1rem', sm: '1.25rem' }
+                  }}
+              >
+                  {activelyExploringError}
+              </Typography>
+              <Button 
+                  variant="outlined" 
+                  onClick={() => window.location.reload()}
+                  sx={{ minHeight: '44px', px: 3 }}
+              >
                 Retry
               </Button>
             </Box>
@@ -478,23 +700,46 @@ export default function HomePage() {
               showCardContent={true}
             />
           ) : (
-            <Box sx={{ textAlign: 'center', py: 6 }}>
-              <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+            <Box sx={{ textAlign: 'center', py: { xs: 4, sm: 6 }, px: 2 }}>
+              <Typography 
+                  variant="h6" 
+                  color="text.secondary" 
+                  sx={{ 
+                      mb: 2,
+                      fontSize: { xs: '1rem', sm: '1.25rem' }
+                  }}
+              >
                 No active explorations found
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  sx={{ 
+                      mb: 3,
+                      fontSize: { xs: '0.875rem', sm: '0.875rem' }
+                  }}
+              >
                 Start exploring some media and mark them as "Actively Exploring" to see them here
               </Typography>
               <Button 
                 variant="contained" 
                 onClick={handleAddMedia}
-                sx={{ mr: 2 }}
+                sx={{ 
+                    mr: { xs: 0, sm: 2 },
+                    mb: { xs: 2, sm: 0 },
+                    width: { xs: '100%', sm: 'auto' },
+                    minHeight: '44px'
+                }}
               >
                 Add Media
               </Button>
               <Button 
                 variant="outlined" 
                 onClick={() => navigate('/all-media')}
+                sx={{
+                    width: { xs: '100%', sm: 'auto' },
+                    minHeight: '44px'
+                }}
               >
                 Browse All Media
               </Button>
@@ -521,7 +766,13 @@ export default function HomePage() {
                           variant="contained" 
                           color="primary" 
                           onClick={handleCreateMixlist}
-                          sx={{ mt: 2 }}
+                          sx={{ 
+                              mt: 2,
+                              mr: { xs: 0, sm: 2 },
+                              mb: { xs: 1, sm: 0 },
+                              width: { xs: '100%', sm: 'auto' },
+                              minHeight: '44px'
+                          }}
                       >
                           Create New Mixlist
                       </Button>
@@ -529,7 +780,11 @@ export default function HomePage() {
                           variant="outlined" 
                           color="secondary" 
                           onClick={handleSeedMixlists}
-                          sx={{ mt: 2 }}
+                          sx={{ 
+                              mt: { xs: 1, sm: 2 },
+                              width: { xs: '100%', sm: 'auto' },
+                              minHeight: '44px'
+                          }}
                       >
                           Seed Mixlists (Development)
                       </Button>
@@ -545,7 +800,7 @@ export default function HomePage() {
         </Section>
 
         {/* View More Button */}
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 6 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: { xs: 3, sm: 4, md: 6 }, px: { xs: 2, sm: 0 } }}>
             <Button 
                 variant="contained" 
                 color="secondary" 
@@ -553,12 +808,15 @@ export default function HomePage() {
                 endIcon={<ArrowForwardIos />}
                 onClick={() => navigate('/mixlists')}
                 sx={{ 
-                    fontSize: '1.2rem', 
-                    padding: '12px 30px', 
-                    mb: 4, 
-                    minWidth: '300px',
+                    fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' }, 
+                    padding: { xs: '10px 20px', sm: '12px 30px' }, 
+                    mb: { xs: 2, sm: 3, md: 4 }, 
+                    minWidth: { xs: '250px', sm: '300px' },
+                    width: { xs: '100%', sm: 'auto' },
+                    maxWidth: { xs: '400px', sm: 'none' },
                     color: theme.palette.background.default,
-                    backgroundColor: theme.palette.text.primary
+                    backgroundColor: theme.palette.text.primary,
+                    minHeight: '48px'
                 }}
             >
                 View More Mixlists
@@ -567,14 +825,44 @@ export default function HomePage() {
 
         {/* Smart Search Section */}
         <Section title="Smart Search and Recommendations">
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 2 }, alignItems: 'center', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
                 {smartSearches.map((search, index) => (
-                    <Button key={index} variant="contained" color="primary">{search}</Button>
+                    <Button 
+                        key={index} 
+                        variant="contained" 
+                        color="primary"
+                        sx={{
+                            fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                            padding: { xs: '6px 12px', sm: '8px 16px' },
+                            minHeight: '44px'
+                        }}
+                    >
+                        {search}
+                    </Button>
                 ))}
-                <Button key="topics-tree" variant="contained" color="primary" startIcon={<Forest />}>
+                <Button 
+                    key="topics-tree" 
+                    variant="contained" 
+                    color="primary" 
+                    startIcon={<Forest />}
+                    sx={{
+                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                        padding: { xs: '6px 12px', sm: '8px 16px' },
+                        minHeight: '44px'
+                    }}
+                >
                     View Topics Tree
                 </Button>
-                <IconButton key="add-list" sx={{ backgroundColor: 'primary.main', color: 'white', '&:hover': { backgroundColor: 'primary.dark' } }}>
+                <IconButton 
+                    key="add-list" 
+                    sx={{ 
+                        backgroundColor: 'primary.main', 
+                        color: 'white',
+                        width: { xs: 44, sm: 48 },
+                        height: { xs: 44, sm: 48 },
+                        '&:hover': { backgroundColor: 'primary.dark' } 
+                    }}
+                >
                     <PlaylistAdd />
                 </IconButton>
             </Box>
@@ -586,14 +874,17 @@ export default function HomePage() {
         </Section>
         
         {/* Action Buttons Section */}
-        <Box sx={{ textAlign: 'center', my: 6 }}>
+        <Box sx={{ textAlign: 'center', my: { xs: 3, sm: 4, md: 6 }, px: { xs: 2, sm: 0 } }}>
             <Button 
                 variant="contained" color="secondary" size="large"
                 sx={{ 
-                    fontSize: '1.2rem', 
-                    padding: '12px 30px', 
-                    mb: 4, 
-                    minWidth: '300px',
+                    fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' }, 
+                    padding: { xs: '10px 20px', sm: '12px 30px' }, 
+                    mb: { xs: 3, md: 4 }, 
+                    minWidth: { xs: '250px', sm: '300px' },
+                    width: { xs: '100%', sm: 'auto' },
+                    maxWidth: { xs: '400px', sm: 'none' },
+                    minHeight: '48px',
                     color: theme.palette.background.default,
                     backgroundColor: theme.palette.text.primary
                 }}
@@ -606,20 +897,31 @@ export default function HomePage() {
                     backgroundColor: 'primary.main',
                     cursor: 'pointer',
                     transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                    width: 250,
-                    height: 200,
+                    width: { xs: '100%', sm: 250 },
+                    maxWidth: { xs: 320, sm: 250 },
+                    height: { xs: 160, sm: 200 },
                     mx: 'auto',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     '&:hover': {
-                        transform: 'translateY(-5px)',
+                        transform: { xs: 'none', sm: 'translateY(-5px)' },
                         boxShadow: '0 8px 25px rgba(252, 250, 250, 0.3)',
+                    },
+                    '&:active': {
+                        transform: 'scale(0.98)'
                     }
                 }}
             >
-                <CardContent sx={{ p: 3, textAlign: 'center' }}>
-                    <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+                <CardContent sx={{ p: { xs: 2, sm: 3 }, textAlign: 'center' }}>
+                    <Typography 
+                        variant="h5" 
+                        sx={{ 
+                            fontWeight: 'bold', 
+                            color: 'text.primary',
+                            fontSize: { xs: '1.2rem', sm: '1.5rem' }
+                        }}
+                    >
                         Productivity Portal
                     </Typography>
                 </CardContent>

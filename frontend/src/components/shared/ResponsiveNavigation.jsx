@@ -1,3 +1,4 @@
+//TODO: Change color of icones from dark purple to white
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {

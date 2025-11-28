@@ -207,35 +207,69 @@ function EditMediaForm() {
 
     if (loading) {
         return (
-            <Container maxWidth="md">
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-                    <CircularProgress />
+            <Container maxWidth="md" sx={{ px: { xs: 2, sm: 3 } }}>
+                <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    justifyContent: 'center', 
+                    alignItems: 'center', 
+                    minHeight: '50vh',
+                    gap: 2
+                }}>
+                    <CircularProgress size={60} />
+                    <Typography variant="h6" color="text.secondary" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
+                        Loading media item...
+                    </Typography>
                 </Box>
             </Container>
         );
     }
 
     return (
-        <Container maxWidth="md">
-            <Box sx={{ mt: 4 }}>
+        <Container maxWidth="md" sx={{ px: { xs: 2, sm: 3 }, py: { xs: 2, sm: 3, md: 4 } }}>
+            <Box sx={{ mt: { xs: 2, sm: 3, md: 4 } }}>
                 {/* Header */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
+                <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    mb: { xs: 3, sm: 4 },
+                    gap: { xs: 2, sm: 0 }
+                }}>
                     <Button
                         onClick={handleCancel}
                         startIcon={<ArrowBack />}
-                        sx={{ mr: 2 }}
+                        variant="outlined"
+                        sx={{ 
+                            mr: { xs: 0, sm: 2 },
+                            minHeight: '44px',
+                            color: 'white',
+                            borderColor: 'white',
+                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                            '&:hover': {
+                                borderColor: 'white',
+                                backgroundColor: 'rgba(255, 255, 255, 0.08)'
+                            }
+                        }}
                     >
                         Back
                     </Button>
-                    <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+                    <Typography 
+                        variant="h4" 
+                        component="h1" 
+                        sx={{ 
+                            fontWeight: 'bold',
+                            fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
+                        }}
+                    >
                         Edit Media Item
                     </Typography>
                 </Box>
 
                 <Card>
-                    <CardContent sx={{ p: 4 }}>
+                    <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
                         <form onSubmit={handleSubmit}>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 3 } }}>
                                 {/* Title */}
                                 <TextField
                                     fullWidth
@@ -331,7 +365,7 @@ function EditMediaForm() {
                                 <Box sx={{ mt: 2 }}>
                                     <Typography variant="body1" sx={{ 
                                         mb: 2, 
-                                        fontSize: '16px',
+                                        fontSize: { xs: '0.875rem', sm: '1rem' },
                                         fontWeight: 'bold'
                                     }}>
                                         Upload New Thumbnail
@@ -341,11 +375,13 @@ function EditMediaForm() {
                                         color="secondary"
                                         component="label"
                                         sx={{ 
-                                            fontSize: '16px',
+                                            fontSize: { xs: '0.875rem', sm: '1rem' },
                                             fontWeight: 'bold',
                                             textTransform: 'none',
                                             py: 1.5,
                                             px: 3,
+                                            minHeight: '48px',
+                                            width: { xs: '100%', sm: 'auto' },
                                             borderRadius: '8px'
                                         }}
                                     >
@@ -360,7 +396,7 @@ function EditMediaForm() {
                                     {thumbnailFile && (
                                         <Typography variant="body2" sx={{ 
                                             mt: 1, 
-                                            fontSize: '14px',
+                                            fontSize: { xs: '0.75rem', sm: '0.875rem' },
                                             color: 'text.secondary'
                                         }}>
                                             Selected: {thumbnailFile.name}
@@ -410,24 +446,56 @@ function EditMediaForm() {
                                 />
 
                                 {/* Action Buttons */}
-                                <Box sx={{ display: 'flex', gap: 2, justifyContent: 'space-between', mt: 4 }}>
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    flexDirection: { xs: 'column', sm: 'row' },
+                                    gap: 2, 
+                                    justifyContent: 'space-between', 
+                                    mt: { xs: 3, sm: 4 }
+                                }}>
                                     <Button
                                         variant="outlined"
-                                        color="error"
                                         startIcon={<Delete />}
                                         onClick={() => setDeleteDialogOpen(true)}
                                         disabled={saving}
                                         size="large"
+                                        sx={{
+                                            width: { xs: '100%', sm: 'auto' },
+                                            minHeight: '48px',
+                                            color: 'white',
+                                            borderColor: 'white',
+                                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                                            '&:hover': {
+                                                borderColor: 'white',
+                                                backgroundColor: 'rgba(255, 255, 255, 0.08)'
+                                            }
+                                        }}
                                     >
                                         Delete Media
                                     </Button>
-                                    <Box sx={{ display: 'flex', gap: 2 }}>
+                                    <Box sx={{ 
+                                        display: 'flex', 
+                                        flexDirection: { xs: 'column', sm: 'row' },
+                                        gap: 2,
+                                        width: { xs: '100%', sm: 'auto' }
+                                    }}>
                                         <Button
                                             variant="outlined"
                                             startIcon={<Cancel />}
                                             onClick={handleCancel}
                                             disabled={saving}
                                             size="large"
+                                            sx={{
+                                                width: { xs: '100%', sm: 'auto' },
+                                                minHeight: '48px',
+                                                color: 'white',
+                                                borderColor: 'white',
+                                                fontSize: { xs: '0.875rem', sm: '1rem' },
+                                                '&:hover': {
+                                                    borderColor: 'white',
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.08)'
+                                                }
+                                            }}
                                         >
                                             Cancel
                                         </Button>
@@ -437,6 +505,11 @@ function EditMediaForm() {
                                             startIcon={<Save />}
                                             disabled={saving}
                                             size="large"
+                                            sx={{
+                                                width: { xs: '100%', sm: 'auto' },
+                                                minHeight: '48px',
+                                                fontSize: { xs: '0.875rem', sm: '1rem' }
+                                            }}
                                         >
                                             {saving ? 'Saving...' : 'Save Changes'}
                                         </Button>
