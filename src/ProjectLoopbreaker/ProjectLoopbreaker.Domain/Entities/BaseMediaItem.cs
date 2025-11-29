@@ -63,6 +63,7 @@ namespace ProjectLoopbreaker.Domain.Entities
         Movie,
         Music,
         Other,
+        Playlist,
         Podcast,
         TVShow,
         Video,

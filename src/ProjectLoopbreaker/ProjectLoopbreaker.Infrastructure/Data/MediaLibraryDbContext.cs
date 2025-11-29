@@ -18,6 +18,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<TvShow> TvShows { get; set; }
         public DbSet<Video> Videos { get; set; }
         public DbSet<YouTubeChannel> YouTubeChannels { get; set; }
+        public DbSet<YouTubePlaylist> YouTubePlaylists { get; set; }
         public DbSet<Article> Articles { get; set; }
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Genre> Genres { get; set; }
@@ -33,6 +34,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         IQueryable<TvShow> IApplicationDbContext.TvShows => TvShows;
         IQueryable<Video> IApplicationDbContext.Videos => Videos;
         IQueryable<YouTubeChannel> IApplicationDbContext.YouTubeChannels => YouTubeChannels;
+        IQueryable<YouTubePlaylist> IApplicationDbContext.YouTubePlaylists => YouTubePlaylists;
         IQueryable<Article> IApplicationDbContext.Articles => Articles;
         IQueryable<Topic> IApplicationDbContext.Topics => Topics;
         IQueryable<Genre> IApplicationDbContext.Genres => Genres;
@@ -430,6 +432,58 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.HasIndex(e => e.PublishedAt);
                 entity.HasIndex(e => e.LastSyncedAt);
                 entity.HasIndex(e => e.SubscriberCount);
+            });
+
+            // Configure YouTubePlaylist specific properties
+            modelBuilder.Entity<YouTubePlaylist>(entity =>
+            {
+                entity.Property(e => e.PlaylistExternalId)
+                    .HasMaxLength(100)
+                    .IsRequired();
+                    
+                entity.Property(e => e.ChannelExternalId)
+                    .HasMaxLength(100);
+                    
+                entity.Property(e => e.PrivacyStatus)
+                    .HasMaxLength(50);
+                    
+                // Configure relationship with YouTubeChannel (optional)
+                entity.HasOne(e => e.LinkedYouTubeChannel)
+                    .WithMany() // A channel can have many playlists, but we don't track this on the channel side
+                    .HasForeignKey(e => e.LinkedYouTubeChannelId)
+                    .OnDelete(DeleteBehavior.SetNull); // When channel deleted, playlist remains but link becomes null
+                    
+                // Create unique index on PlaylistExternalId to prevent duplicate playlist imports
+                entity.HasIndex(e => e.PlaylistExternalId)
+                    .IsUnique();
+                    
+                // Create indexes for better query performance
+                entity.HasIndex(e => e.LinkedYouTubeChannelId);
+                entity.HasIndex(e => e.PublishedAt);
+                entity.HasIndex(e => e.LastSyncedAt);
+            });
+
+            // Configure YouTubePlaylistVideo junction table
+            modelBuilder.Entity<YouTubePlaylistVideo>(entity =>
+            {
+                // Composite primary key
+                entity.HasKey(pv => new { pv.YouTubePlaylistId, pv.VideoId });
+                
+                // Configure relationship with YouTubePlaylist
+                entity.HasOne(pv => pv.YouTubePlaylist)
+                    .WithMany(p => p.PlaylistVideos)
+                    .HasForeignKey(pv => pv.YouTubePlaylistId)
+                    .OnDelete(DeleteBehavior.Cascade); // When playlist deleted, remove all playlist-video associations
+                    
+                // Configure relationship with Video
+                entity.HasOne(pv => pv.Video)
+                    .WithMany(v => v.PlaylistVideos)
+                    .HasForeignKey(pv => pv.VideoId)
+                    .OnDelete(DeleteBehavior.Cascade); // When video deleted, remove all playlist-video associations
+                    
+                // Create indexes for better query performance
+                entity.HasIndex(pv => pv.Position);
+                entity.HasIndex(pv => pv.AddedAt);
             });
 
             // Configure Article specific properties

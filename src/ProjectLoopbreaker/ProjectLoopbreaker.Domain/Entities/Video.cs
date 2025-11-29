@@ -31,6 +31,11 @@ namespace ProjectLoopbreaker.Domain.Entities
         /// </summary>
         public YouTubeChannel? Channel { get; set; }
         
+        /// <summary>
+        /// Navigation property to the junction table for many-to-many relationship with YouTubePlaylists
+        /// </summary>
+        public ICollection<YouTubePlaylistVideo> PlaylistVideos { get; set; } = new List<YouTubePlaylistVideo>();
+        
         [Range(0, int.MaxValue, ErrorMessage = "Length must be a positive number")]
         public int LengthInSeconds { get; set; } = 0;
         

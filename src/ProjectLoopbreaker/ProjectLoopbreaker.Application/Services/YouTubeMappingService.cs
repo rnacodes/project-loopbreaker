@@ -115,6 +115,40 @@ namespace ProjectLoopbreaker.Application.Services
             return channel;
         }
 
+        public YouTubePlaylist MapPlaylistToYouTubePlaylistEntity(YouTubePlaylistDto playlistDto)
+        {
+            if (playlistDto?.Snippet == null)
+                throw new ArgumentException("Playlist DTO or snippet cannot be null", nameof(playlistDto));
+
+            var playlist = new YouTubePlaylist
+            {
+                Title = playlistDto.Snippet.Title ?? "Unknown Playlist",
+                Description = playlistDto.Snippet.Description,
+                Link = $"https://www.youtube.com/playlist?list={playlistDto.Id}",
+                PlaylistExternalId = playlistDto.Id ?? throw new ArgumentException("Playlist ID cannot be null"),
+                ChannelExternalId = playlistDto.Snippet.ChannelId,
+                MediaType = MediaType.Playlist,
+                Thumbnail = GetBestThumbnailUrl(playlistDto.Snippet.Thumbnails),
+                PublishedAt = playlistDto.Snippet.PublishedAt,
+                DateAdded = DateTime.UtcNow,
+                LastSyncedAt = DateTime.UtcNow
+            };
+
+            // Add content details if available
+            if (playlistDto.ContentDetails != null)
+            {
+                playlist.VideoCount = playlistDto.ContentDetails.ItemCount;
+            }
+
+            // Add status if available
+            if (playlistDto.Status != null)
+            {
+                playlist.PrivacyStatus = playlistDto.Status.PrivacyStatus;
+            }
+
+            return playlist;
+        }
+
         public Video MapPlaylistItemToVideoEntity(YouTubePlaylistItemDto playlistItemDto, YouTubeVideoDto? videoDetails = null)
         {
             if (playlistItemDto?.Snippet == null)

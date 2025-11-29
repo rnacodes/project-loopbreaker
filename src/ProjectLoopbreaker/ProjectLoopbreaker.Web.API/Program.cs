@@ -228,6 +228,7 @@ builder.Services.AddScoped<IVideoService, VideoService>();
 builder.Services.AddScoped<IYouTubeService, YouTubeService>();
 builder.Services.AddScoped<IYouTubeMappingService, YouTubeMappingService>();
 builder.Services.AddScoped<IYouTubeChannelService, YouTubeChannelService>();
+builder.Services.AddScoped<IYouTubePlaylistService, YouTubePlaylistService>();
 builder.Services.AddScoped<ITmdbService, TmdbService>();
 builder.Services.AddScoped<IListenNotesService, ListenNotesService>();
 builder.Services.AddScoped<IInstapaperService, InstapaperService>();
