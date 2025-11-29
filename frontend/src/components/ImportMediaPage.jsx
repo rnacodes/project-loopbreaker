@@ -629,24 +629,27 @@ function ImportMediaPage() {
 
             {importMethod === 'search' && (
                 <Box>
-                    <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                        <TextField
-                            label="Search Podcasts"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            variant="outlined"
-                            fullWidth
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                        />
-                        <Button
-                            variant="contained"
-                            onClick={handleSearch}
-                            disabled={isLoading}
-                            startIcon={<Search />}
-                        >
-                            Search
-                        </Button>
-                    </Box>
+                                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                                    <TextField
+                                        label="Search Podcasts"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        variant="outlined"
+                                        fullWidth
+                                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                        InputLabelProps={{
+                                            sx: { color: 'white' }
+                                        }}
+                                    />
+                                    <Button
+                                        variant="contained"
+                                        onClick={handleSearch}
+                                        disabled={isLoading}
+                                        startIcon={<Search />}
+                                    >
+                                        Search
+                                    </Button>
+                                </Box>
 
                     {searchResults.length > 0 && (
                         <Box sx={{ mt: 2 }}>
@@ -908,6 +911,9 @@ function ImportMediaPage() {
                                         variant="outlined"
                                         fullWidth
                                         onKeyPress={(e) => e.key === 'Enter' && handleBookSearch()}
+                                        InputLabelProps={{
+                                            sx: { color: 'white' }
+                                        }}
                                     />
                                     <Button
                                         variant="contained"
@@ -1131,6 +1137,9 @@ function ImportMediaPage() {
                                 variant="outlined"
                                 fullWidth
                                 onKeyPress={(e) => e.key === 'Enter' && handleTmdbSearch()}
+                                InputLabelProps={{
+                                    sx: { color: 'white' }
+                                }}
                             />
                             <Button
                                 variant="contained"
@@ -1378,6 +1387,9 @@ function ImportMediaPage() {
                                         variant="outlined"
                                         fullWidth
                                         onKeyPress={(e) => e.key === 'Enter' && handleYoutubeSearch()}
+                                        InputLabelProps={{
+                                            sx: { color: 'white' }
+                                        }}
                                     />
                                     <Button
                                         variant="contained"
@@ -1411,6 +1423,7 @@ function ImportMediaPage() {
                                                             <img
                                                                 src={item.thumbnail}
                                                                 alt=""
+                                                                crossOrigin="anonymous"
                                                                 style={{
                                                                     width: '100%',
                                                                     height: '100%',

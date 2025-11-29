@@ -168,6 +168,7 @@ function ArticlesPage() {
             <Container maxWidth="xl">
                 <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
                     <Button
+                        sx={{ color: 'white' }}
                         startIcon={<ArrowBack />}
                         onClick={() => navigate('/')}
                     >

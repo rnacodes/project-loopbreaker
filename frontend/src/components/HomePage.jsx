@@ -1,3 +1,4 @@
+// TODO: Create functioning "I'm feeling lucky" button
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedia, CardContent, Button, SpeedDial, SpeedDialIcon, SpeedDialAction, useTheme, CircularProgress } from '@mui/material';
@@ -364,7 +365,7 @@ export default function HomePage() {
         {/* Media Icons and Actions Section */}
         <Section title="">
             {/* Alphabetized Icons */}
-            <Grid container spacing={{ xs: 1, sm: 2 }} justifyContent="center" sx={{ mt: { xs: 2, sm: 3, md: 4 }, mb: 2, maxWidth: '900px', margin: 'auto' }}>
+            <Grid container spacing={{ xs: 1, sm: 2 }} justifyContent="center" sx={{ mt: { xs: 2, sm: 3, md: 4 }, mb: 2, maxWidth: '900px', mx: 'auto' }}>
               {mainMediaIcons.map((item) => (
                   <Grid item xs={4} sm={3} md={2} key={item.key} sx={{ textAlign: 'center' }}>
                       <Box 
@@ -501,7 +502,7 @@ export default function HomePage() {
                                 }
                             }}
                         >
-                            <Apps sx={{ fontSize: { xs: 50, sm: 60, md: 70 }, color: '#9C27B0' }} />
+                            <Apps sx={{ fontSize: { xs: 50, sm: 60, md: 70 }, color: '#695a8c' }} />
                             <Typography 
                                 variant="h5" 
                                 sx={{ 
@@ -867,66 +868,6 @@ export default function HomePage() {
                 </IconButton>
             </Box>
         </Section>
-        
-        {/* Upload Section */}
-        <Section title="Upload Media">
-            <UploadArea />
-        </Section>
-        
-        {/* Action Buttons Section */}
-        <Box sx={{ textAlign: 'center', my: { xs: 3, sm: 4, md: 6 }, px: { xs: 2, sm: 0 } }}>
-            <Button 
-                variant="contained" color="secondary" size="large"
-                sx={{ 
-                    fontSize: { xs: '1rem', sm: '1.1rem', md: '1.2rem' }, 
-                    padding: { xs: '10px 20px', sm: '12px 30px' }, 
-                    mb: { xs: 3, md: 4 }, 
-                    minWidth: { xs: '250px', sm: '300px' },
-                    width: { xs: '100%', sm: 'auto' },
-                    maxWidth: { xs: '400px', sm: 'none' },
-                    minHeight: '48px',
-                    color: theme.palette.background.default,
-                    backgroundColor: theme.palette.text.primary
-                }}
-            >
-                I'm Feeling Lucky
-            </Button>
-            <Card 
-                elevation={8}
-                sx={{
-                    backgroundColor: 'primary.main',
-                    cursor: 'pointer',
-                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                    width: { xs: '100%', sm: 250 },
-                    maxWidth: { xs: 320, sm: 250 },
-                    height: { xs: 160, sm: 200 },
-                    mx: 'auto',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    '&:hover': {
-                        transform: { xs: 'none', sm: 'translateY(-5px)' },
-                        boxShadow: '0 8px 25px rgba(252, 250, 250, 0.3)',
-                    },
-                    '&:active': {
-                        transform: 'scale(0.98)'
-                    }
-                }}
-            >
-                <CardContent sx={{ p: { xs: 2, sm: 3 }, textAlign: 'center' }}>
-                    <Typography 
-                        variant="h5" 
-                        sx={{ 
-                            fontWeight: 'bold', 
-                            color: 'text.primary',
-                            fontSize: { xs: '1.2rem', sm: '1.5rem' }
-                        }}
-                    >
-                        Productivity Portal
-                    </Typography>
-                </CardContent>
-            </Card>
-        </Box>
 
       </Container>
       )}

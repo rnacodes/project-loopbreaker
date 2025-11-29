@@ -56,9 +56,10 @@ function YouTubeChannelProfile() {
     const fetchMixlists = async () => {
         try {
             const mixlists = await getAllMixlists();
-            setAvailableMixlists(mixlists);
+            setAvailableMixlists(mixlists.data || []);
         } catch (error) {
             console.error('Error fetching mixlists:', error);
+            setAvailableMixlists([]);
         }
     };
 
@@ -139,6 +140,7 @@ function YouTubeChannelProfile() {
                                 component="img"
                                 image={channel.thumbnail}
                                 alt={channel.title}
+                                crossOrigin="anonymous"
                                 sx={{ height: '100%', objectFit: 'cover' }}
                             />
                         )}

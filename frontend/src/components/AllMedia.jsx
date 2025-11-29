@@ -141,39 +141,70 @@ function AllMedia() {
               transition: 'all 0.2s ease-in-out'
             }}
           >
-            <Box sx={{ position: 'absolute', top: 8, left: 8, zIndex: 1 }}>
-              <Checkbox
-                checked={selectedItems.has(item.id)}
-                onChange={(e) => {
-                  e.stopPropagation();
-                  handleSelectItem(item.id);
+            {/* Thumbnail/Image Container - Flexible */}
+            {(item.thumbnail || item.Thumbnail) && (
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: '100%',
+                  paddingTop: '150%', // 2:3 aspect ratio for media posters
+                  overflow: 'hidden',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)'
                 }}
-                sx={{ 
-                  bgcolor: 'background.paper',
-                  width: { xs: 40, sm: 42 },
-                  height: { xs: 40, sm: 42 },
-                  '&:hover': { bgcolor: 'background.paper' }
-                }}
-              />
-            </Box>
+              >
+                <CardMedia
+                  component="img"
+                  image={item.thumbnail || item.Thumbnail}
+                  alt={item.title || item.Title}
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </Box>
+            )}
             <CardContent 
               component={Link} 
               to={`/media/${item.id}`}
               sx={{ 
                 flexGrow: 1,
                 textDecoration: 'none',
-                pt: { xs: 7, sm: 6 },
                 p: { xs: 2, sm: 2 }
               }}
             >
-              <Typography 
-                variant="h6" 
-                component="div" 
-                gutterBottom
-                sx={{ fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' } }}
-              >
-                {item.title || item.Title}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                <Checkbox
+                  checked={selectedItems.has(item.id)}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleSelectItem(item.id);
+                  }}
+                  onClick={(e) => e.preventDefault()}
+                  sx={{ 
+                    p: 0,
+                    width: { xs: 24, sm: 24 },
+                    height: { xs: 24, sm: 24 },
+                    mt: 0.5
+                  }}
+                />
+                <Typography 
+                  variant="h6" 
+                  component="div" 
+                  sx={{ 
+                    fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' },
+                    flex: 1
+                  }}
+                >
+                  {item.title || item.Title}
+                </Typography>
+              </Box>
               <Chip 
                 label={item.mediaType || item.MediaType} 
                 size="small" 
@@ -287,11 +318,7 @@ function AllMedia() {
               }}
             />
             <ListItemText
-              component={Link}
-              to={`/media/${item.id}`}
               sx={{ 
-                textDecoration: 'none', 
-                color: 'inherit',
                 flex: 1,
                 width: { xs: '100%', sm: 'auto' }
               }}
@@ -305,8 +332,17 @@ function AllMedia() {
                 }}>
                   <Typography 
                     variant="h6" 
-                    component="div"
-                    sx={{ fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' } }}
+                    component={Link}
+                    to={`/media/${item.id}`}
+                    sx={{ 
+                      fontSize: { xs: '1rem', sm: '1.125rem', md: '1.25rem' },
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        textDecoration: 'underline'
+                      }
+                    }}
                   >
                     {item.title || item.Title}
                   </Typography>

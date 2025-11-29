@@ -22,8 +22,7 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                      "LISTENNOTES_API_KEY";
             _jsonOptions = new JsonSerializerOptions
             {
-                PropertyNameCaseInsensitive = true,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                PropertyNameCaseInsensitive = true
             };
         }
 

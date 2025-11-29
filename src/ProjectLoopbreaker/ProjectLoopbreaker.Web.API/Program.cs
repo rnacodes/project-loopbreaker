@@ -252,6 +252,7 @@ builder.Services.AddHttpClient<IYouTubeApiClient, YouTubeApiClient>(client =>
 builder.Services.AddHttpClient<IListenNotesApiClient, ListenNotesApiClient>(client =>
 {
     client.BaseAddress = new Uri("https://listen-api.listennotes.com/api/v2/");
+    client.Timeout = TimeSpan.FromSeconds(30); // Add 30 second timeout
     
     var apiKey = Environment.GetEnvironmentVariable("LISTENNOTES_API_KEY") ?? 
                  builder.Configuration["ApiKeys:ListenNotes"];

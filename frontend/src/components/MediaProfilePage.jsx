@@ -741,6 +741,7 @@ function MediaProfilePage() {
                     }}
                     image={mediaItem.thumbnail}
                     alt={mediaItem.title}
+                    crossOrigin="anonymous"
                     onError={(e) => {
                       e.target.style.display = 'none';
                     }}
@@ -792,17 +793,30 @@ function MediaProfilePage() {
 
         {/* Media Type Specific Properties Section */}
         <Card sx={{ mt: 3, overflow: 'hidden', borderRadius: 2 }}>
-          <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
-            <Typography 
-              variant="h5" 
-              sx={{ 
-                fontWeight: 'bold', 
-                mb: 3,
-                fontSize: { xs: '1.25rem', sm: '1.5rem' }
+          <Accordion sx={{ boxShadow: 'none', '&:before': { display: 'none' } }} defaultExpanded>
+            <AccordionSummary
+              expandIcon={<ExpandMore />}
+              aria-controls="media-details-content"
+              id="media-details-header"
+              sx={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                px: { xs: 2, sm: 3, md: 4 },
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                }
               }}
             >
-              {mediaItem.mediaType} Details
-            </Typography>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 'bold',
+                  fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                }}
+              >
+                {mediaItem.mediaType === 'TVShow' ? 'TV Show Details' : `${mediaItem.mediaType} Details`}
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ p: { xs: 2, sm: 3, md: 4 }, backgroundColor: 'rgba(255, 255, 255, 0.02)' }}>
             
             {/* Podcast-specific properties */}
             {mediaItem.mediaType === 'Podcast' && (
@@ -1596,7 +1610,8 @@ function MediaProfilePage() {
                 No specific {mediaItem.mediaType.toLowerCase()} details available
               </Typography>
             )}
-          </CardContent>
+            </AccordionDetails>
+          </Accordion>
         </Card>
 
         {/* Related Notes Section */}

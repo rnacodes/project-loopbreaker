@@ -65,7 +65,7 @@ namespace ProjectLoopbreaker.Shared.DTOs.ListenNotes
         public int? UpdateFrequencyHours { get; set; }
 
         [JsonPropertyName("listen_score")]
-        public int? ListenScore { get; set; }
+        public string? ListenScore { get; set; }
 
         [JsonPropertyName("listen_score_global_rank")]
         public string? ListenScoreGlobalRank { get; set; }

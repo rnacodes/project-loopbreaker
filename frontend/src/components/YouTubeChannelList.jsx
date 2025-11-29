@@ -116,6 +116,7 @@ function YouTubeChannelList() {
                                         height="140"
                                         image={channel.thumbnail}
                                         alt={channel.title}
+                                        crossOrigin="anonymous"
                                     />
                                 )}
                                 <CardContent sx={{ flexGrow: 1 }}>
