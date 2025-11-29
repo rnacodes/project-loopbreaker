@@ -733,8 +733,14 @@ function MediaProfilePage() {
                       width: { xs: '100%', sm: 250, md: 180 },
                       maxWidth: { xs: 300, sm: 250, md: 180 },
                       height: { xs: 'auto', sm: 375, md: 270 },
-                      aspectRatio: { xs: '2/3', sm: 'auto' },
-                      objectFit: 'cover',
+                      aspectRatio: { 
+                        xs: (mediaItem.mediaType === 'Video' || mediaItem.mediaType === 'Movie' || mediaItem.mediaType === 'TVShow') 
+                          ? '16/9' 
+                          : '2/3', 
+                        sm: 'auto' 
+                      },
+                      objectFit: 'contain',
+                      backgroundColor: 'rgba(0, 0, 0, 0.2)',
                       borderRadius: 1,
                       boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
                       mb: 2

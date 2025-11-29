@@ -81,7 +81,8 @@ const MediaCard = ({
         component="img"
         sx={{
           height: variant === 'compact' ? 120 : variant === 'featured' ? 200 : 180,
-          objectFit: 'cover',
+          objectFit: 'contain',
+          backgroundColor: 'rgba(0, 0, 0, 0.1)',
           position: 'relative'
         }}
         image={media.thumbnailUrl || media.imageUrl || 'https://placehold.co/600x400/474350/fcfafa?text=No+Image'}

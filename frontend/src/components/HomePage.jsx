@@ -365,103 +365,68 @@ export default function HomePage() {
         {/* Media Icons and Actions Section */}
         <Section title="">
             {/* Alphabetized Icons */}
-            <Grid container spacing={{ xs: 1, sm: 2 }} justifyContent="center" sx={{ mt: { xs: 2, sm: 3, md: 4 }, mb: 2, maxWidth: '900px', mx: 'auto' }}>
-              {mainMediaIcons.map((item) => (
-                  <Grid item xs={4} sm={3} md={2} key={item.key} sx={{ textAlign: 'center' }}>
-                      <Box 
-                          onClick={() => {
-                              if (item.key === 'articles') {
-                                  navigate('/articles');
-                              } else if (item.key === 'books') {
-                                  navigate('/all-media?mediaType=Book');
-                              } else if (item.key === 'courses') {
-                                  navigate('/all-media?mediaType=Course');
-                              } else if (item.key === 'movies') {
-                                  navigate('/all-media?mediaType=Movie');
-                              } else if (item.key === 'music') {
-                                  navigate('/all-media?mediaType=Music');
-                              } else if (item.key === 'online_videos') {
-                                  navigate('/all-media?mediaType=Video');
-                              } else if (item.key === 'podcasts') {
-                                  navigate('/all-media?mediaType=Podcast');
-                              } else if (item.key === 'tv') {
-                                  navigate('/all-media?mediaType=TVShow');
-                              } else if (item.key === 'games') {
-                                  navigate('/all-media?mediaType=VideoGame');
-                              } else if (item.key === 'websites') {
-                                  navigate('/all-media?mediaType=Website');
-                              } else {
-                                  navigate('/all-media');
-                              }
-                          }}
-                          sx={{ 
-                              display: 'flex', 
-                              flexDirection: 'column', 
-                              alignItems: 'center', 
-                              justifyContent: 'center',
-                              cursor: 'pointer', 
-                              color: 'text.secondary',
-                              minHeight: { xs: '60px', sm: '70px' },
-                              minWidth: { xs: '60px', sm: '70px' },
-                              p: { xs: 1, sm: 1.5 },
-                              borderRadius: '12px',
-                              transition: 'all 0.2s ease',
-                              '&:hover': { 
-                                  color: 'text.primary',
-                                  transform: 'scale(1.05)',
-                                  backgroundColor: 'rgba(255, 255, 255, 0.05)'
-                              },
-                              '&:active': {
-                                  transform: 'scale(0.98)'
-                              }
-                          }}
-                      >
-                          {React.cloneElement(item.icon, { 
-                              sx: { fontSize: { xs: 32, sm: 40 } } 
-                          })}
-                          <Typography 
-                              variant="caption" 
-                              sx={{ 
-                                  mt: 0.5,
-                                  fontSize: { xs: '0.65rem', sm: '0.75rem' },
-                                  lineHeight: 1.2
-                              }}
-                          >
-                              {item.name}
-                          </Typography>
-                      </Box>
-                  </Grid>
-              ))}
-            </Grid>
-            {/* Special, larger icons */}
-            <Grid container spacing={{ xs: 1, sm: 2 }} justifyContent="center" sx={{ mb: { xs: 2, sm: 3, md: 4 }, maxWidth: '900px', margin: 'auto' }}>
-                {specialMediaIcons.map((item) => (
-                    <Grid item xs={6} sm={4} md={3} key={item.key} sx={{ textAlign: 'center' }}>
-                        <Box sx={{ 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            cursor: 'pointer', 
-                            color: 'text.secondary',
-                            minHeight: { xs: '70px', sm: '80px' },
-                            p: { xs: 1.5, sm: 2 },
-                            borderRadius: '12px',
-                            transition: 'all 0.2s ease',
-                            '&:hover': { 
-                                color: 'text.primary',
-                                backgroundColor: 'rgba(255, 255, 255, 0.05)'
-                            },
-                            '&:active': {
-                                transform: 'scale(0.98)'
-                            }
-                        }}>
-                            {React.cloneElement(item.icon, { sx: { fontSize: { xs: 40, sm: 50 } } })}
+            <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+              <Grid container spacing={{ xs: 1, sm: 2 }} justifyContent="center" sx={{ mt: { xs: 2, sm: 3, md: 4 }, mb: 2, maxWidth: '900px' }}>
+                {mainMediaIcons.map((item) => (
+                    <Grid item xs={4} sm={3} md={2} key={item.key} sx={{ display: 'flex', justifyContent: 'center' }}>
+                        <Box 
+                            onClick={() => {
+                                if (item.key === 'articles') {
+                                    navigate('/articles');
+                                } else if (item.key === 'books') {
+                                    navigate('/all-media?mediaType=Book');
+                                } else if (item.key === 'courses') {
+                                    navigate('/all-media?mediaType=Course');
+                                } else if (item.key === 'movies') {
+                                    navigate('/all-media?mediaType=Movie');
+                                } else if (item.key === 'music') {
+                                    navigate('/all-media?mediaType=Music');
+                                } else if (item.key === 'online_videos') {
+                                    navigate('/all-media?mediaType=Video');
+                                } else if (item.key === 'podcasts') {
+                                    navigate('/all-media?mediaType=Podcast');
+                                } else if (item.key === 'tv') {
+                                    navigate('/all-media?mediaType=TVShow');
+                                } else if (item.key === 'games') {
+                                    navigate('/all-media?mediaType=VideoGame');
+                                } else if (item.key === 'websites') {
+                                    navigate('/all-media?mediaType=Website');
+                                } else {
+                                    navigate('/all-media');
+                                }
+                            }}
+                            sx={{ 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                cursor: 'pointer', 
+                                color: 'text.secondary',
+                                minHeight: { xs: '60px', sm: '70px' },
+                                minWidth: { xs: '60px', sm: '70px' },
+                                p: { xs: 1, sm: 1.5 },
+                                borderRadius: '12px',
+                                transition: 'all 0.2s ease',
+                                '&:hover': { 
+                                    color: 'text.primary',
+                                    transform: 'scale(1.05)',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                                },
+                                '&:active': {
+                                    transform: 'scale(0.98)'
+                                }
+                            }}
+                        >
+                            {React.cloneElement(item.icon, { 
+                                sx: { fontSize: { xs: 32, sm: 40 } } 
+                            })}
                             <Typography 
-                                variant="body2" 
+                                variant="caption" 
                                 sx={{ 
                                     mt: 0.5,
-                                    fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                                    fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                                    lineHeight: 1.2,
+                                    textAlign: 'center'
                                 }}
                             >
                                 {item.name}
@@ -469,7 +434,48 @@ export default function HomePage() {
                         </Box>
                     </Grid>
                 ))}
-            </Grid>
+              </Grid>
+            </Box>
+            {/* Special, larger icons */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+              <Grid container spacing={{ xs: 1, sm: 2 }} justifyContent="center" sx={{ mb: { xs: 2, sm: 3, md: 4 }, maxWidth: '900px' }}>
+                  {specialMediaIcons.map((item) => (
+                      <Grid item xs={6} sm={4} md={3} key={item.key} sx={{ display: 'flex', justifyContent: 'center' }}>
+                          <Box sx={{ 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              cursor: 'pointer', 
+                              color: 'text.secondary',
+                              minHeight: { xs: '70px', sm: '80px' },
+                              p: { xs: 1.5, sm: 2 },
+                              borderRadius: '12px',
+                              transition: 'all 0.2s ease',
+                              '&:hover': { 
+                                  color: 'text.primary',
+                                  backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                              },
+                              '&:active': {
+                                  transform: 'scale(0.98)'
+                              }
+                          }}>
+                              {React.cloneElement(item.icon, { sx: { fontSize: { xs: 40, sm: 50 } } })}
+                              <Typography 
+                                  variant="body2" 
+                                  sx={{ 
+                                      mt: 0.5,
+                                      fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                                      textAlign: 'center'
+                                  }}
+                              >
+                                  {item.name}
+                              </Typography>
+                          </Box>
+                      </Grid>
+                  ))}
+              </Grid>
+            </Box>
 
             <Box sx={{ 
                 mt: { xs: 2, sm: 3, md: 4 }, 

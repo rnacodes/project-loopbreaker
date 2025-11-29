@@ -138,7 +138,10 @@ const SimpleMediaCarousel = ({
                     height={cardHeight}
                     image={media.thumbnailUrl || media.thumbnail || media.Thumbnail}
                     alt={media.title || media.Title}
-                    sx={{ objectFit: 'cover' }}
+                    sx={{ 
+                      objectFit: 'contain',
+                      backgroundColor: 'rgba(0, 0, 0, 0.1)'
+                    }}
                   />
                 )}
                 {showCardContent && (

@@ -485,7 +485,26 @@ function ImportMediaPage() {
                 publishTime: item.snippet?.publishTime
             })) || [];
             
-            setYoutubeSearchResults(transformedResults);
+            // For playlists, fetch detailed info to get video count
+            const resultsWithDetails = await Promise.all(
+                transformedResults.map(async (item) => {
+                    if (item.kind === 'youtube#playlist') {
+                        try {
+                            const playlistDetails = await getYouTubePlaylistDetails(item.id);
+                            return {
+                                ...item,
+                                videoCount: playlistDetails.contentDetails?.itemCount || 0
+                            };
+                        } catch (error) {
+                            console.warn(`Failed to fetch details for playlist ${item.id}:`, error);
+                            return item;
+                        }
+                    }
+                    return item;
+                })
+            );
+            
+            setYoutubeSearchResults(resultsWithDetails);
             setYoutubeIsLoading(false);
             
         } catch (err) {
@@ -1447,12 +1466,19 @@ function ImportMediaPage() {
                                                             >
                                                                 {item.title}
                                                             </Typography>
-                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, flexWrap: 'wrap' }}>
                                                                 <Chip 
                                                                     label={getYoutubeItemType(item)}
                                                                     size="small"
                                                                     color="primary"
                                                                 />
+                                                                {item.videoCount !== undefined && (
+                                                                    <Chip 
+                                                                        label={`${item.videoCount} video${item.videoCount !== 1 ? 's' : ''}`}
+                                                                        size="small"
+                                                                        sx={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+                                                                    />
+                                                                )}
                                                                 <Typography variant="body2" color="text.secondary">
                                                                     by {item.channelTitle}
                                                                 </Typography>

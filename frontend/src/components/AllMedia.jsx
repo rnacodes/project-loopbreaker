@@ -10,6 +10,16 @@ import {
 import { ViewModule, ViewList, OpenInNew, FileDownload, Delete, CheckBox, CheckBoxOutlineBlank } from '@mui/icons-material';
 import { getAllMedia, getMediaByType, bulkDeleteMedia } from '../services/apiService';
 
+// Helper function to get aspect ratio based on media type
+const getAspectRatio = (mediaType) => {
+  // Videos, Movies, TV Shows use 16:9 (rectangular)
+  if (mediaType === 'Video' || mediaType === 'Movie' || mediaType === 'TVShow') {
+    return '56.25%'; // 16:9 aspect ratio
+  }
+  // Books, Podcasts, Articles use 2:3 (portrait)
+  return '150%'; // 2:3 aspect ratio
+};
+
 function AllMedia() {
   const [mediaItems, setMediaItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -147,7 +157,7 @@ function AllMedia() {
                 sx={{
                   position: 'relative',
                   width: '100%',
-                  paddingTop: '150%', // 2:3 aspect ratio for media posters
+                  paddingTop: getAspectRatio(item.mediaType || item.MediaType),
                   overflow: 'hidden',
                   backgroundColor: 'rgba(255, 255, 255, 0.05)'
                 }}
