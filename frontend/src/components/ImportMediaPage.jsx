@@ -119,11 +119,11 @@ function ImportMediaPage() {
             
             console.log('Podcast imported successfully:', result);
             
-            // Navigate to the media detail page (same as manual import flow)
+            // Navigate to the podcast series profile page
             const mediaId = result.id || result.Id;
             if (mediaId) {
                 setTimeout(() => {
-                    navigate(`/media/${mediaId}`);
+                    navigate(`/podcast-series/${mediaId}`);
                 }, 1500); // Give user time to see success message
             }
             
@@ -153,11 +153,11 @@ function ImportMediaPage() {
             
             console.log('Podcast imported successfully:', result);
             
-            // Navigate to the media detail page (same as manual import flow)
+            // Navigate to the podcast series profile page
             const mediaId = result.id || result.Id;
             if (mediaId) {
                 setTimeout(() => {
-                    navigate(`/media/${mediaId}`);
+                    navigate(`/podcast-series/${mediaId}`);
                 }, 1500); // Give user time to see success message
             }
             
@@ -182,11 +182,11 @@ function ImportMediaPage() {
             
             console.log('Podcast imported successfully:', result);
             
-            // Navigate to the media detail page (same as manual import flow)
+            // Navigate to the podcast series profile page
             const mediaId = result.id || result.Id;
             if (mediaId) {
                 setTimeout(() => {
-                    navigate(`/media/${mediaId}`);
+                    navigate(`/podcast-series/${mediaId}`);
                 }, 1500); // Give user time to see success message
             }
             

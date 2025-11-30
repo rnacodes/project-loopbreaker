@@ -1,3 +1,4 @@
 {
-    "window.zoomLevel": 0.5
+    "window.zoomLevel": 0.5,
+    "dotnet.defaultSolution": "src/ProjectLoopbreaker/ProjectLoopbreaker.sln"
 }

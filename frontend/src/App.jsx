@@ -29,6 +29,8 @@ import SourceDirectoryPage from './components/SourceDirectoryPage';
 import YouTubeChannelList from './components/YouTubeChannelList';
 import YouTubeChannelProfile from './components/YouTubeChannelProfile';
 import YouTubePlaylistProfile from './components/YouTubePlaylistProfile';
+import PodcastSeriesProfile from './components/PodcastSeriesProfile';
+import PodcastEpisodeProfile from './components/PodcastEpisodeProfile';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
@@ -70,6 +72,8 @@ function App() {
           <Route path="/youtube-channels" element={<YouTubeChannelList />} />
           <Route path="/youtube-channel/:id" element={<YouTubeChannelProfile />} />
           <Route path="/youtube-playlist/:id" element={<YouTubePlaylistProfile />} />
+          <Route path="/podcast-series/:id" element={<PodcastSeriesProfile />} />
+          <Route path="/podcast-episode/:id" element={<PodcastEpisodeProfile />} />
           {/* Catch-all route for 404 */}
           <Route path="*" element={
             <div style={{ padding: '2rem', textAlign: 'center' }}>

@@ -67,13 +67,19 @@ function MediaProfilePage() {
             // Try to fetch as podcast series first
             try {
               const seriesResponse = await getPodcastSeriesById(id);
-              detailedMedia = { ...basicMedia, ...seriesResponse.data, podcastType: 'Series' };
-              console.log('Detailed podcast series data:', detailedMedia);
+              // Redirect to dedicated podcast series profile
+              navigate(`/podcast-series/${id}`, { replace: true });
+              return;
             } catch (seriesError) {
               // If series fetch fails, try as episode
-              const episodeResponse = await getPodcastEpisodeById(id);
-              detailedMedia = { ...basicMedia, ...episodeResponse.data, podcastType: 'Episode' };
-              console.log('Detailed podcast episode data:', detailedMedia);
+              try {
+                const episodeResponse = await getPodcastEpisodeById(id);
+                // Redirect to dedicated podcast episode profile
+                navigate(`/podcast-episode/${id}`, { replace: true });
+                return;
+              } catch (episodeError) {
+                console.warn('Could not fetch detailed podcast data, using basic data:', episodeError);
+              }
             }
           } catch (podcastError) {
             console.warn('Could not fetch detailed podcast data, using basic data:', podcastError);
