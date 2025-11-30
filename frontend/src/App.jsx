@@ -28,6 +28,7 @@ import ArticlesPage from './components/ArticlesPage';
 import SourceDirectoryPage from './components/SourceDirectoryPage';
 import YouTubeChannelList from './components/YouTubeChannelList';
 import YouTubeChannelProfile from './components/YouTubeChannelProfile';
+import YouTubePlaylistProfile from './components/YouTubePlaylistProfile';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
@@ -68,6 +69,7 @@ function App() {
           <Route path="/sources" element={<SourceDirectoryPage />} />
           <Route path="/youtube-channels" element={<YouTubeChannelList />} />
           <Route path="/youtube-channel/:id" element={<YouTubeChannelProfile />} />
+          <Route path="/youtube-playlist/:id" element={<YouTubePlaylistProfile />} />
           {/* Catch-all route for 404 */}
           <Route path="*" element={
             <div style={{ padding: '2rem', textAlign: 'center' }}>

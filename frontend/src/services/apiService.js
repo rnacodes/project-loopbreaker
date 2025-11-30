@@ -832,6 +832,104 @@ export const importFromYouTubeUrl = async (url) => {
     }
 };
 
+// YouTube Playlist Management API calls
+export const getAllYouTubePlaylists = async () => {
+    try {
+        const response = await apiClient.get('/youtubeplaylist');
+        return response.data;
+    } catch (error) {
+        console.error('Error getting all YouTube playlists:', error);
+        throw error;
+    }
+};
+
+export const getYouTubePlaylistById = async (id, includeVideos = false) => {
+    try {
+        const params = new URLSearchParams({
+            includeVideos: includeVideos.toString()
+        });
+        const response = await apiClient.get(`/youtubeplaylist/${id}?${params}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error getting YouTube playlist by ID:', error);
+        throw error;
+    }
+};
+
+export const getYouTubePlaylistByExternalId = async (externalId, includeVideos = false) => {
+    try {
+        const params = new URLSearchParams({
+            includeVideos: includeVideos.toString()
+        });
+        const response = await apiClient.get(`/youtubeplaylist/by-external/${externalId}?${params}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error getting YouTube playlist by external ID:', error);
+        throw error;
+    }
+};
+
+export const getYouTubePlaylistVideos = async (id) => {
+    try {
+        const response = await apiClient.get(`/youtubeplaylist/${id}/videos`);
+        return response.data;
+    } catch (error) {
+        console.error('Error getting YouTube playlist videos:', error);
+        throw error;
+    }
+};
+
+export const importYouTubePlaylistEntity = async (playlistExternalId) => {
+    try {
+        const response = await apiClient.post(`/youtubeplaylist/import/${playlistExternalId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error importing YouTube playlist:', error);
+        throw error;
+    }
+};
+
+export const syncYouTubePlaylist = async (id) => {
+    try {
+        const response = await apiClient.post(`/youtubeplaylist/${id}/sync`);
+        return response.data;
+    } catch (error) {
+        console.error('Error syncing YouTube playlist:', error);
+        throw error;
+    }
+};
+
+export const addVideoToYouTubePlaylist = async (playlistId, videoId, position = null) => {
+    try {
+        const params = position !== null ? `?position=${position}` : '';
+        const response = await apiClient.post(`/youtubeplaylist/${playlistId}/videos/${videoId}${params}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error adding video to YouTube playlist:', error);
+        throw error;
+    }
+};
+
+export const removeVideoFromYouTubePlaylist = async (playlistId, videoId) => {
+    try {
+        const response = await apiClient.delete(`/youtubeplaylist/${playlistId}/videos/${videoId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error removing video from YouTube playlist:', error);
+        throw error;
+    }
+};
+
+export const deleteYouTubePlaylist = async (id) => {
+    try {
+        const response = await apiClient.delete(`/youtubeplaylist/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting YouTube playlist:', error);
+        throw error;
+    }
+};
+
 // Article API calls
 export const getAllArticles = async () => {
     try {

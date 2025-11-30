@@ -734,7 +734,7 @@ function MediaProfilePage() {
                       maxWidth: { xs: 300, sm: 250, md: 180 },
                       height: { xs: 'auto', sm: 375, md: 270 },
                       aspectRatio: { 
-                        xs: (mediaItem.mediaType === 'Video' || mediaItem.mediaType === 'Movie' || mediaItem.mediaType === 'TVShow') 
+                        xs: (mediaItem.mediaType === 'Video' || mediaItem.mediaType === 'Movie' || mediaItem.mediaType === 'TVShow' || mediaItem.mediaType === 'Playlist') 
                           ? '16/9' 
                           : '2/3', 
                         sm: 'auto' 

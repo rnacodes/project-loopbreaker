@@ -9,7 +9,7 @@ import {
     Divider, Chip, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import { Search, Download, Podcasts, MenuBook, ExpandMore, OpenInNew, MovieFilter, VideoLibrary, Article } from '@mui/icons-material';
-import { searchPodcasts, getPodcastSeriesById, importPodcastSeriesFromApi, importPodcastSeriesByName, searchBooksFromOpenLibrary, importBookFromOpenLibrary, searchMovies, searchTvShows, searchMulti, getMovieDetails, getTvShowDetails, importMovieFromTmdb, importTvShowFromTmdb, searchYouTube, getYouTubeVideoDetails, getYouTubePlaylistDetails, getYouTubeChannelDetails, importYouTubeVideo, importYouTubePlaylist, importYouTubeChannel, importFromYouTubeUrl, importYouTubeChannelEntity, checkYouTubeChannelExists } from '../services/apiService';
+import { searchPodcasts, getPodcastSeriesById, importPodcastSeriesFromApi, importPodcastSeriesByName, searchBooksFromOpenLibrary, importBookFromOpenLibrary, searchMovies, searchTvShows, searchMulti, getMovieDetails, getTvShowDetails, importMovieFromTmdb, importTvShowFromTmdb, searchYouTube, getYouTubeVideoDetails, getYouTubePlaylistDetails, getYouTubeChannelDetails, importYouTubeVideo, importYouTubePlaylist, importYouTubeChannel, importFromYouTubeUrl, importYouTubeChannelEntity, importYouTubePlaylistEntity, checkYouTubeChannelExists } from '../services/apiService';
 import WhiteOutlineButton from './shared/WhiteOutlineButton';
 
 function ImportMediaPage() {
@@ -555,15 +555,35 @@ function ImportMediaPage() {
             
             if (item.kind === 'youtube#video') {
                 result = await importYouTubeVideo(item.id);
+                
+                setYoutubeSuccess(`"${item.title}" imported successfully!`);
+                setYoutubeIsLoading(false);
+                
+                const mediaId = result.id || result.Id;
+                if (mediaId) {
+                    setTimeout(() => {
+                        navigate(`/media/${mediaId}`);
+                    }, 1500);
+                }
             } else if (item.kind === 'youtube#playlist') {
-                result = await importYouTubePlaylist(item.id, true); // Import as channel/series
+                // Import as YouTubePlaylist entity (first-class media type)
+                result = await importYouTubePlaylistEntity(item.id);
+                
+                setYoutubeSuccess(`Playlist "${item.title}" imported successfully!`);
+                setYoutubeIsLoading(false);
+                
+                // Navigate to the playlist profile page
+                if (result.id) {
+                    setTimeout(() => {
+                        navigate(`/youtube-playlist/${result.id}`);
+                    }, 1500);
+                }
             } else if (item.kind === 'youtube#channel') {
                 // Check if channel already exists
                 const exists = await checkYouTubeChannelExists(item.id);
                 if (exists) {
                     setYoutubeError('This channel has already been imported. Redirecting to channel page...');
                     setYoutubeIsLoading(false);
-                    // You could redirect to the existing channel here if needed
                     return;
                 }
                 
@@ -579,21 +599,8 @@ function ImportMediaPage() {
                         navigate(`/youtube-channel/${result.id}`);
                     }, 1500);
                 }
-                return;
             } else {
                 throw new Error('Unknown YouTube content type');
-            }
-            
-            setYoutubeSuccess(`"${item.title}" imported successfully!`);
-            setYoutubeIsLoading(false);
-            
-            console.log('YouTube import successful:', result);
-            
-            const mediaId = Array.isArray(result) ? result[0]?.id : result.id;
-            if (mediaId) {
-                setTimeout(() => {
-                    navigate(`/media/${mediaId}`);
-                }, 1500);
             }
             
         } catch (err) {

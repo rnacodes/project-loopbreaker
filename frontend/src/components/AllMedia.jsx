@@ -12,8 +12,8 @@ import { getAllMedia, getMediaByType, bulkDeleteMedia } from '../services/apiSer
 
 // Helper function to get aspect ratio based on media type
 const getAspectRatio = (mediaType) => {
-  // Videos, Movies, TV Shows use 16:9 (rectangular)
-  if (mediaType === 'Video' || mediaType === 'Movie' || mediaType === 'TVShow') {
+  // Videos, Movies, TV Shows, Playlists use 16:9 (rectangular)
+  if (mediaType === 'Video' || mediaType === 'Movie' || mediaType === 'TVShow' || mediaType === 'Playlist') {
     return '56.25%'; // 16:9 aspect ratio
   }
   // Books, Podcasts, Articles use 2:3 (portrait)
