@@ -48,6 +48,7 @@ describe('PodcastEpisodeProfile', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Podcast API functions return axios response with { data: }
     apiService.getPodcastEpisodeById.mockResolvedValue({ data: mockEpisode });
     apiService.getPodcastSeriesById.mockResolvedValue({ data: mockSeries });
     apiService.getEpisodesBySeriesId.mockResolvedValue({ data: mockAllEpisodes });

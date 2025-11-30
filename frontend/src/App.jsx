@@ -31,6 +31,7 @@ import YouTubeChannelProfile from './components/YouTubeChannelProfile';
 import YouTubePlaylistProfile from './components/YouTubePlaylistProfile';
 import PodcastSeriesProfile from './components/PodcastSeriesProfile';
 import PodcastEpisodeProfile from './components/PodcastEpisodeProfile';
+import CleanupManagementPage from './components/CleanupManagementPage';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
@@ -74,6 +75,7 @@ function App() {
           <Route path="/youtube-playlist/:id" element={<YouTubePlaylistProfile />} />
           <Route path="/podcast-series/:id" element={<PodcastSeriesProfile />} />
           <Route path="/podcast-episode/:id" element={<PodcastEpisodeProfile />} />
+          <Route path="/cleanup" element={<CleanupManagementPage />} />
           {/* Catch-all route for 404 */}
           <Route path="*" element={
             <div style={{ padding: '2rem', textAlign: 'center' }}>

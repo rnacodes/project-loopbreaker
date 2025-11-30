@@ -27,6 +27,7 @@ describe('YouTubePlaylistProfile', () => {
     thumbnail: 'https://example.com/playlist-thumb.jpg',
     status: 0,
     dateAdded: new Date().toISOString(),
+    videos: [], // Will be populated when includeVideos is true
   };
 
   const mockVideos = [
@@ -48,8 +49,15 @@ describe('YouTubePlaylistProfile', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    apiService.getYouTubePlaylistById.mockResolvedValue({ data: mockPlaylist });
-    apiService.getYouTubePlaylistVideos.mockResolvedValue({ data: mockVideos });
+    // YouTube API functions return data directly (not wrapped in { data: })
+    apiService.getYouTubePlaylistById.mockImplementation((id, includeVideos) => {
+      if (includeVideos) {
+        return Promise.resolve({ ...mockPlaylist, videos: mockVideos });
+      }
+      return Promise.resolve(mockPlaylist);
+    });
+    apiService.getYouTubePlaylistVideos.mockResolvedValue(mockVideos);
+    // Mixlist API returns axios response with { data: }
     apiService.getAllMixlists.mockResolvedValue({ data: [] });
   });
 
@@ -75,11 +83,12 @@ describe('YouTubePlaylistProfile', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Videos/i)).toBeInTheDocument();
+      // Look for the specific heading text
+      expect(screen.getByText(/Videos in Playlist/i)).toBeInTheDocument();
     });
 
-    // Verify API calls
-    expect(apiService.getYouTubePlaylistVideos).toHaveBeenCalledWith('test-playlist-id');
+    // Verify the component shows it has 2 videos in the list
+    expect(screen.getByText(/Videos in Playlist \(2\)/i)).toBeInTheDocument();
   });
 
   it('handles sync button click', async () => {
@@ -114,8 +123,8 @@ describe('YouTubePlaylistProfile', () => {
     );
 
     await waitFor(() => {
-      expect(apiService.getYouTubePlaylistById).toHaveBeenCalledWith('test-playlist-id');
-      expect(apiService.getYouTubePlaylistVideos).toHaveBeenCalledWith('test-playlist-id');
+      // getYouTubePlaylistById is called with (id, includeVideos=true)
+      expect(apiService.getYouTubePlaylistById).toHaveBeenCalledWith('test-playlist-id', true);
     });
   });
 
