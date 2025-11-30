@@ -28,10 +28,12 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
             
             _httpClient = new HttpClient(_mockHttpMessageHandler.Object)
             {
-                BaseAddress = new Uri("https://listen-api.listennotes.com/api/v2/")
+                // Using ListenNotes MOCK server for testing (no API key required)
+                // See: https://www.listennotes.com/api/docs/?test=1
+                BaseAddress = new Uri("https://listen-api-test.listennotes.com/api/v2/")
             };
 
-            // Setup configuration to return test API key
+            // Setup configuration to return test API key (not needed for mock server)
             _mockConfiguration.Setup(x => x["ApiKeys:ListenNotes"]).Returns("test-api-key");
 
             _listenNotesApiClient = new ListenNotesApiClient(_httpClient, _mockLogger.Object, _mockConfiguration.Object);

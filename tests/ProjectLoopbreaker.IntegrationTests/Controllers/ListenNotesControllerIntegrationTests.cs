@@ -12,6 +12,11 @@ using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.IntegrationTests.Controllers
 {
+    /// <summary>
+    /// Integration tests for ListenNotes API endpoints
+    /// Uses WebApplicationFactory which configures mock ListenNotes API server
+    /// Mock server: https://listen-api-test.listennotes.com/api/v2/
+    /// </summary>
     public class ListenNotesControllerIntegrationTests : IClassFixture<WebApplicationFactory>
     {
         private readonly WebApplicationFactory _factory;
@@ -436,9 +441,9 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
         {
             // Arrange
             var mockService = new Mock<IListenNotesService>();
-            var expectedResult = CreatePodcast();
+            var expectedResult = CreatePodcastSeries();
             
-            mockService.Setup(x => x.ImportPodcastAsync("test-id"))
+            mockService.Setup(x => x.ImportPodcastSeriesAsync("test-id"))
                       .ReturnsAsync(expectedResult);
 
             var client = _factory.WithWebHostBuilder(builder =>
@@ -466,7 +471,7 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
             // Arrange
             var mockService = new Mock<IListenNotesService>();
             
-            mockService.Setup(x => x.ImportPodcastAsync("invalid-id"))
+            mockService.Setup(x => x.ImportPodcastSeriesAsync("invalid-id"))
                       .ThrowsAsync(new InvalidOperationException("Podcast not found"));
 
             var client = _factory.WithWebHostBuilder(builder =>
@@ -493,9 +498,10 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
         {
             // Arrange
             var mockService = new Mock<IListenNotesService>();
-            var expectedResult = CreatePodcast();
+            var seriesId = Guid.NewGuid();
+            var expectedResult = CreatePodcastEpisode(seriesId);
             
-            mockService.Setup(x => x.ImportPodcastEpisodeAsync("test-id"))
+            mockService.Setup(x => x.ImportPodcastEpisodeAsync("test-id", seriesId))
                       .ReturnsAsync(expectedResult);
 
             var client = _factory.WithWebHostBuilder(builder =>
@@ -511,7 +517,7 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
             }).CreateClient();
 
             // Act
-            var response = await client.PostAsync("/api/listennotes/import/episode/test-id", null);
+            var response = await client.PostAsync($"/api/listennotes/import/episode/test-id?seriesId={seriesId}", null);
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -522,8 +528,9 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
         {
             // Arrange
             var mockService = new Mock<IListenNotesService>();
+            var seriesId = Guid.NewGuid();
             
-            mockService.Setup(x => x.ImportPodcastEpisodeAsync("invalid-id"))
+            mockService.Setup(x => x.ImportPodcastEpisodeAsync("invalid-id", seriesId))
                       .ThrowsAsync(new InvalidOperationException("Episode not found"));
 
             var client = _factory.WithWebHostBuilder(builder =>
@@ -539,7 +546,7 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
             }).CreateClient();
 
             // Act
-            var response = await client.PostAsync("/api/listennotes/import/episode/invalid-id", null);
+            var response = await client.PostAsync($"/api/listennotes/import/episode/invalid-id?seriesId={seriesId}", null);
 
             // Assert
             response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -677,6 +684,36 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
                 Notes = "Test Description",
                 Status = Status.Uncharted,
                 DateAdded = DateTime.UtcNow
+            };
+        }
+
+        private static PodcastSeries CreatePodcastSeries()
+        {
+            return new PodcastSeries
+            {
+                Id = Guid.NewGuid(),
+                Title = "Test Podcast Series",
+                Publisher = "Test Publisher",
+                Description = "Test Description",
+                ExternalId = "test-podcast-id",
+                Status = Status.Uncharted,
+                DateAdded = DateTime.UtcNow,
+                MediaType = MediaType.Podcast
+            };
+        }
+
+        private static PodcastEpisode CreatePodcastEpisode(Guid seriesId)
+        {
+            return new PodcastEpisode
+            {
+                Id = Guid.NewGuid(),
+                Title = "Test Episode",
+                SeriesId = seriesId,
+                Description = "Test Episode Description",
+                ExternalId = "test-episode-id",
+                Status = Status.Uncharted,
+                DateAdded = DateTime.UtcNow,
+                MediaType = MediaType.Podcast
             };
         }
 

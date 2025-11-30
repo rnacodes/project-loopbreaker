@@ -99,6 +99,11 @@ if (string.IsNullOrEmpty(connectionString))
         Console.WriteLine("Using placeholder connection string. Database operations will fail.");
         connectionString = "Host=localhost;Database=projectloopbreaker;Username=postgres;Password=password";
     }
+    else if (builder.Environment.EnvironmentName == "Testing")
+    {
+        // For testing environment, use a dummy connection string as in-memory database will be configured
+        connectionString = "Host=localhost;Database=test;Username=test;Password=test";
+    }
     else
     {
         throw new InvalidOperationException("Database connection string is required but not configured. Please set DATABASE_URL environment variable or configure DefaultConnection in appsettings.json");
@@ -208,12 +213,17 @@ var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
 dataSourceBuilder.EnableDynamicJson(); // Enable dynamic JSON serialization for arrays
 var dataSource = dataSourceBuilder.Build();
 
-builder.Services.AddDbContext<MediaLibraryDbContext>(options =>
-    options.UseNpgsql(dataSource));
+// Only register Npgsql DbContext if not in Testing environment
+// (Testing environment will use InMemory database configured in WebApplicationFactory)
+if (builder.Environment.EnvironmentName != "Testing")
+{
+    builder.Services.AddDbContext<MediaLibraryDbContext>(options =>
+        options.UseNpgsql(dataSource));
 
-// Register IApplicationDbContext
-builder.Services.AddScoped<IApplicationDbContext>(provider => 
-    provider.GetRequiredService<MediaLibraryDbContext>());
+    // Register IApplicationDbContext
+    builder.Services.AddScoped<IApplicationDbContext>(provider =>
+        provider.GetRequiredService<MediaLibraryDbContext>());
+}
 
 // Register Application Services
 builder.Services.AddScoped<IPodcastMappingService, PodcastMappingService>();
