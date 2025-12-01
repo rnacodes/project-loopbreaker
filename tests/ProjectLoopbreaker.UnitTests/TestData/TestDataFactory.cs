@@ -98,6 +98,34 @@ namespace ProjectLoopbreaker.UnitTests.TestData
             };
         }
 
+        public static Website CreateWebsite(string? title = null, string? url = null, string? domain = null)
+        {
+            return new Website
+            {
+                Id = Guid.NewGuid(),
+                Title = title ?? "Test Website",
+                Link = url ?? "https://example.com",
+                Domain = domain ?? "example.com",
+                MediaType = MediaType.Website,
+                Status = Status.Uncharted,
+                DateAdded = DateTime.UtcNow,
+                LastCheckedDate = DateTime.UtcNow,
+                Topics = new List<Topic>(),
+                Genres = new List<Genre>(),
+                Mixlists = new List<Mixlist>()
+            };
+        }
+
+        public static List<Website> CreateWebsites(int count)
+        {
+            var websites = new List<Website>();
+            for (int i = 0; i < count; i++)
+            {
+                websites.Add(CreateWebsite($"Test Website {i + 1}", $"https://example{i + 1}.com", $"example{i + 1}.com"));
+            }
+            return websites;
+        }
+
         public static CreateBookDto CreateBookDto(string? title = null, string? author = null)
         {
             return new CreateBookDto
@@ -149,6 +177,18 @@ namespace ProjectLoopbreaker.UnitTests.TestData
             return new CreateGenreDto
             {
                 Name = name ?? "test genre"  // lowercase per project standards
+            };
+        }
+
+        public static CreateWebsiteDto CreateWebsiteDto(string? title = null, string? url = null)
+        {
+            return new CreateWebsiteDto
+            {
+                Title = title ?? "Test Website",
+                Url = url ?? "https://example.com",
+                Description = "Test website description",
+                Topics = new List<string>(),
+                Genres = new List<string>()
             };
         }
 

@@ -23,7 +23,6 @@
     <ProjectReference Include="..\ProjectLoopbreaker.Domain\ProjectLoopbreaker.Domain.csproj" />
     <ProjectReference Include="..\ProjectLoopbreaker.Infrastructure\ProjectLoopbreaker.Infrastructure.csproj" />
     <ProjectReference Include="..\ProjectLoopbreaker.Shared\ProjectLoopbreaker.Shared.csproj" />
-    <ProjectReference Include="..\ProjectLoopbreaker.DTOs\ProjectLoopbreaker.DTOs.csproj" />
   </ItemGroup>
 
 </Project>

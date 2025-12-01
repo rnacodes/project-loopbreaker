@@ -20,6 +20,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<YouTubeChannel> YouTubeChannels { get; set; }
         public DbSet<YouTubePlaylist> YouTubePlaylists { get; set; }
         public DbSet<Article> Articles { get; set; }
+        public DbSet<Website> Websites { get; set; }
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Genre> Genres { get; set; }
         public DbSet<Highlight> Highlights { get; set; }
@@ -36,6 +37,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         IQueryable<YouTubeChannel> IApplicationDbContext.YouTubeChannels => YouTubeChannels;
         IQueryable<YouTubePlaylist> IApplicationDbContext.YouTubePlaylists => YouTubePlaylists;
         IQueryable<Article> IApplicationDbContext.Articles => Articles;
+        IQueryable<Website> IApplicationDbContext.Websites => Websites;
         IQueryable<Topic> IApplicationDbContext.Topics => Topics;
         IQueryable<Genre> IApplicationDbContext.Genres => Genres;
         IQueryable<Highlight> IApplicationDbContext.Highlights => Highlights;
@@ -211,6 +213,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             modelBuilder.Entity<Video>().ToTable("Videos");
             modelBuilder.Entity<YouTubeChannel>().ToTable("YouTubeChannels");
             modelBuilder.Entity<Article>().ToTable("Articles");
+            modelBuilder.Entity<Website>().ToTable("Websites");
 
             // Configure PodcastSeries specific properties
             modelBuilder.Entity<PodcastSeries>(entity =>
@@ -525,6 +528,26 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.HasIndex(e => e.IsArchived);
                 entity.HasIndex(e => e.PublicationDate);
                 entity.HasIndex(e => e.ReaderLocation);
+            });
+
+            // Configure Website specific properties
+            modelBuilder.Entity<Website>(entity =>
+            {
+                entity.Property(e => e.RssFeedUrl)
+                    .HasMaxLength(2000);
+                    
+                entity.Property(e => e.Domain)
+                    .HasMaxLength(200);
+                    
+                entity.Property(e => e.Author)
+                    .HasMaxLength(200);
+                    
+                entity.Property(e => e.Publication)
+                    .HasMaxLength(200);
+                    
+                // Create indexes for better query performance
+                entity.HasIndex(e => e.Domain);
+                entity.HasIndex(e => e.LastCheckedDate);
             });
 
             // Configure Highlight entity

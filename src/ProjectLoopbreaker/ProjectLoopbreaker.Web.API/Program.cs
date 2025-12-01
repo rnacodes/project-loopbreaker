@@ -244,6 +244,8 @@ builder.Services.AddScoped<IListenNotesService, ListenNotesService>();
 builder.Services.AddScoped<IInstapaperService, InstapaperService>();
 builder.Services.AddScoped<IArticleService, ArticleService>();
 builder.Services.AddScoped<IArticleMappingService, ArticleMappingService>();
+builder.Services.AddScoped<IWebsiteService, WebsiteService>();
+builder.Services.AddScoped<IWebsiteMappingService, WebsiteMappingService>();
 
 // Register Readwise services
 builder.Services.AddScoped<IHighlightService, HighlightService>();
@@ -338,6 +340,13 @@ builder.Services.AddHttpClient<IOpenLibraryApiClient, OpenLibraryApiClient>(clie
 
 // Register OpenLibrary service
 builder.Services.AddScoped<IOpenLibraryService, OpenLibraryService>();
+
+// Configure Website Scraper service
+builder.Services.AddHttpClient<IWebsiteScraperService, ProjectLoopbreaker.Infrastructure.Services.WebsiteScraperService>(client =>
+{
+    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 // Configure TMDB API client
 builder.Services.AddHttpClient<TmdbApiClient>(client =>

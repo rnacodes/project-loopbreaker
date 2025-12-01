@@ -1,6 +1,8 @@
 //TODO: Add Goodreads link to Sources page
 //TODO: Update with latest features and sources
 //TODO: Include Readwise and Readwise Reader
+//TODO: Combine this with the cleanup page to create an "Admin" page
+//TODO: ^ This could also be where to add authorization
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
