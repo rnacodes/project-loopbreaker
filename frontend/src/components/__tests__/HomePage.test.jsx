@@ -262,7 +262,7 @@ describe('HomePage', () => {
 
   describe('Error Handling', () => {
     it('should display error message when mixlists fail to load', async () => {
-      apiService.getAllMixlists.mockRejectedValue(new Error('Network Error'));
+      apiService.getAllMixlists.mockRejectedValue(new Error('API Error'));
       apiService.getAllMedia.mockResolvedValue({ data: [] });
 
       render(
