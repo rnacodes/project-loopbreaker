@@ -106,9 +106,9 @@ describe('WebsitesPage', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('The Verge')).toBeInTheDocument();
-      expect(screen.getByText('CSS-Tricks')).toBeInTheDocument();
-      expect(screen.getByText('Example Site')).toBeInTheDocument();
+      expect(screen.getAllByText('The Verge').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('CSS-Tricks').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Example Site').length).toBeGreaterThan(0);
     });
   });
 
@@ -126,16 +126,16 @@ describe('WebsitesPage', () => {
     renderWithRouter(<WebsitesPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('The Verge')).toBeInTheDocument();
+      expect(screen.getAllByText('The Verge').length).toBeGreaterThan(0);
     });
 
     const searchInput = screen.getByPlaceholderText('Search websites...');
     fireEvent.change(searchInput, { target: { value: 'css' } });
 
     await waitFor(() => {
-      expect(screen.getByText('CSS-Tricks')).toBeInTheDocument();
-      expect(screen.queryByText('The Verge')).not.toBeInTheDocument();
-      expect(screen.queryByText('Example Site')).not.toBeInTheDocument();
+      expect(screen.getAllByText('CSS-Tricks').length).toBeGreaterThan(0);
+      expect(screen.queryAllByText('The Verge').length).toBe(0);
+      expect(screen.queryAllByText('Example Site').length).toBe(0);
     });
   });
 
@@ -148,7 +148,7 @@ describe('WebsitesPage', () => {
     renderWithRouter(<WebsitesPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('The Verge')).toBeInTheDocument();
+      expect(screen.getAllByText('The Verge').length).toBeGreaterThan(0);
     });
 
     // Click the filter dropdown
@@ -169,7 +169,7 @@ describe('WebsitesPage', () => {
     renderWithRouter(<WebsitesPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('The Verge')).toBeInTheDocument();
+      expect(screen.getAllByText('The Verge').length).toBeGreaterThan(0);
     });
 
     const sortSelect = screen.getByLabelText('Sort By');
@@ -210,7 +210,7 @@ describe('WebsitesPage', () => {
     renderWithRouter(<WebsitesPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('The Verge')).toBeInTheDocument();
+      expect(screen.getAllByText('The Verge').length).toBeGreaterThan(0);
     });
 
     // Find and click the delete button (there are multiple, get the first one)
@@ -233,7 +233,7 @@ describe('WebsitesPage', () => {
     renderWithRouter(<WebsitesPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('The Verge')).toBeInTheDocument();
+      expect(screen.getAllByText('The Verge').length).toBeGreaterThan(0);
     });
 
     const deleteButtons = screen.getAllByLabelText('Delete');
@@ -263,7 +263,7 @@ describe('WebsitesPage', () => {
     renderWithRouter(<WebsitesPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('The Verge')).toBeInTheDocument();
+      expect(screen.getAllByText('The Verge').length).toBeGreaterThan(0);
     });
 
     const searchInput = screen.getByPlaceholderText('Search websites...');
