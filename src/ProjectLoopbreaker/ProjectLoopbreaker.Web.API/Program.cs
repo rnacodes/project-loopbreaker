@@ -6,6 +6,9 @@ using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Application.Services;
 using ProjectLoopbreaker.Shared.Interfaces;
 using Amazon.S3;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,6 +79,48 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
+
+// --- Configure JWT Authentication ---
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? jwtSettings["Secret"];
+
+if (string.IsNullOrEmpty(jwtSecret))
+{
+    Console.WriteLine("WARNING: No JWT secret configured. Authentication will not work.");
+    Console.WriteLine("Please set JWT_SECRET environment variable or configure JwtSettings:Secret in appsettings.json");
+}
+else
+{
+    var key = Encoding.ASCII.GetBytes(jwtSecret);
+
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false; // Set to true in production if using HTTPS
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ClockSkew = TimeSpan.Zero // Remove default 5 minute clock skew
+        };
+    });
+
+    builder.Services.AddAuthorization();
+    
+    Console.WriteLine("JWT Authentication configured successfully.");
+    Console.WriteLine($"JWT Issuer: {jwtSettings["Issuer"]}");
+    Console.WriteLine($"JWT Audience: {jwtSettings["Audience"]}");
+}
 
 // --- Configure EF Core & PostgreSQL ---
 // Try to get connection string from various sources with priority:
@@ -446,7 +491,10 @@ app.UseRouting(); // Ensure routing is enabled
 // --- Use CORS Policy ---
 app.UseCors("AllowFrontend");
 
+// --- Use Authentication and Authorization (order is important!) ---
+app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
 
 Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
