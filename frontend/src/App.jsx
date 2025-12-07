@@ -2,8 +2,12 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import { ThemeProvider, CssBaseline, Typography, Button } from '@mui/material';
 
+// --- Import Auth Context ---
+import { AuthProvider } from './contexts/AuthContext';
+
 // --- Import your page components ---
 import HomePage from './components/HomePage';
+import LoginPage from './components/LoginPage';
 import AddMediaForm from './components/AddMediaForm';
 
 import AllMedia from './components/AllMedia';
@@ -45,12 +49,14 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        {/* Responsive Navigation Component */}
-        <ResponsiveNavigation />
+        <AuthProvider>
+          {/* Responsive Navigation Component */}
+          <ResponsiveNavigation />
 
-        {/* Routes without outer container - each component handles its own layout */}
-        <Routes>
-          <Route path="/" element={<HomePage />} />
+          {/* Routes without outer container - each component handles its own layout */}
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<HomePage />} />
           <Route path="/add-media" element={<AddMediaForm />} />
           <Route path="/all-media" element={<AllMedia />} />
           <Route path="/mixlists" element={<MixlistsPage />} />
@@ -91,6 +97,7 @@ function App() {
             </div>
           } />
         </Routes>
+        </AuthProvider>
       </Router>
     </ThemeProvider>
   );

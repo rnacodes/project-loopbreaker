@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure.Data;
@@ -11,6 +12,7 @@ using System.Linq;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class UploadController : ControllerBase
