@@ -28,8 +28,7 @@ import {
   Search,
   Science,
   Apps,
-  CleaningServices,
-  Language
+  CleaningServices
 } from '@mui/icons-material';
 
 const ResponsiveNavigation = () => {
@@ -52,10 +51,8 @@ const ResponsiveNavigation = () => {
     { text: 'All Media', path: '/all-media', icon: <Movie /> },
     { text: 'Mixlists', path: '/mixlists', icon: <QueueMusic /> },
     { text: 'Sources', path: '/sources', icon: <Apps /> },
-    { text: 'Websites', path: '/websites', icon: <Language /> },
     { text: 'Add Media', path: '/add-media', icon: <Add /> },
     { text: 'Import Media', path: '/import-media', icon: <Download /> },
-    { text: 'Import Website', path: '/import-website', icon: <Language /> },
     { text: 'Upload Media', path: '/upload-media', icon: <Upload /> },
     { text: 'Search by Topic/Genre', path: '/search-by-topic-genre', icon: <Search /> },
     { text: 'Cleanup', path: '/cleanup', icon: <CleaningServices /> },
