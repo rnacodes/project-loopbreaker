@@ -10,6 +10,103 @@ const apiClient = axios.create({
     },
 });
 
+// Request Interceptor - Attach JWT token to all requests
+apiClient.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('authToken');
+        
+        if (token) {
+            // Attach the token as a Bearer token
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Response Interceptor - Handle token expiration
+apiClient.interceptors.response.use(
+    (response) => {
+        return response;
+    },
+    (error) => {
+        // If the token is expired or invalid (401 Unauthorized)
+        if (error.response && error.response.status === 401) {
+            // Only redirect to login if we're not already on the login page
+            // and if the request wasn't to the login endpoint
+            const isLoginRequest = error.config.url?.includes('/auth/login');
+            const currentPath = window.location.pathname;
+            
+            if (!isLoginRequest && currentPath !== '/login') {
+                // Clear the invalid token
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('authUser');
+                
+                // Redirect to login page
+                console.warn('Session expired. Please login again.');
+                window.location.href = '/login';
+            }
+        }
+        
+        return Promise.reject(error);
+    }
+);
+
+// ============================================
+// Authentication API calls
+// ============================================
+
+/**
+ * Login with username and password
+ * @param {string} username - The username
+ * @param {string} password - The password
+ * @returns {Promise} Response with token
+ */
+export const login = async (username, password) => {
+    try {
+        const response = await apiClient.post('/auth/login', { username, password });
+        return response.data;
+    } catch (error) {
+        console.error('Login error:', error);
+        throw error;
+    }
+};
+
+/**
+ * Validate the current token
+ * @returns {Promise} Token validation result
+ */
+export const validateToken = async () => {
+    try {
+        const response = await apiClient.get('/auth/validate');
+        return response.data;
+    } catch (error) {
+        console.error('Token validation error:', error);
+        throw error;
+    }
+};
+
+/**
+ * Logout (server-side notification)
+ * @returns {Promise} Logout confirmation
+ */
+export const logout = async () => {
+    try {
+        const response = await apiClient.post('/auth/logout');
+        return response.data;
+    } catch (error) {
+        console.error('Logout error:', error);
+        throw error;
+    }
+};
+
+// ============================================
+// Media API calls
+// ============================================
+
 export const addMedia = (mediaData) => {
     return apiClient.post('/media', mediaData);
 };
