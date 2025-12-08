@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.13.35806.99
@@ -18,8 +18,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectLoopbreaker.IntegrationTests", "..\..\tests\ProjectLoopbreaker.IntegrationTests\ProjectLoopbreaker.IntegrationTests.csproj", "{97A8378A-0CBD-A07E-28B3-0ED37D1C4547}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectLoopbreaker.Shared", "ProjectLoopbreaker.Shared\ProjectLoopbreaker.Shared.csproj", "{89AD214F-450E-4276-863A-2E8CD0CA6987}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProjectLoopbreaker.Tests", "ProjectLoopbreaker.Tests\ProjectLoopbreaker.Tests.csproj", "{3BEE7E7B-9686-4526-9D1D-2685B95A427F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -127,18 +125,6 @@ Global
 		{89AD214F-450E-4276-863A-2E8CD0CA6987}.Release|x64.Build.0 = Release|Any CPU
 		{89AD214F-450E-4276-863A-2E8CD0CA6987}.Release|x86.ActiveCfg = Release|Any CPU
 		{89AD214F-450E-4276-863A-2E8CD0CA6987}.Release|x86.Build.0 = Release|Any CPU
-		{3BEE7E7B-9686-4526-9D1D-2685B95A427F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3BEE7E7B-9686-4526-9D1D-2685B95A427F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{3BEE7E7B-9686-4526-9D1D-2685B95A427F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{3BEE7E7B-9686-4526-9D1D-2685B95A427F}.Debug|x64.Build.0 = Debug|Any CPU
-		{3BEE7E7B-9686-4526-9D1D-2685B95A427F}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{3BEE7E7B-9686-4526-9D1D-2685B95A427F}.Debug|x86.Build.0 = Debug|Any CPU
-		{3BEE7E7B-9686-4526-9D1D-2685B95A427F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3BEE7E7B-9686-4526-9D1D-2685B95A427F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{3BEE7E7B-9686-4526-9D1D-2685B95A427F}.Release|x64.ActiveCfg = Release|Any CPU
-		{3BEE7E7B-9686-4526-9D1D-2685B95A427F}.Release|x64.Build.0 = Release|Any CPU
-		{3BEE7E7B-9686-4526-9D1D-2685B95A427F}.Release|x86.ActiveCfg = Release|Any CPU
-		{3BEE7E7B-9686-4526-9D1D-2685B95A427F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
