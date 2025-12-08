@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure; // To access the DbContext
 using ProjectLoopbreaker.DTOs;
@@ -25,6 +26,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/media
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<MediaItemResponseDto>>> GetAllMedia()
         {
             var mediaItems = await _context.MediaItems
@@ -368,6 +370,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/media/{id}
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<ActionResult<MediaItemResponseDto>> GetMediaItem(Guid id)
         {
             try
@@ -677,6 +680,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/media/search?query={query}
         [HttpGet("search")]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<BaseMediaItem>>> SearchMedia([FromQuery] string query)
         {
             if (string.IsNullOrWhiteSpace(query))
@@ -708,6 +712,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/media/by-topic/{topicId}
         [HttpGet("by-topic/{topicId}")]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<MediaItemResponseDto>>> GetMediaByTopic(Guid topicId)
         {
             try
@@ -749,6 +754,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/media/by-genre/{genreId}
         [HttpGet("by-genre/{genreId}")]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<MediaItemResponseDto>>> GetMediaByGenre(Guid genreId)
         {
             try
@@ -790,6 +796,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/media/by-type/{mediaType}
         [HttpGet("by-type/{mediaType}")]
+        [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<MediaItemResponseDto>>> GetMediaByType(string mediaType)
         {
             try
@@ -836,6 +843,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/media/{id}/export
         [HttpGet("{id:guid}/export")]
+        [AllowAnonymous]
         public async Task<IActionResult> ExportMediaItem(Guid id)
         {
             try
@@ -892,6 +900,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // GET: api/media/export
         [HttpGet("export")]
+        [AllowAnonymous]
         public async Task<IActionResult> ExportAllMedia()
         {
             try
