@@ -36,7 +36,10 @@ builder.Services.AddCors(options =>
         else
         {
             // Production: Allow your frontend domain and configure based on environment variables
-            var allowedOrigins = new List<string>();
+            var allowedOrigins = new List<string>
+            {
+                "https://www.mymediaverseuniverse.com"  // Production frontend URL
+            };
             
             // Add frontend URL from environment variable if provided
             var frontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL");
@@ -56,7 +59,8 @@ builder.Services.AddCors(options =>
             {
                 policy.WithOrigins(allowedOrigins.ToArray())
                       .AllowAnyHeader()
-                      .AllowAnyMethod();
+                      .AllowAnyMethod()
+                      .AllowCredentials();
             }
             else
             {
@@ -100,7 +104,7 @@ else
     })
     .AddJwtBearer(options =>
     {
-        options.RequireHttpsMetadata = false; // Set to true in production if using HTTPS
+        options.RequireHttpsMetadata = true; // Set to true in production if using HTTPS
         options.SaveToken = true;
         options.TokenValidationParameters = new TokenValidationParameters
         {
