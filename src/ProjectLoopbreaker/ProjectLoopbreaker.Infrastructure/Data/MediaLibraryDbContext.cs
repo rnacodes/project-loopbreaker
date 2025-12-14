@@ -24,6 +24,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Genre> Genres { get; set; }
         public DbSet<Highlight> Highlights { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         // IApplicationDbContext interface implementations
         IQueryable<BaseMediaItem> IApplicationDbContext.MediaItems => MediaItems;
@@ -41,6 +42,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         IQueryable<Topic> IApplicationDbContext.Topics => Topics;
         IQueryable<Genre> IApplicationDbContext.Genres => Genres;
         IQueryable<Highlight> IApplicationDbContext.Highlights => Highlights;
+        IQueryable<RefreshToken> IApplicationDbContext.RefreshTokens => RefreshTokens;
 
 
         public MediaLibraryDbContext(DbContextOptions<MediaLibraryDbContext> options) : base(options) { }
@@ -621,6 +623,36 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.HasIndex(e => e.Category);
                 entity.HasIndex(e => e.HighlightedAt);
                 entity.HasIndex(e => e.IsFavorite);
+            });
+
+            // Configure RefreshToken entity
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.Token)
+                    .HasMaxLength(500)
+                    .IsRequired();
+                    
+                entity.Property(e => e.UserId)
+                    .HasMaxLength(100)
+                    .IsRequired();
+                    
+                entity.Property(e => e.CreatedAt)
+                    .IsRequired();
+                    
+                entity.Property(e => e.ExpiresAt)
+                    .IsRequired();
+                    
+                entity.Property(e => e.ReplacedByToken)
+                    .HasMaxLength(500);
+                    
+                // Create indexes for better query performance
+                entity.HasIndex(e => e.Token)
+                    .IsUnique();
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.ExpiresAt);
+                entity.HasIndex(e => e.IsRevoked);
             });
         }
 

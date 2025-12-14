@@ -22,6 +22,7 @@ namespace ProjectLoopbreaker.Domain.Interfaces
         IQueryable<Topic> Topics { get; }
         IQueryable<Genre> Genres { get; }
         IQueryable<Highlight> Highlights { get; }
+        IQueryable<RefreshToken> RefreshTokens { get; }
 
         // Basic operations
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
