@@ -25,6 +25,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         public async Task<ActionResult<IEnumerable<GenreResponseDto>>> GetAllGenres()
         {
             var genres = await _context.Genres
+                .AsNoTracking()
                 .Include(g => g.MediaItems)
                 .OrderBy(g => g.Name)
                 .ToListAsync();
@@ -70,6 +71,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         public async Task<ActionResult<GenreResponseDto>> GetGenre(Guid id)
         {
             var genre = await _context.Genres
+                .AsNoTracking()
                 .Include(g => g.MediaItems)
                 .FirstOrDefaultAsync(g => g.Id == id);
 

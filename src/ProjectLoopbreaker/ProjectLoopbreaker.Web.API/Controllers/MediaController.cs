@@ -30,6 +30,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         public async Task<ActionResult<IEnumerable<MediaItemResponseDto>>> GetAllMedia()
         {
             var mediaItems = await _context.MediaItems
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(m => m.Mixlists)
                 .Include(m => m.Topics)
                 .Include(m => m.Genres)
@@ -117,68 +119,104 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         /// <summary>
         /// Helper method to add Topics to a media item ensuring proper EF Core change tracking
+        /// OPTIMIZED: Batches database operations to prevent N+1 queries
         /// </summary>
         private async Task AddTopicsToMediaItemAsync(BaseMediaItem mediaItem, string[] topicNames)
         {
             if (topicNames == null || topicNames.Length == 0)
                 return;
 
-            foreach (var topicName in topicNames.Where(t => !string.IsNullOrWhiteSpace(t)))
+            // Normalize all topic names at once
+            var normalizedTopicNames = topicNames
+                .Where(t => !string.IsNullOrWhiteSpace(t))
+                .Select(t => t.Trim().ToLowerInvariant())
+                .Distinct()
+                .ToList();
+
+            if (!normalizedTopicNames.Any())
+                return;
+
+            // ✅ Single query to fetch all existing topics
+            var existingTopics = await _context.Topics
+                .AsNoTracking()
+                .Where(t => normalizedTopicNames.Contains(t.Name))
+                .ToListAsync();
+
+            var existingTopicNames = existingTopics.Select(t => t.Name).ToHashSet();
+            var newTopicNames = normalizedTopicNames.Except(existingTopicNames).ToList();
+
+            // ✅ Batch create all new topics at once
+            if (newTopicNames.Any())
             {
-                var normalizedTopicName = topicName.Trim().ToLowerInvariant();
-                
-                // Check if topic exists using AsNoTracking to avoid tracking conflicts
-                var existingTopic = await _context.Topics
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
-                
-                if (existingTopic == null)
+                var newTopics = newTopicNames.Select(name => new Topic { Name = name }).ToList();
+                _context.Topics.AddRange(newTopics);
+                await _context.SaveChangesAsync(); // Only 1 round trip for all new topics
+                existingTopics.AddRange(newTopics);
+            }
+
+            // ✅ Load all topics into tracking context and add to media item
+            var topicIds = existingTopics.Select(t => t.Id).ToList();
+            var trackedTopics = await _context.Topics
+                .Where(t => topicIds.Contains(t.Id))
+                .ToListAsync();
+
+            foreach (var topic in trackedTopics)
+            {
+                if (!mediaItem.Topics.Any(t => t.Id == topic.Id))
                 {
-                    // Create new topic
-                    existingTopic = new Topic { Name = normalizedTopicName };
-                    _context.Topics.Add(existingTopic);
-                    await _context.SaveChangesAsync();
-                }
-                
-                // Get tracked version and add to media item
-                var trackedTopic = await _context.Topics.FindAsync(existingTopic.Id);
-                if (trackedTopic != null && !mediaItem.Topics.Any(t => t.Id == trackedTopic.Id))
-                {
-                    mediaItem.Topics.Add(trackedTopic);
+                    mediaItem.Topics.Add(topic);
                 }
             }
         }
 
         /// <summary>
         /// Helper method to add Genres to a media item ensuring proper EF Core change tracking
+        /// OPTIMIZED: Batches database operations to prevent N+1 queries
         /// </summary>
         private async Task AddGenresToMediaItemAsync(BaseMediaItem mediaItem, string[] genreNames)
         {
             if (genreNames == null || genreNames.Length == 0)
                 return;
 
-            foreach (var genreName in genreNames.Where(g => !string.IsNullOrWhiteSpace(g)))
+            // Normalize all genre names at once
+            var normalizedGenreNames = genreNames
+                .Where(g => !string.IsNullOrWhiteSpace(g))
+                .Select(g => g.Trim().ToLowerInvariant())
+                .Distinct()
+                .ToList();
+
+            if (!normalizedGenreNames.Any())
+                return;
+
+            // ✅ Single query to fetch all existing genres
+            var existingGenres = await _context.Genres
+                .AsNoTracking()
+                .Where(g => normalizedGenreNames.Contains(g.Name))
+                .ToListAsync();
+
+            var existingGenreNames = existingGenres.Select(g => g.Name).ToHashSet();
+            var newGenreNames = normalizedGenreNames.Except(existingGenreNames).ToList();
+
+            // ✅ Batch create all new genres at once
+            if (newGenreNames.Any())
             {
-                var normalizedGenreName = genreName.Trim().ToLowerInvariant();
-                
-                // Check if genre exists using AsNoTracking to avoid tracking conflicts
-                var existingGenre = await _context.Genres
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
-                
-                if (existingGenre == null)
+                var newGenres = newGenreNames.Select(name => new Genre { Name = name }).ToList();
+                _context.Genres.AddRange(newGenres);
+                await _context.SaveChangesAsync(); // Only 1 round trip for all new genres
+                existingGenres.AddRange(newGenres);
+            }
+
+            // ✅ Load all genres into tracking context and add to media item
+            var genreIds = existingGenres.Select(g => g.Id).ToList();
+            var trackedGenres = await _context.Genres
+                .Where(g => genreIds.Contains(g.Id))
+                .ToListAsync();
+
+            foreach (var genre in trackedGenres)
+            {
+                if (!mediaItem.Genres.Any(g => g.Id == genre.Id))
                 {
-                    // Create new genre
-                    existingGenre = new Genre { Name = normalizedGenreName };
-                    _context.Genres.Add(existingGenre);
-                    await _context.SaveChangesAsync();
-                }
-                
-                // Get tracked version and add to media item
-                var trackedGenre = await _context.Genres.FindAsync(existingGenre.Id);
-                if (trackedGenre != null && !mediaItem.Genres.Any(g => g.Id == trackedGenre.Id))
-                {
-                    mediaItem.Genres.Add(trackedGenre);
+                    mediaItem.Genres.Add(genre);
                 }
             }
         }
@@ -376,6 +414,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             try
             {
                 var mediaItem = await _context.MediaItems
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(m => m.Mixlists)
                     .Include(m => m.Topics)
                     .Include(m => m.Genres)
@@ -690,16 +730,18 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
             try
             {
-                var searchQuery = query.ToLower();
                 var results = await _context.MediaItems
-                    .Where(m => m.Title.ToLower().Contains(searchQuery) || 
-                               (m.Description != null && m.Description.ToLower().Contains(searchQuery)) ||
-                               (m.Topics.Any(t => t.Name.ToLower().Contains(searchQuery))) ||
-                               (m.Genres.Any(g => g.Name.ToLower().Contains(searchQuery))) ||
-                               m.MediaType.ToString().ToLower().Contains(searchQuery))
+                    .AsNoTracking()
+                    .AsSplitQuery()
+                    .Where(m => EF.Functions.ILike(m.Title, $"%{query}%") || 
+                               (m.Description != null && EF.Functions.ILike(m.Description, $"%{query}%")) ||
+                               (m.Topics.Any(t => EF.Functions.ILike(t.Name, $"%{query}%"))) ||
+                               (m.Genres.Any(g => EF.Functions.ILike(g.Name, $"%{query}%"))) ||
+                               EF.Functions.ILike(m.MediaType.ToString(), $"%{query}%"))
                     .Include(m => m.Mixlists)
                     .Include(m => m.Topics)
                     .Include(m => m.Genres)
+                    .Take(100) // Limit results for performance
                     .ToListAsync();
 
                 return Ok(results);
@@ -718,6 +760,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             try
             {
                 var mediaItems = await _context.MediaItems
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Where(m => m.Topics.Any(t => t.Id == topicId))
                     .Include(m => m.Mixlists)
                     .Include(m => m.Topics)
@@ -760,6 +804,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             try
             {
                 var mediaItems = await _context.MediaItems
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Where(m => m.Genres.Any(g => g.Id == genreId))
                     .Include(m => m.Mixlists)
                     .Include(m => m.Topics)
@@ -807,6 +853,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 }
 
                 var mediaItems = await _context.MediaItems
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Where(m => m.MediaType == parsedMediaType)
                     .Include(m => m.Mixlists)
                     .Include(m => m.Topics)
@@ -906,6 +954,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             try
             {
                 var mediaItems = await _context.MediaItems
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(m => m.Topics)
                     .Include(m => m.Genres)
                     .Include(m => m.Mixlists)

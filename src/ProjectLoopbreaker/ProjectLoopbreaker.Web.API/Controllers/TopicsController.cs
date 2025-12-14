@@ -25,6 +25,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         public async Task<ActionResult<IEnumerable<TopicResponseDto>>> GetAllTopics()
         {
             var topics = await _context.Topics
+                .AsNoTracking()
                 .Include(t => t.MediaItems)
                 .OrderBy(t => t.Name)
                 .ToListAsync();
@@ -50,8 +51,9 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
             var normalizedQuery = query.ToLowerInvariant();
             var topics = await _context.Topics
+                .AsNoTracking()
                 .Include(t => t.MediaItems)
-                .Where(t => t.Name.Contains(normalizedQuery))
+                .Where(t => EF.Functions.ILike(t.Name, $"%{normalizedQuery}%"))
                 .OrderBy(t => t.Name)
                 .ToListAsync();
                 
@@ -70,6 +72,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         public async Task<ActionResult<TopicResponseDto>> GetTopic(Guid id)
         {
             var topic = await _context.Topics
+                .AsNoTracking()
                 .Include(t => t.MediaItems)
                 .FirstOrDefaultAsync(t => t.Id == id);
 

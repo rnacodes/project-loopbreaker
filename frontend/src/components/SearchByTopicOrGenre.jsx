@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import {
     Container, Typography, Box, Accordion, AccordionSummary, AccordionDetails,
     List, ListItem, ListItemText, ListItemButton, Chip, CircularProgress,
-    Alert, Grid, Card, CardContent
+    Alert, Grid, Card, CardContent, Button, TextField, Dialog, DialogTitle,
+    DialogContent, DialogActions, IconButton
 } from '@mui/material';
-import { ExpandMore, Topic as TopicIcon, Category as GenreIcon } from '@mui/icons-material';
-import { getAllTopics, getAllGenres } from '../services/apiService';
+import { ExpandMore, Topic as TopicIcon, Category as GenreIcon, Add as AddIcon } from '@mui/icons-material';
+import { getAllTopics, getAllGenres, createTopic, createGenre } from '../services/apiService';
 
 function SearchByTopicOrGenre() {
     const [expanded, setExpanded] = useState(false);
@@ -14,6 +15,14 @@ function SearchByTopicOrGenre() {
     const [genres, setGenres] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    
+    // Dialog states
+    const [openTopicDialog, setOpenTopicDialog] = useState(false);
+    const [openGenreDialog, setOpenGenreDialog] = useState(false);
+    const [newTopicName, setNewTopicName] = useState('');
+    const [newGenreName, setNewGenreName] = useState('');
+    const [creating, setCreating] = useState(false);
     
     const navigate = useNavigate();
 
@@ -53,6 +62,60 @@ function SearchByTopicOrGenre() {
         navigate(`/search-results?type=genre&value=${encodeURIComponent(genre.name || genre.Name)}&id=${genre.id || genre.Id}`);
     };
 
+    const handleCreateTopic = async () => {
+        if (!newTopicName.trim()) {
+            setError('Topic name cannot be empty');
+            return;
+        }
+
+        setCreating(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            const response = await createTopic({ name: newTopicName.trim() });
+            setSuccess(`Topic "${newTopicName}" created successfully!`);
+            setNewTopicName('');
+            setOpenTopicDialog(false);
+            
+            // Refresh the topics list
+            const topicsResponse = await getAllTopics();
+            setTopics(topicsResponse.data.sort((a, b) => (a.name || a.Name).localeCompare(b.name || b.Name)));
+        } catch (err) {
+            console.error('Error creating topic:', err);
+            setError(err.response?.data?.message || 'Failed to create topic');
+        } finally {
+            setCreating(false);
+        }
+    };
+
+    const handleCreateGenre = async () => {
+        if (!newGenreName.trim()) {
+            setError('Genre name cannot be empty');
+            return;
+        }
+
+        setCreating(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            const response = await createGenre({ name: newGenreName.trim() });
+            setSuccess(`Genre "${newGenreName}" created successfully!`);
+            setNewGenreName('');
+            setOpenGenreDialog(false);
+            
+            // Refresh the genres list
+            const genresResponse = await getAllGenres();
+            setGenres(genresResponse.data.sort((a, b) => (a.name || a.Name).localeCompare(b.name || b.Name)));
+        } catch (err) {
+            console.error('Error creating genre:', err);
+            setError(err.response?.data?.message || 'Failed to create genre');
+        } finally {
+            setCreating(false);
+        }
+    };
+
     if (loading) {
         return (
             <Container maxWidth="lg">
@@ -71,8 +134,14 @@ function SearchByTopicOrGenre() {
                 </Typography>
                 
                 {error && (
-                    <Alert severity="error" sx={{ mb: 3 }}>
+                    <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
                         {error}
+                    </Alert>
+                )}
+
+                {success && (
+                    <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess('')}>
+                        {success}
                     </Alert>
                 )}
 
@@ -98,11 +167,28 @@ function SearchByTopicOrGenre() {
                             }
                         }}
                     >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
                             <TopicIcon />
                             <Typography variant="h6">
                                 Topics ({topics.length})
                             </Typography>
+                            <Box sx={{ ml: 'auto' }}>
+                                <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenTopicDialog(true);
+                                    }}
+                                    sx={{ 
+                                        color: 'white',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                        }
+                                    }}
+                                >
+                                    <AddIcon />
+                                </IconButton>
+                            </Box>
                         </Box>
                     </AccordionSummary>
                     <AccordionDetails>
@@ -179,11 +265,28 @@ function SearchByTopicOrGenre() {
                             }
                         }}
                     >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
                             <GenreIcon />
                             <Typography variant="h6">
                                 Genres ({genres.length})
                             </Typography>
+                            <Box sx={{ ml: 'auto' }}>
+                                <IconButton
+                                    size="small"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenGenreDialog(true);
+                                    }}
+                                    sx={{ 
+                                        color: 'white',
+                                        '&:hover': {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                        }
+                                    }}
+                                >
+                                    <AddIcon />
+                                </IconButton>
+                            </Box>
                         </Box>
                     </AccordionSummary>
                     <AccordionDetails>
@@ -237,6 +340,94 @@ function SearchByTopicOrGenre() {
                         )}
                     </AccordionDetails>
                 </Accordion>
+
+                {/* Create Topic Dialog */}
+                <Dialog 
+                    open={openTopicDialog} 
+                    onClose={() => !creating && setOpenTopicDialog(false)}
+                    maxWidth="sm"
+                    fullWidth
+                >
+                    <DialogTitle>Create New Topic</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            label="Topic Name"
+                            type="text"
+                            fullWidth
+                            variant="outlined"
+                            value={newTopicName}
+                            onChange={(e) => setNewTopicName(e.target.value)}
+                            disabled={creating}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter' && !creating) {
+                                    handleCreateTopic();
+                                }
+                            }}
+                            sx={{ mt: 2 }}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button 
+                            onClick={() => setOpenTopicDialog(false)} 
+                            disabled={creating}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleCreateTopic} 
+                            variant="contained"
+                            disabled={creating || !newTopicName.trim()}
+                        >
+                            {creating ? 'Creating...' : 'Create'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Create Genre Dialog */}
+                <Dialog 
+                    open={openGenreDialog} 
+                    onClose={() => !creating && setOpenGenreDialog(false)}
+                    maxWidth="sm"
+                    fullWidth
+                >
+                    <DialogTitle>Create New Genre</DialogTitle>
+                    <DialogContent>
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            label="Genre Name"
+                            type="text"
+                            fullWidth
+                            variant="outlined"
+                            value={newGenreName}
+                            onChange={(e) => setNewGenreName(e.target.value)}
+                            disabled={creating}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter' && !creating) {
+                                    handleCreateGenre();
+                                }
+                            }}
+                            sx={{ mt: 2 }}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button 
+                            onClick={() => setOpenGenreDialog(false)} 
+                            disabled={creating}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleCreateGenre} 
+                            variant="contained"
+                            disabled={creating || !newGenreName.trim()}
+                        >
+                            {creating ? 'Creating...' : 'Create'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </Box>
         </Container>
     );

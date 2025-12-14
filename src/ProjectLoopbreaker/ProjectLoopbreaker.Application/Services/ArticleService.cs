@@ -35,6 +35,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.Articles
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(a => a.Topics)
                     .Include(a => a.Genres)
                     .ToListAsync();
@@ -51,6 +53,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.Articles
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(a => a.Topics)
                     .Include(a => a.Genres)
                     .FirstOrDefaultAsync(a => a.Id == id);
@@ -67,7 +71,9 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.Articles
-                    .Where(a => a.Author != null && a.Author.ToLower().Contains(author.ToLower()))
+                    .AsNoTracking()
+                    .AsSplitQuery()
+                    .Where(a => a.Author != null && EF.Functions.ILike(a.Author, $"%{author}%"))
                     .Include(a => a.Topics)
                     .Include(a => a.Genres)
                     .ToListAsync();
@@ -84,6 +90,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.Articles
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Where(a => a.IsArchived)
                     .Include(a => a.Topics)
                     .Include(a => a.Genres)
@@ -102,6 +110,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.Articles
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Where(a => a.IsStarred)
                     .Include(a => a.Topics)
                     .Include(a => a.Genres)
@@ -120,6 +130,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.Articles
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(a => a.Topics)
                     .Include(a => a.Genres)
                     .FirstOrDefaultAsync(a => a.InstapaperBookmarkId == instapaperBookmarkId);

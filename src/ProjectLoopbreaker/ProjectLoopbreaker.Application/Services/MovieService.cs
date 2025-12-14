@@ -23,6 +23,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.Movies
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(m => m.Topics)
                     .Include(m => m.Genres)
                     .ToListAsync();
@@ -39,6 +41,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.Movies
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(m => m.Topics)
                     .Include(m => m.Genres)
                     .FirstOrDefaultAsync(m => m.Id == id);

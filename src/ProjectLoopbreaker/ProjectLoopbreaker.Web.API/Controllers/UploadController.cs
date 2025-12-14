@@ -281,7 +281,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
         // POST: api/upload/csv
         [HttpPost("csv")]
-        public async Task<IActionResult> UploadCsv(IFormFile file, [FromForm] string mediaType)
+        public async Task<IActionResult> UploadCsv(IFormFile file, [FromForm] string? mediaType = null)
         {
             try
             {
@@ -293,11 +293,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
                 {
                     return BadRequest("File must be a CSV");
-                }
-
-                if (string.IsNullOrEmpty(mediaType))
-                {
-                    return BadRequest("Media type must be specified");
                 }
 
                 var results = new List<object>();
@@ -319,31 +314,67 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return BadRequest("CSV file must have headers");
                 }
 
-                // Parse the media type from the request
-                if (!Enum.TryParse<MediaType>(mediaType, true, out var parsedMediaType))
+                // Check if MediaType column exists in the CSV
+                var hasMediaTypeColumn = headers.Any(h => h.Equals("MediaType", StringComparison.OrdinalIgnoreCase));
+                MediaType? fixedMediaType = null;
+
+                if (!hasMediaTypeColumn && string.IsNullOrEmpty(mediaType))
                 {
-                    return BadRequest($"Invalid media type: {mediaType}. Supported types: Book, Podcast, Movie, TVShow, Article");
+                    return BadRequest("CSV file must include a 'MediaType' column, or you must specify a media type parameter");
                 }
 
-                _logger.LogInformation("Processing CSV upload for media type: {MediaType}", parsedMediaType);
+                // If mediaType parameter is provided, use it for all rows (legacy behavior)
+                if (!string.IsNullOrEmpty(mediaType))
+                {
+                    if (!Enum.TryParse<MediaType>(mediaType, true, out var parsedType))
+                    {
+                        return BadRequest($"Invalid media type: {mediaType}. Supported types: Book, Movie, TVShow, Article, Video, Website");
+                    }
+                    fixedMediaType = parsedType;
+                    _logger.LogInformation("Processing CSV upload with fixed media type: {MediaType}", fixedMediaType);
+                }
+                else
+                {
+                    _logger.LogInformation("Processing CSV upload with per-row media types from MediaType column");
+                }
 
-                // Process rows based on media type
+                // Process rows based on media type (either from column or parameter)
                 while (csv.Read())
                 {
                     try
                     {
                         BaseMediaItem? mediaItem = null;
+                        MediaType rowMediaType;
 
-                        switch (parsedMediaType)
+                        // Determine media type for this row
+                        if (fixedMediaType.HasValue)
+                        {
+                            rowMediaType = fixedMediaType.Value;
+                        }
+                        else
+                        {
+                            // Read MediaType from the current row
+                            var mediaTypeStr = GetCsvValue(csv, "MediaType");
+                            if (string.IsNullOrEmpty(mediaTypeStr))
+                            {
+                                errors.Add($"Row {csv.CurrentIndex}: MediaType column is empty");
+                                errorCount++;
+                                continue;
+                            }
+
+                            if (!Enum.TryParse<MediaType>(mediaTypeStr, true, out rowMediaType))
+                            {
+                                errors.Add($"Row {csv.CurrentIndex}: Invalid media type '{mediaTypeStr}'");
+                                errorCount++;
+                                continue;
+                            }
+                        }
+
+                        switch (rowMediaType)
                         {
                             case MediaType.Book:
                                 mediaItem = await ProcessBookRow(csv);
                                 break;
-                            case MediaType.Podcast:
-                                // TODO: Update to handle PodcastSeries and PodcastEpisode separately
-                                // mediaItem = await ProcessPodcastRow(csv);
-                                _logger.LogWarning("Podcast CSV import not yet updated for new structure. Skipping row.");
-                                continue;
                             case MediaType.Movie:
                                 mediaItem = await ProcessMovieRow(csv);
                                 break;
@@ -353,8 +384,29 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                             case MediaType.Article:
                                 mediaItem = await ProcessArticleRow(csv);
                                 break;
+                            case MediaType.Video:
+                                mediaItem = await ProcessVideoRow(csv);
+                                break;
+                            case MediaType.Website:
+                                mediaItem = await ProcessWebsiteRow(csv);
+                                break;
+                            case MediaType.Podcast:
+                                // Podcast requires special handling - check if it's a series or episode
+                                var podcastTypeStr = GetCsvValue(csv, "PodcastType");
+                                if (podcastTypeStr?.Equals("Episode", StringComparison.OrdinalIgnoreCase) == true)
+                                {
+                                    errors.Add($"Row {csv.CurrentIndex}: PodcastEpisode import via CSV not yet supported. Please use the Import Media page.");
+                                    errorCount++;
+                                    continue;
+                                }
+                                else
+                                {
+                                    errors.Add($"Row {csv.CurrentIndex}: PodcastSeries import via CSV not yet supported. Please use the Import Media page.");
+                                    errorCount++;
+                                    continue;
+                                }
                             default:
-                                errors.Add($"Row {csv.CurrentIndex}: Unsupported media type {parsedMediaType}");
+                                errors.Add($"Row {csv.CurrentIndex}: Unsupported media type {rowMediaType}");
                                 errorCount++;
                                 continue;
                         }
@@ -365,7 +417,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                             if (mediaItem is Book book)
                             {
                                 _context.Books.Add(book);
-                                // Track the imported book for the response
                                 importedItems.Add(new
                                 {
                                     Id = book.Id,
@@ -375,34 +426,9 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                                     MediaType = "Book"
                                 });
                             }
-                            else if (mediaItem is PodcastSeries podcastSeries)
-                            {
-                                _context.PodcastSeries.Add(podcastSeries);
-                                // Track the imported podcast series for the response
-                                importedItems.Add(new
-                                {
-                                    Id = podcastSeries.Id,
-                                    Title = podcastSeries.Title,
-                                    Thumbnail = podcastSeries.Thumbnail,
-                                    MediaType = "PodcastSeries"
-                                });
-                            }
-                            else if (mediaItem is PodcastEpisode podcastEpisode)
-                            {
-                                _context.PodcastEpisodes.Add(podcastEpisode);
-                                // Track the imported podcast episode for the response
-                                importedItems.Add(new
-                                {
-                                    Id = podcastEpisode.Id,
-                                    Title = podcastEpisode.Title,
-                                    Thumbnail = podcastEpisode.Thumbnail,
-                                    MediaType = "PodcastEpisode"
-                                });
-                            }
                             else if (mediaItem is Movie movie)
                             {
                                 _context.Movies.Add(movie);
-                                // Track the imported movie for the response
                                 importedItems.Add(new
                                 {
                                     Id = movie.Id,
@@ -416,7 +442,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                             else if (mediaItem is TvShow tvShow)
                             {
                                 _context.TvShows.Add(tvShow);
-                                // Track the imported TV show for the response
                                 importedItems.Add(new
                                 {
                                     Id = tvShow.Id,
@@ -430,7 +455,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                             else if (mediaItem is Article article)
                             {
                                 _context.Articles.Add(article);
-                                // Track the imported article for the response
                                 importedItems.Add(new
                                 {
                                     Id = article.Id,
@@ -440,6 +464,52 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                                     IsArchived = article.IsArchived,
                                     IsStarred = article.IsStarred,
                                     MediaType = "Article"
+                                });
+                            }
+                            else if (mediaItem is Video video)
+                            {
+                                _context.Videos.Add(video);
+                                importedItems.Add(new
+                                {
+                                    Id = video.Id,
+                                    Title = video.Title,
+                                    Platform = video.Platform,
+                                    Thumbnail = video.Thumbnail,
+                                    MediaType = "Video"
+                                });
+                            }
+                            else if (mediaItem is Website website)
+                            {
+                                _context.MediaItems.Add(website);
+                                importedItems.Add(new
+                                {
+                                    Id = website.Id,
+                                    Title = website.Title,
+                                    Link = website.Link,
+                                    Thumbnail = website.Thumbnail,
+                                    MediaType = "Website"
+                                });
+                            }
+                            else if (mediaItem is PodcastSeries podcastSeries)
+                            {
+                                _context.PodcastSeries.Add(podcastSeries);
+                                importedItems.Add(new
+                                {
+                                    Id = podcastSeries.Id,
+                                    Title = podcastSeries.Title,
+                                    Thumbnail = podcastSeries.Thumbnail,
+                                    MediaType = "PodcastSeries"
+                                });
+                            }
+                            else if (mediaItem is PodcastEpisode podcastEpisode)
+                            {
+                                _context.PodcastEpisodes.Add(podcastEpisode);
+                                importedItems.Add(new
+                                {
+                                    Id = podcastEpisode.Id,
+                                    Title = podcastEpisode.Title,
+                                    Thumbnail = podcastEpisode.Thumbnail,
+                                    MediaType = "PodcastEpisode"
                                 });
                             }
                             else
@@ -809,6 +879,95 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 article.OwnershipStatus = ownership;
 
             return article;
+        }
+
+        private async Task<Video?> ProcessVideoRow(CsvReader csv)
+        {
+            var video = new Video
+            {
+                Title = GetCsvValue(csv, "Title") ?? "Unknown Title",
+                MediaType = MediaType.Video,
+                Platform = GetCsvValue(csv, "Platform") ?? "YouTube", // Default to YouTube, required field
+                VideoType = VideoType.Episode, // Default to Episode for standalone videos
+                DateAdded = DateTime.UtcNow,
+                Status = ParseStatus(GetCsvValue(csv, "Status")) ?? Status.Uncharted
+            };
+
+            // Optional fields
+            video.Description = GetCsvValue(csv, "Description");
+            video.Link = GetCsvValue(csv, "Link");
+            video.Notes = GetCsvValue(csv, "Notes");
+            video.RelatedNotes = GetCsvValue(csv, "RelatedNotes");
+            video.Thumbnail = GetCsvValue(csv, "Thumbnail");
+            video.ExternalId = GetCsvValue(csv, "VideoId") ?? GetCsvValue(csv, "ExternalId");
+
+            // Parse numeric fields
+            var lengthStr = GetCsvValue(csv, "LengthInSeconds") ?? GetCsvValue(csv, "DurationInSeconds");
+            if (!string.IsNullOrEmpty(lengthStr) && int.TryParse(lengthStr, out int length))
+                video.LengthInSeconds = length;
+
+            // Parse video type
+            var videoTypeStr = GetCsvValue(csv, "VideoType");
+            if (!string.IsNullOrEmpty(videoTypeStr) && Enum.TryParse<VideoType>(videoTypeStr, true, out VideoType videoType))
+                video.VideoType = videoType;
+
+            // Parse dates
+            var dateCompletedStr = GetCsvValue(csv, "DateCompleted");
+            if (!string.IsNullOrEmpty(dateCompletedStr) && DateTime.TryParse(dateCompletedStr, out DateTime dateCompleted))
+                video.DateCompleted = dateCompleted;
+
+            // Parse enums
+            var ratingStr = GetCsvValue(csv, "Rating");
+            if (!string.IsNullOrEmpty(ratingStr) && Enum.TryParse<Rating>(ratingStr, true, out Rating rating))
+                video.Rating = rating;
+
+            var ownershipStr = GetCsvValue(csv, "OwnershipStatus");
+            if (!string.IsNullOrEmpty(ownershipStr) && Enum.TryParse<OwnershipStatus>(ownershipStr, true, out OwnershipStatus ownership))
+                video.OwnershipStatus = ownership;
+
+            return video;
+        }
+
+        private async Task<Website?> ProcessWebsiteRow(CsvReader csv)
+        {
+            var website = new Website
+            {
+                Title = GetCsvValue(csv, "Title") ?? "Unknown Title",
+                MediaType = MediaType.Website,
+                DateAdded = DateTime.UtcNow,
+                Status = ParseStatus(GetCsvValue(csv, "Status")) ?? Status.Uncharted
+            };
+
+            // Optional fields
+            website.Description = GetCsvValue(csv, "Description");
+            website.Link = GetCsvValue(csv, "Link");
+            website.Notes = GetCsvValue(csv, "Notes");
+            website.RelatedNotes = GetCsvValue(csv, "RelatedNotes");
+            website.Thumbnail = GetCsvValue(csv, "Thumbnail");
+            website.Domain = GetCsvValue(csv, "Domain");
+            website.RssFeedUrl = GetCsvValue(csv, "RssFeedUrl");
+            website.Author = GetCsvValue(csv, "Author");
+            website.Publication = GetCsvValue(csv, "Publication");
+
+            // Parse dates
+            var lastCheckedStr = GetCsvValue(csv, "LastCheckedDate");
+            if (!string.IsNullOrEmpty(lastCheckedStr) && DateTime.TryParse(lastCheckedStr, out DateTime lastChecked))
+                website.LastCheckedDate = lastChecked;
+
+            var dateCompletedStr = GetCsvValue(csv, "DateCompleted");
+            if (!string.IsNullOrEmpty(dateCompletedStr) && DateTime.TryParse(dateCompletedStr, out DateTime dateCompleted))
+                website.DateCompleted = dateCompleted;
+
+            // Parse enums
+            var ratingStr = GetCsvValue(csv, "Rating");
+            if (!string.IsNullOrEmpty(ratingStr) && Enum.TryParse<Rating>(ratingStr, true, out Rating rating))
+                website.Rating = rating;
+
+            var ownershipStr = GetCsvValue(csv, "OwnershipStatus");
+            if (!string.IsNullOrEmpty(ownershipStr) && Enum.TryParse<OwnershipStatus>(ownershipStr, true, out OwnershipStatus ownership))
+                website.OwnershipStatus = ownership;
+
+            return website;
         }
 
         private static string? GetCsvValue(CsvReader csv, string fieldName)

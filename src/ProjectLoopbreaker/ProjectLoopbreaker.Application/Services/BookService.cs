@@ -24,6 +24,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.Books
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(b => b.Topics)
                     .Include(b => b.Genres)
                     .ToListAsync();
@@ -40,6 +42,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.Books
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(b => b.Topics)
                     .Include(b => b.Genres)
                     .FirstOrDefaultAsync(b => b.Id == id);

@@ -38,7 +38,7 @@ function UploadMediaPage() {
         setUploadResult(null);
 
         try {
-            // Read the first line of the CSV to detect media type
+            // Read the first line of the CSV to detect if MediaType column exists
             const text = await file.text();
             const lines = text.split('\n');
             
@@ -47,24 +47,17 @@ function UploadMediaPage() {
             }
             
             const headers = lines[0].toLowerCase().split(',');
-            const firstDataRow = lines[1].split(',');
             
             // Check if MediaType column exists
             const mediaTypeIndex = headers.findIndex(h => h.trim() === 'mediatype');
             
             if (mediaTypeIndex === -1) {
-                throw new Error('CSV file must include a "MediaType" column as the first column');
-            }
-            
-            // Get the media type from the first data row
-            const mediaType = firstDataRow[mediaTypeIndex].trim().replace(/"/g, '');
-            
-            if (!mediaType) {
-                throw new Error('MediaType column cannot be empty');
+                throw new Error('CSV file must include a "MediaType" column');
             }
 
-            // Upload with the detected media type
-            const response = await uploadCsv(file, mediaType);
+            // Upload the CSV - backend will read MediaType from each row
+            // We pass null as mediaType to let the backend handle per-row media types
+            const response = await uploadCsv(file, null);
             console.log('Upload response:', response.data);
             setUploadResult(response.data);
         } catch (err) {
@@ -100,12 +93,15 @@ function UploadMediaPage() {
             
             <Typography variant="body1" color="text.secondary" paragraph>
                 Upload a CSV file to import multiple media items at once. Your CSV must include a MediaType column to specify the type of each item.
+                You can mix different media types in a single CSV file!
             </Typography>
 
             <Alert severity="info" sx={{ mb: 3 }}>
                 <AlertTitle>CSV Format Requirement</AlertTitle>
-                Your CSV file must include <strong>MediaType</strong> as the first column. Supported types: 
-                Article, Book, Movie, Podcast, TVShow, Video, Website, and more.
+                Your CSV file must include <strong>MediaType</strong> as a column. Each row can have a different type! 
+                Supported types: Article, Book, Movie, TVShow, Video, Website.
+                <br />
+                <strong>Note:</strong> Podcast import is not yet supported via CSV. Please use the Import Media page for podcasts.
             </Alert>
 
             <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
@@ -495,14 +491,15 @@ function UploadMediaPage() {
                 <Alert severity="warning" sx={{ mt: 2, mb: 2 }}>
                     <Typography variant="body2">
                         <strong>Important Tips:</strong>
-                        <br />• The first column MUST be "MediaType"
-                        <br />• All rows should have the same MediaType or you should upload separate CSVs per type
+                        <br />• Your CSV file MUST include a "MediaType" column
+                        <br />• <strong>NEW:</strong> You can mix different media types in the same CSV! Each row can have its own MediaType.
                         <br />• Ensure your CSV file is properly formatted with commas as separators
                         <br />• Use quotes around text that contains commas
                         <br />• For boolean fields, use "TRUE" or "FALSE" (case-insensitive)
                         <br />• For date fields, use formats like "2024-01-15" or "01/15/2024"
                         <br />• Multiple topics/genres within a cell can be separated by semicolons
                         <br />• Leave optional columns empty if not applicable
+                        <br />• <strong>Podcast Note:</strong> CSV import for podcasts is not yet supported. Use the Import Media page instead.
                     </Typography>
                 </Alert>
 
