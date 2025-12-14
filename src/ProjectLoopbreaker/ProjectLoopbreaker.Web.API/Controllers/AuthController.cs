@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using ProjectLoopbreaker.DTOs;
+using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -14,21 +12,27 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
+        private readonly IAuthService _authService;
 
-        public AuthController(IConfiguration configuration, ILogger<AuthController> logger)
+        public AuthController(
+            IConfiguration configuration, 
+            ILogger<AuthController> logger,
+            IAuthService authService)
         {
             _configuration = configuration;
             _logger = logger;
+            _authService = authService;
         }
 
         /// <summary>
-        /// Login endpoint that validates credentials and returns a JWT token
+        /// Login endpoint that validates credentials and returns a JWT access token
+        /// Sets the refresh token as an HttpOnly cookie
         /// </summary>
         /// <param name="model">Login credentials (username and password)</param>
-        /// <returns>JWT token if credentials are valid</returns>
+        /// <returns>JWT access token if credentials are valid</returns>
         [HttpPost("login")]
         [AllowAnonymous]
-        public IActionResult Login([FromBody] LoginRequestDto model)
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto model)
         {
             if (model == null || string.IsNullOrWhiteSpace(model.Username) || string.IsNullOrWhiteSpace(model.Password))
             {
@@ -52,60 +56,130 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return Unauthorized(new { message = "Invalid username or password" });
             }
 
-            // Generate Token
+            // Generate Tokens
             try
             {
                 var jwtSettings = _configuration.GetSection("JwtSettings");
-                var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? jwtSettings["Secret"];
+                var userId = Guid.NewGuid().ToString(); // In production, get from database
                 
-                if (string.IsNullOrEmpty(jwtSecret))
+                // Parse token expiration settings
+                var accessTokenMinutes = int.Parse(jwtSettings["AccessTokenExpirationMinutes"] ?? "15");
+                var refreshTokenDays = int.Parse(jwtSettings["RefreshTokenExpirationDays"] ?? "7");
+                
+                // Generate short-lived access token
+                var accessToken = _authService.GenerateAccessToken(model.Username, userId, accessTokenMinutes);
+                var accessTokenExpiresAt = DateTime.UtcNow.AddMinutes(accessTokenMinutes);
+                
+                // Generate long-lived refresh token
+                var refreshToken = _authService.GenerateRefreshToken();
+                await _authService.SaveRefreshTokenAsync(userId, refreshToken, refreshTokenDays);
+                
+                // Set refresh token as HttpOnly cookie
+                var cookieOptions = new CookieOptions
                 {
-                    _logger.LogError("JWT Secret is not configured");
-                    return StatusCode(500, new { message = "Authentication is not properly configured" });
-                }
-
-                var key = Encoding.ASCII.GetBytes(jwtSecret);
-                var expiryMinutes = double.Parse(jwtSettings["ExpiryMinutes"] ?? "60");
-                var expiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes);
-
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var tokenDescriptor = new SecurityTokenDescriptor
-                {
-                    Subject = new ClaimsIdentity(new[]
-                    {
-                        new Claim(ClaimTypes.Name, model.Username),
-                        new Claim("userId", Guid.NewGuid().ToString()), // Generate a user ID
-                        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-                    }),
-                    Expires = expiresAt,
-                    Issuer = jwtSettings["Issuer"],
-                    Audience = jwtSettings["Audience"],
-                    SigningCredentials = new SigningCredentials(
-                        new SymmetricSecurityKey(key), 
-                        SecurityAlgorithms.HmacSha256Signature)
+                    HttpOnly = true,     // Prevents XSS attacks from reading the token
+                    Secure = true,       // Only sent over HTTPS (set to false for local development if needed)
+                    SameSite = SameSiteMode.Strict, // Protects against CSRF
+                    Expires = DateTime.UtcNow.AddDays(refreshTokenDays)
                 };
+                
+                Response.Cookies.Append("refresh_token", refreshToken, cookieOptions);
 
-                var token = tokenHandler.CreateToken(tokenDescriptor);
-                var tokenString = tokenHandler.WriteToken(token);
+                _logger.LogInformation("User {Username} logged in successfully with dual token system", model.Username);
 
-                _logger.LogInformation("User {Username} logged in successfully", model.Username);
-
+                // Return only the access token in the response body
                 return Ok(new LoginResponseDto
                 {
-                    Token = tokenString,
+                    Token = accessToken,
                     Username = model.Username,
-                    ExpiresAt = expiresAt
+                    ExpiresAt = accessTokenExpiresAt
                 });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating JWT token");
-                return StatusCode(500, new { message = "An error occurred while generating authentication token" });
+                _logger.LogError(ex, "Error generating authentication tokens");
+                return StatusCode(500, new { message = "An error occurred while generating authentication tokens" });
             }
         }
 
         /// <summary>
-        /// Validates if the current token is still valid
+        /// Refresh endpoint that exchanges a valid refresh token for a new access token
+        /// Implements refresh token rotation for enhanced security
+        /// </summary>
+        /// <returns>New JWT access token</returns>
+        [HttpPost("refresh")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Refresh()
+        {
+            try
+            {
+                // Read refresh token from HttpOnly cookie
+                if (!Request.Cookies.TryGetValue("refresh_token", out var refreshToken) || string.IsNullOrEmpty(refreshToken))
+                {
+                    _logger.LogWarning("Refresh token not found in cookie");
+                    return Unauthorized(new { message = "Refresh token not found" });
+                }
+
+                // Validate the refresh token
+                var userId = await _authService.ValidateRefreshTokenAsync(refreshToken);
+                if (userId == null)
+                {
+                    _logger.LogWarning("Invalid or expired refresh token");
+                    
+                    // Clear the invalid cookie
+                    Response.Cookies.Delete("refresh_token");
+                    
+                    return Unauthorized(new { message = "Invalid or expired refresh token" });
+                }
+
+                var jwtSettings = _configuration.GetSection("JwtSettings");
+                var accessTokenMinutes = int.Parse(jwtSettings["AccessTokenExpirationMinutes"] ?? "15");
+                var refreshTokenDays = int.Parse(jwtSettings["RefreshTokenExpirationDays"] ?? "7");
+
+                // Generate new access token
+                var newAccessToken = _authService.GenerateAccessToken(
+                    userId, 
+                    userId, 
+                    accessTokenMinutes);
+                var accessTokenExpiresAt = DateTime.UtcNow.AddMinutes(accessTokenMinutes);
+
+                // Generate new refresh token (Rotation)
+                var newRefreshToken = _authService.GenerateRefreshToken();
+                
+                // Revoke old refresh token and save new one
+                await _authService.RevokeRefreshTokenAsync(refreshToken, newRefreshToken);
+                await _authService.SaveRefreshTokenAsync(userId, newRefreshToken, refreshTokenDays);
+
+                // Set new refresh token as HttpOnly cookie
+                var cookieOptions = new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTime.UtcNow.AddDays(refreshTokenDays)
+                };
+                
+                Response.Cookies.Append("refresh_token", newRefreshToken, cookieOptions);
+
+                _logger.LogInformation("Access token refreshed for user {UserId}", userId);
+
+                // Return new access token
+                return Ok(new LoginResponseDto
+                {
+                    Token = newAccessToken,
+                    Username = userId,
+                    ExpiresAt = accessTokenExpiresAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refreshing access token");
+                return StatusCode(500, new { message = "An error occurred while refreshing authentication token" });
+            }
+        }
+
+        /// <summary>
+        /// Validates if the current access token is still valid
         /// </summary>
         /// <returns>Token validation result</returns>
         [HttpGet("validate")]
@@ -121,19 +195,36 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         }
 
         /// <summary>
-        /// Logout endpoint (client-side should remove token)
+        /// Logout endpoint that revokes all refresh tokens and clears the cookie
         /// </summary>
         /// <returns>Success message</returns>
         [HttpPost("logout")]
         [Authorize]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            var username = User.FindFirst(ClaimTypes.Name)?.Value;
-            _logger.LogInformation("User {Username} logged out", username);
-            
-            // With JWT, logout is primarily handled client-side by removing the token
-            // However, you could implement token blacklisting here if needed
-            return Ok(new { message = "Logged out successfully" });
+            try
+            {
+                var userId = User.FindFirst("userId")?.Value;
+                
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    // Revoke all refresh tokens for this user
+                    await _authService.RevokeAllUserTokensAsync(userId);
+                    _logger.LogInformation("Revoked all refresh tokens for user {UserId}", userId);
+                }
+
+                // Clear the refresh token cookie
+                Response.Cookies.Delete("refresh_token");
+                
+                _logger.LogInformation("User {UserId} logged out successfully", userId);
+                
+                return Ok(new { message = "Logged out successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during logout");
+                return StatusCode(500, new { message = "An error occurred during logout" });
+            }
         }
     }
 }
