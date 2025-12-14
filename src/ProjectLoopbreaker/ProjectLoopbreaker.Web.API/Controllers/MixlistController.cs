@@ -33,28 +33,29 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
+                // Use AsNoTracking and AsSplitQuery to avoid circular reference issues
                 var mixlists = await _context.Mixlists
-                    .Include(m => m.MediaItems)
-                    .ToListAsync();
-                    
-                var response = mixlists.Select(mixlist => new MixlistResponseDto
-                {
-                    Id = mixlist.Id,
-                    Name = mixlist.Name,
-                    Description = mixlist.Description,
-                    DateCreated = mixlist.DateCreated,
-                    Thumbnail = mixlist.Thumbnail,
-                    MediaItemIds = mixlist.MediaItems.Select(mi => mi.Id).ToArray(),
-                    MediaItems = mixlist.MediaItems.Select(mi => new MediaItemSummary
+                    .AsNoTracking()
+                    .AsSplitQuery()
+                    .Select(m => new MixlistResponseDto
                     {
-                        Id = mi.Id,
-                        Title = mi.Title,
-                        MediaType = mi.MediaType,
-                        Thumbnail = mi.Thumbnail
-                    }).ToArray()
-                }).ToList();
+                        Id = m.Id,
+                        Name = m.Name,
+                        Description = m.Description,
+                        DateCreated = m.DateCreated,
+                        Thumbnail = m.Thumbnail,
+                        MediaItemIds = m.MediaItems.Select(mi => mi.Id).ToArray(),
+                        MediaItems = m.MediaItems.Select(mi => new MediaItemSummary
+                        {
+                            Id = mi.Id,
+                            Title = mi.Title,
+                            MediaType = mi.MediaType,
+                            Thumbnail = mi.Thumbnail
+                        }).ToArray()
+                    })
+                    .ToListAsync();
                 
-                return Ok(response);
+                return Ok(mixlists);
             }
             catch (Exception ex)
             {
@@ -68,33 +69,35 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
+                // Use AsNoTracking and projection to avoid circular reference issues
                 var mixlist = await _context.Mixlists
-                    .Include(m => m.MediaItems)
-                    .FirstOrDefaultAsync(m => m.Id == id);
+                    .AsNoTracking()
+                    .AsSplitQuery()
+                    .Where(m => m.Id == id)
+                    .Select(m => new MixlistResponseDto
+                    {
+                        Id = m.Id,
+                        Name = m.Name,
+                        Description = m.Description,
+                        DateCreated = m.DateCreated,
+                        Thumbnail = m.Thumbnail,
+                        MediaItemIds = m.MediaItems.Select(mi => mi.Id).ToArray(),
+                        MediaItems = m.MediaItems.Select(mi => new MediaItemSummary
+                        {
+                            Id = mi.Id,
+                            Title = mi.Title,
+                            MediaType = mi.MediaType,
+                            Thumbnail = mi.Thumbnail
+                        }).ToArray()
+                    })
+                    .FirstOrDefaultAsync();
 
                 if (mixlist == null)
                 {
                     return NotFound($"Mixlist with ID {id} not found.");
                 }
 
-                var response = new MixlistResponseDto
-                {
-                    Id = mixlist.Id,
-                    Name = mixlist.Name,
-                    Description = mixlist.Description,
-                    DateCreated = mixlist.DateCreated,
-                    Thumbnail = mixlist.Thumbnail,
-                    MediaItemIds = mixlist.MediaItems.Select(mi => mi.Id).ToArray(),
-                    MediaItems = mixlist.MediaItems.Select(mi => new MediaItemSummary
-                    {
-                        Id = mi.Id,
-                        Title = mi.Title,
-                        MediaType = mi.MediaType,
-                        Thumbnail = mi.Thumbnail
-                    }).ToArray()
-                };
-
-                return Ok(response);
+                return Ok(mixlist);
             }
             catch (Exception ex)
             {
@@ -114,32 +117,34 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 }
 
                 var searchQuery = query.ToLower();
+                
+                // Use AsNoTracking and projection to avoid circular reference issues
                 var mixlists = await _context.Mixlists
-                    .Include(m => m.MediaItems)
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Where(m => 
                         m.Name.ToLower().Contains(searchQuery) ||
                         (m.Description != null && m.Description.ToLower().Contains(searchQuery))
                     )
+                    .Select(m => new MixlistResponseDto
+                    {
+                        Id = m.Id,
+                        Name = m.Name,
+                        Description = m.Description,
+                        DateCreated = m.DateCreated,
+                        Thumbnail = m.Thumbnail,
+                        MediaItemIds = m.MediaItems.Select(mi => mi.Id).ToArray(),
+                        MediaItems = m.MediaItems.Select(mi => new MediaItemSummary
+                        {
+                            Id = mi.Id,
+                            Title = mi.Title,
+                            MediaType = mi.MediaType,
+                            Thumbnail = mi.Thumbnail
+                        }).ToArray()
+                    })
                     .ToListAsync();
 
-                var response = mixlists.Select(mixlist => new MixlistResponseDto
-                {
-                    Id = mixlist.Id,
-                    Name = mixlist.Name,
-                    Description = mixlist.Description,
-                    DateCreated = mixlist.DateCreated,
-                    Thumbnail = mixlist.Thumbnail,
-                    MediaItemIds = mixlist.MediaItems.Select(mi => mi.Id).ToArray(),
-                    MediaItems = mixlist.MediaItems.Select(mi => new MediaItemSummary
-                    {
-                        Id = mi.Id,
-                        Title = mi.Title,
-                        MediaType = mi.MediaType,
-                        Thumbnail = mi.Thumbnail
-                    }).ToArray()
-                }).ToList();
-
-                return Ok(response);
+                return Ok(mixlists);
             }
             catch (Exception ex)
             {

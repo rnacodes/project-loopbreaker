@@ -1,18 +1,14 @@
-//TODO: Update to reflect latest changes to the API and frontend.
-//TODO: Update to include all media types.
 import React, { useState } from 'react';
 import {
     Container, Box, Typography, Button, Paper, Alert, AlertTitle,
     CircularProgress, List, ListItem, ListItemText, Divider,
-    Card, CardContent, Accordion, AccordionSummary, AccordionDetails,
-    FormControl, InputLabel, Select, MenuItem
+    Card, CardContent, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import { CloudUpload, FileUpload, CheckCircle, Error, ExpandMore } from '@mui/icons-material';
 import { uploadCsv } from '../services/apiService';
 
 function UploadMediaPage() {
     const [file, setFile] = useState(null);
-    const [mediaType, setMediaType] = useState('Book');
     const [uploading, setUploading] = useState(false);
     const [uploadResult, setUploadResult] = useState(null);
     const [error, setError] = useState('');
@@ -42,13 +38,41 @@ function UploadMediaPage() {
         setUploadResult(null);
 
         try {
+            // Read the first line of the CSV to detect media type
+            const text = await file.text();
+            const lines = text.split('\n');
+            
+            if (lines.length < 2) {
+                throw new Error('CSV file must have a header row and at least one data row');
+            }
+            
+            const headers = lines[0].toLowerCase().split(',');
+            const firstDataRow = lines[1].split(',');
+            
+            // Check if MediaType column exists
+            const mediaTypeIndex = headers.findIndex(h => h.trim() === 'mediatype');
+            
+            if (mediaTypeIndex === -1) {
+                throw new Error('CSV file must include a "MediaType" column as the first column');
+            }
+            
+            // Get the media type from the first data row
+            const mediaType = firstDataRow[mediaTypeIndex].trim().replace(/"/g, '');
+            
+            if (!mediaType) {
+                throw new Error('MediaType column cannot be empty');
+            }
+
+            // Upload with the detected media type
             const response = await uploadCsv(file, mediaType);
-            console.log('Upload response:', response.data); // Debug log
+            console.log('Upload response:', response.data);
             setUploadResult(response.data);
         } catch (err) {
             console.error('Upload error:', err);
             if (err.response?.data?.error) {
                 setError(err.response.data.error + (err.response.data.details ? ': ' + err.response.data.details : ''));
+            } else if (err.message) {
+                setError(err.message);
             } else {
                 setError('Failed to upload file. Please try again.');
             }
@@ -59,7 +83,6 @@ function UploadMediaPage() {
 
     const resetUpload = () => {
         setFile(null);
-        setMediaType('Book');
         setUploadResult(null);
         setError('');
         // Reset the file input
@@ -76,8 +99,14 @@ function UploadMediaPage() {
             </Typography>
             
             <Typography variant="body1" color="text.secondary" paragraph>
-                Upload a CSV file to import multiple media items at once. Please select the media type you're uploading.
+                Upload a CSV file to import multiple media items at once. Your CSV must include a MediaType column to specify the type of each item.
             </Typography>
+
+            <Alert severity="info" sx={{ mb: 3 }}>
+                <AlertTitle>CSV Format Requirement</AlertTitle>
+                Your CSV file must include <strong>MediaType</strong> as the first column. Supported types: 
+                Article, Book, Movie, Podcast, TVShow, Video, Website, and more.
+            </Alert>
 
             <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
                 <Box sx={{ textAlign: 'center', mb: 3 }}>
@@ -88,18 +117,6 @@ function UploadMediaPage() {
                 </Box>
 
                 <Box sx={{ mb: 3 }}>
-                    <FormControl fullWidth sx={{ mb: 2 }}>
-                        <InputLabel>Media Type</InputLabel>
-                        <Select
-                            value={mediaType}
-                            label="Media Type"
-                            onChange={(e) => setMediaType(e.target.value)}
-                        >
-                            <MenuItem value="Book">Book</MenuItem>
-                            <MenuItem value="Podcast">Podcast</MenuItem>
-                        </Select>
-                    </FormControl>
-
                     <input
                         id="csv-file-input"
                         type="file"
@@ -113,7 +130,15 @@ function UploadMediaPage() {
                             component="span"
                             startIcon={<FileUpload />}
                             fullWidth
-                            sx={{ mb: 2 }}
+                            sx={{ 
+                                mb: 2,
+                                borderColor: 'rgba(255, 255, 255, 0.7)',
+                                color: 'text.primary',
+                                '&:hover': {
+                                    borderColor: 'rgba(255, 255, 255, 1)',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                                }
+                            }}
                         >
                             Choose CSV File
                         </Button>
@@ -141,6 +166,14 @@ function UploadMediaPage() {
                         variant="outlined"
                         onClick={resetUpload}
                         disabled={uploading}
+                        sx={{ 
+                            borderColor: 'rgba(255, 255, 255, 0.7)',
+                            color: 'text.primary',
+                            '&:hover': {
+                                borderColor: 'rgba(255, 255, 255, 1)',
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }}
                     >
                         Reset
                     </Button>
@@ -325,70 +358,221 @@ function UploadMediaPage() {
                 </Typography>
                 
                 <Typography variant="body2" paragraph>
-                    Your CSV file should include a header row with column names. Make sure to select the correct media type above before uploading.
+                    Your CSV file must include a header row with column names. The <strong>MediaType</strong> column 
+                    is required as the first column and specifies the type of media for each row.
                 </Typography>
 
-                <Accordion>
-                    <AccordionSummary expandIcon={<ExpandMore />}>
-                        <Typography variant="subtitle1">Book CSV Format</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <Typography variant="body2" paragraph>
-                            <strong>Required columns:</strong> Title, Author
-                        </Typography>
-                        <Typography variant="body2" paragraph>
-                            <strong>Optional columns:</strong> Description, Link, Notes, RelatedNotes, Thumbnail, 
-                            Genre, ISBN, ASIN, Format (Digital/Physical), PartOfSeries (true/false), 
-                            Status (Uncharted/ActivelyExploring/Completed/Abandoned), Rating (SuperLike/Like/Neutral/Dislike), 
-                            OwnershipStatus (Own/Rented/Streamed), DateCompleted, Topics (comma-separated), Genres (comma-separated)
-                        </Typography>
-                    </AccordionDetails>
-                </Accordion>
-
-                <Accordion>
-                    <AccordionSummary expandIcon={<ExpandMore />}>
-                        <Typography variant="subtitle1">Podcast CSV Format</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <Typography variant="body2" paragraph>
-                            <strong>Required columns:</strong> Title
-                        </Typography>
-                        <Typography variant="body2" paragraph>
-                            <strong>Optional columns:</strong> Description, Link, Notes, RelatedNotes, Thumbnail, 
-                            Genre, Publisher, AudioLink, ExternalId, PodcastType (Series/Episode), 
-                            DurationInSeconds, ReleaseDate, Status, Rating, OwnershipStatus, DateCompleted, 
-                            Topics (comma-separated), Genres (comma-separated)
-                        </Typography>
-                    </AccordionDetails>
-                </Accordion>
-
-                <Alert severity="info" sx={{ mt: 2 }}>
+                <Alert severity="info" sx={{ mb: 2 }}>
                     <Typography variant="body2">
-                        <strong>Tips:</strong>
-                        <br />• Ensure your CSV file is properly formatted with commas as separators
-                        <br />• Use quotes around text that contains commas
-                        <br />• For boolean fields, use "true" or "false"
-                        <br />• For date fields, use formats like "2024-01-15" or "01/15/2024"
-                        <br />• Multiple topics/genres can be separated by commas within the cell
+                        <strong>Common Columns (All Media Types):</strong>
+                        <br />• <strong>MediaType</strong> (Required, First Column): Article, Book, Movie, Podcast, TVShow, Video, Website
+                        <br />• <strong>Title</strong> (Required): The title of the media item
+                        <br />• <strong>Description</strong> (Optional): A description of the media item
+                        <br />• <strong>Link</strong> (Optional): URL to the media item
+                        <br />• <strong>Notes</strong> (Optional): Your personal notes
+                        <br />• <strong>RelatedNotes</strong> (Optional): Links to Obsidian or other related notes
+                        <br />• <strong>Thumbnail</strong> (Optional): URL to thumbnail image
+                        <br />• <strong>Status</strong> (Optional): Uncharted, ActivelyExploring, Completed, Abandoned
+                        <br />• <strong>Rating</strong> (Optional): SuperLike, Like, Neutral, Dislike
+                        <br />• <strong>OwnershipStatus</strong> (Optional): Own, Rented, Streamed
+                        <br />• <strong>DateCompleted</strong> (Optional): Date format like "2024-01-15"
+                        <br />• <strong>Topics</strong> (Optional): Comma-separated topic names
+                        <br />• <strong>Genres</strong> (Optional): Comma-separated genre names
                     </Typography>
                 </Alert>
 
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                        <Typography variant="subtitle1">📚 Book Format</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Typography variant="body2" paragraph>
+                            <strong>Required:</strong> MediaType (Book), Title, Author
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>Book-Specific Columns:</strong> Author, ISBN, ASIN, Format (Digital/Physical), 
+                            PartOfSeries (true/false), SeriesName, PositionInSeries
+                        </Typography>
+                    </AccordionDetails>
+                </Accordion>
+
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                        <Typography variant="subtitle1">🎬 Movie Format</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Typography variant="body2" paragraph>
+                            <strong>Required:</strong> MediaType (Movie), Title
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>Movie-Specific Columns:</strong> Director, ReleaseYear, RuntimeMinutes, 
+                            TmdbId (The Movie Database ID)
+                        </Typography>
+                    </AccordionDetails>
+                </Accordion>
+
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                        <Typography variant="subtitle1">📺 TV Show Format</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Typography variant="body2" paragraph>
+                            <strong>Required:</strong> MediaType (TVShow), Title
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>TV Show-Specific Columns:</strong> Creator, FirstAirYear, LastAirYear, 
+                            NumberOfSeasons, NumberOfEpisodes, TmdbId
+                        </Typography>
+                    </AccordionDetails>
+                </Accordion>
+
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                        <Typography variant="subtitle1">🎙️ Podcast Format</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Typography variant="body2" paragraph>
+                            <strong>Required:</strong> MediaType (Podcast), Title
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>Podcast-Specific Columns:</strong> Publisher, AudioLink, ExternalId (ListenNotes ID), 
+                            PodcastType (Series/Episode), DurationInSeconds, ReleaseDate, EpisodeNumber, 
+                            SeriesId (for episodes)
+                        </Typography>
+                        <Typography variant="body2" color="warning.main">
+                            <strong>Note:</strong> Podcast CSV import is currently being updated. Please use the 
+                            Import Media page for podcasts.
+                        </Typography>
+                    </AccordionDetails>
+                </Accordion>
+
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                        <Typography variant="subtitle1">📹 Video Format</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Typography variant="body2" paragraph>
+                            <strong>Required:</strong> MediaType (Video), Title
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>Video-Specific Columns:</strong> ChannelName, VideoId (YouTube ID), 
+                            ChannelId (YouTube Channel ID), DurationInSeconds, ViewCount, PublishedAt
+                        </Typography>
+                    </AccordionDetails>
+                </Accordion>
+
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                        <Typography variant="subtitle1">📰 Article Format</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Typography variant="body2" paragraph>
+                            <strong>Required:</strong> MediaType (Article), Title
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>Article-Specific Columns:</strong> Author, Link (required for articles), 
+                            PublicationDate, Domain, IsArchived (true/false), IsStarred (true/false), 
+                            ReadingProgress (0-100), WordCount, ExternalId (Instapaper/Readwise ID)
+                        </Typography>
+                    </AccordionDetails>
+                </Accordion>
+
+                <Accordion>
+                    <AccordionSummary expandIcon={<ExpandMore />}>
+                        <Typography variant="subtitle1">🌐 Website Format</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Typography variant="body2" paragraph>
+                            <strong>Required:</strong> MediaType (Website), Title, Link
+                        </Typography>
+                        <Typography variant="body2" paragraph>
+                            <strong>Website-Specific Columns:</strong> Domain, HasRssFeed (true/false), 
+                            RssFeedUrl, FaviconUrl, Type (Blog/Portfolio/Documentation/Tool/Resource/Other)
+                        </Typography>
+                    </AccordionDetails>
+                </Accordion>
+
+                <Alert severity="warning" sx={{ mt: 2, mb: 2 }}>
+                    <Typography variant="body2">
+                        <strong>Important Tips:</strong>
+                        <br />• The first column MUST be "MediaType"
+                        <br />• All rows should have the same MediaType or you should upload separate CSVs per type
+                        <br />• Ensure your CSV file is properly formatted with commas as separators
+                        <br />• Use quotes around text that contains commas
+                        <br />• For boolean fields, use "TRUE" or "FALSE" (case-insensitive)
+                        <br />• For date fields, use formats like "2024-01-15" or "01/15/2024"
+                        <br />• Multiple topics/genres within a cell can be separated by semicolons
+                        <br />• Leave optional columns empty if not applicable
+                    </Typography>
+                </Alert>
+
+                <Typography variant="subtitle2" gutterBottom sx={{ mt: 3, fontWeight: 600 }}>
+                    Download Sample CSV Templates
+                </Typography>
                 <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                     <Button
                         variant="outlined"
                         size="small"
                         href="/sample-book-import.csv"
                         download="sample-book-import.csv"
+                        sx={{ 
+                            borderColor: 'rgba(255, 255, 255, 0.5)',
+                            color: 'text.primary',
+                            '&:hover': {
+                                borderColor: 'rgba(255, 255, 255, 0.8)',
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }}
                     >
-                        Download Book Sample CSV
+                        📚 Book Sample
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        href="/sample-movie-import.csv"
+                        download="sample-movie-import.csv"
+                        sx={{ 
+                            borderColor: 'rgba(255, 255, 255, 0.5)',
+                            color: 'text.primary',
+                            '&:hover': {
+                                borderColor: 'rgba(255, 255, 255, 0.8)',
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }}
+                    >
+                        🎬 Movie Sample
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        href="/sample-tvshow-import.csv"
+                        download="sample-tvshow-import.csv"
+                        sx={{ 
+                            borderColor: 'rgba(255, 255, 255, 0.5)',
+                            color: 'text.primary',
+                            '&:hover': {
+                                borderColor: 'rgba(255, 255, 255, 0.8)',
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }}
+                    >
+                        📺 TV Show Sample
                     </Button>
                     <Button
                         variant="outlined"
                         size="small"
                         href="/sample-podcast-import.csv"
                         download="sample-podcast-import.csv"
+                        sx={{ 
+                            borderColor: 'rgba(255, 255, 255, 0.5)',
+                            color: 'text.primary',
+                            '&:hover': {
+                                borderColor: 'rgba(255, 255, 255, 0.8)',
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }}
                     >
-                        Download Podcast Sample CSV
+                        🎙️ Podcast Sample
                     </Button>
                 </Box>
             </Paper>
@@ -402,7 +586,13 @@ function UploadMediaPage() {
                         px: 4, 
                         py: 1.5,
                         fontSize: '16px',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        borderColor: 'rgba(255, 255, 255, 0.7)',
+                        color: 'text.primary',
+                        '&:hover': {
+                            borderColor: 'rgba(255, 255, 255, 1)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                        }
                     }}
                 >
                     Go Back
