@@ -31,7 +31,8 @@ builder.Services.AddCors(options =>
                       "https://localhost:4200"    // Angular HTTPS
                   )
                   .AllowAnyHeader()
-                  .AllowAnyMethod();
+                  .AllowAnyMethod()
+                  .AllowCredentials();  // Required for HttpOnly cookies (JWT refresh tokens)
         }
         else
         {
