@@ -23,6 +23,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.TvShows
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(t => t.Topics)
                     .Include(t => t.Genres)
                     .ToListAsync();
@@ -39,6 +41,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.TvShows
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(t => t.Topics)
                     .Include(t => t.Genres)
                     .FirstOrDefaultAsync(t => t.Id == id);
@@ -55,7 +59,9 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.TvShows
-                    .Where(t => t.Creator != null && t.Creator.ToLower().Contains(creator.ToLower()))
+                    .AsNoTracking()
+                    .AsSplitQuery()
+                    .Where(t => t.Creator != null && EF.Functions.ILike(t.Creator, $"%{creator}%"))
                     .Include(t => t.Topics)
                     .Include(t => t.Genres)
                     .ToListAsync();
@@ -72,6 +78,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.TvShows
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Where(t => t.FirstAirYear == year)
                     .Include(t => t.Topics)
                     .Include(t => t.Genres)

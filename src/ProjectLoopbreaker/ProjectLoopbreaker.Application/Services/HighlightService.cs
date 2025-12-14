@@ -27,6 +27,8 @@ namespace ProjectLoopbreaker.Application.Services
         public async Task<IEnumerable<Highlight>> GetAllHighlightsAsync()
         {
             return await _context.Highlights
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(h => h.Article)
                 .Include(h => h.Book)
                 .OrderByDescending(h => h.HighlightedAt ?? h.CreatedAt)
@@ -36,6 +38,8 @@ namespace ProjectLoopbreaker.Application.Services
         public async Task<Highlight?> GetHighlightByIdAsync(Guid id)
         {
             return await _context.Highlights
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(h => h.Article)
                 .Include(h => h.Book)
                 .FirstOrDefaultAsync(h => h.Id == id);
@@ -44,6 +48,7 @@ namespace ProjectLoopbreaker.Application.Services
         public async Task<IEnumerable<Highlight>> GetHighlightsByArticleIdAsync(Guid articleId)
         {
             return await _context.Highlights
+                .AsNoTracking()
                 .Where(h => h.ArticleId == articleId)
                 .OrderBy(h => h.Location ?? 0)
                 .ToListAsync();
@@ -52,6 +57,7 @@ namespace ProjectLoopbreaker.Application.Services
         public async Task<IEnumerable<Highlight>> GetHighlightsByBookIdAsync(Guid bookId)
         {
             return await _context.Highlights
+                .AsNoTracking()
                 .Where(h => h.BookId == bookId)
                 .OrderBy(h => h.Location ?? 0)
                 .ToListAsync();
@@ -61,6 +67,7 @@ namespace ProjectLoopbreaker.Application.Services
         {
             var normalizedTag = tag.ToLowerInvariant();
             return await _context.Highlights
+                .AsNoTracking()
                 .Where(h => h.Tags != null && h.Tags.Contains(normalizedTag))
                 .OrderByDescending(h => h.HighlightedAt ?? h.CreatedAt)
                 .ToListAsync();

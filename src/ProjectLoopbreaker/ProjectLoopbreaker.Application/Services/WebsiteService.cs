@@ -32,6 +32,8 @@ namespace ProjectLoopbreaker.Application.Services
         {
             return await _context.MediaItems
                 .OfType<Website>()
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(w => w.Topics)
                 .Include(w => w.Genres)
                 .OrderByDescending(w => w.DateAdded)
@@ -42,6 +44,8 @@ namespace ProjectLoopbreaker.Application.Services
         {
             return await _context.MediaItems
                 .OfType<Website>()
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(w => w.Topics)
                 .Include(w => w.Genres)
                 .FirstOrDefaultAsync(w => w.Id == id);

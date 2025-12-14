@@ -32,6 +32,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.YouTubeChannels
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(c => c.Topics)
                     .Include(c => c.Genres)
                     .Include(c => c.Mixlists)
@@ -50,6 +52,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.YouTubeChannels
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(c => c.Topics)
                     .Include(c => c.Genres)
                     .Include(c => c.Mixlists)
@@ -68,6 +72,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.YouTubeChannels
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(c => c.Topics)
                     .Include(c => c.Genres)
                     .Include(c => c.Mixlists)
@@ -86,6 +92,8 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 return await _context.Videos
+                    .AsNoTracking()
+                    .AsSplitQuery()
                     .Include(v => v.Topics)
                     .Include(v => v.Genres)
                     .Where(v => v.ChannelId == channelId)

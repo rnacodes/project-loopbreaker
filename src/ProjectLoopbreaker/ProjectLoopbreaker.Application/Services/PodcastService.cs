@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
@@ -35,6 +35,8 @@ namespace ProjectLoopbreaker.Application.Services
         public async Task<IEnumerable<PodcastSeries>> GetAllPodcastSeriesAsync()
         {
             return await _context.PodcastSeries
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(p => p.Topics)
                 .Include(p => p.Genres)
                 .ToListAsync();
@@ -43,6 +45,8 @@ namespace ProjectLoopbreaker.Application.Services
         public async Task<PodcastSeries?> GetPodcastSeriesByIdAsync(Guid id)
         {
             return await _context.PodcastSeries
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(p => p.Topics)
                 .Include(p => p.Genres)
                 .Include(p => p.Episodes)
@@ -52,7 +56,10 @@ namespace ProjectLoopbreaker.Application.Services
         public async Task<IEnumerable<PodcastSeries>> SearchPodcastSeriesAsync(string query)
         {
             return await _context.PodcastSeries
-                .Where(p => p.Title.Contains(query) || (p.Publisher != null && p.Publisher.Contains(query)))
+                .AsNoTracking()
+                .AsSplitQuery()
+                .Where(p => EF.Functions.ILike(p.Title, $"%{query}%") || 
+                           (p.Publisher != null && EF.Functions.ILike(p.Publisher, $"%{query}%")))
                 .Include(p => p.Topics)
                 .Include(p => p.Genres)
                 .ToListAsync();
@@ -172,6 +179,8 @@ namespace ProjectLoopbreaker.Application.Services
         public async Task<IEnumerable<PodcastEpisode>> GetEpisodesBySeriesIdAsync(Guid seriesId)
         {
             return await _context.PodcastEpisodes
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Where(e => e.SeriesId == seriesId)
                 .Include(e => e.Topics)
                 .Include(e => e.Genres)
@@ -182,6 +191,8 @@ namespace ProjectLoopbreaker.Application.Services
         public async Task<PodcastEpisode?> GetPodcastEpisodeByIdAsync(Guid id)
         {
             return await _context.PodcastEpisodes
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(e => e.Series)
                 .Include(e => e.Topics)
                 .Include(e => e.Genres)
@@ -191,6 +202,8 @@ namespace ProjectLoopbreaker.Application.Services
         public async Task<IEnumerable<PodcastEpisode>> GetAllPodcastEpisodesAsync()
         {
             return await _context.PodcastEpisodes
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Include(e => e.Series)
                 .Include(e => e.Topics)
                 .Include(e => e.Genres)
@@ -338,6 +351,8 @@ namespace ProjectLoopbreaker.Application.Services
         public async Task<IEnumerable<PodcastSeries>> GetSubscribedPodcastSeriesAsync()
         {
             return await _context.PodcastSeries
+                .AsNoTracking()
+                .AsSplitQuery()
                 .Where(p => p.IsSubscribed)
                 .Include(p => p.Topics)
                 .Include(p => p.Genres)

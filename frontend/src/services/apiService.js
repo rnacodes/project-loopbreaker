@@ -467,10 +467,15 @@ export const deleteBook = (id) => {
 };
 
 // Upload API calls
-export const uploadCsv = (file, mediaType) => {
+export const uploadCsv = (file, mediaType = null) => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('mediaType', mediaType);
+    
+    // Only append mediaType if it's provided (for single-type CSVs)
+    // If not provided, backend will read MediaType from each row
+    if (mediaType) {
+        formData.append('mediaType', mediaType);
+    }
     
     return apiClient.post('/upload/csv', formData, {
         headers: {
