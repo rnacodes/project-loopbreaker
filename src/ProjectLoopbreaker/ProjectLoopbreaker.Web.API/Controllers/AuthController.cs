@@ -13,15 +13,18 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
         private readonly IAuthService _authService;
+        private readonly IWebHostEnvironment _environment;
 
         public AuthController(
             IConfiguration configuration, 
             ILogger<AuthController> logger,
-            IAuthService authService)
+            IAuthService authService,
+            IWebHostEnvironment environment)
         {
             _configuration = configuration;
             _logger = logger;
             _authService = authService;
+            _environment = environment;
         }
 
         /// <summary>
@@ -75,15 +78,22 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 await _authService.SaveRefreshTokenAsync(userId, refreshToken, refreshTokenDays);
                 
                 // Set refresh token as HttpOnly cookie
+                // Automatically use Secure=false in Development, Secure=true in Production
+                // Can be overridden with JwtSettings:RequireHttps config or REQUIRE_HTTPS env var
+                var requireHttps = GetRequireHttpsSetting();
+                
                 var cookieOptions = new CookieOptions
                 {
                     HttpOnly = true,     // Prevents XSS attacks from reading the token
-                    Secure = true,       // Only sent over HTTPS (set to false for local development if needed)
+                    Secure = requireHttps,  // Auto: false in Development, true in Production
                     SameSite = SameSiteMode.Strict, // Protects against CSRF
                     Expires = DateTime.UtcNow.AddDays(refreshTokenDays)
                 };
                 
                 Response.Cookies.Append("refresh_token", refreshToken, cookieOptions);
+                
+                _logger.LogInformation("Refresh token cookie set with Secure={Secure} (Environment: {Environment})", 
+                    requireHttps, _environment.EnvironmentName);
 
                 _logger.LogInformation("User {Username} logged in successfully with dual token system", model.Username);
 
@@ -151,10 +161,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 await _authService.SaveRefreshTokenAsync(userId, newRefreshToken, refreshTokenDays);
 
                 // Set new refresh token as HttpOnly cookie
+                var requireHttps = GetRequireHttpsSetting();
+                
                 var cookieOptions = new CookieOptions
                 {
                     HttpOnly = true,
-                    Secure = true,
+                    Secure = requireHttps,  // Auto: false in Development, true in Production
                     SameSite = SameSiteMode.Strict,
                     Expires = DateTime.UtcNow.AddDays(refreshTokenDays)
                 };
@@ -225,6 +237,36 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 _logger.LogError(ex, "Error during logout");
                 return StatusCode(500, new { message = "An error occurred during logout" });
             }
+        }
+        
+        /// <summary>
+        /// Determines whether to require HTTPS for secure cookies
+        /// Priority: 1. REQUIRE_HTTPS env var, 2. JwtSettings:RequireHttps config, 3. Environment-based default
+        /// </summary>
+        private bool GetRequireHttpsSetting()
+        {
+            // Check environment variable first (highest priority)
+            var envVar = Environment.GetEnvironmentVariable("REQUIRE_HTTPS");
+            if (!string.IsNullOrEmpty(envVar) && bool.TryParse(envVar, out var envValue))
+            {
+                _logger.LogInformation("Using REQUIRE_HTTPS environment variable: {Value}", envValue);
+                return envValue;
+            }
+            
+            // Check configuration setting (second priority)
+            var jwtSettings = _configuration.GetSection("JwtSettings");
+            var configValue = jwtSettings["RequireHttps"];
+            if (!string.IsNullOrEmpty(configValue) && bool.TryParse(configValue, out var configBool))
+            {
+                _logger.LogInformation("Using JwtSettings:RequireHttps configuration: {Value}", configBool);
+                return configBool;
+            }
+            
+            // Default: true for Production/Staging, false for Development (lowest priority)
+            var defaultValue = !_environment.IsDevelopment();
+            _logger.LogInformation("Using environment-based default for RequireHttps: {Value} (Environment: {Environment})", 
+                defaultValue, _environment.EnvironmentName);
+            return defaultValue;
         }
     }
 }
