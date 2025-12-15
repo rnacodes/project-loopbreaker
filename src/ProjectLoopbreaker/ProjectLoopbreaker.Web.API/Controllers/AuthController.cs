@@ -42,9 +42,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return BadRequest(new { message = "Username and password are required" });
             }
 
-            // Validate User Credentials
-            // TODO: Replace this with actual user validation against your database
-            // For now, using environment variables or configuration for simple auth
             var validUsername = Environment.GetEnvironmentVariable("AUTH_USERNAME") ?? 
                                _configuration["Auth:Username"] ?? 
                                "admin";

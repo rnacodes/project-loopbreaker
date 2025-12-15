@@ -480,7 +480,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                             }
                             else if (mediaItem is Website website)
                             {
-                                _context.MediaItems.Add(website);
+                                _context.Websites.Add(website);
                                 importedItems.Add(new
                                 {
                                     Id = website.Id,
@@ -627,7 +627,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             // Parse dates
             var dateCompletedStr = GetCsvValue(csv, "DateCompleted");
             if (!string.IsNullOrEmpty(dateCompletedStr) && DateTime.TryParse(dateCompletedStr, out DateTime dateCompleted))
-                book.DateCompleted = dateCompleted;
+                book.DateCompleted = DateTime.SpecifyKind(dateCompleted, DateTimeKind.Utc);
 
             // Note: Topics and Genres can be assigned later through the UI
             // For now, we'll just create the basic book entity
@@ -672,11 +672,11 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             // Parse dates
             var releaseDateStr = GetCsvValue(csv, "ReleaseDate");
             if (!string.IsNullOrEmpty(releaseDateStr) && DateTime.TryParse(releaseDateStr, out DateTime releaseDate))
-                podcast.ReleaseDate = releaseDate;
+                podcast.ReleaseDate = DateTime.SpecifyKind(releaseDate, DateTimeKind.Utc);
 
             var dateCompletedStr = GetCsvValue(csv, "DateCompleted");
             if (!string.IsNullOrEmpty(dateCompletedStr) && DateTime.TryParse(dateCompletedStr, out DateTime dateCompleted))
-                podcast.DateCompleted = dateCompleted;
+                podcast.DateCompleted = DateTime.SpecifyKind(dateCompleted, DateTimeKind.Utc);
 
             // Parse enums
             var ratingStr = GetCsvValue(csv, "Rating");
@@ -745,7 +745,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             // Parse dates
             var dateCompletedStr = GetCsvValue(csv, "DateCompleted");
             if (!string.IsNullOrEmpty(dateCompletedStr) && DateTime.TryParse(dateCompletedStr, out DateTime dateCompleted))
-                movie.DateCompleted = dateCompleted;
+                movie.DateCompleted = DateTime.SpecifyKind(dateCompleted, DateTimeKind.Utc);
 
             return movie;
         }
@@ -808,7 +808,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             // Parse dates
             var dateCompletedStr = GetCsvValue(csv, "DateCompleted");
             if (!string.IsNullOrEmpty(dateCompletedStr) && DateTime.TryParse(dateCompletedStr, out DateTime dateCompleted))
-                tvShow.DateCompleted = dateCompleted;
+                tvShow.DateCompleted = DateTime.SpecifyKind(dateCompleted, DateTimeKind.Utc);
 
             return tvShow;
         }
@@ -863,11 +863,11 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             // Parse dates
             var publicationDateStr = GetCsvValue(csv, "PublicationDate");
             if (!string.IsNullOrEmpty(publicationDateStr) && DateTime.TryParse(publicationDateStr, out DateTime publicationDate))
-                article.PublicationDate = publicationDate;
+                article.PublicationDate = DateTime.SpecifyKind(publicationDate, DateTimeKind.Utc);
 
             var dateCompletedStr = GetCsvValue(csv, "DateCompleted");
             if (!string.IsNullOrEmpty(dateCompletedStr) && DateTime.TryParse(dateCompletedStr, out DateTime dateCompleted))
-                article.DateCompleted = dateCompleted;
+                article.DateCompleted = DateTime.SpecifyKind(dateCompleted, DateTimeKind.Utc);
 
             // Parse enums
             var ratingStr = GetCsvValue(csv, "Rating");
@@ -914,7 +914,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             // Parse dates
             var dateCompletedStr = GetCsvValue(csv, "DateCompleted");
             if (!string.IsNullOrEmpty(dateCompletedStr) && DateTime.TryParse(dateCompletedStr, out DateTime dateCompleted))
-                video.DateCompleted = dateCompleted;
+                video.DateCompleted = DateTime.SpecifyKind(dateCompleted, DateTimeKind.Utc);
 
             // Parse enums
             var ratingStr = GetCsvValue(csv, "Rating");
@@ -952,11 +952,11 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             // Parse dates
             var lastCheckedStr = GetCsvValue(csv, "LastCheckedDate");
             if (!string.IsNullOrEmpty(lastCheckedStr) && DateTime.TryParse(lastCheckedStr, out DateTime lastChecked))
-                website.LastCheckedDate = lastChecked;
+                website.LastCheckedDate = DateTime.SpecifyKind(lastChecked, DateTimeKind.Utc);
 
             var dateCompletedStr = GetCsvValue(csv, "DateCompleted");
             if (!string.IsNullOrEmpty(dateCompletedStr) && DateTime.TryParse(dateCompletedStr, out DateTime dateCompleted))
-                website.DateCompleted = dateCompleted;
+                website.DateCompleted = DateTime.SpecifyKind(dateCompleted, DateTimeKind.Utc);
 
             // Parse enums
             var ratingStr = GetCsvValue(csv, "Rating");

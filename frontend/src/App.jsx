@@ -22,6 +22,7 @@ import ImportMixlistPage from './components/ImportMixlistPage';
 import ImportGenresTopicsPage from './components/ImportGenresTopicsPage';
 import SearchByTopicOrGenre from './components/SearchByTopicOrGenre';
 import SearchResults from './components/SearchResults';
+import MockSearchUI from './components/MockSearchUI';
 import DemoPage from './components/DemoPage';
 import UploadMediaPage from './components/UploadMediaPage';
 import YouTubeCallback from './pages/YouTubeCallback';
@@ -69,6 +70,7 @@ function App() {
           <Route path="/upload-media" element={<UploadMediaPage />} />
           <Route path="/search-by-topic-genre" element={<SearchByTopicOrGenre />} />
           <Route path="/search-results" element={<SearchResults />} />
+          <Route path="/search" element={<MockSearchUI />} />
           <Route path="/media/:id" element={<MediaProfilePage />} />
           <Route path="/media/:id/edit" element={<EditMediaForm />} />
           <Route path="/demo" element={<DemoPage />} />

@@ -1,4 +1,5 @@
 //TODO: Change color of icones from dark purple to white
+//TODO: Remove username from displaying when logged in - can just show "Logged In"
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
