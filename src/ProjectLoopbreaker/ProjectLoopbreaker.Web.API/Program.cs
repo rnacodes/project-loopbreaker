@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Infrastructure.Data;
 using ProjectLoopbreaker.Infrastructure.Clients;
+using ProjectLoopbreaker.Infrastructure.Services;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Application.Services;
@@ -9,6 +10,8 @@ using Amazon.S3;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Typesense;
+using Typesense.Setup;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -478,11 +481,97 @@ builder.Services.AddSingleton<IAmazonS3>(sp =>
     return new Amazon.S3.AmazonS3Client(accessKey, secretKey, config);
 });
 
+// Configure Typesense Client for search functionality
+builder.Services.AddSingleton<ITypesenseClient>(sp =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    
+    // Get Typesense configuration from environment variables or appsettings
+    var apiKey = Environment.GetEnvironmentVariable("TYPESENSE_ADMIN_API_KEY") ?? 
+                 configuration["Typesense:AdminApiKey"];
+    var host = Environment.GetEnvironmentVariable("TYPESENSE_HOST") ?? 
+               configuration["Typesense:Host"];
+    var portString = Environment.GetEnvironmentVariable("TYPESENSE_PORT") ?? 
+                     configuration["Typesense:Port"] ?? "443";
+    var protocol = Environment.GetEnvironmentVariable("TYPESENSE_PROTOCOL") ?? 
+                   configuration["Typesense:Protocol"] ?? "https";
+
+    Console.WriteLine("=== Typesense Configuration Debug ===");
+    Console.WriteLine($"API Key: {(string.IsNullOrEmpty(apiKey) ? "MISSING" : "SET")}");
+    Console.WriteLine($"Host: {(string.IsNullOrEmpty(host) ? "MISSING" : host)}");
+    Console.WriteLine($"Port: {portString}");
+    Console.WriteLine($"Protocol: {protocol}");
+
+    // Check if configuration is complete
+    if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(host))
+    {
+        Console.WriteLine("WARNING: Typesense configuration is incomplete.");
+        Console.WriteLine("Search functionality will not be available until properly configured.");
+        Console.WriteLine("Expected environment variables:");
+        Console.WriteLine("  TYPESENSE_ADMIN_API_KEY");
+        Console.WriteLine("  TYPESENSE_HOST (e.g., search.mymediaverseuniverse.com)");
+        Console.WriteLine("  TYPESENSE_PORT (default: 443)");
+        Console.WriteLine("  TYPESENSE_PROTOCOL (default: https)");
+        
+        // Return a dummy client that won't be usable
+        // This prevents the app from crashing if Typesense is not configured
+        var dummyNodes = new List<Node> { new Node("localhost", "8108", "http") };
+        var dummyConfig = new Config(dummyNodes, "dummy-key");
+        var dummyHttpClient = new HttpClient();
+        return new TypesenseClient(Microsoft.Extensions.Options.Options.Create(dummyConfig), dummyHttpClient);
+    }
+
+    if (!int.TryParse(portString, out int port))
+    {
+        Console.WriteLine($"WARNING: Invalid Typesense port '{portString}', defaulting to 443");
+        port = 443;
+    }
+
+    var nodes = new List<Node>
+    {
+        new Node(host, port.ToString(), protocol)
+    };
+
+    var config = new Config(nodes, apiKey);
+
+    Console.WriteLine("Typesense client configured successfully.");
+    
+    var httpClient = new HttpClient();
+    return new TypesenseClient(Microsoft.Extensions.Options.Options.Create(config), httpClient);
+});
+
+// Register Typesense service
+builder.Services.AddScoped<ITypeSenseService, TypeSenseService>();
+
 // Add other services like Swagger if needed
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Initialize Typesense collection on startup (only if Typesense is configured)
+try
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var typeSenseService = scope.ServiceProvider.GetService<ITypeSenseService>();
+        if (typeSenseService != null)
+        {
+            Console.WriteLine("Initializing Typesense collection...");
+            await typeSenseService.EnsureCollectionExistsAsync();
+            Console.WriteLine("Typesense collection initialization complete.");
+        }
+        else
+        {
+            Console.WriteLine("Typesense service not available. Skipping collection initialization.");
+        }
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"WARNING: Failed to initialize Typesense collection: {ex.Message}");
+    Console.WriteLine("Application will continue, but search functionality may not work.");
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

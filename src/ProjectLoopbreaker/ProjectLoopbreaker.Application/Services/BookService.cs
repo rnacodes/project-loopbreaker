@@ -5,6 +5,8 @@ using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Application.Utilities;
+using ProjectLoopbreaker.Application.Helpers;
+using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Application.Services
 {
@@ -12,11 +14,16 @@ namespace ProjectLoopbreaker.Application.Services
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<BookService> _logger;
+        private readonly ITypeSenseService? _typeSenseService;
 
-        public BookService(IApplicationDbContext context, ILogger<BookService> logger)
+        public BookService(
+            IApplicationDbContext context, 
+            ILogger<BookService> logger,
+            ITypeSenseService? typeSenseService = null)
         {
             _context = context;
             _logger = logger;
+            _typeSenseService = typeSenseService;
         }
 
         public async Task<IEnumerable<Book>> GetAllBooksAsync()
@@ -146,6 +153,12 @@ namespace ProjectLoopbreaker.Application.Services
                 _context.Add(book);
                 await _context.SaveChangesAsync();
 
+                // Index in Typesense after successful creation
+                await TypesenseIndexingHelper.IndexMediaItemAsync(
+                    book,
+                    _typeSenseService,
+                    TypesenseIndexingHelper.GetBookFields(book));
+
                 _logger.LogInformation("Successfully created book: {Title} by {Author}", book.Title, book.Author);
                 return book;
             }
@@ -202,6 +215,12 @@ namespace ProjectLoopbreaker.Application.Services
 
                 await _context.SaveChangesAsync();
 
+                // Re-index in Typesense after successful update
+                await TypesenseIndexingHelper.IndexMediaItemAsync(
+                    book,
+                    _typeSenseService,
+                    TypesenseIndexingHelper.GetBookFields(book));
+
                 _logger.LogInformation("Successfully updated book: {Title} by {Author}", book.Title, book.Author);
                 return book;
             }
@@ -222,10 +241,17 @@ namespace ProjectLoopbreaker.Application.Services
                     return false;
                 }
 
+                var bookId = book.Id;
+                var bookTitle = book.Title;
+                var bookAuthor = book.Author;
+
                 _context.Remove(book);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Successfully deleted book: {Title} by {Author}", book.Title, book.Author);
+                // Delete from Typesense after successful deletion
+                await TypesenseIndexingHelper.DeleteMediaItemAsync(bookId, _typeSenseService);
+
+                _logger.LogInformation("Successfully deleted book: {Title} by {Author}", bookTitle, bookAuthor);
                 return true;
             }
             catch (Exception ex)
