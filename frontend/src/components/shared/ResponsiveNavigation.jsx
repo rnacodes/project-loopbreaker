@@ -33,7 +33,8 @@ import {
   CleaningServices,
   Login as LoginIcon,
   Logout as LogoutIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  Storage as StorageIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 

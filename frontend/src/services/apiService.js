@@ -1678,3 +1678,64 @@ export const cleanupAllMedia = async () => {
         throw error;
     }
 };
+
+// ===========================
+// Typesense Admin API calls
+// ===========================
+
+/**
+ * Trigger a bulk reindex of all media items in Typesense
+ * @returns {Promise<Object>} Reindex result with statistics
+ */
+export const typesenseReindex = async () => {
+    try {
+        const response = await apiClient.post('/search/reindex');
+        return response.data;
+    } catch (error) {
+        console.error('Error reindexing Typesense:', error);
+        throw error;
+    }
+};
+
+/**
+ * Check Typesense health status
+ * @returns {Promise<Object>} Health status information
+ */
+export const typesenseHealth = async () => {
+    try {
+        const response = await apiClient.get('/search/health');
+        return response.data;
+    } catch (error) {
+        console.error('Error checking Typesense health:', error);
+        throw error;
+    }
+};
+
+/**
+ * Search media items using Typesense
+ * @param {string} query - Search query
+ * @param {string} mediaType - Media type filter ('all' or specific type)
+ * @param {number} page - Page number (default: 1)
+ * @param {number} perPage - Results per page (default: 20)
+ * @returns {Promise<Object>} Search results
+ */
+export const typesenseSearch = async (query, mediaType = 'all', page = 1, perPage = 20) => {
+    try {
+        const params = {
+            q: query,
+            page: page,
+            per_page: perPage,
+        };
+
+        let endpoint = '/search';
+        if (mediaType !== 'all') {
+            endpoint = `/search/by-type/${mediaType}`;
+        }
+
+        const response = await apiClient.get(endpoint, { params });
+        return response.data;
+    } catch (error) {
+        console.error('Error searching Typesense:', error);
+        throw error;
+    }
+};
