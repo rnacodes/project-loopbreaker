@@ -39,6 +39,7 @@ import PodcastEpisodeProfile from './components/PodcastEpisodeProfile';
 import CleanupManagementPage from './components/CleanupManagementPage';
 import WebsiteImportPage from './components/WebsiteImportPage';
 import WebsitesPage from './components/WebsitesPage';
+import TypesenseAdminPage from './components/TypesenseAdminPage';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
@@ -88,6 +89,7 @@ function App() {
           <Route path="/cleanup" element={<CleanupManagementPage />} />
           <Route path="/import-website" element={<WebsiteImportPage />} />
           <Route path="/websites" element={<WebsitesPage />} />
+          <Route path="/typesense-admin" element={<TypesenseAdminPage />} />
           {/* Catch-all route for 404 */}
           <Route path="*" element={
             <div style={{ padding: '2rem', textAlign: 'center' }}>
