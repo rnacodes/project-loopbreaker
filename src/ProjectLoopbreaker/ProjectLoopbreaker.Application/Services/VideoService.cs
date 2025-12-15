@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Helpers;
+using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Application.Services
 {
@@ -15,11 +17,16 @@ namespace ProjectLoopbreaker.Application.Services
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<VideoService> _logger;
+        private readonly ITypeSenseService? _typeSenseService;
 
-        public VideoService(IApplicationDbContext context, ILogger<VideoService> logger)
+        public VideoService(
+            IApplicationDbContext context, 
+            ILogger<VideoService> logger,
+            ITypeSenseService? typeSenseService = null)
         {
             _context = context;
             _logger = logger;
+            _typeSenseService = typeSenseService;
         }
 
         // Standard CRUD operations
@@ -234,6 +241,13 @@ namespace ProjectLoopbreaker.Application.Services
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Re-index in Typesense after successful update
+                await TypesenseIndexingHelper.IndexMediaItemAsync(
+                    video,
+                    _typeSenseService,
+                    TypesenseIndexingHelper.GetVideoFields(video));
+
                 return video;
             }
             catch (Exception ex)
@@ -253,8 +267,14 @@ namespace ProjectLoopbreaker.Application.Services
                     return false;
                 }
 
+                var videoId = video.Id;
+
                 _context.Remove(video);
                 await _context.SaveChangesAsync();
+
+                // Delete from Typesense after successful deletion
+                await TypesenseIndexingHelper.DeleteMediaItemAsync(videoId, _typeSenseService);
+
                 return true;
             }
             catch (Exception ex)
@@ -285,6 +305,13 @@ namespace ProjectLoopbreaker.Application.Services
                     existingVideo.RelatedNotes = existingVideo.RelatedNotes ?? video.RelatedNotes;
 
                     await _context.SaveChangesAsync();
+
+                    // Re-index in Typesense after update
+                    await TypesenseIndexingHelper.IndexMediaItemAsync(
+                        existingVideo,
+                        _typeSenseService,
+                        TypesenseIndexingHelper.GetVideoFields(existingVideo));
+
                     return existingVideo;
                 }
                 else
@@ -297,6 +324,13 @@ namespace ProjectLoopbreaker.Application.Services
                 // It's a new video, add it
                 _context.Add(video);
                 await _context.SaveChangesAsync();
+
+                // Index in Typesense after creation
+                await TypesenseIndexingHelper.IndexMediaItemAsync(
+                    video,
+                    _typeSenseService,
+                    TypesenseIndexingHelper.GetVideoFields(video));
+
                 return video;
             }
         }

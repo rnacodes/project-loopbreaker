@@ -8,7 +8,8 @@ import {
 } from '@mui/material';
 import {
     Search, ViewModule, ViewList, FilterList, Clear, TuneRounded,
-    ExpandMore, Star, StarBorder, OpenInNew, AccessTime, Update
+    ExpandMore, Star, StarBorder, OpenInNew, AccessTime, Update,
+    ThumbUp, ThumbDown, Remove, Favorite
 } from '@mui/icons-material';
 
 // MOCK DATA
@@ -18,7 +19,7 @@ const mockSearchResults = [
         title: "The Psychology of Money",
         mediaType: "Book",
         status: "Actively Exploring",
-        rating: 4.5,
+        ratingType: "like", // superlike, like, neutral, dislike
         topics: ["finance", "psychology", "behavioral economics"],
         genres: ["non-fiction", "self-help"],
         author: "Morgan Housel",
@@ -31,7 +32,7 @@ const mockSearchResults = [
         title: "Huberman Lab Podcast",
         mediaType: "Podcast",
         status: "Want to Explore",
-        rating: 5.0,
+        ratingType: "superlike",
         topics: ["neuroscience", "health", "productivity"],
         genres: ["science", "education"],
         author: "Andrew Huberman",
@@ -44,7 +45,7 @@ const mockSearchResults = [
         title: "Atomic Habits",
         mediaType: "Book",
         status: "Explored",
-        rating: 5.0,
+        ratingType: "superlike",
         topics: ["habits", "productivity", "self-improvement"],
         genres: ["non-fiction", "self-help"],
         author: "James Clear",
@@ -57,7 +58,7 @@ const mockSearchResults = [
         title: "The Social Dilemma",
         mediaType: "Movie",
         status: "Explored",
-        rating: 4.0,
+        ratingType: "like",
         topics: ["technology", "social media", "ethics"],
         genres: ["documentary", "technology"],
         author: "Jeff Orlowski",
@@ -70,7 +71,7 @@ const mockSearchResults = [
         title: "Build with ChatGPT APIs",
         mediaType: "Course",
         status: "Want to Explore",
-        rating: null,
+        ratingType: null,
         topics: ["ai", "programming", "apis"],
         genres: ["technology", "education"],
         author: "DeepLearning.AI",
@@ -83,7 +84,7 @@ const mockSearchResults = [
         title: "Interstellar",
         mediaType: "Movie",
         status: "Want to Explore",
-        rating: 4.8,
+        ratingType: "superlike",
         topics: ["space", "science fiction", "physics"],
         genres: ["sci-fi", "drama"],
         author: "Christopher Nolan",
@@ -96,7 +97,7 @@ const mockSearchResults = [
         title: "How to Take Smart Notes",
         mediaType: "Book",
         status: "Actively Exploring",
-        rating: 4.3,
+        ratingType: "like",
         topics: ["note-taking", "zettelkasten", "productivity"],
         genres: ["non-fiction", "education"],
         author: "Sönke Ahrens",
@@ -109,7 +110,7 @@ const mockSearchResults = [
         title: "Lex Fridman Podcast",
         mediaType: "Podcast",
         status: "Actively Exploring",
-        rating: 4.7,
+        ratingType: "like",
         topics: ["ai", "philosophy", "science"],
         genres: ["technology", "interviews"],
         author: "Lex Fridman",
@@ -122,7 +123,7 @@ const mockSearchResults = [
         title: "The Witcher 3: Wild Hunt",
         mediaType: "VideoGame",
         status: "Explored",
-        rating: 5.0,
+        ratingType: "superlike",
         topics: ["fantasy", "rpg", "storytelling"],
         genres: ["action", "adventure", "rpg"],
         author: "CD Projekt Red",
@@ -135,7 +136,7 @@ const mockSearchResults = [
         title: "3Blue1Brown YouTube Channel",
         mediaType: "Video",
         status: "Actively Exploring",
-        rating: 5.0,
+        ratingType: "superlike",
         topics: ["mathematics", "education", "visualization"],
         genres: ["education", "science"],
         author: "Grant Sanderson",
@@ -148,7 +149,7 @@ const mockSearchResults = [
         title: "Breaking Bad",
         mediaType: "TVShow",
         status: "Explored",
-        rating: 5.0,
+        ratingType: "superlike",
         topics: ["drama", "crime", "morality"],
         genres: ["drama", "thriller"],
         author: "Vince Gilligan",
@@ -161,7 +162,7 @@ const mockSearchResults = [
         title: "Wait But Why",
         mediaType: "Website",
         status: "Actively Exploring",
-        rating: 4.9,
+        ratingType: "like",
         topics: ["science", "philosophy", "futurism"],
         genres: ["blog", "education"],
         author: "Tim Urban",
@@ -209,6 +210,22 @@ const sortOptions = [
     { value: 'title', label: 'Title (A-Z)' }
 ];
 
+// HELPER FUNCTIONS
+const getRatingIcon = (ratingType) => {
+    switch (ratingType) {
+        case 'superlike':
+            return <Favorite sx={{ fontSize: 18, color: '#e91e63' }} />;
+        case 'like':
+            return <ThumbUp sx={{ fontSize: 18, color: '#4caf50' }} />;
+        case 'neutral':
+            return <Remove sx={{ fontSize: 18, color: '#9e9e9e' }} />;
+        case 'dislike':
+            return <ThumbDown sx={{ fontSize: 18, color: '#f44336' }} />;
+        default:
+            return null;
+    }
+};
+
 // COMPONENTS
 const MediaCard = ({ item }) => (
     <Card 
@@ -240,12 +257,9 @@ const MediaCard = ({ item }) => (
                 >
                     {item.title}
                 </Typography>
-                {item.rating && (
+                {item.ratingType && (
                     <Box sx={{ display: 'flex', alignItems: 'center', ml: 1, flexShrink: 0 }}>
-                        <Star sx={{ fontSize: 18, color: '#ffc107', mr: 0.3 }} />
-                        <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                            {item.rating}
-                        </Typography>
+                        {getRatingIcon(item.ratingType)}
                     </Box>
                 )}
             </Box>
@@ -301,8 +315,8 @@ const MediaCard = ({ item }) => (
                         label={topic}
                         size="small"
                         sx={{ 
-                            fontSize: '0.65rem', 
-                            height: '20px',
+                            fontSize: '0.75rem', 
+                            height: '24px',
                             backgroundColor: 'rgba(54, 39, 89, 0.3)',
                             color: '#ce93d8'
                         }}
@@ -312,13 +326,13 @@ const MediaCard = ({ item }) => (
                     <Chip
                         label={`+${item.topics.length - 3}`}
                         size="small"
-                        sx={{ fontSize: '0.65rem', height: '20px' }}
+                        sx={{ fontSize: '0.75rem', height: '24px' }}
                     />
                 )}
             </Box>
 
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <AccessTime sx={{ fontSize: 14 }} />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.7rem' }}>
+                <AccessTime sx={{ fontSize: 12 }} />
                 Added {new Date(item.dateAdded).toLocaleDateString()}
             </Typography>
         </CardContent>
@@ -344,12 +358,9 @@ const MediaListItem = ({ item }) => (
                     <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
                         {item.title}
                     </Typography>
-                    {item.rating && (
+                    {item.ratingType && (
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Star sx={{ fontSize: 18, color: '#ffc107', mr: 0.3 }} />
-                            <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                {item.rating}
-                            </Typography>
+                            {getRatingIcon(item.ratingType)}
                         </Box>
                     )}
                 </Box>
@@ -380,8 +391,8 @@ const MediaListItem = ({ item }) => (
                             label={topic}
                             size="small"
                             sx={{ 
-                                fontSize: '0.65rem', 
-                                height: '20px',
+                                fontSize: '0.75rem', 
+                                height: '24px',
                                 backgroundColor: 'rgba(54, 39, 89, 0.3)',
                                 color: '#ce93d8'
                             }}
@@ -391,7 +402,7 @@ const MediaListItem = ({ item }) => (
                         <Chip
                             label={`+${item.topics.length - 4}`}
                             size="small"
-                            sx={{ fontSize: '0.65rem', height: '20px' }}
+                            sx={{ fontSize: '0.75rem', height: '24px' }}
                         />
                     )}
                 </Box>
@@ -436,6 +447,10 @@ export default function MockSearchUI() {
     const [ratingRange, setRatingRange] = useState([0, 5]);
     const [showFilters, setShowFilters] = useState(true);
     const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+    const [topicSearchQuery, setTopicSearchQuery] = useState('');
+    const [genreSearchQuery, setGenreSearchQuery] = useState('');
+    const [showAllTopics, setShowAllTopics] = useState(false);
+    const [showAllGenres, setShowAllGenres] = useState(false);
 
     // Mock filtering logic (just for demonstration)
     const filteredResults = mockSearchResults;
@@ -473,6 +488,10 @@ export default function MockSearchUI() {
         setSelectedStatus('all');
         setRatingRange([0, 5]);
         setSearchQuery('');
+        setTopicSearchQuery('');
+        setGenreSearchQuery('');
+        setShowAllTopics(false);
+        setShowAllGenres(false);
     };
 
     return (
@@ -626,22 +645,68 @@ export default function MockSearchUI() {
                                         </Typography>
                                     </AccordionSummary>
                                     <AccordionDetails sx={{ pt: 0 }}>
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            placeholder="Search topics..."
+                                            value={topicSearchQuery}
+                                            onChange={(e) => setTopicSearchQuery(e.target.value)}
+                                            sx={{ mb: 1.5 }}
+                                            InputProps={{
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <Search sx={{ fontSize: 18 }} />
+                                                    </InputAdornment>
+                                                )
+                                            }}
+                                        />
                                         <FormGroup>
-                                            {topicOptions.map((topic) => (
-                                                <FormControlLabel
-                                                    key={topic}
-                                                    control={
-                                                        <Checkbox
-                                                            checked={selectedTopics.includes(topic)}
-                                                            onChange={() => handleTopicToggle(topic)}
-                                                            size="small"
-                                                        />
-                                                    }
-                                                    label={<Typography variant="body2">{topic}</Typography>}
-                                                    sx={{ mb: 0.5 }}
-                                                />
-                                            ))}
+                                            {topicOptions
+                                                .filter(topic => topic.toLowerCase().includes(topicSearchQuery.toLowerCase()))
+                                                .slice(0, showAllTopics ? undefined : 10)
+                                                .map((topic) => (
+                                                    <FormControlLabel
+                                                        key={topic}
+                                                        control={
+                                                            <Checkbox
+                                                                checked={selectedTopics.includes(topic)}
+                                                                onChange={() => handleTopicToggle(topic)}
+                                                                size="small"
+                                                            />
+                                                        }
+                                                        label={<Typography variant="body2">{topic}</Typography>}
+                                                        sx={{ mb: 0.5 }}
+                                                    />
+                                                ))}
                                         </FormGroup>
+                                        {topicOptions.filter(topic => topic.toLowerCase().includes(topicSearchQuery.toLowerCase())).length > 10 && !showAllTopics && (
+                                            <Button
+                                                size="small"
+                                                onClick={() => setShowAllTopics(true)}
+                                                sx={{ mt: 1, textTransform: 'none' }}
+                                            >
+                                                Show More
+                                            </Button>
+                                        )}
+                                        {showAllTopics && (
+                                            <Button
+                                                size="small"
+                                                onClick={() => setShowAllTopics(false)}
+                                                sx={{ mt: 1, textTransform: 'none' }}
+                                            >
+                                                Show Less
+                                            </Button>
+                                        )}
+                                        <Divider sx={{ my: 1.5 }} />
+                                        <Button
+                                            size="small"
+                                            fullWidth
+                                            variant="text"
+                                            onClick={() => navigate('/search-by-topic-genre')}
+                                            sx={{ textTransform: 'none', justifyContent: 'flex-start' }}
+                                        >
+                                            Browse all topics →
+                                        </Button>
                                     </AccordionDetails>
                                 </Accordion>
 
@@ -655,22 +720,68 @@ export default function MockSearchUI() {
                                         </Typography>
                                     </AccordionSummary>
                                     <AccordionDetails sx={{ pt: 0 }}>
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            placeholder="Search genres..."
+                                            value={genreSearchQuery}
+                                            onChange={(e) => setGenreSearchQuery(e.target.value)}
+                                            sx={{ mb: 1.5 }}
+                                            InputProps={{
+                                                startAdornment: (
+                                                    <InputAdornment position="start">
+                                                        <Search sx={{ fontSize: 18 }} />
+                                                    </InputAdornment>
+                                                )
+                                            }}
+                                        />
                                         <FormGroup>
-                                            {genreOptions.map((genre) => (
-                                                <FormControlLabel
-                                                    key={genre}
-                                                    control={
-                                                        <Checkbox
-                                                            checked={selectedGenres.includes(genre)}
-                                                            onChange={() => handleGenreToggle(genre)}
-                                                            size="small"
-                                                        />
-                                                    }
-                                                    label={<Typography variant="body2">{genre}</Typography>}
-                                                    sx={{ mb: 0.5 }}
-                                                />
-                                            ))}
+                                            {genreOptions
+                                                .filter(genre => genre.toLowerCase().includes(genreSearchQuery.toLowerCase()))
+                                                .slice(0, showAllGenres ? undefined : 10)
+                                                .map((genre) => (
+                                                    <FormControlLabel
+                                                        key={genre}
+                                                        control={
+                                                            <Checkbox
+                                                                checked={selectedGenres.includes(genre)}
+                                                                onChange={() => handleGenreToggle(genre)}
+                                                                size="small"
+                                                            />
+                                                        }
+                                                        label={<Typography variant="body2">{genre}</Typography>}
+                                                        sx={{ mb: 0.5 }}
+                                                    />
+                                                ))}
                                         </FormGroup>
+                                        {genreOptions.filter(genre => genre.toLowerCase().includes(genreSearchQuery.toLowerCase())).length > 10 && !showAllGenres && (
+                                            <Button
+                                                size="small"
+                                                onClick={() => setShowAllGenres(true)}
+                                                sx={{ mt: 1, textTransform: 'none' }}
+                                            >
+                                                Show More
+                                            </Button>
+                                        )}
+                                        {showAllGenres && (
+                                            <Button
+                                                size="small"
+                                                onClick={() => setShowAllGenres(false)}
+                                                sx={{ mt: 1, textTransform: 'none' }}
+                                            >
+                                                Show Less
+                                            </Button>
+                                        )}
+                                        <Divider sx={{ my: 1.5 }} />
+                                        <Button
+                                            size="small"
+                                            fullWidth
+                                            variant="text"
+                                            onClick={() => navigate('/search-by-topic-genre')}
+                                            sx={{ textTransform: 'none', justifyContent: 'flex-start' }}
+                                        >
+                                            Browse all genres →
+                                        </Button>
                                     </AccordionDetails>
                                 </Accordion>
 

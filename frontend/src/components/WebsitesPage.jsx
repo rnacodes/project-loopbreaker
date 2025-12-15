@@ -261,7 +261,11 @@ function WebsitesPage() {
                                         height="160"
                                         image={website.thumbnail}
                                         alt={website.title}
-                                        sx={{ objectFit: 'cover' }}
+                                        sx={{ 
+                                          width: '100%',
+                                          maxHeight: 160,
+                                          objectFit: 'cover' 
+                                        }}
                                         onError={(e) => {
                                             e.target.style.display = 'none';
                                         }}

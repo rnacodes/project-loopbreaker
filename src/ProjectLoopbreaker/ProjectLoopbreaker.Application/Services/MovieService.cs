@@ -4,6 +4,8 @@ using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Helpers;
+using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Application.Services
 {
@@ -11,11 +13,16 @@ namespace ProjectLoopbreaker.Application.Services
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<MovieService> _logger;
+        private readonly ITypeSenseService? _typeSenseService;
 
-        public MovieService(IApplicationDbContext context, ILogger<MovieService> logger)
+        public MovieService(
+            IApplicationDbContext context, 
+            ILogger<MovieService> logger,
+            ITypeSenseService? typeSenseService = null)
         {
             _context = context;
             _logger = logger;
+            _typeSenseService = typeSenseService;
         }
 
         public async Task<IEnumerable<Movie>> GetAllMoviesAsync()
@@ -146,6 +153,12 @@ namespace ProjectLoopbreaker.Application.Services
                 _context.Add(movie);
                 await _context.SaveChangesAsync();
 
+                // Index in Typesense after successful creation
+                await TypesenseIndexingHelper.IndexMediaItemAsync(
+                    movie,
+                    _typeSenseService,
+                    TypesenseIndexingHelper.GetMovieFields(movie));
+
                 _logger.LogInformation("Successfully created movie: {Title} ({Year})", movie.Title, movie.ReleaseYear);
                 return movie;
             }
@@ -204,6 +217,12 @@ namespace ProjectLoopbreaker.Application.Services
 
                 await _context.SaveChangesAsync();
 
+                // Re-index in Typesense after successful update
+                await TypesenseIndexingHelper.IndexMediaItemAsync(
+                    movie,
+                    _typeSenseService,
+                    TypesenseIndexingHelper.GetMovieFields(movie));
+
                 _logger.LogInformation("Successfully updated movie: {Title} ({Year})", movie.Title, movie.ReleaseYear);
                 return movie;
             }
@@ -224,10 +243,17 @@ namespace ProjectLoopbreaker.Application.Services
                     return false;
                 }
 
+                var movieId = movie.Id;
+                var movieTitle = movie.Title;
+                var movieYear = movie.ReleaseYear;
+
                 _context.Remove(movie);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Successfully deleted movie: {Title} ({Year})", movie.Title, movie.ReleaseYear);
+                // Delete from Typesense after successful deletion
+                await TypesenseIndexingHelper.DeleteMediaItemAsync(movieId, _typeSenseService);
+
+                _logger.LogInformation("Successfully deleted movie: {Title} ({Year})", movieTitle, movieYear);
                 return true;
             }
             catch (Exception ex)

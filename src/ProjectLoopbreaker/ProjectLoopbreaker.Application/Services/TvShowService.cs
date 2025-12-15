@@ -4,6 +4,8 @@ using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Helpers;
+using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Application.Services
 {
@@ -11,11 +13,16 @@ namespace ProjectLoopbreaker.Application.Services
     {
         private readonly IApplicationDbContext _context;
         private readonly ILogger<TvShowService> _logger;
+        private readonly ITypeSenseService? _typeSenseService;
 
-        public TvShowService(IApplicationDbContext context, ILogger<TvShowService> logger)
+        public TvShowService(
+            IApplicationDbContext context, 
+            ILogger<TvShowService> logger,
+            ITypeSenseService? typeSenseService = null)
         {
             _context = context;
             _logger = logger;
+            _typeSenseService = typeSenseService;
         }
 
         public async Task<IEnumerable<TvShow>> GetAllTvShowsAsync()
@@ -151,6 +158,12 @@ namespace ProjectLoopbreaker.Application.Services
                 _context.Add(tvShow);
                 await _context.SaveChangesAsync();
 
+                // Index in Typesense after successful creation
+                await TypesenseIndexingHelper.IndexMediaItemAsync(
+                    tvShow,
+                    _typeSenseService,
+                    TypesenseIndexingHelper.GetTvShowFields(tvShow));
+
                 _logger.LogInformation("Successfully created TV show: {Title} ({Year})", tvShow.Title, tvShow.FirstAirYear);
                 return tvShow;
             }
@@ -210,6 +223,12 @@ namespace ProjectLoopbreaker.Application.Services
 
                 await _context.SaveChangesAsync();
 
+                // Re-index in Typesense after successful update
+                await TypesenseIndexingHelper.IndexMediaItemAsync(
+                    tvShow,
+                    _typeSenseService,
+                    TypesenseIndexingHelper.GetTvShowFields(tvShow));
+
                 _logger.LogInformation("Successfully updated TV show: {Title} ({Year})", tvShow.Title, tvShow.FirstAirYear);
                 return tvShow;
             }
@@ -230,10 +249,17 @@ namespace ProjectLoopbreaker.Application.Services
                     return false;
                 }
 
+                var tvShowId = tvShow.Id;
+                var tvShowTitle = tvShow.Title;
+                var tvShowYear = tvShow.FirstAirYear;
+
                 _context.Remove(tvShow);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Successfully deleted TV show: {Title} ({Year})", tvShow.Title, tvShow.FirstAirYear);
+                // Delete from Typesense after successful deletion
+                await TypesenseIndexingHelper.DeleteMediaItemAsync(tvShowId, _typeSenseService);
+
+                _logger.LogInformation("Successfully deleted TV show: {Title} ({Year})", tvShowTitle, tvShowYear);
                 return true;
             }
             catch (Exception ex)

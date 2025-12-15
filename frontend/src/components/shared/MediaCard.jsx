@@ -80,8 +80,10 @@ const MediaCard = ({
       <CardMedia
         component="img"
         sx={{
+          width: '100%',
           height: variant === 'compact' ? 120 : variant === 'featured' ? 200 : 180,
-          objectFit: 'contain',
+          maxHeight: variant === 'compact' ? 120 : variant === 'featured' ? 200 : 180,
+          objectFit: 'cover',
           backgroundColor: 'rgba(0, 0, 0, 0.1)',
           position: 'relative'
         }}

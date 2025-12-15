@@ -157,6 +157,7 @@ function AllMedia() {
                 sx={{
                   position: 'relative',
                   width: '100%',
+                  maxWidth: '100%',
                   paddingTop: getAspectRatio(item.mediaType || item.MediaType),
                   overflow: 'hidden',
                   backgroundColor: 'rgba(255, 255, 255, 0.05)'
@@ -172,6 +173,8 @@ function AllMedia() {
                     left: 0,
                     width: '100%',
                     height: '100%',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
                     objectFit: 'cover'
                   }}
                   onError={(e) => {
