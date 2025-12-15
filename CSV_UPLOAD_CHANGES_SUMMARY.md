@@ -238,6 +238,7 @@ MediaType,Title,Description,Link,Notes,RelatedNotes,Thumbnail,Status,Rating,Owne
 - **CSV Format Guide**: See `CSV_UPLOAD_FIX.md` for detailed column information
 - **Sample CSV**: Use `temp-docs/sample-mediaitems-corrected.csv` as a template
 - **Backend API**: See `UploadController.cs` for implementation details
+- **Future Podcast CSV Import**: See `PODCAST_CSV_IMPORT_PLAN.md` for implementation plan
 
 ## Questions?
 
