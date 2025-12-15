@@ -73,7 +73,11 @@ function ArticleCard({ article }) {
                     height="180"
                     image={article.thumbnail}
                     alt={article.title}
-                    sx={{ objectFit: 'cover' }}
+                    sx={{ 
+                      width: '100%',
+                      maxHeight: 180,
+                      objectFit: 'cover' 
+                    }}
                 />
             )}
             

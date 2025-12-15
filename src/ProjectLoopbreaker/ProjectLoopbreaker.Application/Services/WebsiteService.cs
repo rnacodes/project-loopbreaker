@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Helpers;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.DTOs;
@@ -17,15 +18,18 @@ namespace ProjectLoopbreaker.Application.Services
         private readonly IApplicationDbContext _context;
         private readonly IWebsiteScraperService _scraperService;
         private readonly ILogger<WebsiteService> _logger;
+        private readonly ITypeSenseService? _typeSenseService;
 
         public WebsiteService(
             IApplicationDbContext context,
             IWebsiteScraperService scraperService,
-            ILogger<WebsiteService> logger)
+            ILogger<WebsiteService> logger,
+            ITypeSenseService? typeSenseService = null)
         {
             _context = context;
             _scraperService = scraperService;
             _logger = logger;
+            _typeSenseService = typeSenseService;
         }
 
         public async Task<IEnumerable<Website>> GetAllWebsitesAsync()
@@ -116,6 +120,12 @@ namespace ProjectLoopbreaker.Application.Services
             _context.Add(website);
             await _context.SaveChangesAsync();
 
+            // Index in Typesense after successful creation
+            await TypesenseIndexingHelper.IndexMediaItemAsync(
+                website,
+                _typeSenseService,
+                TypesenseIndexingHelper.GetWebsiteFields(website));
+
             _logger.LogInformation("Created website with ID: {Id}, Title: {Title}", website.Id, website.Title);
             return website;
         }
@@ -186,6 +196,12 @@ namespace ProjectLoopbreaker.Application.Services
             _context.Update(website);
             await _context.SaveChangesAsync();
 
+            // Re-index in Typesense after successful update
+            await TypesenseIndexingHelper.IndexMediaItemAsync(
+                website,
+                _typeSenseService,
+                TypesenseIndexingHelper.GetWebsiteFields(website));
+
             _logger.LogInformation("Updated website with ID: {Id}", id);
             return website;
         }
@@ -196,8 +212,13 @@ namespace ProjectLoopbreaker.Application.Services
             if (website == null)
                 return false;
 
+            var websiteId = website.Id;
+
             _context.Remove(website);
             await _context.SaveChangesAsync();
+
+            // Delete from Typesense after successful deletion
+            await TypesenseIndexingHelper.DeleteMediaItemAsync(websiteId, _typeSenseService);
 
             _logger.LogInformation("Deleted website with ID: {Id}", id);
             return true;

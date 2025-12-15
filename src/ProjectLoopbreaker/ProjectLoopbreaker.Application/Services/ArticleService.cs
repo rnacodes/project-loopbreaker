@@ -5,6 +5,8 @@ using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Helpers;
+using ProjectLoopbreaker.Shared.Interfaces;
 using Amazon.S3;
 using Amazon.S3.Model;
 using System.Text;
@@ -17,17 +19,20 @@ namespace ProjectLoopbreaker.Application.Services
         private readonly ILogger<ArticleService> _logger;
         private readonly IAmazonS3? _s3Client;
         private readonly IConfiguration _configuration;
+        private readonly ITypeSenseService? _typeSenseService;
 
         public ArticleService(
             IApplicationDbContext context, 
             ILogger<ArticleService> logger,
             IAmazonS3? s3Client,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            ITypeSenseService? typeSenseService = null)
         {
             _context = context;
             _logger = logger;
             _s3Client = s3Client;
             _configuration = configuration;
+            _typeSenseService = typeSenseService;
         }
 
         public async Task<IEnumerable<Article>> GetAllArticlesAsync()
@@ -182,6 +187,12 @@ namespace ProjectLoopbreaker.Application.Services
                 _context.Add(article);
                 await _context.SaveChangesAsync();
 
+                // Index in Typesense after successful creation
+                await TypesenseIndexingHelper.IndexMediaItemAsync(
+                    article,
+                    _typeSenseService,
+                    TypesenseIndexingHelper.GetArticleFields(article));
+
                 _logger.LogInformation("Successfully created article: {Title}", article.Title);
                 return article;
             }
@@ -241,6 +252,12 @@ namespace ProjectLoopbreaker.Application.Services
 
                 await _context.SaveChangesAsync();
 
+                // Re-index in Typesense after successful update
+                await TypesenseIndexingHelper.IndexMediaItemAsync(
+                    article,
+                    _typeSenseService,
+                    TypesenseIndexingHelper.GetArticleFields(article));
+
                 _logger.LogInformation("Successfully updated article: {Title}", article.Title);
                 return article;
             }
@@ -260,6 +277,9 @@ namespace ProjectLoopbreaker.Application.Services
                 {
                     return false;
                 }
+
+                var articleId = article.Id;
+                var articleTitle = article.Title;
 
                 // Delete content from S3 if it exists
                 if (!string.IsNullOrEmpty(article.ContentStoragePath) && _s3Client != null)
@@ -284,7 +304,10 @@ namespace ProjectLoopbreaker.Application.Services
                 _context.Remove(article);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Successfully deleted article with ID: {Id}", id);
+                // Delete from Typesense after successful deletion
+                await TypesenseIndexingHelper.DeleteMediaItemAsync(articleId, _typeSenseService);
+
+                _logger.LogInformation("Successfully deleted article: {Title}", articleTitle);
                 return true;
             }
             catch (Exception ex)
@@ -329,6 +352,12 @@ namespace ProjectLoopbreaker.Application.Services
                 article.LastSyncDate = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
+
+                // Re-index in Typesense after sync status update
+                await TypesenseIndexingHelper.IndexMediaItemAsync(
+                    article,
+                    _typeSenseService,
+                    TypesenseIndexingHelper.GetArticleFields(article));
 
                 _logger.LogInformation("Updated sync status for article: {Title}", article.Title);
                 return article;

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Helpers;
 using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Application.Services
@@ -18,17 +19,20 @@ namespace ProjectLoopbreaker.Application.Services
         private readonly IListenNotesApiClient _listenNotesApiClient;
         private readonly IPodcastMappingService _podcastMappingService;
         private readonly ILogger<PodcastService> _logger;
+        private readonly ITypeSenseService? _typeSenseService;
 
         public PodcastService(
             IApplicationDbContext context,
             IListenNotesApiClient listenNotesApiClient,
             IPodcastMappingService podcastMappingService,
-            ILogger<PodcastService> logger)
+            ILogger<PodcastService> logger,
+            ITypeSenseService? typeSenseService = null)
         {
             _context = context;
             _listenNotesApiClient = listenNotesApiClient;
             _podcastMappingService = podcastMappingService;
             _logger = logger;
+            _typeSenseService = typeSenseService;
         }
 
         // Podcast Series methods
@@ -131,6 +135,12 @@ namespace ProjectLoopbreaker.Application.Services
             _context.Add(series);
             await _context.SaveChangesAsync();
 
+            // Index in Typesense after successful creation
+            await TypesenseIndexingHelper.IndexMediaItemAsync(
+                series,
+                _typeSenseService,
+                TypesenseIndexingHelper.GetPodcastSeriesFields(series));
+
             return series;
         }
 
@@ -142,9 +152,14 @@ namespace ProjectLoopbreaker.Application.Services
                 return false;
             }
 
+            var seriesId = series.Id;
+
             // Cascade delete will automatically remove episodes
             _context.Remove(series);
             await _context.SaveChangesAsync();
+
+            // Delete from Typesense after successful deletion
+            await TypesenseIndexingHelper.DeleteMediaItemAsync(seriesId, _typeSenseService);
 
             return true;
         }
@@ -288,6 +303,15 @@ namespace ProjectLoopbreaker.Application.Services
             _context.Add(episode);
             await _context.SaveChangesAsync();
 
+            // Index in Typesense after successful creation (podcast episodes are indexed as media items)
+            await TypesenseIndexingHelper.IndexMediaItemAsync(
+                episode,
+                _typeSenseService,
+                new Dictionary<string, object>
+                {
+                    { "publisher", episode.Publisher ?? "" }
+                });
+
             return episode;
         }
 
@@ -299,8 +323,13 @@ namespace ProjectLoopbreaker.Application.Services
                 return false;
             }
 
+            var episodeId = episode.Id;
+
             _context.Remove(episode);
             await _context.SaveChangesAsync();
+
+            // Delete from Typesense after successful deletion
+            await TypesenseIndexingHelper.DeleteMediaItemAsync(episodeId, _typeSenseService);
 
             return true;
         }
@@ -330,6 +359,12 @@ namespace ProjectLoopbreaker.Application.Services
             series.IsSubscribed = true;
             await _context.SaveChangesAsync();
 
+            // Re-index in Typesense after subscription status update
+            await TypesenseIndexingHelper.IndexMediaItemAsync(
+                series,
+                _typeSenseService,
+                TypesenseIndexingHelper.GetPodcastSeriesFields(series));
+
             return series;
         }
 
@@ -344,6 +379,12 @@ namespace ProjectLoopbreaker.Application.Services
 
             series.IsSubscribed = false;
             await _context.SaveChangesAsync();
+
+            // Re-index in Typesense after subscription status update
+            await TypesenseIndexingHelper.IndexMediaItemAsync(
+                series,
+                _typeSenseService,
+                TypesenseIndexingHelper.GetPodcastSeriesFields(series));
 
             return series;
         }
