@@ -1,16 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Container, Box, Typography, TextField, InputAdornment, Grid, Card, CardContent,
     Chip, Button, ButtonGroup, Divider, Accordion, AccordionSummary, AccordionDetails,
     FormGroup, FormControlLabel, Checkbox, Select, MenuItem, FormControl, InputLabel,
-    Paper, IconButton, ToggleButton, ToggleButtonGroup, Slider, Stack, Badge
+    Paper, IconButton, ToggleButton, ToggleButtonGroup, Slider, Stack, Badge,
+    CircularProgress, Alert
 } from '@mui/material';
 import {
     Search, ViewModule, ViewList, FilterList, Clear, TuneRounded,
     ExpandMore, Star, StarBorder, OpenInNew, AccessTime, Update,
     ThumbUp, ThumbDown, Remove, Favorite
 } from '@mui/icons-material';
+import { typesenseAdvancedSearch } from '../services/apiService';
+import { getAllTopics, getAllGenres } from '../services/apiService';
 
 // MOCK DATA
 const mockSearchResults = [
@@ -173,34 +176,35 @@ const mockSearchResults = [
 ];
 
 const mediaTypeOptions = [
-    { value: 'all', label: 'All Media Types', count: 12 },
-    { value: 'Book', label: 'Books', count: 3 },
-    { value: 'Podcast', label: 'Podcasts', count: 2 },
-    { value: 'Movie', label: 'Movies', count: 2 },
-    { value: 'Course', label: 'Courses', count: 1 },
-    { value: 'TVShow', label: 'TV Shows', count: 1 },
-    { value: 'Video', label: 'Videos', count: 1 },
-    { value: 'VideoGame', label: 'Video Games', count: 1 },
-    { value: 'Website', label: 'Websites', count: 1 }
-];
-
-const topicOptions = [
-    'ai', 'psychology', 'productivity', 'finance', 'neuroscience', 
-    'philosophy', 'science', 'mathematics', 'technology', 'habits',
-    'note-taking', 'programming', 'space', 'fantasy'
-];
-
-const genreOptions = [
-    'non-fiction', 'self-help', 'science', 'education', 'technology',
-    'documentary', 'sci-fi', 'drama', 'interviews', 'action', 'adventure'
+    { value: 'all', label: 'All Media Types' },
+    { value: 'Article', label: 'Articles' },
+    { value: 'Book', label: 'Books' },
+    { value: 'Channel', label: 'Channels' },
+    { value: 'Document', label: 'Documents' },
+    { value: 'Movie', label: 'Movies' },
+    { value: 'Music', label: 'Music' },
+    { value: 'Other', label: 'Other' },
+    { value: 'Playlist', label: 'Playlists' },
+    { value: 'Podcast', label: 'Podcasts' },
+    { value: 'TVShow', label: 'TV Shows' },
+    { value: 'Video', label: 'Videos' },
+    { value: 'VideoGame', label: 'Video Games' },
+    { value: 'Website', label: 'Websites' }
 ];
 
 const statusOptions = [
     { value: 'all', label: 'All Statuses' },
-    { value: 'Want to Explore', label: 'Want to Explore' },
-    { value: 'Actively Exploring', label: 'Actively Exploring' },
-    { value: 'Explored', label: 'Explored' },
-    { value: 'Reference', label: 'Reference' }
+    { value: 'Uncharted', label: 'Uncharted' },
+    { value: 'ActivelyExploring', label: 'Actively Exploring' },
+    { value: 'Completed', label: 'Completed' },
+    { value: 'Abandoned', label: 'Abandoned' }
+];
+
+const ratingOptions = [
+    { value: 'SuperLike', label: 'Super Like', icon: 'superlike' },
+    { value: 'Like', label: 'Like', icon: 'like' },
+    { value: 'Neutral', label: 'Neutral', icon: 'neutral' },
+    { value: 'Dislike', label: 'Dislike', icon: 'dislike' }
 ];
 
 const sortOptions = [
@@ -227,23 +231,27 @@ const getRatingIcon = (ratingType) => {
 };
 
 // COMPONENTS
-const MediaCard = ({ item }) => (
-    <Card 
-        sx={{ 
-            height: '100%',
-            display: 'flex',
-            flexDirection: 'column',
-            cursor: 'pointer',
-            '&:hover': {
-                transform: 'translateY(-4px)',
-                boxShadow: 8,
-                '& .card-title': {
-                    color: 'primary.main'
-                }
-            },
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-        }}
-    >
+const MediaCard = ({ item }) => {
+    const navigate = useNavigate();
+    
+    return (
+        <Card 
+            onClick={() => navigate(`/media/${item.id}`)}
+            sx={{ 
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                cursor: 'pointer',
+                '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: 8,
+                    '& .card-title': {
+                        color: 'primary.main'
+                    }
+                },
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+            }}
+        >
         <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                 <Typography 
@@ -275,12 +283,13 @@ const MediaCard = ({ item }) => (
                     }}
                 />
                 <Chip 
-                    label={item.status} 
+                    label={item.status === 'ActivelyExploring' ? 'Actively Exploring' : item.status} 
                     size="small" 
                     color={
-                        item.status === 'Actively Exploring' ? 'success' :
-                        item.status === 'Want to Explore' ? 'info' :
-                        'default'
+                        item.status === 'ActivelyExploring' ? 'success' :
+                        item.status === 'Uncharted' ? 'info' :
+                        item.status === 'Completed' ? 'default' :
+                        'warning'
                     }
                     variant="outlined"
                     sx={{ fontSize: '0.7rem' }}
@@ -337,21 +346,26 @@ const MediaCard = ({ item }) => (
             </Typography>
         </CardContent>
     </Card>
-);
+    );
+};
 
-const MediaListItem = ({ item }) => (
-    <Paper 
-        sx={{ 
-            p: 2.5,
-            mb: 2,
-            cursor: 'pointer',
-            '&:hover': {
-                boxShadow: 6,
-                backgroundColor: 'rgba(255, 255, 255, 0.02)'
-            },
-            transition: 'all 0.2s'
-        }}
-    >
+const MediaListItem = ({ item }) => {
+    const navigate = useNavigate();
+    
+    return (
+        <Paper 
+            onClick={() => navigate(`/media/${item.id}`)}
+            sx={{ 
+                p: 2.5,
+                mb: 2,
+                cursor: 'pointer',
+                '&:hover': {
+                    boxShadow: 6,
+                    backgroundColor: 'rgba(255, 255, 255, 0.02)'
+                },
+                transition: 'all 0.2s'
+            }}
+        >
         <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={6}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
@@ -419,12 +433,13 @@ const MediaListItem = ({ item }) => (
                         }}
                     />
                     <Chip 
-                        label={item.status} 
+                        label={item.status === 'ActivelyExploring' ? 'Actively Exploring' : item.status} 
                         size="small" 
                         color={
-                            item.status === 'Actively Exploring' ? 'success' :
-                            item.status === 'Want to Explore' ? 'info' :
-                            'default'
+                            item.status === 'ActivelyExploring' ? 'success' :
+                            item.status === 'Uncharted' ? 'info' :
+                            item.status === 'Completed' ? 'default' :
+                            'warning'
                         }
                         variant="outlined"
                     />
@@ -432,7 +447,8 @@ const MediaListItem = ({ item }) => (
             </Grid>
         </Grid>
     </Paper>
-);
+    );
+};
 
 // MAIN COMPONENT
 export default function MockSearchUI() {
@@ -444,16 +460,104 @@ export default function MockSearchUI() {
     const [selectedTopics, setSelectedTopics] = useState([]);
     const [selectedGenres, setSelectedGenres] = useState([]);
     const [selectedStatus, setSelectedStatus] = useState('all');
-    const [ratingRange, setRatingRange] = useState([0, 5]);
+    const [selectedRatings, setSelectedRatings] = useState([]);
     const [showFilters, setShowFilters] = useState(true);
-    const [activeFiltersCount, setActiveFiltersCount] = useState(0);
     const [topicSearchQuery, setTopicSearchQuery] = useState('');
     const [genreSearchQuery, setGenreSearchQuery] = useState('');
     const [showAllTopics, setShowAllTopics] = useState(false);
     const [showAllGenres, setShowAllGenres] = useState(false);
 
-    // Mock filtering logic (just for demonstration)
-    const filteredResults = mockSearchResults;
+    // Data state
+    const [searchResults, setSearchResults] = useState([]);
+    const [allTopics, setAllTopics] = useState([]);
+    const [allGenres, setAllGenres] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [totalResults, setTotalResults] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const perPage = 20;
+
+    // Fetch topics and genres on mount
+    useEffect(() => {
+        const fetchFiltersData = async () => {
+            try {
+                const [topicsData, genresData] = await Promise.all([
+                    getAllTopics(),
+                    getAllGenres()
+                ]);
+                setAllTopics(topicsData.map(t => t.name));
+                setAllGenres(genresData.map(g => g.name));
+            } catch (err) {
+                console.error('Error fetching filter data:', err);
+            }
+        };
+        fetchFiltersData();
+    }, []);
+
+    // Perform search when filters change
+    useEffect(() => {
+        performSearch();
+    }, [searchQuery, selectedMediaTypes, selectedTopics, selectedGenres, selectedStatus, selectedRatings, currentPage]);
+
+    const performSearch = async () => {
+        setLoading(true);
+        setError(null);
+        
+        try {
+            const searchOptions = {
+                query: searchQuery || '*',
+                mediaTypes: selectedMediaTypes.filter(type => type !== 'all'),
+                topics: selectedTopics,
+                genres: selectedGenres,
+                status: selectedStatus !== 'all' ? selectedStatus : null,
+                ratings: selectedRatings,
+                page: currentPage,
+                perPage: perPage,
+                sortBy: sortBy
+            };
+
+            const response = await typesenseAdvancedSearch(searchOptions);
+            
+            // Transform Typesense response to match component structure
+            const hits = response.hits || [];
+            const transformedResults = hits.map(hit => {
+                const doc = hit.document;
+                return {
+                    id: doc.id,
+                    title: doc.title,
+                    mediaType: doc.media_type,
+                    status: doc.status,
+                    ratingType: doc.rating?.toLowerCase() || null,
+                    topics: doc.topics || [],
+                    genres: doc.genres || [],
+                    author: doc.author || doc.director || doc.creator || doc.publisher || 'Unknown',
+                    duration: getDuration(doc),
+                    dateAdded: new Date(doc.date_added * 1000).toISOString().split('T')[0],
+                    notes: doc.description || '',
+                    thumbnail: doc.thumbnail
+                };
+            });
+
+            setSearchResults(transformedResults);
+            setTotalResults(response.found || 0);
+            setTotalPages(Math.ceil((response.found || 0) / perPage));
+        } catch (err) {
+            console.error('Search error:', err);
+            setError('Failed to perform search. Please try again.');
+            setSearchResults([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getDuration = (doc) => {
+        // Helper function to extract duration from different media types
+        if (doc.runtime_minutes) return `${doc.runtime_minutes} min`;
+        if (doc.release_year) return `${doc.release_year}`;
+        if (doc.season_count) return `${doc.season_count} seasons`;
+        return 'Various';
+    };
 
     const handleMediaTypeToggle = (value) => {
         if (value === 'all') {
@@ -481,17 +585,24 @@ export default function MockSearchUI() {
         );
     };
 
+    const handleRatingToggle = (rating) => {
+        setSelectedRatings(prev =>
+            prev.includes(rating) ? prev.filter(r => r !== rating) : [...prev, rating]
+        );
+    };
+
     const handleClearFilters = () => {
         setSelectedMediaTypes(['all']);
         setSelectedTopics([]);
         setSelectedGenres([]);
         setSelectedStatus('all');
-        setRatingRange([0, 5]);
+        setSelectedRatings([]);
         setSearchQuery('');
         setTopicSearchQuery('');
         setGenreSearchQuery('');
         setShowAllTopics(false);
         setShowAllGenres(false);
+        setCurrentPage(1);
     };
 
     return (
@@ -553,20 +664,22 @@ export default function MockSearchUI() {
                     />
                     
                     {/* Quick Filters */}
-                    <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mr: 1, alignSelf: 'center' }}>
-                            Quick filters:
-                        </Typography>
-                        {['ai', 'productivity', 'science', 'philosophy'].map((topic) => (
-                            <Chip
-                                key={topic}
-                                label={topic}
-                                onClick={() => handleTopicToggle(topic)}
-                                color={selectedTopics.includes(topic) ? 'primary' : 'default'}
-                                sx={{ cursor: 'pointer' }}
-                            />
-                        ))}
-                    </Box>
+                    {allTopics.length > 0 && (
+                        <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ mr: 1, alignSelf: 'center' }}>
+                                Quick filters:
+                            </Typography>
+                            {allTopics.slice(0, 4).map((topic) => (
+                                <Chip
+                                    key={topic}
+                                    label={topic}
+                                    onClick={() => handleTopicToggle(topic)}
+                                    color={selectedTopics.includes(topic) ? 'primary' : 'default'}
+                                    sx={{ cursor: 'pointer' }}
+                                />
+                            ))}
+                        </Box>
+                    )}
                 </Paper>
 
                 <Grid container spacing={3}>
@@ -617,18 +730,8 @@ export default function MockSearchUI() {
                                                             size="small"
                                                         />
                                                     }
-                                                    label={
-                                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                                                            <Typography variant="body2">{option.label}</Typography>
-                                                            <Typography variant="body2" color="text.secondary">
-                                                                {option.count}
-                                                            </Typography>
-                                                        </Box>
-                                                    }
-                                                    sx={{ 
-                                                        mb: 0.5,
-                                                        '& .MuiFormControlLabel-label': { width: '100%' }
-                                                    }}
+                                                    label={<Typography variant="body2">{option.label}</Typography>}
+                                                    sx={{ mb: 0.5 }}
                                                 />
                                             ))}
                                         </FormGroup>
@@ -661,7 +764,7 @@ export default function MockSearchUI() {
                                             }}
                                         />
                                         <FormGroup>
-                                            {topicOptions
+                                            {allTopics
                                                 .filter(topic => topic.toLowerCase().includes(topicSearchQuery.toLowerCase()))
                                                 .slice(0, showAllTopics ? undefined : 10)
                                                 .map((topic) => (
@@ -679,7 +782,7 @@ export default function MockSearchUI() {
                                                     />
                                                 ))}
                                         </FormGroup>
-                                        {topicOptions.filter(topic => topic.toLowerCase().includes(topicSearchQuery.toLowerCase())).length > 10 && !showAllTopics && (
+                                        {allTopics.filter(topic => topic.toLowerCase().includes(topicSearchQuery.toLowerCase())).length > 10 && !showAllTopics && (
                                             <Button
                                                 size="small"
                                                 onClick={() => setShowAllTopics(true)}
@@ -736,7 +839,7 @@ export default function MockSearchUI() {
                                             }}
                                         />
                                         <FormGroup>
-                                            {genreOptions
+                                            {allGenres
                                                 .filter(genre => genre.toLowerCase().includes(genreSearchQuery.toLowerCase()))
                                                 .slice(0, showAllGenres ? undefined : 10)
                                                 .map((genre) => (
@@ -754,7 +857,7 @@ export default function MockSearchUI() {
                                                     />
                                                 ))}
                                         </FormGroup>
-                                        {genreOptions.filter(genre => genre.toLowerCase().includes(genreSearchQuery.toLowerCase())).length > 10 && !showAllGenres && (
+                                        {allGenres.filter(genre => genre.toLowerCase().includes(genreSearchQuery.toLowerCase())).length > 10 && !showAllGenres && (
                                             <Button
                                                 size="small"
                                                 onClick={() => setShowAllGenres(true)}
@@ -816,27 +919,31 @@ export default function MockSearchUI() {
                                 <Accordion disableGutters elevation={0}>
                                     <AccordionSummary expandIcon={<ExpandMore />}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                            Rating
+                                            Rating {selectedRatings.length > 0 && `(${selectedRatings.length})`}
                                         </Typography>
                                     </AccordionSummary>
                                     <AccordionDetails sx={{ pt: 0 }}>
-                                        <Box sx={{ px: 1 }}>
-                                            <Slider
-                                                value={ratingRange}
-                                                onChange={(e, newValue) => setRatingRange(newValue)}
-                                                valueLabelDisplay="auto"
-                                                min={0}
-                                                max={5}
-                                                step={0.5}
-                                                marks={[
-                                                    { value: 0, label: '0' },
-                                                    { value: 5, label: '5' }
-                                                ]}
-                                            />
-                                            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, textAlign: 'center' }}>
-                                                {ratingRange[0]} - {ratingRange[1]} stars
-                                            </Typography>
-                                        </Box>
+                                        <FormGroup>
+                                            {ratingOptions.map((rating) => (
+                                                <FormControlLabel
+                                                    key={rating.value}
+                                                    control={
+                                                        <Checkbox
+                                                            checked={selectedRatings.includes(rating.value)}
+                                                            onChange={() => handleRatingToggle(rating.value)}
+                                                            size="small"
+                                                        />
+                                                    }
+                                                    label={
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                            {getRatingIcon(rating.icon)}
+                                                            <Typography variant="body2">{rating.label}</Typography>
+                                                        </Box>
+                                                    }
+                                                    sx={{ mb: 0.5 }}
+                                                />
+                                            ))}
+                                        </FormGroup>
                                     </AccordionDetails>
                                 </Accordion>
                             </Paper>
@@ -856,10 +963,11 @@ export default function MockSearchUI() {
                         }}>
                             <Box>
                                 <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                                    {filteredResults.length} Results
+                                    {totalResults} Results
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
                                     {searchQuery && `Showing results for "${searchQuery}"`}
+                                    {!searchQuery && 'Showing all media items'}
                                 </Typography>
                             </Box>
 
@@ -944,9 +1052,26 @@ export default function MockSearchUI() {
                         )}
 
                         {/* Results Display */}
-                        {viewMode === 'card' ? (
+                        {loading ? (
+                            <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+                                <CircularProgress />
+                            </Box>
+                        ) : error ? (
+                            <Alert severity="error" sx={{ mb: 3 }}>
+                                {error}
+                            </Alert>
+                        ) : searchResults.length === 0 ? (
+                            <Paper sx={{ p: 8, textAlign: 'center' }}>
+                                <Typography variant="h6" color="text.secondary">
+                                    No results found
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                    Try adjusting your filters or search query
+                                </Typography>
+                            </Paper>
+                        ) : viewMode === 'card' ? (
                             <Grid container spacing={3}>
-                                {filteredResults.map((item) => (
+                                {searchResults.map((item) => (
                                     <Grid item xs={12} sm={6} lg={4} key={item.id}>
                                         <MediaCard item={item} />
                                     </Grid>
@@ -954,22 +1079,44 @@ export default function MockSearchUI() {
                             </Grid>
                         ) : (
                             <Box>
-                                {filteredResults.map((item) => (
+                                {searchResults.map((item) => (
                                     <MediaListItem key={item.id} item={item} />
                                 ))}
                             </Box>
                         )}
 
                         {/* Pagination */}
-                        <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-                            <ButtonGroup variant="outlined">
-                                <Button disabled>Previous</Button>
-                                <Button variant="contained">1</Button>
-                                <Button>2</Button>
-                                <Button>3</Button>
-                                <Button>Next</Button>
-                            </ButtonGroup>
-                        </Box>
+                        {!loading && searchResults.length > 0 && totalPages > 1 && (
+                            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+                                <ButtonGroup variant="outlined">
+                                    <Button 
+                                        disabled={currentPage === 1}
+                                        onClick={() => setCurrentPage(prev => prev - 1)}
+                                    >
+                                        Previous
+                                    </Button>
+                                    {[...Array(Math.min(5, totalPages))].map((_, index) => {
+                                        const pageNum = index + 1;
+                                        return (
+                                            <Button
+                                                key={pageNum}
+                                                variant={currentPage === pageNum ? 'contained' : 'outlined'}
+                                                onClick={() => setCurrentPage(pageNum)}
+                                            >
+                                                {pageNum}
+                                            </Button>
+                                        );
+                                    })}
+                                    {totalPages > 5 && <Button disabled>...</Button>}
+                                    <Button 
+                                        disabled={currentPage === totalPages}
+                                        onClick={() => setCurrentPage(prev => prev + 1)}
+                                    >
+                                        Next
+                                    </Button>
+                                </ButtonGroup>
+                            </Box>
+                        )}
                     </Grid>
                 </Grid>
             </Container>

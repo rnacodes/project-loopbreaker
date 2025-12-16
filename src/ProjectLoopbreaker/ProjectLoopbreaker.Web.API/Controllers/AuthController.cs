@@ -83,7 +83,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 {
                     HttpOnly = true,     // Prevents XSS attacks from reading the token
                     Secure = requireHttps,  // Auto: false in Development, true in Production
-                    SameSite = SameSiteMode.Strict, // Protects against CSRF
+                    SameSite = SameSiteMode.Lax, // Allows cookies on navigation, protects against CSRF
                     Expires = DateTime.UtcNow.AddDays(refreshTokenDays)
                 };
                 
@@ -164,7 +164,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 {
                     HttpOnly = true,
                     Secure = requireHttps,  // Auto: false in Development, true in Production
-                    SameSite = SameSiteMode.Strict,
+                    SameSite = SameSiteMode.Lax, // Allows cookies on navigation, protects against CSRF
                     Expires = DateTime.UtcNow.AddDays(refreshTokenDays)
                 };
                 

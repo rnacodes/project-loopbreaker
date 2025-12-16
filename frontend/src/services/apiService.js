@@ -1739,3 +1739,81 @@ export const typesenseSearch = async (query, mediaType = 'all', page = 1, perPag
         throw error;
     }
 };
+
+/**
+ * Advanced search with multiple filters
+ * @param {Object} options - Search options
+ * @param {string} options.query - Search query (default: '*' for all)
+ * @param {Array<string>} options.mediaTypes - Array of media types to filter by
+ * @param {Array<string>} options.topics - Array of topics to filter by
+ * @param {Array<string>} options.genres - Array of genres to filter by
+ * @param {string} options.status - Status filter (Uncharted, ActivelyExploring, Completed, Abandoned)
+ * @param {Array<string>} options.ratings - Array of ratings to filter by (SuperLike, Like, Neutral, Dislike)
+ * @param {number} options.page - Page number (default: 1)
+ * @param {number} options.perPage - Results per page (default: 20)
+ * @param {string} options.sortBy - Sort field (default: relevance)
+ * @returns {Promise<Object>} Search results
+ */
+export const typesenseAdvancedSearch = async (options) => {
+    try {
+        const {
+            query = '*',
+            mediaTypes = [],
+            topics = [],
+            genres = [],
+            status = null,
+            ratings = [],
+            page = 1,
+            perPage = 20,
+            sortBy = 'relevance'
+        } = options;
+
+        // Build filter string
+        const filters = [];
+        
+        // Media type filter
+        if (mediaTypes.length > 0 && !mediaTypes.includes('all')) {
+            const mediaTypeFilter = mediaTypes.map(type => `media_type:=${type}`).join(' || ');
+            filters.push(`(${mediaTypeFilter})`);
+        }
+        
+        // Topics filter
+        if (topics.length > 0) {
+            const topicFilter = topics.map(topic => `topics:=${topic}`).join(' || ');
+            filters.push(`(${topicFilter})`);
+        }
+        
+        // Genres filter
+        if (genres.length > 0) {
+            const genreFilter = genres.map(genre => `genres:=${genre}`).join(' || ');
+            filters.push(`(${genreFilter})`);
+        }
+        
+        // Status filter
+        if (status && status !== 'all') {
+            filters.push(`status:=${status}`);
+        }
+        
+        // Ratings filter
+        if (ratings.length > 0) {
+            const ratingFilter = ratings.map(rating => `rating:=${rating}`).join(' || ');
+            filters.push(`(${ratingFilter})`);
+        }
+
+        const params = {
+            q: query || '*',
+            page: page,
+            per_page: perPage,
+        };
+
+        if (filters.length > 0) {
+            params.filter = filters.join(' && ');
+        }
+
+        const response = await apiClient.get('/search', { params });
+        return response.data;
+    } catch (error) {
+        console.error('Error performing advanced search:', error);
+        throw error;
+    }
+};
