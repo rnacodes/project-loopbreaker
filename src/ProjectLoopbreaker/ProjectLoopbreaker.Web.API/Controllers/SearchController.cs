@@ -255,5 +255,63 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return StatusCode(503, new { status = "unhealthy", message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Completely resets the media_items collection by deleting and recreating it.
+        /// POST /api/search/reset
+        /// WARNING: This will delete all indexed media items from Typesense!
+        /// </summary>
+        [HttpPost("reset")]
+        public async Task<IActionResult> ResetMediaItemsCollection()
+        {
+            try
+            {
+                _logger.LogInformation("Resetting media_items collection...");
+
+                await _typeSenseService.ResetMediaItemsCollectionAsync();
+
+                _logger.LogInformation("Media_items collection reset complete.");
+
+                return Ok(new 
+                { 
+                    message = "Media items collection reset successfully. All old data has been cleared.",
+                    collection = "media_items"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting media_items collection.");
+                return StatusCode(500, new { error = "An error occurred while resetting the collection. Please check logs." });
+            }
+        }
+
+        /// <summary>
+        /// Completely resets the mixlists collection by deleting and recreating it.
+        /// POST /api/search/reset-mixlists
+        /// WARNING: This will delete all indexed mixlists from Typesense!
+        /// </summary>
+        [HttpPost("reset-mixlists")]
+        public async Task<IActionResult> ResetMixlistsCollection()
+        {
+            try
+            {
+                _logger.LogInformation("Resetting mixlists collection...");
+
+                await _typeSenseService.ResetMixlistsCollectionAsync();
+
+                _logger.LogInformation("Mixlists collection reset complete.");
+
+                return Ok(new 
+                { 
+                    message = "Mixlists collection reset successfully. All old data has been cleared.",
+                    collection = "mixlists"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting mixlists collection.");
+                return StatusCode(500, new { error = "An error occurred while resetting the collection. Please check logs." });
+            }
+        }
     }
 }

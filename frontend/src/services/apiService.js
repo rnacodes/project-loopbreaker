@@ -1712,6 +1712,36 @@ export const typesenseHealth = async () => {
 };
 
 /**
+ * Reset the media_items collection in Typesense (deletes and recreates)
+ * WARNING: This will delete all indexed media items!
+ * @returns {Promise<Object>} Reset result
+ */
+export const typesenseResetMediaItems = async () => {
+    try {
+        const response = await apiClient.post('/search/reset');
+        return response.data;
+    } catch (error) {
+        console.error('Error resetting media items collection:', error);
+        throw error;
+    }
+};
+
+/**
+ * Reset the mixlists collection in Typesense (deletes and recreates)
+ * WARNING: This will delete all indexed mixlists!
+ * @returns {Promise<Object>} Reset result
+ */
+export const typesenseResetMixlists = async () => {
+    try {
+        const response = await apiClient.post('/search/reset-mixlists');
+        return response.data;
+    } catch (error) {
+        console.error('Error resetting mixlists collection:', error);
+        throw error;
+    }
+};
+
+/**
  * Search media items using Typesense
  * @param {string} query - Search query
  * @param {string} mediaType - Media type filter ('all' or specific type)
