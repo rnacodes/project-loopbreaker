@@ -1,7 +1,7 @@
 // TODO: Create functioning "I'm feeling lucky" button
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedia, CardContent, Button, SpeedDial, SpeedDialIcon, SpeedDialAction, useTheme, CircularProgress } from '@mui/material';
+import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedia, CardContent, Button, useTheme, CircularProgress } from '@mui/material';
 import { 
     Search, Book, Movie, Tv, Article, LibraryMusic, Podcasts, SportsEsports, YouTube, Language, MenuBook, AutoAwesome, 
     AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos, Forest, 
@@ -11,17 +11,17 @@ import { getAllMixlists, seedMixlists, getAllMedia } from '../services/apiServic
 
 // MOCK DATA
 const mainMediaIcons = [
-    { name: 'Articles', icon: <Article sx={{ fontSize: 40 }} />, key: 'articles' },
-    { name: 'Books', icon: <Book sx={{ fontSize: 40 }} />, key: 'books' },
-    { name: 'Courses', icon: <LocalLibrary sx={{ fontSize: 40 }} />, key: 'courses' },
-    { name: 'Documents and Notes', icon: <NoteAlt sx={{ fontSize: 40 }} />, key: 'articles' },
-    { name: 'Movies', icon: <Movie sx={{ fontSize: 40 }} />, key: 'movies' },
-    { name: 'Music', icon: <LibraryMusic sx={{ fontSize: 40 }} />, key: 'music' },
-    { name: 'Online Videos', icon: <YouTube sx={{ fontSize: 40 }} />, key: 'online_videos' },
-    { name: 'Podcasts', icon: <Podcasts sx={{ fontSize: 40 }} />, key: 'podcasts' },
-    { name: 'TV Shows', icon: <Tv sx={{ fontSize: 40 }} />, key: 'tv' },
-    { name: 'Video Games', icon: <SportsEsports sx={{ fontSize: 40 }} />, key: 'games' },
-    { name: 'Websites', icon: <Language sx={{ fontSize: 40 }} />, key: 'websites' },
+    { name: 'Articles', icon: <Article sx={{ fontSize: 40 }} />, mediaType: 'Article', supported: true },
+    { name: 'Books', icon: <Book sx={{ fontSize: 40 }} />, mediaType: 'Book', supported: true },
+    { name: 'Courses', icon: <LocalLibrary sx={{ fontSize: 40 }} />, mediaType: 'Course', supported: false },
+    { name: 'Documents', icon: <NoteAlt sx={{ fontSize: 40 }} />, mediaType: 'Document', supported: false },
+    { name: 'Movies', icon: <Movie sx={{ fontSize: 40 }} />, mediaType: 'Movie', supported: true },
+    { name: 'Music', icon: <LibraryMusic sx={{ fontSize: 40 }} />, mediaType: 'Music', supported: false },
+    { name: 'Online Videos', icon: <YouTube sx={{ fontSize: 40 }} />, mediaType: 'Video', supported: true },
+    { name: 'Podcasts', icon: <Podcasts sx={{ fontSize: 40 }} />, mediaType: 'Podcast', supported: true },
+    { name: 'TV Shows', icon: <Tv sx={{ fontSize: 40 }} />, mediaType: 'TVShow', supported: true },
+    { name: 'Video Games', icon: <SportsEsports sx={{ fontSize: 40 }} />, mediaType: 'VideoGame', supported: false },
+    { name: 'Websites', icon: <Language sx={{ fontSize: 40 }} />, mediaType: 'Website', supported: true },
 ];
 
 const specialMediaIcons = [
@@ -34,14 +34,6 @@ const smartSearches = [
   '20+ min YouTube video',
   'Quick summary podcast',
   'In-depth research paper',
-];
-
-const speedDialActions = [
-    { icon: <AccountCircle />, name: 'Profile', key: 'account' },
-    { icon: <Share />, name: 'Share', key: 'share' },
-    { icon: <Help />, name: 'Help', key: 'help' },
-    { icon: <Info />, name: 'About', key: 'info' },
-    { icon: <Settings />, name: 'Settings', key: 'settings' },
 ];
 
 // COMPONENTS
@@ -161,35 +153,6 @@ const UploadArea = () => {
     );
 };
 
-const FloatingMenu = () => (
-    <SpeedDial
-        ariaLabel="SpeedDial menu"
-        sx={{ 
-            position: 'fixed', 
-            bottom: { xs: 16, sm: 24, md: 32 }, 
-            right: { xs: 16, sm: 24, md: 32 },
-            '& .MuiFab-root': {
-                width: { xs: 48, sm: 56 },
-                height: { xs: 48, sm: 56 }
-            }
-        }}
-        icon={<SpeedDialIcon />}
-    >
-        {speedDialActions.map((action) => (
-            <SpeedDialAction
-                key={action.key}
-                icon={action.icon}
-                tooltipTitle={action.name}
-                sx={{
-                    '& .MuiSpeedDialAction-fab': {
-                        width: { xs: 40, sm: 44 },
-                        height: { xs: 40, sm: 44 }
-                    }
-                }}
-            />
-        ))}
-    </SpeedDial>
-);
 
 // MAIN HOMEPAGE COMPONENT
 export default function HomePage() {
@@ -355,8 +318,7 @@ export default function HomePage() {
           <SearchBar 
             placeholder="Your next adventure awaits..."
             onSearch={(query, results) => {
-              console.log('Search results:', results);
-              // You can add navigation logic here based on results
+              navigate(`/search?q=${encodeURIComponent(query)}`);
             }}
             showSuggestions={true}
           />
@@ -367,32 +329,12 @@ export default function HomePage() {
             {/* Alphabetized Icons */}
             <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
               <Grid container spacing={{ xs: 1, sm: 2 }} justifyContent="center" sx={{ mt: { xs: 2, sm: 3, md: 4 }, mb: 2, maxWidth: '900px' }}>
-                {mainMediaIcons.map((item) => (
-                    <Grid item xs={4} sm={3} md={2} key={item.key} sx={{ display: 'flex', justifyContent: 'center' }}>
+                {mainMediaIcons.map((item, index) => (
+                    <Grid item xs={4} sm={3} md={2} key={`media-${index}`} sx={{ display: 'flex', justifyContent: 'center' }}>
                         <Box 
                             onClick={() => {
-                                if (item.key === 'articles') {
-                                    navigate('/articles');
-                                } else if (item.key === 'books') {
-                                    navigate('/all-media?mediaType=Book');
-                                } else if (item.key === 'courses') {
-                                    navigate('/all-media?mediaType=Course');
-                                } else if (item.key === 'movies') {
-                                    navigate('/all-media?mediaType=Movie');
-                                } else if (item.key === 'music') {
-                                    navigate('/all-media?mediaType=Music');
-                                } else if (item.key === 'online_videos') {
-                                    navigate('/all-media?mediaType=Video');
-                                } else if (item.key === 'podcasts') {
-                                    navigate('/all-media?mediaType=Podcast');
-                                } else if (item.key === 'tv') {
-                                    navigate('/all-media?mediaType=TVShow');
-                                } else if (item.key === 'games') {
-                                    navigate('/all-media?mediaType=VideoGame');
-                                } else if (item.key === 'websites') {
-                                    navigate('/all-media?mediaType=Website');
-                                } else {
-                                    navigate('/all-media');
+                                if (item.supported) {
+                                    navigate(`/search?mediaType=${item.mediaType}`);
                                 }
                             }}
                             sx={{ 
@@ -400,21 +342,22 @@ export default function HomePage() {
                                 flexDirection: 'column', 
                                 alignItems: 'center', 
                                 justifyContent: 'center',
-                                cursor: 'pointer', 
-                                color: 'text.secondary',
+                                cursor: item.supported ? 'pointer' : 'default', 
+                                color: item.supported ? 'text.secondary' : 'text.disabled',
                                 minHeight: { xs: '60px', sm: '70px' },
                                 minWidth: { xs: '60px', sm: '70px' },
                                 p: { xs: 1, sm: 1.5 },
                                 borderRadius: '12px',
                                 transition: 'all 0.2s ease',
-                                '&:hover': { 
+                                opacity: item.supported ? 1 : 0.5,
+                                '&:hover': item.supported ? { 
                                     color: 'text.primary',
                                     transform: 'scale(1.05)',
                                     backgroundColor: 'rgba(255, 255, 255, 0.05)'
-                                },
-                                '&:active': {
+                                } : {},
+                                '&:active': item.supported ? {
                                     transform: 'scale(0.98)'
-                                }
+                                } : {}
                             }}
                         >
                             {React.cloneElement(item.icon, { 
@@ -431,6 +374,19 @@ export default function HomePage() {
                             >
                                 {item.name}
                             </Typography>
+                            {!item.supported && (
+                                <Typography 
+                                    variant="caption" 
+                                    sx={{ 
+                                        fontSize: { xs: '0.55rem', sm: '0.65rem' },
+                                        color: 'text.disabled',
+                                        fontStyle: 'italic',
+                                        textAlign: 'center'
+                                    }}
+                                >
+                                    Coming Soon
+                                </Typography>
+                            )}
                         </Box>
                     </Grid>
                 ))}
@@ -831,7 +787,7 @@ export default function HomePage() {
         </Box>
 
         {/* Smart Search Section */}
-        <Section title="Smart Search and Recommendations">
+        <Section title="Smart Search and Recommendations - Coming Soon!">
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 2 }, alignItems: 'center', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
                 {smartSearches.map((search, index) => (
                     <Button 
@@ -877,7 +833,6 @@ export default function HomePage() {
 
       </Container>
       )}
-      <FloatingMenu />
     </Box>
   );
 }

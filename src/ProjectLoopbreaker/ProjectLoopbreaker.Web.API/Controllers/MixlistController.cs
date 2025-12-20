@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure.Data;
 using ProjectLoopbreaker.DTOs;
+using ProjectLoopbreaker.Shared.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -20,11 +21,19 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     {
         private readonly MediaLibraryDbContext _context;
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ITypeSenseService _typeSenseService;
+        private readonly ILogger<MixlistController> _logger;
 
-        public MixlistController(MediaLibraryDbContext context, IHttpClientFactory httpClientFactory)
+        public MixlistController(
+            MediaLibraryDbContext context, 
+            IHttpClientFactory httpClientFactory,
+            ITypeSenseService typeSenseService,
+            ILogger<MixlistController> logger)
         {
             _context = context;
             _httpClientFactory = httpClientFactory;
+            _typeSenseService = typeSenseService;
+            _logger = logger;
         }
 
         // GET: api/mixlist
@@ -177,6 +186,26 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             _context.Mixlists.Add(mixlist);
             await _context.SaveChangesAsync();
 
+            // Index in Typesense
+            try
+            {
+                await _typeSenseService.IndexMixlistAsync(
+                    mixlist.Id,
+                    mixlist.Name,
+                    mixlist.Description,
+                    mixlist.Thumbnail,
+                    mixlist.DateCreated,
+                    new List<string>(), // Empty initially
+                    new List<string>(), // Empty initially
+                    new List<string>()  // Empty initially
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to index new mixlist {MixlistId} in Typesense", mixlist.Id);
+                // Don't fail the request if Typesense indexing fails
+            }
+
             var response = new MixlistResponseDto
             {
                 Id = mixlist.Id,
@@ -199,6 +228,9 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             {
                 var mixlist = await _context.Mixlists
                     .Include(m => m.MediaItems)
+                        .ThenInclude(mi => mi.Topics)
+                    .Include(m => m.MediaItems)
+                        .ThenInclude(mi => mi.Genres)
                     .FirstOrDefaultAsync(m => m.Id == mixlistId);
 
                 if (mixlist == null)
@@ -207,6 +239,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 }
 
                 var mediaItem = await _context.MediaItems
+                    .Include(m => m.Topics)
+                    .Include(m => m.Genres)
                     .Include(m => m.Mixlists)
                     .FirstOrDefaultAsync(m => m.Id == mediaItemId);
 
@@ -225,6 +259,36 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 mixlist.MediaItems.Add(mediaItem);
                 await _context.SaveChangesAsync();
 
+                // Re-index in Typesense with updated media items
+                try
+                {
+                    var mediaItemTitles = mixlist.MediaItems.Select(mi => mi.Title).ToList();
+                    var topics = mixlist.MediaItems
+                        .SelectMany(mi => mi.Topics.Select(t => t.Name))
+                        .Distinct()
+                        .ToList();
+                    var genres = mixlist.MediaItems
+                        .SelectMany(mi => mi.Genres.Select(g => g.Name))
+                        .Distinct()
+                        .ToList();
+
+                    await _typeSenseService.IndexMixlistAsync(
+                        mixlist.Id,
+                        mixlist.Name,
+                        mixlist.Description,
+                        mixlist.Thumbnail,
+                        mixlist.DateCreated,
+                        mediaItemTitles,
+                        topics,
+                        genres
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to re-index mixlist {MixlistId} in Typesense after adding media item", mixlistId);
+                    // Don't fail the request if Typesense indexing fails
+                }
+
                 return Ok(new { message = $"Media item '{mediaItem.Title}' added to mixlist '{mixlist.Name}'" });
             }
             catch (Exception ex)
@@ -241,6 +305,9 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             {
                 var mixlist = await _context.Mixlists
                     .Include(m => m.MediaItems)
+                        .ThenInclude(mi => mi.Topics)
+                    .Include(m => m.MediaItems)
+                        .ThenInclude(mi => mi.Genres)
                     .FirstOrDefaultAsync(m => m.Id == mixlistId);
 
                 if (mixlist == null)
@@ -258,6 +325,36 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 mixlist.MediaItems.Remove(mediaItem);
                 await _context.SaveChangesAsync();
 
+                // Re-index in Typesense with updated media items
+                try
+                {
+                    var mediaItemTitles = mixlist.MediaItems.Select(mi => mi.Title).ToList();
+                    var topics = mixlist.MediaItems
+                        .SelectMany(mi => mi.Topics.Select(t => t.Name))
+                        .Distinct()
+                        .ToList();
+                    var genres = mixlist.MediaItems
+                        .SelectMany(mi => mi.Genres.Select(g => g.Name))
+                        .Distinct()
+                        .ToList();
+
+                    await _typeSenseService.IndexMixlistAsync(
+                        mixlist.Id,
+                        mixlist.Name,
+                        mixlist.Description,
+                        mixlist.Thumbnail,
+                        mixlist.DateCreated,
+                        mediaItemTitles,
+                        topics,
+                        genres
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to re-index mixlist {MixlistId} in Typesense after removing media item", mixlistId);
+                    // Don't fail the request if Typesense indexing fails
+                }
+
                 return Ok(new { message = $"Media item removed from mixlist '{mixlist.Name}'" });
             }
             catch (Exception ex)
@@ -272,7 +369,13 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var mixlist = await _context.Mixlists.FindAsync(id);
+                var mixlist = await _context.Mixlists
+                    .Include(m => m.MediaItems)
+                        .ThenInclude(mi => mi.Topics)
+                    .Include(m => m.MediaItems)
+                        .ThenInclude(mi => mi.Genres)
+                    .FirstOrDefaultAsync(m => m.Id == id);
+
                 if (mixlist == null)
                 {
                     return NotFound($"Mixlist with ID {id} not found.");
@@ -289,6 +392,37 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     mixlist.Thumbnail = dto.Thumbnail;
 
                 await _context.SaveChangesAsync();
+
+                // Re-index in Typesense with updated data
+                try
+                {
+                    var mediaItemTitles = mixlist.MediaItems.Select(mi => mi.Title).ToList();
+                    var topics = mixlist.MediaItems
+                        .SelectMany(mi => mi.Topics.Select(t => t.Name))
+                        .Distinct()
+                        .ToList();
+                    var genres = mixlist.MediaItems
+                        .SelectMany(mi => mi.Genres.Select(g => g.Name))
+                        .Distinct()
+                        .ToList();
+
+                    await _typeSenseService.IndexMixlistAsync(
+                        mixlist.Id,
+                        mixlist.Name,
+                        mixlist.Description,
+                        mixlist.Thumbnail,
+                        mixlist.DateCreated,
+                        mediaItemTitles,
+                        topics,
+                        genres
+                    );
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to re-index mixlist {MixlistId} in Typesense after update", id);
+                    // Don't fail the request if Typesense indexing fails
+                }
+
                 return Ok(mixlist);
             }
             catch (Exception ex)
@@ -323,6 +457,17 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
                 _context.Mixlists.Remove(mixlist);
                 await _context.SaveChangesAsync();
+
+                // Delete from Typesense
+                try
+                {
+                    await _typeSenseService.DeleteMixlistAsync(id);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to delete mixlist {MixlistId} from Typesense", id);
+                    // Don't fail the request if Typesense deletion fails
+                }
                 
                 return NoContent();
             }

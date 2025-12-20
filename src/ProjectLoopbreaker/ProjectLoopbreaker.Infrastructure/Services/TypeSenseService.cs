@@ -18,6 +18,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
         private readonly IApplicationDbContext _context;
         private readonly ILogger<TypeSenseService> _logger;
         private const string COLLECTION_NAME = "media_items";
+        private const string MIXLIST_COLLECTION_NAME = "mixlists";
 
         public TypeSenseService(
             ITypesenseClient typesenseClient,
@@ -338,6 +339,231 @@ namespace ProjectLoopbreaker.Infrastructure.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error during bulk re-index of media items.");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Ensures the mixlists collection exists with proper schema.
+        /// Called during application startup.
+        /// </summary>
+        public async Task EnsureMixlistCollectionExistsAsync()
+        {
+            try
+            {
+                // Try to retrieve the collection to check if it exists
+                await _typesenseClient.RetrieveCollection(MIXLIST_COLLECTION_NAME);
+                _logger.LogInformation("Typesense collection '{CollectionName}' already exists.", MIXLIST_COLLECTION_NAME);
+            }
+            catch (TypesenseApiNotFoundException)
+            {
+                // Collection doesn't exist, create it
+                _logger.LogInformation("Creating Typesense collection '{CollectionName}'...", MIXLIST_COLLECTION_NAME);
+
+                var schema = new Schema(MIXLIST_COLLECTION_NAME, new List<Field>
+                {
+                    new Field("id", FieldType.String, false), // Primary key
+                    new Field("name", FieldType.String, false), // Searchable
+                    new Field("description", FieldType.String, false, optional: true), // Searchable, optional
+                    new Field("thumbnail", FieldType.String, false, optional: true, index: false), // Not searchable
+                    new Field("date_created", FieldType.Int64, false), // Sortable timestamp
+                    new Field("media_item_count", FieldType.Int32, false), // Sortable/facetable
+                    new Field("media_item_titles", FieldType.StringArray, false, optional: true), // Searchable array
+                    new Field("topics", FieldType.StringArray, true, optional: true), // Facetable array
+                    new Field("genres", FieldType.StringArray, true, optional: true) // Facetable array
+                })
+                {
+                    DefaultSortingField = "date_created" // Sort by most recently created by default
+                };
+
+                await _typesenseClient.CreateCollection(schema);
+                _logger.LogInformation("Successfully created Typesense collection '{CollectionName}'.", MIXLIST_COLLECTION_NAME);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error ensuring Typesense mixlist collection exists.");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Indexes or updates a single mixlist in Typesense.
+        /// Uses upsert operation for efficiency.
+        /// </summary>
+        public async Task IndexMixlistAsync(
+            Guid id,
+            string name,
+            string? description,
+            string? thumbnail,
+            DateTime dateCreated,
+            List<string> mediaItemTitles,
+            List<string> topics,
+            List<string> genres)
+        {
+            try
+            {
+                var document = new MixlistDocument
+                {
+                    Id = id.ToString(),
+                    Name = name,
+                    Description = description,
+                    Thumbnail = thumbnail,
+                    DateCreated = ((DateTimeOffset)dateCreated).ToUnixTimeSeconds(),
+                    MediaItemCount = mediaItemTitles.Count,
+                    MediaItemTitles = mediaItemTitles ?? new List<string>(),
+                    Topics = topics ?? new List<string>(),
+                    Genres = genres ?? new List<string>()
+                };
+
+                // Upsert: creates if new, updates if exists
+                await _typesenseClient.UpsertDocument<MixlistDocument>(MIXLIST_COLLECTION_NAME, document);
+                
+                _logger.LogDebug("Successfully indexed mixlist {Id} ({Name}) in Typesense.", id, name);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error indexing mixlist {Id} in Typesense.", id);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Deletes a mixlist from the Typesense index.
+        /// </summary>
+        public async Task DeleteMixlistAsync(Guid id)
+        {
+            try
+            {
+                await _typesenseClient.DeleteDocument<MixlistDocument>(MIXLIST_COLLECTION_NAME, id.ToString());
+                _logger.LogDebug("Successfully deleted mixlist {Id} from Typesense.", id);
+            }
+            catch (TypesenseApiNotFoundException)
+            {
+                _logger.LogWarning("Mixlist {Id} not found in Typesense (may have already been deleted).", id);
+                // Don't throw - it's fine if the document doesn't exist
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting mixlist {Id} from Typesense.", id);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Searches the mixlists collection in Typesense.
+        /// </summary>
+        public async Task<object> SearchMixlistsAsync(string query, string? filters = null, int perPage = 20, int page = 1)
+        {
+            try
+            {
+                // Create search parameters with query and queryBy fields
+                var searchParameters = new SearchParameters(
+                    query,
+                    // Search across these fields
+                    "name,description,media_item_titles"
+                )
+                {
+                    PerPage = perPage,
+                    Page = page,
+                    // Sort by relevance first, then by recency
+                    SortBy = "_text_match:desc,date_created:desc"
+                };
+
+                // Add filters if provided (e.g., "topics:=productivity")
+                if (!string.IsNullOrEmpty(filters))
+                {
+                    searchParameters.FilterBy = filters;
+                }
+
+                var searchResult = await _typesenseClient.Search<MixlistDocument>(MIXLIST_COLLECTION_NAME, searchParameters);
+                
+                _logger.LogDebug("Mixlist search for '{Query}' returned {Count} results.", query, searchResult.Found);
+                
+                return searchResult;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching Typesense mixlists for query '{Query}'.", query);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Re-indexes all mixlists from PostgreSQL into Typesense.
+        /// Useful for initial setup or full synchronization.
+        /// </summary>
+        public async Task<int> BulkReindexAllMixlistsAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Starting bulk re-index of all mixlists...");
+
+                // Fetch all mixlists with their media items and related data
+                var mixlists = await _context.Mixlists
+                    .Include(m => m.MediaItems)
+                        .ThenInclude(mi => mi.Topics)
+                    .Include(m => m.MediaItems)
+                        .ThenInclude(mi => mi.Genres)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                var documents = new List<MixlistDocument>();
+
+                foreach (var mixlist in mixlists)
+                {
+                    var mediaItemTitles = mixlist.MediaItems.Select(mi => mi.Title).ToList();
+                    var topics = mixlist.MediaItems
+                        .SelectMany(mi => mi.Topics.Select(t => t.Name))
+                        .Distinct()
+                        .ToList();
+                    var genres = mixlist.MediaItems
+                        .SelectMany(mi => mi.Genres.Select(g => g.Name))
+                        .Distinct()
+                        .ToList();
+
+                    var document = new MixlistDocument
+                    {
+                        Id = mixlist.Id.ToString(),
+                        Name = mixlist.Name,
+                        Description = mixlist.Description,
+                        Thumbnail = mixlist.Thumbnail,
+                        DateCreated = ((DateTimeOffset)mixlist.DateCreated).ToUnixTimeSeconds(),
+                        MediaItemCount = mixlist.MediaItems.Count,
+                        MediaItemTitles = mediaItemTitles,
+                        Topics = topics,
+                        Genres = genres
+                    };
+
+                    documents.Add(document);
+                }
+
+                // Import documents in batch (more efficient than individual upserts)
+                var importResults = await _typesenseClient.ImportDocuments<MixlistDocument>(
+                    MIXLIST_COLLECTION_NAME, 
+                    documents, 
+                    40, // Batch size
+                    ImportType.Upsert
+                );
+
+                var successCount = importResults.Count(r => r.Success);
+                var failureCount = importResults.Count(r => !r.Success);
+
+                _logger.LogInformation(
+                    "Bulk re-index of mixlists complete. Success: {SuccessCount}, Failures: {FailureCount}", 
+                    successCount, 
+                    failureCount
+                );
+
+                if (failureCount > 0)
+                {
+                    _logger.LogWarning("Some mixlist documents failed to index. Check Typesense logs for details.");
+                }
+
+                return successCount;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during bulk re-index of mixlists.");
                 throw;
             }
         }

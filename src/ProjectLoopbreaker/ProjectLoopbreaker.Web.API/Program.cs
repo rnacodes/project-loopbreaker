@@ -549,7 +549,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Initialize Typesense collection on startup (only if Typesense is configured)
+// Initialize Typesense collections on startup (only if Typesense is configured)
 try
 {
     using (var scope = app.Services.CreateScope())
@@ -557,8 +557,11 @@ try
         var typeSenseService = scope.ServiceProvider.GetService<ITypeSenseService>();
         if (typeSenseService != null)
         {
-            Console.WriteLine("Initializing Typesense collection...");
+            Console.WriteLine("Initializing Typesense collections...");
             await typeSenseService.EnsureCollectionExistsAsync();
+            Console.WriteLine("Typesense media_items collection initialized.");
+            await typeSenseService.EnsureMixlistCollectionExistsAsync();
+            Console.WriteLine("Typesense mixlists collection initialized.");
             Console.WriteLine("Typesense collection initialization complete.");
         }
         else
@@ -569,7 +572,7 @@ try
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"WARNING: Failed to initialize Typesense collection: {ex.Message}");
+    Console.WriteLine($"WARNING: Failed to initialize Typesense collections: {ex.Message}");
     Console.WriteLine("Application will continue, but search functionality may not work.");
 }
 

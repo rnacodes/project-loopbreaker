@@ -184,7 +184,8 @@ namespace ProjectLoopbreaker.UnitTests.Application
             result.Title.Should().Be("Updated Title");
             result.Author.Should().Be("Updated Author");
             
-            // Verify the book was updated in the database
+            // Clear tracker and reload from database to verify persistence
+            Context.ChangeTracker.Clear();
             var updatedBook = await Context.Books.FindAsync(existingBook.Id);
             updatedBook.Should().NotBeNull();
             updatedBook!.Title.Should().Be("Updated Title");

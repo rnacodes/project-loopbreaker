@@ -53,13 +53,13 @@ function SearchByTopicOrGenre() {
     };
 
     const handleTopicClick = (topic) => {
-        // Navigate to media search page with topic filter
-        navigate(`/search-results?type=topic&value=${encodeURIComponent(topic.name || topic.Name)}&id=${topic.id || topic.Id}`);
+        // Navigate to unified search with topic filter
+        navigate(`/search?topics=${encodeURIComponent(topic.name || topic.Name)}`);
     };
 
     const handleGenreClick = (genre) => {
-        // Navigate to media search page with genre filter
-        navigate(`/search-results?type=genre&value=${encodeURIComponent(genre.name || genre.Name)}&id=${genre.id || genre.Id}`);
+        // Navigate to unified search with genre filter
+        navigate(`/search?genres=${encodeURIComponent(genre.name || genre.Name)}`);
     };
 
     const handleCreateTopic = async () => {
@@ -129,8 +129,18 @@ function SearchByTopicOrGenre() {
     return (
         <Container maxWidth="lg">
             <Box sx={{ mt: 4 }}>
-                <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 4 }}>
-                    Search by Topic or Genre
+                <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 1 }}>
+                    📚 Topics & Genres Directory
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Browse, create, and manage all your topics and genres. Click any to see related media, or{' '}
+                    <Button 
+                        variant="text" 
+                        onClick={() => navigate('/search')}
+                        sx={{ p: 0, minWidth: 'auto', textTransform: 'none', verticalAlign: 'baseline' }}
+                    >
+                        go to advanced search
+                    </Button>
                 </Typography>
                 
                 {error && (

@@ -321,7 +321,8 @@ namespace ProjectLoopbreaker.UnitTests.Application
             result.Director.Should().Be("Updated Director");
             result.Status.Should().Be(Status.ActivelyExploring);
 
-            // Verify updated in database
+            // Clear tracker and reload from database to verify persistence
+            Context.ChangeTracker.Clear();
             var updatedMovie = await Context.Movies.FindAsync(movieId);
             updatedMovie!.Title.Should().Be("Updated Title");
         }
