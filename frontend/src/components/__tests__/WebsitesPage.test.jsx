@@ -84,10 +84,16 @@ const mockWebsites = [
 
 describe('WebsitesPage', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
     mockNavigate.mockClear();
     apiService.getAllWebsites.mockResolvedValue(mockWebsites);
     apiService.getWebsitesWithRss.mockResolvedValue(mockWebsites.filter(w => w.rssFeedUrl));
+  });
+
+  afterEach(() => {
+    vi.runAllTimers();
+    vi.useRealTimers();
   });
 
   it('should render websites page with header', async () => {

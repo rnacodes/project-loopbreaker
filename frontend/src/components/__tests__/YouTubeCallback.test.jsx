@@ -43,11 +43,14 @@ const renderWithRouter = (component, initialUrl = '/youtube/callback') => {
 
 describe('YouTubeCallback', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
     mockNavigate.mockClear();
   });
 
   afterEach(() => {
+    vi.runAllTimers();
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -78,8 +81,6 @@ describe('YouTubeCallback', () => {
     });
 
     it('should redirect to import page after 3 seconds on success', async () => {
-      vi.useFakeTimers();
-      
       await act(async () => {
         renderWithRouter(<YouTubeCallback />, '/youtube/callback?code=test_code&state=test_state');
       });
@@ -95,8 +96,6 @@ describe('YouTubeCallback', () => {
       });
 
       expect(mockNavigate).toHaveBeenCalledWith('/import-media');
-      
-      vi.useRealTimers();
     });
 
     it('should navigate to home when Go to Home button is clicked', async () => {

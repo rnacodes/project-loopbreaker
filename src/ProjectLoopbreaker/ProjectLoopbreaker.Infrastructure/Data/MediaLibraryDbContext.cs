@@ -667,6 +667,11 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             base.Update(entity);
         }
 
+        public void ClearChangeTracker()
+        {
+            ChangeTracker.Clear();
+        }
+
         public new void Remove<TEntity>(TEntity entity) where TEntity : class
         {
             base.Remove(entity);

@@ -31,6 +31,7 @@ namespace ProjectLoopbreaker.Domain.Interfaces
         void Add<TEntity>(TEntity entity) where TEntity : class;
         void Update<TEntity>(TEntity entity) where TEntity : class;
         void Remove<TEntity>(TEntity entity) where TEntity : class;
+        void ClearChangeTracker();
         
         // Entity finding
         Task<TEntity?> FindAsync<TEntity>(params object[] keyValues) where TEntity : class;

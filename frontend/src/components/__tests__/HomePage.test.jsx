@@ -23,6 +23,16 @@ vi.mock('../shared/SimpleMediaCarousel', () => ({
 }));
 
 describe('HomePage', () => {
+  // Setup fake timers to prevent timer leaks
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.runAllTimers();
+    vi.useRealTimers();
+  });
+
   const mockMixlists = [
     {
       id: 'mixlist-1',
