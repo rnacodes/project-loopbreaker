@@ -29,35 +29,54 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<MediaItemResponseDto>>> GetAllMedia()
         {
-            var mediaItems = await _context.MediaItems
-                .AsNoTracking()
-                .AsSplitQuery()
-                .Include(m => m.Mixlists)
-                .Include(m => m.Topics)
-                .Include(m => m.Genres)
-                .ToListAsync();
-                
-            var response = mediaItems.Select(item => new MediaItemResponseDto
+            try
             {
-                Id = item.Id,
-                Title = item.Title,
-                MediaType = item.MediaType,
-                Link = item.Link,
-                Notes = item.Notes,
-                DateAdded = item.DateAdded,
-                Status = item.Status,
-                DateCompleted = item.DateCompleted,
-                Rating = item.Rating,
-                OwnershipStatus = item.OwnershipStatus,
-                Description = item.Description,
-                RelatedNotes = item.RelatedNotes,
-                Thumbnail = item.Thumbnail,
-                Topics = item.Topics.Select(t => t.Name).ToArray(),
-                Genres = item.Genres.Select(g => g.Name).ToArray(),
-                MixlistIds = item.Mixlists.Select(m => m.Id).ToArray()
-            }).ToList();
-            
-            return Ok(response);
+                var mediaItems = await _context.MediaItems
+                    .AsNoTracking()
+                    .AsSplitQuery()
+                    .Include(m => m.Mixlists)
+                    .Include(m => m.Topics)
+                    .Include(m => m.Genres)
+                    .ToListAsync();
+                    
+                var response = mediaItems.Select(item => new MediaItemResponseDto
+                {
+                    Id = item.Id,
+                    Title = item.Title,
+                    MediaType = item.MediaType,
+                    Link = item.Link,
+                    Notes = item.Notes,
+                    DateAdded = item.DateAdded,
+                    Status = item.Status,
+                    DateCompleted = item.DateCompleted,
+                    Rating = item.Rating,
+                    OwnershipStatus = item.OwnershipStatus,
+                    Description = item.Description,
+                    RelatedNotes = item.RelatedNotes,
+                    Thumbnail = item.Thumbnail,
+                    Topics = item.Topics?.Select(t => t.Name).ToArray() ?? Array.Empty<string>(),
+                    Genres = item.Genres?.Select(g => g.Name).ToArray() ?? Array.Empty<string>(),
+                    MixlistIds = item.Mixlists?.Select(m => m.Id).ToArray() ?? Array.Empty<Guid>()
+                }).ToList();
+                
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                // Log the full exception for debugging
+                Console.WriteLine($"ERROR in GetAllMedia: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
+                
+                return StatusCode(500, new { 
+                    error = "Failed to retrieve media items", 
+                    details = ex.Message,
+                    type = ex.GetType().Name
+                });
+            }
         }
 
         // POST: api/media
