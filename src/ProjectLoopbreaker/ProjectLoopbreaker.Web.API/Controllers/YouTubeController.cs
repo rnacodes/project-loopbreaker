@@ -299,7 +299,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 }
 
                 var result = await _youTubeService.ImportVideoAsync(videoId);
-                return Ok(result);
+                return CreatedAtAction(nameof(GetVideoDetails), new { videoId = result.ExternalId }, result);
             }
             catch (InvalidOperationException ex)
             {
@@ -362,7 +362,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 }
 
                 var result = await _youTubeService.ImportChannelAsync(channelId);
-                return Ok(result);
+                return Created($"/api/YouTube/channel/{channelId}", result);
             }
             catch (InvalidOperationException ex)
             {
@@ -392,7 +392,11 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 }
 
                 var result = await _youTubeService.ImportFromUrlAsync(request.Url);
-                return Ok(result);
+                if (result is Video video)
+                {
+                    return CreatedAtAction(nameof(GetVideoDetails), new { videoId = video.ExternalId }, result);
+                }
+                return Created(string.Empty, result);
             }
             catch (ArgumentException ex)
             {

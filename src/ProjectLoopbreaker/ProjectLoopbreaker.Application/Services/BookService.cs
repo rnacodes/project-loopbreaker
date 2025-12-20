@@ -213,6 +213,9 @@ namespace ProjectLoopbreaker.Application.Services
                 // Handle Genres array conversion
                 await HandleGenresAsync(book, dto.Genres);
 
+                // Clear change tracker and explicitly update the entity since it was retrieved with AsNoTracking
+                _context.ClearChangeTracker();
+                _context.Update(book);
                 await _context.SaveChangesAsync();
 
                 // Re-index in Typesense after successful update

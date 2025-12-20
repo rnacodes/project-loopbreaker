@@ -32,8 +32,14 @@ const renderWithRouter = (component) => {
 
 describe('WebsiteImportPage', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
     mockNavigate.mockClear();
+  });
+
+  afterEach(() => {
+    vi.runAllTimers();
+    vi.useRealTimers();
   });
 
   it('should render the import form with all fields', () => {
@@ -302,11 +308,14 @@ describe('WebsiteImportPage', () => {
       expect(screen.getByText(/imported successfully/)).toBeInTheDocument();
     });
 
-    // Wait for form to clear (after 2 second timeout in component)
+    // Advance timers to trigger the form clear timeout
+    vi.advanceTimersByTime(2000);
+
+    // Wait for form to clear
     await waitFor(() => {
       expect(urlInput).toHaveValue('');
       expect(notesInput).toHaveValue('');
-    }, { timeout: 3000 });
+    });
   });
 });
 

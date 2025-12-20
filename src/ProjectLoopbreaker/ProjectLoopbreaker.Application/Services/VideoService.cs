@@ -240,6 +240,9 @@ namespace ProjectLoopbreaker.Application.Services
                     }
                 }
 
+                // Clear change tracker and explicitly update the entity since it was retrieved with AsNoTracking
+                _context.ClearChangeTracker();
+                _context.Update(video);
                 await _context.SaveChangesAsync();
 
                 // Re-index in Typesense after successful update

@@ -207,6 +207,9 @@ namespace ProjectLoopbreaker.Application.Services
                 // Clear existing topics and genres and save immediately to avoid FK conflicts
                 movie.Topics.Clear();
                 movie.Genres.Clear();
+                // Clear change tracker and explicitly update the entity since it was retrieved with AsNoTracking
+                _context.ClearChangeTracker();
+                _context.Update(movie);
                 await _context.SaveChangesAsync();
 
                 // Handle Topics array conversion
