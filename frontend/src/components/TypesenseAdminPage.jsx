@@ -33,7 +33,7 @@ import {
   Error as ErrorIcon,
   Info as InfoIcon,
 } from '@mui/icons-material';
-import { typesenseReindex, typesenseHealth, typesenseSearch } from '../services/apiService';
+import { typesenseReindex, typesenseHealth, typesenseSearch, typesenseResetMediaItems, typesenseResetMixlists } from '../services/apiService';
 
 const TypesenseAdminPage = () => {
   // State for reindexing
@@ -52,6 +52,11 @@ const TypesenseAdminPage = () => {
   const [searchResults, setSearchResults] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
+
+  // State for reset operations
+  const [resetting, setResetting] = useState(false);
+  const [resetResult, setResetResult] = useState(null);
+  const [resetError, setResetError] = useState(null);
 
   // Check health on component mount
   useEffect(() => {
@@ -108,6 +113,46 @@ const TypesenseAdminPage = () => {
       setSearchError(error.response?.data?.message || error.message || 'Search failed');
     } finally {
       setSearchLoading(false);
+    }
+  };
+
+  // Handler for resetting media items collection
+  const handleResetMediaItems = async () => {
+    if (!window.confirm('⚠️ WARNING: This will delete ALL media items from the search index! This action cannot be undone. Continue?')) {
+      return;
+    }
+
+    setResetting(true);
+    setResetResult(null);
+    setResetError(null);
+
+    try {
+      const result = await typesenseResetMediaItems();
+      setResetResult(result);
+    } catch (error) {
+      setResetError(error.response?.data?.message || error.message || 'Failed to reset media items collection');
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  // Handler for resetting mixlists collection
+  const handleResetMixlists = async () => {
+    if (!window.confirm('⚠️ WARNING: This will delete ALL mixlists from the search index! This action cannot be undone. Continue?')) {
+      return;
+    }
+
+    setResetting(true);
+    setResetResult(null);
+    setResetError(null);
+
+    try {
+      const result = await typesenseResetMixlists();
+      setResetResult(result);
+    } catch (error) {
+      setResetError(error.response?.data?.message || error.message || 'Failed to reset mixlists collection');
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -285,6 +330,79 @@ const TypesenseAdminPage = () => {
               )}
             </CardContent>
           </Card>
+        )}
+      </Paper>
+
+      {/* Reset Collections Section */}
+      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+          Reset Collections
+        </Typography>
+        
+        <Alert severity="warning" icon={<ErrorIcon />} sx={{ mb: 2 }}>
+          <strong>⚠️ WARNING:</strong> Resetting will permanently delete all data from the Typesense collection and recreate it empty. 
+          Use this when you need to completely clear old data (e.g., after clearing the database). 
+          This is different from reindexing, which syncs data from the database.
+        </Alert>
+
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Reset Media Items
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  Deletes and recreates the media_items collection. All indexed media will be removed from search.
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="error"
+                  startIcon={resetting ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
+                  onClick={handleResetMediaItems}
+                  disabled={resetting}
+                  fullWidth
+                >
+                  {resetting ? 'Resetting...' : 'Reset Media Items Collection'}
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Reset Mixlists
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  Deletes and recreates the mixlists collection. All indexed mixlists will be removed from search.
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="error"
+                  startIcon={resetting ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
+                  onClick={handleResetMixlists}
+                  disabled={resetting}
+                  fullWidth
+                >
+                  {resetting ? 'Resetting...' : 'Reset Mixlists Collection'}
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {resetError && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            <strong>Reset Failed:</strong> {resetError}
+          </Alert>
+        )}
+
+        {resetResult && (
+          <Alert severity="success" sx={{ mt: 2 }}>
+            <strong>✓ Reset Complete:</strong> {resetResult.message || 'Collection has been reset successfully.'}
+          </Alert>
         )}
       </Paper>
 

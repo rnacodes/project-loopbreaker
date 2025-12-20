@@ -567,5 +567,69 @@ namespace ProjectLoopbreaker.Infrastructure.Services
                 throw;
             }
         }
+
+        /// <summary>
+        /// Deletes and recreates the media_items collection to completely clear all data.
+        /// </summary>
+        public async Task ResetMediaItemsCollectionAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Resetting Typesense collection '{CollectionName}'...", COLLECTION_NAME);
+
+                // Delete the collection if it exists
+                try
+                {
+                    await _typesenseClient.DeleteCollection(COLLECTION_NAME);
+                    _logger.LogInformation("Deleted existing collection '{CollectionName}'.", COLLECTION_NAME);
+                }
+                catch (TypesenseApiNotFoundException)
+                {
+                    _logger.LogInformation("Collection '{CollectionName}' doesn't exist, skipping delete.", COLLECTION_NAME);
+                }
+
+                // Recreate the collection with the schema
+                await EnsureCollectionExistsAsync();
+                
+                _logger.LogInformation("Successfully reset collection '{CollectionName}'.", COLLECTION_NAME);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting Typesense collection '{CollectionName}'.", COLLECTION_NAME);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Deletes and recreates the mixlists collection to completely clear all data.
+        /// </summary>
+        public async Task ResetMixlistsCollectionAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Resetting Typesense collection '{CollectionName}'...", MIXLIST_COLLECTION_NAME);
+
+                // Delete the collection if it exists
+                try
+                {
+                    await _typesenseClient.DeleteCollection(MIXLIST_COLLECTION_NAME);
+                    _logger.LogInformation("Deleted existing collection '{CollectionName}'.", MIXLIST_COLLECTION_NAME);
+                }
+                catch (TypesenseApiNotFoundException)
+                {
+                    _logger.LogInformation("Collection '{CollectionName}' doesn't exist, skipping delete.", MIXLIST_COLLECTION_NAME);
+                }
+
+                // Recreate the collection with the schema
+                await EnsureMixlistCollectionExistsAsync();
+                
+                _logger.LogInformation("Successfully reset collection '{CollectionName}'.", MIXLIST_COLLECTION_NAME);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting Typesense collection '{CollectionName}'.", MIXLIST_COLLECTION_NAME);
+                throw;
+            }
+        }
     }
 }

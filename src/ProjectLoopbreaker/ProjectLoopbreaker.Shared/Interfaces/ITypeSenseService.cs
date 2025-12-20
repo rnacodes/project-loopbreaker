@@ -113,5 +113,17 @@ namespace ProjectLoopbreaker.Shared.Interfaces
         /// Useful for initial setup or full data synchronization.
         /// </summary>
         Task<int> BulkReindexAllMixlistsAsync();
+
+        /// <summary>
+        /// Deletes and recreates the media_items collection, clearing all indexed data.
+        /// Use this to completely reset the search index.
+        /// </summary>
+        Task ResetMediaItemsCollectionAsync();
+
+        /// <summary>
+        /// Deletes and recreates the mixlists collection, clearing all indexed data.
+        /// Use this to completely reset the mixlist search index.
+        /// </summary>
+        Task ResetMixlistsCollectionAsync();
     }
 }

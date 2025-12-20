@@ -686,3 +686,4 @@ ProjectLoopbreaker.Web.API/Controllers/DevController.cs
 # Project-specific ignores
 temp-docs/
 docs/
+temp-yaml/
