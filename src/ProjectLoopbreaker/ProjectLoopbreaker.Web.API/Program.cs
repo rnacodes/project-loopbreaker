@@ -42,7 +42,8 @@ builder.Services.AddCors(options =>
             // Production: Allow your frontend domain and configure based on environment variables
             var allowedOrigins = new List<string>
             {
-                "https://www.mymediaverseuniverse.com"  // Production frontend URL
+                "https://www.mymediaverseuniverse.com",  // Production frontend URL
+                "https://mymediaverseuniverse.com"       // Production frontend URL (without www)
             };
             
             // Add frontend URL from environment variable if provided
