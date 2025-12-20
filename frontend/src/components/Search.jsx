@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Container, Box, Typography, TextField, InputAdornment, Grid, Card, CardContent,
     Chip, Button, ButtonGroup, Divider, Accordion, AccordionSummary, AccordionDetails,
@@ -8,11 +8,11 @@ import {
     CircularProgress, Alert
 } from '@mui/material';
 import {
-    Search, ViewModule, ViewList, FilterList, Clear, TuneRounded,
+    Search as SearchIcon, ViewModule, ViewList, FilterList, Clear, TuneRounded,
     ExpandMore, Star, StarBorder, OpenInNew, AccessTime, Update,
     ThumbUp, ThumbDown, Remove, Favorite
 } from '@mui/icons-material';
-import { typesenseAdvancedSearch } from '../services/apiService';
+import { typesenseAdvancedSearch, typesenseAdvancedSearchMixlists } from '../services/apiService';
 import { getAllTopics, getAllGenres } from '../services/apiService';
 
 // MOCK DATA
@@ -234,9 +234,18 @@ const getRatingIcon = (ratingType) => {
 const MediaCard = ({ item }) => {
     const navigate = useNavigate();
     
+    // Determine navigation path based on item type
+    const handleClick = () => {
+        if (item.isMixlist) {
+            navigate(`/mixlist/${item.id}`);
+        } else {
+            navigate(`/media/${item.id}`);
+        }
+    };
+    
     return (
         <Card 
-            onClick={() => navigate(`/media/${item.id}`)}
+            onClick={handleClick}
             sx={{ 
                 height: '100%',
                 display: 'flex',
@@ -352,9 +361,18 @@ const MediaCard = ({ item }) => {
 const MediaListItem = ({ item }) => {
     const navigate = useNavigate();
     
+    // Determine navigation path based on item type
+    const handleClick = () => {
+        if (item.isMixlist) {
+            navigate(`/mixlist/${item.id}`);
+        } else {
+            navigate(`/media/${item.id}`);
+        }
+    };
+    
     return (
-        <Paper 
-            onClick={() => navigate(`/media/${item.id}`)}
+    <Paper
+        onClick={handleClick}
             sx={{ 
                 p: 2.5,
                 mb: 2,
@@ -451,11 +469,13 @@ const MediaListItem = ({ item }) => {
 };
 
 // MAIN COMPONENT
-export default function MockSearchUI() {
+export default function Search() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState('card');
     const [sortBy, setSortBy] = useState('relevance');
+    const [searchMode, setSearchMode] = useState('media'); // 'media' or 'mixlists'
     const [selectedMediaTypes, setSelectedMediaTypes] = useState(['all']);
     const [selectedTopics, setSelectedTopics] = useState([]);
     const [selectedGenres, setSelectedGenres] = useState([]);
@@ -466,6 +486,7 @@ export default function MockSearchUI() {
     const [genreSearchQuery, setGenreSearchQuery] = useState('');
     const [showAllTopics, setShowAllTopics] = useState(false);
     const [showAllGenres, setShowAllGenres] = useState(false);
+    const [urlParamsLoaded, setUrlParamsLoaded] = useState(false);
 
     // Data state
     const [searchResults, setSearchResults] = useState([]);
@@ -477,6 +498,27 @@ export default function MockSearchUI() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const perPage = 20;
+
+    // Load URL parameters on mount
+    useEffect(() => {
+        const loadUrlParams = () => {
+            const query = searchParams.get('q');
+            const mediaType = searchParams.get('mediaType');
+            const topics = searchParams.get('topics');
+            const genres = searchParams.get('genres');
+            const status = searchParams.get('status');
+            
+            if (query) setSearchQuery(query);
+            if (mediaType) setSelectedMediaTypes([mediaType]);
+            if (topics) setSelectedTopics(topics.split(',').map(t => t.trim()));
+            if (genres) setSelectedGenres(genres.split(',').map(g => g.trim()));
+            if (status) setSelectedStatus(status);
+            
+            setUrlParamsLoaded(true);
+        };
+        
+        loadUrlParams();
+    }, [searchParams]);
 
     // Fetch topics and genres on mount
     useEffect(() => {
@@ -495,53 +537,98 @@ export default function MockSearchUI() {
         fetchFiltersData();
     }, []);
 
-    // Perform search when filters change
+    // Perform search when filters change (but wait for URL params to load first)
     useEffect(() => {
-        performSearch();
-    }, [searchQuery, selectedMediaTypes, selectedTopics, selectedGenres, selectedStatus, selectedRatings, currentPage]);
+        if (urlParamsLoaded) {
+            performSearch();
+        }
+    }, [searchQuery, searchMode, selectedMediaTypes, selectedTopics, selectedGenres, selectedStatus, selectedRatings, currentPage, urlParamsLoaded]);
 
     const performSearch = async () => {
         setLoading(true);
         setError(null);
         
         try {
-            const searchOptions = {
-                query: searchQuery || '*',
-                mediaTypes: selectedMediaTypes.filter(type => type !== 'all'),
-                topics: selectedTopics,
-                genres: selectedGenres,
-                status: selectedStatus !== 'all' ? selectedStatus : null,
-                ratings: selectedRatings,
-                page: currentPage,
-                perPage: perPage,
-                sortBy: sortBy
-            };
-
-            const response = await typesenseAdvancedSearch(searchOptions);
+            let response;
             
-            // Transform Typesense response to match component structure
-            const hits = response.hits || [];
-            const transformedResults = hits.map(hit => {
-                const doc = hit.document;
-                return {
-                    id: doc.id,
-                    title: doc.title,
-                    mediaType: doc.media_type,
-                    status: doc.status,
-                    ratingType: doc.rating?.toLowerCase() || null,
-                    topics: doc.topics || [],
-                    genres: doc.genres || [],
-                    author: doc.author || doc.director || doc.creator || doc.publisher || 'Unknown',
-                    duration: getDuration(doc),
-                    dateAdded: new Date(doc.date_added * 1000).toISOString().split('T')[0],
-                    notes: doc.description || '',
-                    thumbnail: doc.thumbnail
+            if (searchMode === 'mixlists') {
+                // Search mixlists
+                const searchOptions = {
+                    query: searchQuery || '*',
+                    topics: selectedTopics,
+                    genres: selectedGenres,
+                    page: currentPage,
+                    perPage: perPage,
+                    sortBy: sortBy
                 };
-            });
 
-            setSearchResults(transformedResults);
-            setTotalResults(response.found || 0);
-            setTotalPages(Math.ceil((response.found || 0) / perPage));
+                response = await typesenseAdvancedSearchMixlists(searchOptions);
+                
+                // Transform Typesense response for mixlists
+                const hits = response.hits || [];
+                const transformedResults = hits.map(hit => {
+                    const doc = hit.document;
+                    return {
+                        id: doc.id,
+                        title: doc.name,
+                        mediaType: 'Mixlist',
+                        status: null,
+                        ratingType: null,
+                        topics: doc.topics || [],
+                        genres: doc.genres || [],
+                        author: `${doc.media_item_count} items`,
+                        duration: new Date(doc.date_created * 1000).toLocaleDateString(),
+                        dateAdded: new Date(doc.date_created * 1000).toISOString().split('T')[0],
+                        notes: doc.description || '',
+                        thumbnail: doc.thumbnail,
+                        isMixlist: true
+                    };
+                });
+
+                setSearchResults(transformedResults);
+                setTotalResults(response.found || 0);
+                setTotalPages(Math.ceil((response.found || 0) / perPage));
+            } else {
+                // Search media items
+                const searchOptions = {
+                    query: searchQuery || '*',
+                    mediaTypes: selectedMediaTypes.filter(type => type !== 'all'),
+                    topics: selectedTopics,
+                    genres: selectedGenres,
+                    status: selectedStatus !== 'all' ? selectedStatus : null,
+                    ratings: selectedRatings,
+                    page: currentPage,
+                    perPage: perPage,
+                    sortBy: sortBy
+                };
+
+                response = await typesenseAdvancedSearch(searchOptions);
+                
+                // Transform Typesense response to match component structure
+                const hits = response.hits || [];
+                const transformedResults = hits.map(hit => {
+                    const doc = hit.document;
+                    return {
+                        id: doc.id,
+                        title: doc.title,
+                        mediaType: doc.media_type,
+                        status: doc.status,
+                        ratingType: doc.rating?.toLowerCase() || null,
+                        topics: doc.topics || [],
+                        genres: doc.genres || [],
+                        author: doc.author || doc.director || doc.creator || doc.publisher || 'Unknown',
+                        duration: getDuration(doc),
+                        dateAdded: new Date(doc.date_added * 1000).toISOString().split('T')[0],
+                        notes: doc.description || '',
+                        thumbnail: doc.thumbnail,
+                        isMixlist: false
+                    };
+                });
+
+                setSearchResults(transformedResults);
+                setTotalResults(response.found || 0);
+                setTotalPages(Math.ceil((response.found || 0) / perPage));
+            }
         } catch (err) {
             console.error('Search error:', err);
             setError('Failed to perform search. Please try again.');
@@ -621,8 +708,41 @@ export default function MockSearchUI() {
                         Search MediaVerse
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
-                        Search across all your media with powerful filters and instant results
+                        {searchMode === 'media' 
+                            ? 'Search across all your media with powerful filters and instant results'
+                            : 'Search and discover curated mixlists by name, topics, or genres'}
                     </Typography>
+                    
+                    {/* Search Mode Toggle */}
+                    <Box sx={{ mt: 2 }}>
+                        <ToggleButtonGroup
+                            value={searchMode}
+                            exclusive
+                            onChange={(e, newMode) => {
+                                if (newMode !== null) {
+                                    setSearchMode(newMode);
+                                    setCurrentPage(1); // Reset to first page when switching modes
+                                }
+                            }}
+                            size="small"
+                            sx={{
+                                backgroundColor: 'background.paper',
+                                '& .MuiToggleButton-root': {
+                                    px: 3,
+                                    py: 1,
+                                    textTransform: 'none',
+                                    fontWeight: 'bold'
+                                }
+                            }}
+                        >
+                            <ToggleButton value="media">
+                                Media Items
+                            </ToggleButton>
+                            <ToggleButton value="mixlists">
+                                Mixlists
+                            </ToggleButton>
+                        </ToggleButtonGroup>
+                    </Box>
                 </Box>
 
                 {/* Search Bar */}
@@ -644,7 +764,7 @@ export default function MockSearchUI() {
                         InputProps={{
                             startAdornment: (
                                 <InputAdornment position="start">
-                                    <Search sx={{ fontSize: 28, color: 'text.secondary' }} />
+                                    <SearchIcon sx={{ fontSize: 28, color: 'text.secondary' }} />
                                 </InputAdornment>
                             ),
                             endAdornment: searchQuery && (
@@ -711,34 +831,38 @@ export default function MockSearchUI() {
 
                                 <Divider sx={{ mb: 2 }} />
 
-                                {/* Media Type Filter */}
-                                <Accordion defaultExpanded disableGutters elevation={0}>
-                                    <AccordionSummary expandIcon={<ExpandMore />}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                            Media Type
-                                        </Typography>
-                                    </AccordionSummary>
-                                    <AccordionDetails sx={{ pt: 0 }}>
-                                        <FormGroup>
-                                            {mediaTypeOptions.map((option) => (
-                                                <FormControlLabel
-                                                    key={option.value}
-                                                    control={
-                                                        <Checkbox
-                                                            checked={selectedMediaTypes.includes(option.value)}
-                                                            onChange={() => handleMediaTypeToggle(option.value)}
-                                                            size="small"
+                                {/* Media Type Filter - Only show for media search */}
+                                {searchMode === 'media' && (
+                                    <>
+                                        <Accordion defaultExpanded disableGutters elevation={0}>
+                                            <AccordionSummary expandIcon={<ExpandMore />}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                                    Media Type
+                                                </Typography>
+                                            </AccordionSummary>
+                                            <AccordionDetails sx={{ pt: 0 }}>
+                                                <FormGroup>
+                                                    {mediaTypeOptions.map((option) => (
+                                                        <FormControlLabel
+                                                            key={option.value}
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={selectedMediaTypes.includes(option.value)}
+                                                                    onChange={() => handleMediaTypeToggle(option.value)}
+                                                                    size="small"
+                                                                />
+                                                            }
+                                                            label={<Typography variant="body2">{option.label}</Typography>}
+                                                            sx={{ mb: 0.5 }}
                                                         />
-                                                    }
-                                                    label={<Typography variant="body2">{option.label}</Typography>}
-                                                    sx={{ mb: 0.5 }}
-                                                />
-                                            ))}
-                                        </FormGroup>
-                                    </AccordionDetails>
-                                </Accordion>
+                                                    ))}
+                                                </FormGroup>
+                                            </AccordionDetails>
+                                        </Accordion>
 
-                                <Divider sx={{ my: 1 }} />
+                                        <Divider sx={{ my: 1 }} />
+                                    </>
+                                )}
 
                                 {/* Topics Filter */}
                                 <Accordion disableGutters elevation={0}>
@@ -758,7 +882,7 @@ export default function MockSearchUI() {
                                             InputProps={{
                                                 startAdornment: (
                                                     <InputAdornment position="start">
-                                                        <Search sx={{ fontSize: 18 }} />
+                                                        <SearchIcon sx={{ fontSize: 18 }} />
                                                     </InputAdornment>
                                                 )
                                             }}
@@ -833,7 +957,7 @@ export default function MockSearchUI() {
                                             InputProps={{
                                                 startAdornment: (
                                                     <InputAdornment position="start">
-                                                        <Search sx={{ fontSize: 18 }} />
+                                                        <SearchIcon sx={{ fontSize: 18 }} />
                                                     </InputAdornment>
                                                 )
                                             }}
@@ -888,64 +1012,69 @@ export default function MockSearchUI() {
                                     </AccordionDetails>
                                 </Accordion>
 
-                                <Divider sx={{ my: 1 }} />
+                                {/* Status and Rating Filters - Only show for media search */}
+                                {searchMode === 'media' && (
+                                    <>
+                                        <Divider sx={{ my: 1 }} />
 
-                                {/* Status Filter */}
-                                <Accordion disableGutters elevation={0}>
-                                    <AccordionSummary expandIcon={<ExpandMore />}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                            Status
-                                        </Typography>
-                                    </AccordionSummary>
-                                    <AccordionDetails sx={{ pt: 0 }}>
-                                        <FormControl fullWidth size="small">
-                                            <Select
-                                                value={selectedStatus}
-                                                onChange={(e) => setSelectedStatus(e.target.value)}
-                                            >
-                                                {statusOptions.map((option) => (
-                                                    <MenuItem key={option.value} value={option.value}>
-                                                        {option.label}
-                                                    </MenuItem>
-                                                ))}
-                                            </Select>
-                                        </FormControl>
-                                    </AccordionDetails>
-                                </Accordion>
+                                        {/* Status Filter */}
+                                        <Accordion disableGutters elevation={0}>
+                                            <AccordionSummary expandIcon={<ExpandMore />}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                                    Status
+                                                </Typography>
+                                            </AccordionSummary>
+                                            <AccordionDetails sx={{ pt: 0 }}>
+                                                <FormControl fullWidth size="small">
+                                                    <Select
+                                                        value={selectedStatus}
+                                                        onChange={(e) => setSelectedStatus(e.target.value)}
+                                                    >
+                                                        {statusOptions.map((option) => (
+                                                            <MenuItem key={option.value} value={option.value}>
+                                                                {option.label}
+                                                            </MenuItem>
+                                                        ))}
+                                                    </Select>
+                                                </FormControl>
+                                            </AccordionDetails>
+                                        </Accordion>
 
-                                <Divider sx={{ my: 1 }} />
+                                        <Divider sx={{ my: 1 }} />
 
-                                {/* Rating Filter */}
-                                <Accordion disableGutters elevation={0}>
-                                    <AccordionSummary expandIcon={<ExpandMore />}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                            Rating {selectedRatings.length > 0 && `(${selectedRatings.length})`}
-                                        </Typography>
-                                    </AccordionSummary>
-                                    <AccordionDetails sx={{ pt: 0 }}>
-                                        <FormGroup>
-                                            {ratingOptions.map((rating) => (
-                                                <FormControlLabel
-                                                    key={rating.value}
-                                                    control={
-                                                        <Checkbox
-                                                            checked={selectedRatings.includes(rating.value)}
-                                                            onChange={() => handleRatingToggle(rating.value)}
-                                                            size="small"
+                                        {/* Rating Filter */}
+                                        <Accordion disableGutters elevation={0}>
+                                            <AccordionSummary expandIcon={<ExpandMore />}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
+                                                    Rating {selectedRatings.length > 0 && `(${selectedRatings.length})`}
+                                                </Typography>
+                                            </AccordionSummary>
+                                            <AccordionDetails sx={{ pt: 0 }}>
+                                                <FormGroup>
+                                                    {ratingOptions.map((rating) => (
+                                                        <FormControlLabel
+                                                            key={rating.value}
+                                                            control={
+                                                                <Checkbox
+                                                                    checked={selectedRatings.includes(rating.value)}
+                                                                    onChange={() => handleRatingToggle(rating.value)}
+                                                                    size="small"
+                                                                />
+                                                            }
+                                                            label={
+                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                                    {getRatingIcon(rating.icon)}
+                                                                    <Typography variant="body2">{rating.label}</Typography>
+                                                                </Box>
+                                                            }
+                                                            sx={{ mb: 0.5 }}
                                                         />
-                                                    }
-                                                    label={
-                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                            {getRatingIcon(rating.icon)}
-                                                            <Typography variant="body2">{rating.label}</Typography>
-                                                        </Box>
-                                                    }
-                                                    sx={{ mb: 0.5 }}
-                                                />
-                                            ))}
-                                        </FormGroup>
-                                    </AccordionDetails>
-                                </Accordion>
+                                                    ))}
+                                                </FormGroup>
+                                            </AccordionDetails>
+                                        </Accordion>
+                                    </>
+                                )}
                             </Paper>
                         </Grid>
                     )}
@@ -967,7 +1096,8 @@ export default function MockSearchUI() {
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
                                     {searchQuery && `Showing results for "${searchQuery}"`}
-                                    {!searchQuery && 'Showing all media items'}
+                                    {!searchQuery && searchMode === 'media' && 'Showing all media items'}
+                                    {!searchQuery && searchMode === 'mixlists' && 'Showing all mixlists'}
                                 </Typography>
                             </Box>
 

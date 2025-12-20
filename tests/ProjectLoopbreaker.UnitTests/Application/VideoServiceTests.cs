@@ -206,7 +206,8 @@ namespace ProjectLoopbreaker.UnitTests.Application
             result.VideoType.Should().Be(VideoType.Episode);
             result.Status.Should().Be(Status.ActivelyExploring);
             
-            // Verify updated in database
+            // Clear tracker and reload from database to verify persistence
+            Context.ChangeTracker.Clear();
             var updatedVideo = await Context.Videos.FindAsync(videoId);
             updatedVideo.Should().NotBeNull();
             updatedVideo!.Title.Should().Be("Updated Title");
@@ -236,6 +237,9 @@ namespace ProjectLoopbreaker.UnitTests.Application
             var video = new Video { Id = videoId, Title = "Test Video", Platform = "YouTube", Topics = new List<Topic>(), Genres = new List<Genre>() };
             Context.Videos.Add(video);
             await Context.SaveChangesAsync();
+            
+            // Clear change tracker to avoid entity tracking conflicts
+            Context.ChangeTracker.Clear();
 
             // Act
             var result = await _service.DeleteVideoAsync(videoId);

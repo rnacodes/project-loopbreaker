@@ -120,6 +120,60 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         }
 
         /// <summary>
+        /// Searches mixlists using Typesense full-text search.
+        /// GET /api/search/mixlists?q=searchterm&filter=topics:=productivity&page=1&per_page=20
+        /// </summary>
+        /// <param name="q">Search query text</param>
+        /// <param name="filter">Optional filter string (e.g., "topics:=productivity" or "genres:=fiction")</param>
+        /// <param name="page">Page number (default: 1)</param>
+        /// <param name="per_page">Results per page (default: 20, max: 100)</param>
+        /// <returns>Search results from Typesense</returns>
+        [HttpGet("mixlists")]
+        public async Task<IActionResult> SearchMixlists(
+            [FromQuery] string q,
+            [FromQuery] string? filter = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int per_page = 20)
+        {
+            try
+            {
+                // Validate query parameter
+                if (string.IsNullOrWhiteSpace(q))
+                {
+                    return BadRequest(new { error = "Search query 'q' parameter is required." });
+                }
+
+                // Limit per_page to prevent abuse
+                if (per_page > 100)
+                {
+                    per_page = 100;
+                }
+
+                if (per_page < 1)
+                {
+                    per_page = 20;
+                }
+
+                if (page < 1)
+                {
+                    page = 1;
+                }
+
+                _logger.LogInformation("Mixlist search request: query='{Query}', filter='{Filter}', page={Page}, per_page={PerPage}", 
+                    q, filter, page, per_page);
+
+                var results = await _typeSenseService.SearchMixlistsAsync(q, filter, per_page, page);
+
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing mixlist search for query '{Query}'", q);
+                return StatusCode(500, new { error = "An error occurred while searching mixlists. Please try again." });
+            }
+        }
+
+        /// <summary>
         /// Triggers a full re-index of all media items from PostgreSQL to Typesense.
         /// POST /api/search/reindex
         /// This is an admin operation and should be used sparingly.
@@ -145,6 +199,35 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             {
                 _logger.LogError(ex, "Error during re-index operation.");
                 return StatusCode(500, new { error = "An error occurred during re-index. Please check logs." });
+            }
+        }
+
+        /// <summary>
+        /// Triggers a full re-index of all mixlists from PostgreSQL to Typesense.
+        /// POST /api/search/reindex-mixlists
+        /// This is an admin operation and should be used sparingly.
+        /// </summary>
+        [HttpPost("reindex-mixlists")]
+        public async Task<IActionResult> ReindexAllMixlists()
+        {
+            try
+            {
+                _logger.LogInformation("Starting full re-index of all mixlists...");
+
+                var count = await _typeSenseService.BulkReindexAllMixlistsAsync();
+
+                _logger.LogInformation("Re-index of mixlists complete. Indexed {Count} mixlists.", count);
+
+                return Ok(new 
+                { 
+                    message = "Mixlist re-index completed successfully.", 
+                    indexed_count = count 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during mixlist re-index operation.");
+                return StatusCode(500, new { error = "An error occurred during mixlist re-index. Please check logs." });
             }
         }
 

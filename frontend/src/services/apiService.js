@@ -1817,3 +1817,100 @@ export const typesenseAdvancedSearch = async (options) => {
         throw error;
     }
 };
+
+/**
+ * Search mixlists using Typesense
+ * @param {string} query - Search query
+ * @param {string} filter - Optional filter string (e.g., "topics:=productivity")
+ * @param {number} page - Page number (default: 1)
+ * @param {number} perPage - Results per page (default: 20)
+ * @returns {Promise<Object>} Search results
+ */
+export const typesenseSearchMixlists = async (query, filter = null, page = 1, perPage = 20) => {
+    try {
+        const params = {
+            q: query,
+            page: page,
+            per_page: perPage,
+        };
+
+        if (filter) {
+            params.filter = filter;
+        }
+
+        const response = await apiClient.get('/search/mixlists', { params });
+        return response.data;
+    } catch (error) {
+        console.error('Error searching mixlists:', error);
+        throw error;
+    }
+};
+
+/**
+ * Advanced mixlist search with multiple filters
+ * @param {Object} options - Search options
+ * @param {string} options.query - Search query (default: '*' for all)
+ * @param {Array<string>} options.topics - Array of topics to filter by
+ * @param {Array<string>} options.genres - Array of genres to filter by
+ * @param {number} options.page - Page number (default: 1)
+ * @param {number} options.perPage - Results per page (default: 20)
+ * @param {string} options.sortBy - Sort field (default: relevance)
+ * @returns {Promise<Object>} Search results
+ */
+export const typesenseAdvancedSearchMixlists = async (options) => {
+    try {
+        const {
+            query = '*',
+            topics = [],
+            genres = [],
+            page = 1,
+            perPage = 20,
+            sortBy = 'relevance'
+        } = options;
+
+        // Build filter string
+        const filters = [];
+        
+        // Topics filter
+        if (topics.length > 0) {
+            const topicFilter = topics.map(topic => `topics:=${topic}`).join(' || ');
+            filters.push(`(${topicFilter})`);
+        }
+        
+        // Genres filter
+        if (genres.length > 0) {
+            const genreFilter = genres.map(genre => `genres:=${genre}`).join(' || ');
+            filters.push(`(${genreFilter})`);
+        }
+
+        const params = {
+            q: query || '*',
+            page: page,
+            per_page: perPage,
+        };
+
+        if (filters.length > 0) {
+            params.filter = filters.join(' && ');
+        }
+
+        const response = await apiClient.get('/search/mixlists', { params });
+        return response.data;
+    } catch (error) {
+        console.error('Error performing advanced mixlist search:', error);
+        throw error;
+    }
+};
+
+/**
+ * Reindex all mixlists in Typesense
+ * @returns {Promise<Object>} Reindex results
+ */
+export const reindexMixlists = async () => {
+    try {
+        const response = await apiClient.post('/search/reindex-mixlists');
+        return response.data;
+    } catch (error) {
+        console.error('Error reindexing mixlists:', error);
+        throw error;
+    }
+};

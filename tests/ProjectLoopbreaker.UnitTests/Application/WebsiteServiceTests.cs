@@ -239,6 +239,9 @@ namespace ProjectLoopbreaker.UnitTests.Application
             var existingWebsite = TestDataFactory.CreateWebsite("Old Title", "https://old.com", "old.com");
             Context.Websites.Add(existingWebsite);
             await Context.SaveChangesAsync();
+            
+            // Clear change tracker to avoid entity tracking conflicts
+            Context.ChangeTracker.Clear();
 
             var updateDto = TestDataFactory.CreateWebsiteDto("Updated Title", "https://updated.com");
             updateDto.Description = "Updated Description";
@@ -273,6 +276,9 @@ namespace ProjectLoopbreaker.UnitTests.Application
             var website = TestDataFactory.CreateWebsite("To Delete", "https://delete.com", "delete.com");
             Context.Websites.Add(website);
             await Context.SaveChangesAsync();
+            
+            // Clear change tracker to avoid entity tracking conflicts
+            Context.ChangeTracker.Clear();
 
             // Act
             var result = await _websiteService.DeleteWebsiteAsync(website.Id);

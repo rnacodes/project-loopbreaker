@@ -1,5 +1,5 @@
 // Custom Migration Template - Replace the generated Up() method with this content
-
+// TODO: update if still needed or delete if no longer needed
 protected override void Up(MigrationBuilder migrationBuilder)
 {
     // Step 1: Create the new Topics and Genres tables

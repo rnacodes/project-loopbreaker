@@ -16,7 +16,10 @@ import {
   Box,
   useTheme,
   useMediaQuery,
-  Chip
+  Chip,
+  Menu,
+  MenuItem,
+  Collapse
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -34,12 +37,24 @@ import {
   Login as LoginIcon,
   Logout as LogoutIcon,
   Person as PersonIcon,
-  Storage as StorageIcon
+  Storage as StorageIcon,
+  Article,
+  Language,
+  Category,
+  AdminPanelSettings,
+  Sync,
+  ImportExport,
+  ExpandMore,
+  ExpandLess
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
 const ResponsiveNavigation = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mediaMenuAnchor, setMediaMenuAnchor] = useState(null);
+  const [adminMenuAnchor, setAdminMenuAnchor] = useState(null);
+  const [mobileMediaOpen, setMobileMediaOpen] = useState(false);
+  const [mobileAdminOpen, setMobileAdminOpen] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
@@ -50,9 +65,14 @@ const ResponsiveNavigation = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const handleNavigation = (path) => {
-    navigate(path);
+  const handleNavigation = (path, requiresAuth = false) => {
+    if (requiresAuth && !isAuthenticated) {
+      navigate('/login');
+    } else {
+      navigate(path);
+    }
     setMobileOpen(false);
+    handleCloseMenus();
   };
 
   const handleLogout = () => {
@@ -66,17 +86,32 @@ const ResponsiveNavigation = () => {
     setMobileOpen(false);
   };
 
+  const handleCloseMenus = () => {
+    setMediaMenuAnchor(null);
+    setAdminMenuAnchor(null);
+  };
+
   const navigationItems = [
     { text: 'Home', path: '/', icon: <Home /> },
-    { text: 'All Media', path: '/all-media', icon: <Movie /> },
-    { text: 'Mixlists', path: '/mixlists', icon: <QueueMusic /> },
-    { text: 'Sources', path: '/sources', icon: <Apps /> },
+    { text: 'Search', path: '/search', icon: <Search /> },
+    { text: 'Browse Topics & Genres', path: '/search-by-topic-genre', icon: <Category /> },
+    { text: 'Mixlists', path: '/mixlists', icon: <QueueMusic /> }
+  ];
+
+  const mediaMenuItems = [
     { text: 'Add Media', path: '/add-media', icon: <Add /> },
+    { text: 'Articles', path: '/articles', icon: <Article /> },
     { text: 'Import Media', path: '/import-media', icon: <Download /> },
     { text: 'Upload Media', path: '/upload-media', icon: <Upload /> },
-    { text: 'Search by Topic/Genre', path: '/search-by-topic-genre', icon: <Search /> },
-    { text: 'Cleanup', path: '/cleanup', icon: <CleaningServices /> },
-    { text: 'Demo', path: '/demo', icon: <Science /> }
+    { text: 'Websites', path: '/websites', icon: <Language /> }
+  ];
+
+  const adminMenuItems = [
+    { text: 'Cleanup', path: '/cleanup', icon: <CleaningServices />, requiresAuth: true },
+    { text: 'Instapaper Import', path: '/instapaper/import', icon: <ImportExport />, requiresAuth: true },
+    { text: 'Readwise Sync', path: '/readwise-sync', icon: <Sync />, requiresAuth: true },
+    { text: 'Sources', path: '/sources', icon: <Apps />, requiresAuth: true },
+    { text: 'Typesense Admin', path: '/typesense-admin', icon: <StorageIcon />, requiresAuth: true }
   ];
 
   const drawer = (
@@ -103,13 +138,14 @@ const ResponsiveNavigation = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <PersonIcon fontSize="small" />
             <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-              {user.username}
+              Logged In
             </Typography>
           </Box>
         </Box>
       )}
       
       <List>
+        {/* Main Navigation Items */}
         {navigationItems.map((item) => (
           <ListItem
             button
@@ -134,6 +170,112 @@ const ResponsiveNavigation = () => {
             />
           </ListItem>
         ))}
+        
+        {/* Media Submenu */}
+        <ListItem
+          button
+          onClick={() => setMobileMediaOpen(!mobileMediaOpen)}
+          sx={{
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            }
+          }}
+        >
+          <ListItemIcon sx={{ color: 'primary.main' }}>
+            <Movie />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Media"
+            sx={{
+              '& .MuiListItemText-primary': {
+                fontWeight: 'medium'
+              }
+            }}
+          />
+          {mobileMediaOpen ? <ExpandLess /> : <ExpandMore />}
+        </ListItem>
+        <Collapse in={mobileMediaOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            {mediaMenuItems.map((item) => (
+              <ListItem
+                button
+                key={item.text}
+                onClick={() => handleNavigation(item.path)}
+                sx={{
+                  pl: 4,
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                  }
+                }}
+              >
+                <ListItemIcon sx={{ color: 'primary.main', minWidth: 40 }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.text}
+                  sx={{
+                    '& .MuiListItemText-primary': {
+                      fontSize: '0.9rem'
+                    }
+                  }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Collapse>
+        
+        {/* Admin Submenu */}
+        <ListItem
+          button
+          onClick={() => setMobileAdminOpen(!mobileAdminOpen)}
+          sx={{
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            }
+          }}
+        >
+          <ListItemIcon sx={{ color: 'primary.main' }}>
+            <AdminPanelSettings />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Admin"
+            sx={{
+              '& .MuiListItemText-primary': {
+                fontWeight: 'medium'
+              }
+            }}
+          />
+          {mobileAdminOpen ? <ExpandLess /> : <ExpandMore />}
+        </ListItem>
+        <Collapse in={mobileAdminOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            {adminMenuItems.map((item) => (
+              <ListItem
+                button
+                key={item.text}
+                onClick={() => handleNavigation(item.path, item.requiresAuth)}
+                sx={{
+                  pl: 4,
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                  }
+                }}
+              >
+                <ListItemIcon sx={{ color: 'primary.main', minWidth: 40 }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.text}
+                  sx={{
+                    '& .MuiListItemText-primary': {
+                      fontSize: '0.9rem'
+                    }
+                  }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Collapse>
         
         {/* Login/Logout Button in Mobile Menu */}
         {isAuthenticated ? (
@@ -213,6 +355,7 @@ const ResponsiveNavigation = () => {
             </IconButton>
           ) : (
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              {/* Main Navigation Items */}
               {navigationItems.map((item) => (
                 <Button
                   key={item.text}
@@ -229,12 +372,74 @@ const ResponsiveNavigation = () => {
                 </Button>
               ))}
               
+              {/* Media Menu */}
+              <Button
+                color="inherit"
+                onClick={(e) => setMediaMenuAnchor(e.currentTarget)}
+                endIcon={<ExpandMore />}
+                sx={{ 
+                  textTransform: 'none',
+                  minWidth: 'auto',
+                  px: 2
+                }}
+              >
+                Media
+              </Button>
+              <Menu
+                anchorEl={mediaMenuAnchor}
+                open={Boolean(mediaMenuAnchor)}
+                onClose={handleCloseMenus}
+              >
+                {mediaMenuItems.map((item) => (
+                  <MenuItem
+                    key={item.text}
+                    onClick={() => handleNavigation(item.path)}
+                  >
+                    <ListItemIcon>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText>{item.text}</ListItemText>
+                  </MenuItem>
+                ))}
+              </Menu>
+              
+              {/* Admin Menu */}
+              <Button
+                color="inherit"
+                onClick={(e) => setAdminMenuAnchor(e.currentTarget)}
+                endIcon={<ExpandMore />}
+                sx={{ 
+                  textTransform: 'none',
+                  minWidth: 'auto',
+                  px: 2
+                }}
+              >
+                Admin
+              </Button>
+              <Menu
+                anchorEl={adminMenuAnchor}
+                open={Boolean(adminMenuAnchor)}
+                onClose={handleCloseMenus}
+              >
+                {adminMenuItems.map((item) => (
+                  <MenuItem
+                    key={item.text}
+                    onClick={() => handleNavigation(item.path, item.requiresAuth)}
+                  >
+                    <ListItemIcon>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText>{item.text}</ListItemText>
+                  </MenuItem>
+                ))}
+              </Menu>
+              
               {/* Desktop Auth Section */}
               {isAuthenticated && user ? (
                 <>
                   <Chip
                     icon={<PersonIcon />}
-                    label={user.username}
+                    label="Logged In"
                     size="small"
                     sx={{ ml: 2 }}
                   />

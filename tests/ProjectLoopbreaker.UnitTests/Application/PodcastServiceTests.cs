@@ -89,7 +89,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             result.Should().BeNull();
         }
 
-        [Fact]
+        [Fact(Skip = "ILike is PostgreSQL-specific and not supported in InMemory database. Test in integration tests instead.")]
         public async Task SearchPodcastSeriesAsync_ShouldReturnMatchingSeries()
         {
             // Arrange

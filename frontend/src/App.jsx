@@ -5,6 +5,9 @@ import { ThemeProvider, CssBaseline, Typography, Button } from '@mui/material';
 // --- Import Auth Context ---
 import { AuthProvider } from './contexts/AuthContext';
 
+// --- Import Route Protection ---
+import ConditionalProtectedRoute from './components/ConditionalProtectedRoute';
+
 // --- Import your page components ---
 import HomePage from './components/HomePage';
 import LoginPage from './components/LoginPage';
@@ -22,7 +25,7 @@ import ImportMixlistPage from './components/ImportMixlistPage';
 import ImportGenresTopicsPage from './components/ImportGenresTopicsPage';
 import SearchByTopicOrGenre from './components/SearchByTopicOrGenre';
 import SearchResults from './components/SearchResults';
-import MockSearchUI from './components/MockSearchUI';
+import Search from './components/Search';
 import DemoPage from './components/DemoPage';
 import UploadMediaPage from './components/UploadMediaPage';
 import YouTubeCallback from './pages/YouTubeCallback';
@@ -57,39 +60,104 @@ function App() {
 
           {/* Routes without outer container - each component handles its own layout */}
           <Routes>
+            {/* Public routes - always accessible */}
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<HomePage />} />
-          <Route path="/add-media" element={<AddMediaForm />} />
-          <Route path="/all-media" element={<AllMedia />} />
-          <Route path="/mixlists" element={<MixlistsPage />} />
-          <Route path="/mixlist/:id" element={<MixlistProfilePage />} />
-          <Route path="/mixlist/:id/edit" element={<EditMixlistForm />} />
-          <Route path="/create-mixlist" element={<CreateMixlistForm />} />
-          <Route path="/import-media" element={<ImportMediaPage />} />
-          <Route path="/import-mixlist" element={<ImportMixlistPage />} />
-          <Route path="/import-genres-topics" element={<ImportGenresTopicsPage />} />
-          <Route path="/upload-media" element={<UploadMediaPage />} />
-          <Route path="/search-by-topic-genre" element={<SearchByTopicOrGenre />} />
-          <Route path="/search-results" element={<SearchResults />} />
-          <Route path="/search" element={<MockSearchUI />} />
-          <Route path="/media/:id" element={<MediaProfilePage />} />
-          <Route path="/media/:id/edit" element={<EditMediaForm />} />
-          <Route path="/demo" element={<DemoPage />} />
-          <Route path="/youtube/callback" element={<YouTubeCallback />} />
-          <Route path="/instapaper/auth" element={<InstapaperAuthPage />} />
-          <Route path="/instapaper/import" element={<InstapaperImportPage />} />
-          <Route path="/readwise-sync" element={<ReadwiseSyncPage />} />
-          <Route path="/articles" element={<ArticlesPage />} />
-          <Route path="/sources" element={<SourceDirectoryPage />} />
-          <Route path="/youtube-channels" element={<YouTubeChannelList />} />
-          <Route path="/youtube-channel/:id" element={<YouTubeChannelProfile />} />
-          <Route path="/youtube-playlist/:id" element={<YouTubePlaylistProfile />} />
-          <Route path="/podcast-series/:id" element={<PodcastSeriesProfile />} />
-          <Route path="/podcast-episode/:id" element={<PodcastEpisodeProfile />} />
-          <Route path="/cleanup" element={<CleanupManagementPage />} />
-          <Route path="/import-website" element={<WebsiteImportPage />} />
-          <Route path="/websites" element={<WebsitesPage />} />
-          <Route path="/typesense-admin" element={<TypesenseAdminPage />} />
+            <Route path="/demo" element={<DemoPage />} />
+            
+            {/* Protected routes - require login in production, open in demo */}
+            <Route path="/" element={
+              <ConditionalProtectedRoute><HomePage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/add-media" element={
+              <ConditionalProtectedRoute><AddMediaForm /></ConditionalProtectedRoute>
+            } />
+            <Route path="/all-media" element={
+              <ConditionalProtectedRoute><AllMedia /></ConditionalProtectedRoute>
+            } />
+            <Route path="/mixlists" element={
+              <ConditionalProtectedRoute><MixlistsPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/mixlist/:id" element={
+              <ConditionalProtectedRoute><MixlistProfilePage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/mixlist/:id/edit" element={
+              <ConditionalProtectedRoute><EditMixlistForm /></ConditionalProtectedRoute>
+            } />
+            <Route path="/create-mixlist" element={
+              <ConditionalProtectedRoute><CreateMixlistForm /></ConditionalProtectedRoute>
+            } />
+            <Route path="/import-media" element={
+              <ConditionalProtectedRoute><ImportMediaPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/import-mixlist" element={
+              <ConditionalProtectedRoute><ImportMixlistPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/import-genres-topics" element={
+              <ConditionalProtectedRoute><ImportGenresTopicsPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/upload-media" element={
+              <ConditionalProtectedRoute><UploadMediaPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/search-by-topic-genre" element={
+              <ConditionalProtectedRoute><SearchByTopicOrGenre /></ConditionalProtectedRoute>
+            } />
+            <Route path="/search-results" element={
+              <ConditionalProtectedRoute><SearchResults /></ConditionalProtectedRoute>
+            } />
+            <Route path="/search" element={
+              <ConditionalProtectedRoute><Search /></ConditionalProtectedRoute>
+            } />
+            <Route path="/media/:id" element={
+              <ConditionalProtectedRoute><MediaProfilePage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/media/:id/edit" element={
+              <ConditionalProtectedRoute><EditMediaForm /></ConditionalProtectedRoute>
+            } />
+            <Route path="/youtube/callback" element={
+              <ConditionalProtectedRoute><YouTubeCallback /></ConditionalProtectedRoute>
+            } />
+            <Route path="/instapaper/auth" element={
+              <ConditionalProtectedRoute><InstapaperAuthPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/instapaper/import" element={
+              <ConditionalProtectedRoute><InstapaperImportPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/readwise-sync" element={
+              <ConditionalProtectedRoute><ReadwiseSyncPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/articles" element={
+              <ConditionalProtectedRoute><ArticlesPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/sources" element={
+              <ConditionalProtectedRoute><SourceDirectoryPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/youtube-channels" element={
+              <ConditionalProtectedRoute><YouTubeChannelList /></ConditionalProtectedRoute>
+            } />
+            <Route path="/youtube-channel/:id" element={
+              <ConditionalProtectedRoute><YouTubeChannelProfile /></ConditionalProtectedRoute>
+            } />
+            <Route path="/youtube-playlist/:id" element={
+              <ConditionalProtectedRoute><YouTubePlaylistProfile /></ConditionalProtectedRoute>
+            } />
+            <Route path="/podcast-series/:id" element={
+              <ConditionalProtectedRoute><PodcastSeriesProfile /></ConditionalProtectedRoute>
+            } />
+            <Route path="/podcast-episode/:id" element={
+              <ConditionalProtectedRoute><PodcastEpisodeProfile /></ConditionalProtectedRoute>
+            } />
+            <Route path="/cleanup" element={
+              <ConditionalProtectedRoute><CleanupManagementPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/import-website" element={
+              <ConditionalProtectedRoute><WebsiteImportPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/websites" element={
+              <ConditionalProtectedRoute><WebsitesPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/typesense-admin" element={
+              <ConditionalProtectedRoute><TypesenseAdminPage /></ConditionalProtectedRoute>
+            } />
           {/* Catch-all route for 404 */}
           <Route path="*" element={
             <div style={{ padding: '2rem', textAlign: 'center' }}>

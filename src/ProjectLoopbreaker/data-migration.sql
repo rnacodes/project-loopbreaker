@@ -1,3 +1,4 @@
+-- TODO: Delete if no longer using
 -- Data Migration Script to Convert JSONB Topics/Genres to Separate Tables
 -- Run this BEFORE applying the new EF migration
 
