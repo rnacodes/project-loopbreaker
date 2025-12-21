@@ -6,6 +6,7 @@ using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Application.Services;
 using ProjectLoopbreaker.Shared.Interfaces;
+using ProjectLoopbreaker.Web.API.Middleware;
 using Amazon.S3;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -578,6 +579,10 @@ catch (Exception ex)
 }
 
 // Configure the HTTP request pipeline.
+
+// Add global exception handler first to catch all unhandled exceptions
+app.UseGlobalExceptionHandler();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

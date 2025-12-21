@@ -1,0 +1,6 @@
+# Netlify/Render SPA redirect configuration
+# This ensures all routes are handled by index.html for client-side routing
+
+# Redirect all requests to index.html (for React Router)
+/*    /index.html   200
+

@@ -286,7 +286,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             try
             {
                 var result = await _tmdbService.ImportMovieAsync(movieId, language);
-                return Ok(result);
+                return Created(string.Empty, result);
             }
             catch (InvalidOperationException ex)
             {
@@ -314,7 +314,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             try
             {
                 var result = await _tmdbService.ImportTvShowAsync(tvShowId, language);
-                return Ok(result);
+                return Created(string.Empty, result);
             }
             catch (InvalidOperationException ex)
             {
