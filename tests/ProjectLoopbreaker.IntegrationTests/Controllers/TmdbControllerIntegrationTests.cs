@@ -141,7 +141,7 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
             var response = await client.PostAsync($"/api/tmdb/import/movie/{movieId}", null);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            response.StatusCode.Should().Be(HttpStatusCode.Created);
             var movie = await response.Content.ReadFromJsonAsync<Movie>();
             movie.Should().NotBeNull();
             movie!.Title.Should().Be("Inception");
@@ -179,7 +179,7 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
             var response = await client.PostAsync($"/api/tmdb/import/tv/{tvShowId}", null);
 
             // Assert
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            response.StatusCode.Should().Be(HttpStatusCode.Created);
             var tvShow = await response.Content.ReadFromJsonAsync<TvShow>();
             tvShow.Should().NotBeNull();
             tvShow!.Title.Should().Be("Game of Thrones");

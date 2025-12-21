@@ -33,13 +33,18 @@ import {
   Error as ErrorIcon,
   Info as InfoIcon,
 } from '@mui/icons-material';
-import { typesenseReindex, typesenseHealth, typesenseSearch, typesenseResetMediaItems, typesenseResetMixlists } from '../services/apiService';
+import { typesenseReindex, reindexMixlists, typesenseHealth, typesenseSearch, typesenseResetMediaItems, typesenseResetMixlists } from '../services/apiService';
 
 const TypesenseAdminPage = () => {
-  // State for reindexing
+  // State for reindexing media items
   const [reindexing, setReindexing] = useState(false);
   const [reindexResult, setReindexResult] = useState(null);
   const [reindexError, setReindexError] = useState(null);
+
+  // State for reindexing mixlists
+  const [reindexingMixlists, setReindexingMixlists] = useState(false);
+  const [reindexMixlistsResult, setReindexMixlistsResult] = useState(null);
+  const [reindexMixlistsError, setReindexMixlistsError] = useState(null);
 
   // State for health check
   const [healthStatus, setHealthStatus] = useState(null);
@@ -63,7 +68,7 @@ const TypesenseAdminPage = () => {
     checkHealth();
   }, []);
 
-  // Handler for bulk reindex
+  // Handler for bulk reindex media items
   const handleReindex = async () => {
     setReindexing(true);
     setReindexResult(null);
@@ -73,9 +78,25 @@ const TypesenseAdminPage = () => {
       const result = await typesenseReindex();
       setReindexResult(result);
     } catch (error) {
-      setReindexError(error.response?.data?.message || error.message || 'Failed to reindex');
+      setReindexError(error.response?.data?.message || error.message || 'Failed to reindex media items');
     } finally {
       setReindexing(false);
+    }
+  };
+
+  // Handler for bulk reindex mixlists
+  const handleReindexMixlists = async () => {
+    setReindexingMixlists(true);
+    setReindexMixlistsResult(null);
+    setReindexMixlistsError(null);
+
+    try {
+      const result = await reindexMixlists();
+      setReindexMixlistsResult(result);
+    } catch (error) {
+      setReindexMixlistsError(error.response?.data?.message || error.message || 'Failed to reindex mixlists');
+    } finally {
+      setReindexingMixlists(false);
     }
   };
 
@@ -227,24 +248,61 @@ const TypesenseAdminPage = () => {
         </Typography>
         
         <Alert severity="info" icon={<InfoIcon />} sx={{ mb: 2 }}>
-          This will reindex all media items in your database. This operation may take several minutes depending on the size of your media library.
+          Reindex syncs data from your database to Typesense. Use this after adding or modifying content, or if search results seem out of sync.
         </Alert>
 
-        <Button
-          variant="contained"
-          color="primary"
-          size="large"
-          startIcon={reindexing ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
-          onClick={handleReindex}
-          disabled={reindexing}
-          sx={{ mb: 2 }}
-        >
-          {reindexing ? 'Reindexing...' : 'Start Bulk Reindex'}
-        </Button>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Reindex Media Items
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  Syncs all media items (books, articles, videos, etc.) from your database to the search index.
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={reindexing ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
+                  onClick={handleReindex}
+                  disabled={reindexing}
+                  fullWidth
+                >
+                  {reindexing ? 'Reindexing...' : 'Reindex Media Items'}
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
 
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Reindex Mixlists
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  Syncs all mixlists and their associated topics/genres to the search index.
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={reindexingMixlists ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
+                  onClick={handleReindexMixlists}
+                  disabled={reindexingMixlists}
+                  fullWidth
+                >
+                  {reindexingMixlists ? 'Reindexing...' : 'Reindex Mixlists'}
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* Media Items Reindex Results */}
         {reindexError && (
           <Alert severity="error" sx={{ mt: 2 }}>
-            <strong>Reindex Failed:</strong> {reindexError}
+            <strong>Media Items Reindex Failed:</strong> {reindexError}
           </Alert>
         )}
 
@@ -252,81 +310,54 @@ const TypesenseAdminPage = () => {
           <Card variant="outlined" sx={{ mt: 2, bgcolor: 'success.light' }}>
             <CardContent>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'success.dark' }}>
-                ✓ Reindex Complete
+                ✓ Media Items Reindex Complete
               </Typography>
               
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                      {reindexResult.indexed_count || reindexResult.indexedCount || 0}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Items Indexed
-                    </Typography>
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                      {reindexResult.successful_count || reindexResult.successfulCount || 0}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Successful
-                    </Typography>
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                      {reindexResult.failed_count || reindexResult.failedCount || 0}
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Failed
-                    </Typography>
-                  </Box>
-                </Grid>
-
-                <Grid item xs={12} sm={6} md={3}>
-                  <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'info.main' }}>
-                      {reindexResult.duration_seconds || reindexResult.durationSeconds || 'N/A'}s
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Duration
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
+              <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                  {reindexResult.indexed_count || reindexResult.indexedCount || 0}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Media Items Indexed
+                </Typography>
+              </Box>
 
               {reindexResult.message && (
                 <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
                   {reindexResult.message}
                 </Typography>
               )}
+            </CardContent>
+          </Card>
+        )}
 
-              {reindexResult.errors && reindexResult.errors.length > 0 && (
-                <Accordion sx={{ mt: 2 }}>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography color="error">
-                      View Errors ({reindexResult.errors.length})
-                    </Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <List dense>
-                      {reindexResult.errors.map((error, index) => (
-                        <ListItem key={index}>
-                          <ListItemText
-                            primary={error}
-                            sx={{ color: 'error.main' }}
-                          />
-                        </ListItem>
-                      ))}
-                    </List>
-                  </AccordionDetails>
-                </Accordion>
+        {/* Mixlists Reindex Results */}
+        {reindexMixlistsError && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            <strong>Mixlists Reindex Failed:</strong> {reindexMixlistsError}
+          </Alert>
+        )}
+
+        {reindexMixlistsResult && (
+          <Card variant="outlined" sx={{ mt: 2, bgcolor: 'success.light' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+                ✓ Mixlists Reindex Complete
+              </Typography>
+              
+              <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                  {reindexMixlistsResult.indexed_count || reindexMixlistsResult.indexedCount || 0}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Mixlists Indexed
+                </Typography>
+              </Box>
+
+              {reindexMixlistsResult.message && (
+                <Typography variant="body2" sx={{ mt: 2, fontStyle: 'italic' }}>
+                  {reindexMixlistsResult.message}
+                </Typography>
               )}
             </CardContent>
           </Card>

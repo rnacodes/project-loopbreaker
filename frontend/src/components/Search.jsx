@@ -1,3 +1,4 @@
+// TODO: Change the following to white: Clear All, checkmarks under media type, and browse all topics/genres, as well as pagination at bottom of page
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
