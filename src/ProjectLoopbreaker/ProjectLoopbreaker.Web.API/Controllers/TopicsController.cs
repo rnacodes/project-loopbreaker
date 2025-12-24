@@ -24,20 +24,44 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TopicResponseDto>>> GetAllTopics()
         {
-            var topics = await _context.Topics
-                .AsNoTracking()
-                .Include(t => t.MediaItems)
-                .OrderBy(t => t.Name)
-                .ToListAsync();
-                
-            var response = topics.Select(t => new TopicResponseDto
+            try
             {
-                Id = t.Id,
-                Name = t.Name,
-                MediaItemIds = t.MediaItems.Select(m => m.Id).ToArray()
-            }).ToList();
-            
-            return Ok(response);
+                var topics = await _context.Topics
+                    .AsNoTracking()
+                    .OrderBy(t => t.Name)
+                    .ToListAsync();
+                
+                // Load media items separately to avoid discriminator issues
+                var response = new List<TopicResponseDto>();
+                foreach (var topic in topics)
+                {
+                    // Get media item IDs directly without loading full entities
+                    var mediaItemIds = await _context.Database
+                        .SqlQueryRaw<Guid>(@"
+                            SELECT mi.""Id"" 
+                            FROM ""MediaItems"" mi
+                            INNER JOIN ""MediaItemTopic"" mit ON mi.""Id"" = mit.""MediaItemsId""
+                            WHERE mit.""TopicsId"" = {0}
+                            AND mi.""Discriminator"" IS NOT NULL 
+                            AND mi.""Discriminator"" != ''", topic.Id)
+                        .ToListAsync();
+                    
+                    response.Add(new TopicResponseDto
+                    {
+                        Id = topic.Id,
+                        Name = topic.Name,
+                        MediaItemIds = mediaItemIds.ToArray()
+                    });
+                }
+                
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetAllTopics: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, new { error = "Failed to retrieve topics", details = ex.Message });
+            }
         }
 
         // GET: api/topics/search?query={query}
@@ -49,46 +73,87 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return await GetAllTopics();
             }
 
-            var normalizedQuery = query.ToLowerInvariant();
-            var topics = await _context.Topics
-                .AsNoTracking()
-                .Include(t => t.MediaItems)
-                .Where(t => EF.Functions.ILike(t.Name, $"%{normalizedQuery}%"))
-                .OrderBy(t => t.Name)
-                .ToListAsync();
-                
-            var response = topics.Select(t => new TopicResponseDto
+            try
             {
-                Id = t.Id,
-                Name = t.Name,
-                MediaItemIds = t.MediaItems.Select(m => m.Id).ToArray()
-            }).ToList();
-            
-            return Ok(response);
+                var normalizedQuery = query.ToLowerInvariant();
+                var topics = await _context.Topics
+                    .AsNoTracking()
+                    .Where(t => EF.Functions.ILike(t.Name, $"%{normalizedQuery}%"))
+                    .OrderBy(t => t.Name)
+                    .ToListAsync();
+                
+                // Load media items separately to avoid discriminator issues
+                var response = new List<TopicResponseDto>();
+                foreach (var topic in topics)
+                {
+                    // Get media item IDs directly without loading full entities
+                    var mediaItemIds = await _context.Database
+                        .SqlQueryRaw<Guid>(@"
+                            SELECT mi.""Id"" 
+                            FROM ""MediaItems"" mi
+                            INNER JOIN ""MediaItemTopic"" mit ON mi.""Id"" = mit.""MediaItemsId""
+                            WHERE mit.""TopicsId"" = {0}
+                            AND mi.""Discriminator"" IS NOT NULL 
+                            AND mi.""Discriminator"" != ''", topic.Id)
+                        .ToListAsync();
+                    
+                    response.Add(new TopicResponseDto
+                    {
+                        Id = topic.Id,
+                        Name = topic.Name,
+                        MediaItemIds = mediaItemIds.ToArray()
+                    });
+                }
+                
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SearchTopics: {ex.Message}");
+                return StatusCode(500, new { error = "Failed to search topics", details = ex.Message });
+            }
         }
 
         // GET: api/topics/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<TopicResponseDto>> GetTopic(Guid id)
         {
-            var topic = await _context.Topics
-                .AsNoTracking()
-                .Include(t => t.MediaItems)
-                .FirstOrDefaultAsync(t => t.Id == id);
-
-            if (topic == null)
+            try
             {
-                return NotFound($"Topic with ID {id} not found.");
+                var topic = await _context.Topics
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.Id == id);
+
+                if (topic == null)
+                {
+                    return NotFound($"Topic with ID {id} not found.");
+                }
+
+                // Get media item IDs directly without loading full entities
+                var mediaItemIds = await _context.Database
+                    .SqlQueryRaw<Guid>(@"
+                        SELECT mi.""Id"" 
+                        FROM ""MediaItems"" mi
+                        INNER JOIN ""MediaItemTopic"" mit ON mi.""Id"" = mit.""MediaItemsId""
+                        WHERE mit.""TopicsId"" = {0}
+                        AND mi.""Discriminator"" IS NOT NULL 
+                        AND mi.""Discriminator"" != ''", id)
+                    .ToListAsync();
+
+                var response = new TopicResponseDto
+                {
+                    Id = topic.Id,
+                    Name = topic.Name,
+                    MediaItemIds = mediaItemIds.ToArray()
+                };
+
+                return Ok(response);
             }
-
-            var response = new TopicResponseDto
+            catch (Exception ex)
             {
-                Id = topic.Id,
-                Name = topic.Name,
-                MediaItemIds = topic.MediaItems.Select(m => m.Id).ToArray()
-            };
-
-            return Ok(response);
+                Console.WriteLine($"Error in GetTopic: {ex.Message}");
+                return StatusCode(500, new { error = "Failed to retrieve topic", details = ex.Message });
+            }
         }
 
         // POST: api/topics
@@ -104,16 +169,27 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
             // Check if topic already exists
             var existingTopic = await _context.Topics
-                .Include(t => t.MediaItems)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
 
             if (existingTopic != null)
             {
+                // Get media item IDs directly
+                var mediaItemIds = await _context.Database
+                    .SqlQueryRaw<Guid>(@"
+                        SELECT mi.""Id"" 
+                        FROM ""MediaItems"" mi
+                        INNER JOIN ""MediaItemTopic"" mit ON mi.""Id"" = mit.""MediaItemsId""
+                        WHERE mit.""TopicsId"" = {0}
+                        AND mi.""Discriminator"" IS NOT NULL 
+                        AND mi.""Discriminator"" != ''", existingTopic.Id)
+                    .ToListAsync();
+                
                 var existingResponse = new TopicResponseDto
                 {
                     Id = existingTopic.Id,
                     Name = existingTopic.Name,
-                    MediaItemIds = existingTopic.MediaItems.Select(m => m.Id).ToArray()
+                    MediaItemIds = mediaItemIds.ToArray()
                 };
                 return Ok(existingResponse);
             }

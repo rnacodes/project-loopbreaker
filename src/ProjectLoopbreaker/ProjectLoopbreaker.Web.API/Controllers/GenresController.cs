@@ -24,20 +24,44 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GenreResponseDto>>> GetAllGenres()
         {
-            var genres = await _context.Genres
-                .AsNoTracking()
-                .Include(g => g.MediaItems)
-                .OrderBy(g => g.Name)
-                .ToListAsync();
-                
-            var response = genres.Select(g => new GenreResponseDto
+            try
             {
-                Id = g.Id,
-                Name = g.Name,
-                MediaItemIds = g.MediaItems.Select(m => m.Id).ToArray()
-            }).ToList();
-            
-            return Ok(response);
+                var genres = await _context.Genres
+                    .AsNoTracking()
+                    .OrderBy(g => g.Name)
+                    .ToListAsync();
+                
+                // Load media items separately to avoid discriminator issues
+                var response = new List<GenreResponseDto>();
+                foreach (var genre in genres)
+                {
+                    // Get media item IDs directly without loading full entities
+                    var mediaItemIds = await _context.Database
+                        .SqlQueryRaw<Guid>(@"
+                            SELECT mi.""Id"" 
+                            FROM ""MediaItems"" mi
+                            INNER JOIN ""GenreMediaItem"" gmi ON mi.""Id"" = gmi.""MediaItemsId""
+                            WHERE gmi.""GenresId"" = {0}
+                            AND mi.""Discriminator"" IS NOT NULL 
+                            AND mi.""Discriminator"" != ''", genre.Id)
+                        .ToListAsync();
+                    
+                    response.Add(new GenreResponseDto
+                    {
+                        Id = genre.Id,
+                        Name = genre.Name,
+                        MediaItemIds = mediaItemIds.ToArray()
+                    });
+                }
+                
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetAllGenres: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, new { error = "Failed to retrieve genres", details = ex.Message });
+            }
         }
 
         // GET: api/genres/search?query={query}
@@ -49,45 +73,87 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return await GetAllGenres();
             }
 
-            var normalizedQuery = query.ToLowerInvariant();
-            var genres = await _context.Genres
-                .Include(g => g.MediaItems)
-                .Where(g => g.Name.Contains(normalizedQuery))
-                .OrderBy(g => g.Name)
-                .ToListAsync();
-                
-            var response = genres.Select(g => new GenreResponseDto
+            try
             {
-                Id = g.Id,
-                Name = g.Name,
-                MediaItemIds = g.MediaItems.Select(m => m.Id).ToArray()
-            }).ToList();
-            
-            return Ok(response);
+                var normalizedQuery = query.ToLowerInvariant();
+                var genres = await _context.Genres
+                    .AsNoTracking()
+                    .Where(g => g.Name.Contains(normalizedQuery))
+                    .OrderBy(g => g.Name)
+                    .ToListAsync();
+                
+                // Load media items separately to avoid discriminator issues
+                var response = new List<GenreResponseDto>();
+                foreach (var genre in genres)
+                {
+                    // Get media item IDs directly without loading full entities
+                    var mediaItemIds = await _context.Database
+                        .SqlQueryRaw<Guid>(@"
+                            SELECT mi.""Id"" 
+                            FROM ""MediaItems"" mi
+                            INNER JOIN ""GenreMediaItem"" gmi ON mi.""Id"" = gmi.""MediaItemsId""
+                            WHERE gmi.""GenresId"" = {0}
+                            AND mi.""Discriminator"" IS NOT NULL 
+                            AND mi.""Discriminator"" != ''", genre.Id)
+                        .ToListAsync();
+                    
+                    response.Add(new GenreResponseDto
+                    {
+                        Id = genre.Id,
+                        Name = genre.Name,
+                        MediaItemIds = mediaItemIds.ToArray()
+                    });
+                }
+                
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in SearchGenres: {ex.Message}");
+                return StatusCode(500, new { error = "Failed to search genres", details = ex.Message });
+            }
         }
 
         // GET: api/genres/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<GenreResponseDto>> GetGenre(Guid id)
         {
-            var genre = await _context.Genres
-                .AsNoTracking()
-                .Include(g => g.MediaItems)
-                .FirstOrDefaultAsync(g => g.Id == id);
-
-            if (genre == null)
+            try
             {
-                return NotFound($"Genre with ID {id} not found.");
+                var genre = await _context.Genres
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(g => g.Id == id);
+
+                if (genre == null)
+                {
+                    return NotFound($"Genre with ID {id} not found.");
+                }
+
+                // Get media item IDs directly without loading full entities
+                var mediaItemIds = await _context.Database
+                    .SqlQueryRaw<Guid>(@"
+                        SELECT mi.""Id"" 
+                        FROM ""MediaItems"" mi
+                        INNER JOIN ""GenreMediaItem"" gmi ON mi.""Id"" = gmi.""MediaItemsId""
+                        WHERE gmi.""GenresId"" = {0}
+                        AND mi.""Discriminator"" IS NOT NULL 
+                        AND mi.""Discriminator"" != ''", id)
+                    .ToListAsync();
+
+                var response = new GenreResponseDto
+                {
+                    Id = genre.Id,
+                    Name = genre.Name,
+                    MediaItemIds = mediaItemIds.ToArray()
+                };
+
+                return Ok(response);
             }
-
-            var response = new GenreResponseDto
+            catch (Exception ex)
             {
-                Id = genre.Id,
-                Name = genre.Name,
-                MediaItemIds = genre.MediaItems.Select(m => m.Id).ToArray()
-            };
-
-            return Ok(response);
+                Console.WriteLine($"Error in GetGenre: {ex.Message}");
+                return StatusCode(500, new { error = "Failed to retrieve genre", details = ex.Message });
+            }
         }
 
         // POST: api/genres
