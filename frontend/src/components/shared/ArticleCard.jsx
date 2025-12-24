@@ -8,6 +8,7 @@ import {
     Star, Archive, CheckCircle, Article as ArticleIcon,
     OpenInNew, AccessTime, MenuBook
 } from '@mui/icons-material';
+import { formatStatus } from '../../utils/formatters';
 
 function ArticleCard({ article }) {
     const navigate = useNavigate();
@@ -146,7 +147,7 @@ function ArticleCard({ article }) {
                 <Box sx={{ mt: 'auto' }}>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
                         <Chip
-                            label={getStatusLabel(article.status)}
+                            label={formatStatus(article.status)}
                             color={getStatusColor(article.status)}
                             size="small"
                         />

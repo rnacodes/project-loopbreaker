@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { Save, Cancel, ArrowBack, Delete } from '@mui/icons-material';
 import { getMediaById, updateMedia, uploadThumbnail, deleteMedia } from '../services/apiService';
+import { formatStatus, formatMediaType } from '../utils/formatters';
 
 function EditMediaForm() {
     const { id } = useParams();
@@ -298,7 +299,7 @@ function EditMediaForm() {
                                 >
                                     {statusOptions.map((option) => (
                                         <MenuItem key={option} value={option}>
-                                            {option}
+                                            {formatStatus(option)}
                                         </MenuItem>
                                     ))}
                                 </TextField>

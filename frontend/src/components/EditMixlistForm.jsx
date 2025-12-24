@@ -1,4 +1,6 @@
 //TODO: Add feature parity with the Edit Media form
+//TODO: Update outline button to be white instead of purple
+//TODO: Change floating label to be white instead of purple
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {

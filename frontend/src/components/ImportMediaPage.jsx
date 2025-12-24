@@ -1,5 +1,6 @@
 //TODO: Update to reflect latest changes to the API and frontend.
-
+//TODO: Make Close button in the "View Details" box white outline
+//TODO: Put media types in alphabetical order
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -206,6 +207,7 @@ function ImportMediaPage() {
         
         setBookIsLoading(true);
         setBookError('');
+        setBookSuccess('');
         setBookSearchResults([]);
         
         try {
@@ -234,15 +236,18 @@ function ImportMediaPage() {
         
         setBookIsLoading(true);
         setBookError('');
+        setBookSuccess('');
         
         try {
+            console.log('Importing book by ISBN:', bookIsbn);
+            
             const result = await importBookFromOpenLibrary({ isbn: bookIsbn });
+            
+            console.log('Book import response:', result);
             
             setBookSuccess(`Book imported successfully!`);
             setBookIsLoading(false);
             setBookIsbn('');
-            
-            console.log('Book imported successfully:', result);
             
             const mediaId = result.id || result.Id;
             if (mediaId) {
@@ -253,7 +258,21 @@ function ImportMediaPage() {
             
         } catch (err) {
             console.error('Import by ISBN error:', err);
-            setBookError('Failed to import book. Please check the ISBN and try again.');
+            console.error('Error response:', err.response?.data);
+            
+            // Get more detailed error message
+            let errorMessage = 'Failed to import book. ';
+            if (err.response?.data?.error) {
+                errorMessage += err.response.data.error;
+            } else if (err.response?.data?.details) {
+                errorMessage += err.response.data.details;
+            } else if (err.message) {
+                errorMessage += err.message;
+            } else {
+                errorMessage += 'Please check the ISBN and try again.';
+            }
+            
+            setBookError(errorMessage);
             setBookIsLoading(false);
         }
     };
@@ -266,6 +285,7 @@ function ImportMediaPage() {
         
         setBookIsLoading(true);
         setBookError('');
+        setBookSuccess('');
         
         try {
             const importData = {
@@ -273,14 +293,16 @@ function ImportMediaPage() {
                 ...(bookAuthor.trim() && { author: bookAuthor })
             };
             
+            console.log('Importing book by title/author:', importData);
+            
             const result = await importBookFromOpenLibrary(importData);
+            
+            console.log('Book import response:', result);
             
             setBookSuccess(`Book imported successfully!`);
             setBookIsLoading(false);
             setBookTitle('');
             setBookAuthor('');
-            
-            console.log('Book imported successfully:', result);
             
             const mediaId = result.id || result.Id;
             if (mediaId) {
@@ -291,7 +313,21 @@ function ImportMediaPage() {
             
         } catch (err) {
             console.error('Import by title/author error:', err);
-            setBookError('Failed to import book. Please check the title and try again.');
+            console.error('Error response:', err.response?.data);
+            
+            // Get more detailed error message
+            let errorMessage = 'Failed to import book. ';
+            if (err.response?.data?.error) {
+                errorMessage += err.response.data.error;
+            } else if (err.response?.data?.details) {
+                errorMessage += err.response.data.details;
+            } else if (err.message) {
+                errorMessage += err.message;
+            } else {
+                errorMessage += 'Please check the title and try again.';
+            }
+            
+            setBookError(errorMessage);
             setBookIsLoading(false);
         }
     };
@@ -299,20 +335,29 @@ function ImportMediaPage() {
     const handleImportBook = async (book) => {
         setBookIsLoading(true);
         setBookError('');
+        setBookSuccess('');
         
         try {
+            console.log('Attempting to import book:', {
+                key: book.key,
+                title: book.title,
+                authors: book.authors
+            });
+            
             const importData = {
                 openLibraryKey: book.key,
                 title: book.title,
                 author: book.authors?.[0]
             };
             
+            console.log('Import data being sent:', importData);
+            
             const result = await importBookFromOpenLibrary(importData);
+            
+            console.log('Book import response:', result);
             
             setBookSuccess(`"${book.title}" imported successfully!`);
             setBookIsLoading(false);
-            
-            console.log('Book imported successfully:', result);
             
             const mediaId = result.id || result.Id;
             if (mediaId) {
@@ -323,7 +368,24 @@ function ImportMediaPage() {
             
         } catch (err) {
             console.error('Import book error:', err);
-            setBookError('Failed to import book. Please try again.');
+            console.error('Error response:', err.response?.data);
+            console.error('Error status:', err.response?.status);
+            
+            // Get more detailed error message
+            let errorMessage = 'Failed to import book. ';
+            if (err.response?.data?.error) {
+                errorMessage += err.response.data.error;
+            } else if (err.response?.data?.details) {
+                errorMessage += err.response.data.details;
+            } else if (err.response?.data) {
+                errorMessage += JSON.stringify(err.response.data);
+            } else if (err.message) {
+                errorMessage += err.message;
+            } else {
+                errorMessage += 'Please try again.';
+            }
+            
+            setBookError(errorMessage);
             setBookIsLoading(false);
         }
     };

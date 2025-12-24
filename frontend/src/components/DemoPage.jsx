@@ -20,6 +20,7 @@ import {
   MenuItem
 } from '@mui/material';
 import WhiteOutlineButton from './shared/WhiteOutlineButton';
+import { formatMediaType, formatStatus } from '../utils/formatters';
 import {
   Book,
   Movie,
@@ -320,7 +321,7 @@ const DemoPage = () => {
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                     <Chip
-                      label={media.mediaType}
+                      label={formatMediaType(media.mediaType)}
                       size="small"
                       sx={{
                         backgroundColor: COLORS.mediaTypes[media.mediaType] || COLORS.mediaTypes.document,
@@ -329,7 +330,7 @@ const DemoPage = () => {
                       }}
                     />
                     <Chip
-                      label={media.status}
+                      label={formatStatus(media.status)}
                       size="small"
                       sx={{
                         backgroundColor: getStatusColor(media.status),

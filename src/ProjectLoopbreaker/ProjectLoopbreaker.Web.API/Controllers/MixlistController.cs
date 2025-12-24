@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Domain.Entities;
@@ -17,6 +18,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [AllowAnonymous] // Allow anonymous access to all mixlist endpoints
     public class MixlistController : ControllerBase
     {
         private readonly MediaLibraryDbContext _context;
