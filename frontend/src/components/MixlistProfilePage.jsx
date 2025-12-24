@@ -1,10 +1,12 @@
+//TODO: Correct - individual media description not showing up
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     Box, Typography, Button, Card, CardContent, CardMedia,
     Chip, IconButton, Collapse, Divider, Paper, Link,
     Dialog, DialogTitle, DialogContent, DialogActions,
-    TextField, List, ListItem, ListItemText, Snackbar, Alert, InputAdornment
+    TextField, List, ListItem, ListItemText, Snackbar, Alert, InputAdornment,
+    Checkbox, ListItemIcon
 } from '@mui/material';
 import { 
     ArrowBack, ExpandMore, ExpandLess, OpenInNew, Edit,
@@ -14,6 +16,7 @@ import {
     getMixlistById, removeMediaFromMixlist, searchMedia, addMediaToMixlist
 } from '../services/apiService';
 import SimpleMediaCarousel from './shared/SimpleMediaCarousel';
+import { formatMediaType, formatStatus } from '../utils/formatters';
 
 function MixlistProfilePage() {
     const { id } = useParams();
@@ -26,6 +29,7 @@ function MixlistProfilePage() {
     const [searchResults, setSearchResults] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [searching, setSearching] = useState(false);
+    const [selectedMediaIds, setSelectedMediaIds] = useState([]);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
     useEffect(() => {
@@ -58,10 +62,20 @@ function MixlistProfilePage() {
         setSearching(true);
         try {
             const response = await searchMedia(query);
-            setSearchResults(response.data || []);
+            console.log('Search response:', response);
+            // Handle both response.data and direct response array
+            const results = Array.isArray(response.data) ? response.data : 
+                           Array.isArray(response) ? response : [];
+            console.log('Processed results:', results);
+            setSearchResults(results);
         } catch (error) {
             console.error('Error searching media:', error);
-            setSnackbar({ open: true, message: 'Failed to search media', severity: 'error' });
+            console.error('Error details:', error.response?.data);
+            setSnackbar({ 
+                open: true, 
+                message: `Failed to search media: ${error.response?.data?.error || error.message}`, 
+                severity: 'error' 
+            });
         } finally {
             setSearching(false);
         }
@@ -69,10 +83,12 @@ function MixlistProfilePage() {
 
     const handleAddMedia = async (mediaItemId) => {
         try {
+            console.log('Adding media to mixlist:', { mixlistId: id, mediaItemId });
             await addMediaToMixlist(id, mediaItemId);
             
             // Reload the mixlist to update the display
             const response = await getMixlistById(id);
+            console.log('Reloaded mixlist:', response);
             setMixlist(response.data);
             
             // Close dialog and clear search
@@ -83,7 +99,92 @@ function MixlistProfilePage() {
             setSnackbar({ open: true, message: 'Media added successfully!', severity: 'success' });
         } catch (error) {
             console.error('Error adding media to mixlist:', error);
-            setSnackbar({ open: true, message: 'Failed to add media', severity: 'error' });
+            console.error('Error details:', error.response?.data);
+            setSnackbar({ 
+                open: true, 
+                message: `Failed to add media: ${error.response?.data?.error || error.message}`, 
+                severity: 'error' 
+            });
+        }
+    };
+
+    const handleToggleMediaSelection = (mediaItemId) => {
+        setSelectedMediaIds(prev => {
+            if (prev.includes(mediaItemId)) {
+                return prev.filter(id => id !== mediaItemId);
+            } else {
+                return [...prev, mediaItemId];
+            }
+        });
+    };
+
+    const handleAddSelectedMedia = async () => {
+        if (selectedMediaIds.length === 0) {
+            setSnackbar({ open: true, message: 'Please select at least one media item', severity: 'warning' });
+            return;
+        }
+
+        try {
+            console.log('=== Starting bulk add media ===');
+            console.log('Mixlist ID:', id);
+            console.log('Selected media IDs:', selectedMediaIds);
+            console.log('Number of items to add:', selectedMediaIds.length);
+            
+            // Add each selected media item sequentially to better track errors
+            let successCount = 0;
+            let failedItems = [];
+            
+            for (const mediaItemId of selectedMediaIds) {
+                try {
+                    console.log(`Adding media item ${mediaItemId} to mixlist ${id}...`);
+                    const result = await addMediaToMixlist(id, mediaItemId);
+                    console.log(`Successfully added media item ${mediaItemId}:`, result);
+                    successCount++;
+                } catch (itemError) {
+                    console.error(`Failed to add media item ${mediaItemId}:`, itemError);
+                    console.error('Error response:', itemError.response?.data);
+                    console.error('Error status:', itemError.response?.status);
+                    failedItems.push({ id: mediaItemId, error: itemError.response?.data?.error || itemError.message });
+                }
+            }
+            
+            console.log(`=== Bulk add complete: ${successCount} succeeded, ${failedItems.length} failed ===`);
+            
+            // Reload the mixlist to update the display
+            console.log('Reloading mixlist...');
+            const response = await getMixlistById(id);
+            console.log('Reloaded mixlist:', response);
+            setMixlist(response.data);
+            
+            // Close dialog and clear search/selection
+            setAddMediaDialogOpen(false);
+            setSearchQuery('');
+            setSearchResults([]);
+            setSelectedMediaIds([]);
+            
+            if (failedItems.length === 0) {
+                const itemText = successCount === 1 ? 'item' : 'items';
+                setSnackbar({ 
+                    open: true, 
+                    message: `Successfully added ${successCount} media ${itemText}!`, 
+                    severity: 'success' 
+                });
+            } else {
+                setSnackbar({ 
+                    open: true, 
+                    message: `Added ${successCount} items, but ${failedItems.length} failed. Check console for details.`, 
+                    severity: 'warning' 
+                });
+            }
+        } catch (error) {
+            console.error('=== Unexpected error in bulk add ===');
+            console.error('Error:', error);
+            console.error('Error details:', error.response?.data);
+            setSnackbar({ 
+                open: true, 
+                message: `Failed to add media items: ${error.response?.data?.error || error.message}`, 
+                severity: 'error' 
+            });
         }
     };
 
@@ -282,7 +383,7 @@ function MixlistProfilePage() {
                                                             {mediaItem.title || mediaItem.Title}
                                                         </Link>
                                                         <Chip
-                                                            label={mediaItem.mediaType || mediaItem.MediaType}
+                                                            label={formatMediaType(mediaItem.mediaType || mediaItem.MediaType)}
                                                             size="small"
                                                             sx={{
                                                                 backgroundColor: getMediaTypeColor(mediaItem.mediaType || mediaItem.MediaType),
@@ -372,7 +473,7 @@ function MixlistProfilePage() {
                                             
                                             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
                                                 <Chip
-                                                    label={selectedMedia.mediaType || selectedMedia.MediaType}
+                                                    label={formatMediaType(selectedMedia.mediaType || selectedMedia.MediaType)}
                                                     size="small"
                                                     sx={{
                                                         backgroundColor: getMediaTypeColor(selectedMedia.mediaType || selectedMedia.MediaType),
@@ -383,7 +484,7 @@ function MixlistProfilePage() {
                                                 />
                                                 {(selectedMedia.status || selectedMedia.Status) && (
                                                     <Chip
-                                                        label={selectedMedia.status || selectedMedia.Status}
+                                                        label={formatStatus(selectedMedia.status || selectedMedia.Status)}
                                                         size="small"
                                                         sx={{
                                                             backgroundColor: getStatusColor(selectedMedia.status || selectedMedia.Status),
@@ -510,39 +611,58 @@ function MixlistProfilePage() {
                                 .filter(media => !currentMediaItems.some(current => 
                                     (current.id || current.Id) === (media.id || media.Id)
                                 ))
-                                .map((media) => (
-                                    <ListItem 
-                                        key={media.id || media.Id} 
-                                        button
-                                        onClick={() => handleAddMedia(media.id || media.Id)}
-                                        sx={{ border: 1, borderColor: 'divider', mb: 1, borderRadius: 1 }}
-                                    >
-                                        <ListItemText 
-                                            primary={media.title || media.Title}
-                                            secondary={
-                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                                                    <Chip
-                                                        label={media.mediaType || media.MediaType}
-                                                        size="small"
-                                                        sx={{
-                                                            backgroundColor: getMediaTypeColor(media.mediaType || media.MediaType),
-                                                            color: 'white',
-                                                            fontSize: '0.7rem'
-                                                        }}
-                                                    />
-                                                    {media.description && (
-                                                        <Typography variant="body2" color="text.secondary">
-                                                            {media.description.length > 100 
-                                                                ? `${media.description.substring(0, 100)}...` 
-                                                                : media.description
-                                                            }
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-                                            }
-                                        />
-                                    </ListItem>
-                                ))}
+                                .map((media) => {
+                                    const mediaId = media.id || media.Id;
+                                    const isSelected = selectedMediaIds.includes(mediaId);
+                                    
+                                    return (
+                                        <ListItem 
+                                            key={mediaId} 
+                                            button
+                                            onClick={() => handleToggleMediaSelection(mediaId)}
+                                            sx={{ 
+                                                border: 1, 
+                                                borderColor: isSelected ? 'primary.main' : 'divider', 
+                                                mb: 1, 
+                                                borderRadius: 1,
+                                                backgroundColor: isSelected ? 'action.selected' : 'transparent'
+                                            }}
+                                        >
+                                            <ListItemIcon>
+                                                <Checkbox
+                                                    edge="start"
+                                                    checked={isSelected}
+                                                    tabIndex={-1}
+                                                    disableRipple
+                                                />
+                                            </ListItemIcon>
+                                            <ListItemText 
+                                                primary={media.title || media.Title}
+                                                secondary={
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
+                                                        <Chip
+                                                            label={formatMediaType(media.mediaType || media.MediaType)}
+                                                            size="small"
+                                                            sx={{
+                                                                backgroundColor: getMediaTypeColor(media.mediaType || media.MediaType),
+                                                                color: 'white',
+                                                                fontSize: '0.7rem'
+                                                            }}
+                                                        />
+                                                        {media.description && (
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                {media.description.length > 100 
+                                                                    ? `${media.description.substring(0, 100)}...` 
+                                                                    : media.description
+                                                                }
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                }
+                                            />
+                                        </ListItem>
+                                    );
+                                })}
                         </List>
                     )}
 
@@ -556,12 +676,24 @@ function MixlistProfilePage() {
                 </DialogContent>
                 <DialogActions>
                     <Button 
-                        variant="contained" 
-                        color="primary"
-                        onClick={() => setAddMediaDialogOpen(false)}
+                        variant="outlined"
+                        onClick={() => {
+                            setAddMediaDialogOpen(false);
+                            setSelectedMediaIds([]);
+                        }}
                     >
                         Cancel
                     </Button>
+                    {selectedMediaIds.length > 0 && (
+                        <Button 
+                            variant="contained" 
+                            color="primary"
+                            startIcon={<Add />}
+                            onClick={handleAddSelectedMedia}
+                        >
+                            Add Selected ({selectedMediaIds.length})
+                        </Button>
+                    )}
                 </DialogActions>
             </Dialog>
 

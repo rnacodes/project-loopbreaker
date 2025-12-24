@@ -323,34 +323,10 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return BadRequest("At least one of OpenLibraryKey, ISBN, or Title must be provided");
                 }
 
-                // Upload cover image to DigitalOcean Spaces if available and not already uploaded
-                if (!string.IsNullOrEmpty(createdBook.Thumbnail) && createdBook.Thumbnail.Contains("covers.openlibrary.org"))
-                {
-                    string? uploadedCoverUrl = await UploadImageFromUrlAsync(createdBook.Thumbnail);
-                    if (!string.IsNullOrEmpty(uploadedCoverUrl))
-                    {
-                        // Update the book with the uploaded thumbnail
-                        await _bookService.UpdateBookAsync(createdBook.Id, new CreateBookDto
-                        {
-                            Title = createdBook.Title,
-                            Author = createdBook.Author,
-                            Description = createdBook.Description,
-                            Link = createdBook.Link,
-                            Thumbnail = uploadedCoverUrl,
-                            ISBN = createdBook.ISBN,
-                            Format = createdBook.Format,
-                            PartOfSeries = createdBook.PartOfSeries,
-                            Status = createdBook.Status,
-                            Rating = createdBook.Rating,
-                            OwnershipStatus = createdBook.OwnershipStatus,
-                            Notes = createdBook.Notes,
-                            RelatedNotes = createdBook.RelatedNotes,
-                            Genres = createdBook.Genres?.Select(g => g.Name).ToArray() ?? Array.Empty<string>(),
-                            GoodreadsRating = createdBook.GoodreadsRating
-                        });
-                        createdBook.Thumbnail = uploadedCoverUrl;
-                    }
-                }
+                // Note: Thumbnail uploading to DigitalOcean Spaces is disabled for book imports
+                // to avoid Entity Framework tracking conflicts. The OpenLibrary CDN URLs are
+                // reliable and work well. If custom thumbnail upload is needed, it can be done
+                // separately after import via the update book endpoint.
 
                 _logger.LogInformation("Successfully imported book from Open Library: {Title} by {Author}", createdBook.Title, createdBook.Author);
 

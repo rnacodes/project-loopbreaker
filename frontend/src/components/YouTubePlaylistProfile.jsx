@@ -19,6 +19,7 @@ import {
     addMediaToMixlist,
     removeMediaFromMixlist
 } from '../services/apiService';
+import { formatStatus } from '../utils/formatters';
 
 function YouTubePlaylistProfile() {
     const [playlist, setPlaylist] = useState(null);
@@ -198,7 +199,7 @@ function YouTubePlaylistProfile() {
                                 )}
                                 {playlist.status && (
                                     <Chip 
-                                        label={playlist.status} 
+                                        label={formatStatus(playlist.status)} 
                                         size="small"
                                         color="primary"
                                     />

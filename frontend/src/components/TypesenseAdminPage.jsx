@@ -34,6 +34,7 @@ import {
   Info as InfoIcon,
 } from '@mui/icons-material';
 import { typesenseReindex, reindexMixlists, typesenseHealth, typesenseSearch, typesenseResetMediaItems, typesenseResetMixlists } from '../services/apiService';
+import { formatStatus } from '../utils/formatters';
 
 const TypesenseAdminPage = () => {
   // State for reindexing media items
@@ -555,7 +556,7 @@ const TypesenseAdminPage = () => {
                             <Chip label={`Creator: ${doc.creator}`} size="small" variant="outlined" />
                           )}
                           {doc.status && (
-                            <Chip label={doc.status} size="small" variant="outlined" />
+                            <Chip label={formatStatus(doc.status)} size="small" variant="outlined" />
                           )}
                           {doc.rating && (
                             <Chip label={doc.rating} size="small" variant="outlined" color="primary" />

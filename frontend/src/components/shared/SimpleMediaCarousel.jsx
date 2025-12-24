@@ -3,6 +3,7 @@ import {
   Box, Typography, Card, CardContent, CardMedia, IconButton, Chip
 } from '@mui/material';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
+import { formatMediaType } from '../../utils/formatters';
 
 const SimpleMediaCarousel = ({
   mediaItems = [],
@@ -164,7 +165,7 @@ const SimpleMediaCarousel = ({
                       {media.title || media.Title}
                     </Typography>
                     <Chip
-                      label={media.mediaType || media.MediaType}
+                      label={formatMediaType(media.mediaType || media.MediaType)}
                       size="small"
                       sx={{
                         backgroundColor: getMediaTypeColor(media.mediaType || media.MediaType),

@@ -7,6 +7,7 @@ import {
 } from '@mui/material';
 import { ViewModule, ViewList, OpenInNew } from '@mui/icons-material';
 import { getAllMedia, getMediaByTopic, getMediaByGenre } from '../services/apiService';
+import { formatMediaType } from '../utils/formatters';
 
 function SearchResults() {
     const [mediaItems, setMediaItems] = useState([]);
@@ -101,7 +102,7 @@ function SearchResults() {
                                 {item.title || item.Title}
                             </Typography>
                             <Chip 
-                                label={item.mediaType || item.MediaType} 
+                                label={formatMediaType(item.mediaType || item.MediaType)} 
                                 size="small" 
                                 sx={{ mb: 1 }}
                             />
@@ -184,7 +185,7 @@ function SearchResults() {
                                         {item.title || item.Title}
                                     </Typography>
                                     <Chip 
-                                        label={item.mediaType || item.MediaType} 
+                                        label={formatMediaType(item.mediaType || item.MediaType)} 
                                         size="small" 
                                         variant="outlined"
                                     />

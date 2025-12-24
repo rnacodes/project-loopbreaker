@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { ViewModule, ViewList, OpenInNew, FileDownload, Delete, CheckBox, CheckBoxOutlineBlank } from '@mui/icons-material';
 import { getAllMedia, getMediaByType, bulkDeleteMedia } from '../services/apiService';
+import { formatMediaType, formatStatus } from '../utils/formatters';
 
 // Helper function to get aspect ratio based on media type
 const getAspectRatio = (mediaType) => {
@@ -219,7 +220,7 @@ function AllMedia() {
                 </Typography>
               </Box>
               <Chip 
-                label={item.mediaType || item.MediaType} 
+                label={formatMediaType(item.mediaType || item.MediaType)} 
                 size="small" 
                 sx={{ 
                   mb: 1,
@@ -243,7 +244,7 @@ function AllMedia() {
                 color="text.secondary"
                 sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
               >
-                {item.status || item.Status || 'No status set'}
+                {formatStatus(item.status || item.Status) || 'No status set'}
               </Typography>
               
               {/* Topics and Genres */}
@@ -360,7 +361,7 @@ function AllMedia() {
                     {item.title || item.Title}
                   </Typography>
                   <Chip 
-                    label={item.mediaType || item.MediaType} 
+                    label={formatMediaType(item.mediaType || item.MediaType)} 
                     size="small"
                     sx={{ 
                       fontSize: { xs: '0.7rem', sm: '0.75rem' },
@@ -390,7 +391,7 @@ function AllMedia() {
                       fontSize: { xs: '0.8rem', sm: '0.875rem' }
                     }}
                   >
-                    {item.status || item.Status || 'No status set'}
+                    {formatStatus(item.status || item.Status) || 'No status set'}
                   </Typography>
                   
                   {/* Topics and Genres */}

@@ -4,18 +4,18 @@ import {
     Box, Typography, Button, Card, CardContent, CardMedia,
     Chip, Divider, IconButton, Grid, CircularProgress, Alert,
     Accordion, AccordionSummary, AccordionDetails, List, ListItem, ListItemText,
-    Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, ListItemButton
+    Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, ListItemButton,
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 } from '@mui/material';
 import {
     ArrowBack, Edit, OpenInNew, Sync, Delete,
-    PlaylistAdd, Podcasts, ExpandMore, Notifications, NotificationsOff
+    PlaylistAdd, Podcasts, ExpandMore, Visibility
 } from '@mui/icons-material';
+import axios from 'axios';
 import {
     getPodcastSeriesById,
     getEpisodesBySeriesId,
     syncPodcastSeriesEpisodes,
-    subscribeToPodcastSeries,
-    unsubscribeFromPodcastSeries,
     deletePodcastSeries,
     getAllMixlists,
     addMediaToMixlist
@@ -30,6 +30,10 @@ function PodcastSeriesProfile() {
     const [addToMixlistDialog, setAddToMixlistDialog] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
     const [deleteConfirmDialog, setDeleteConfirmDialog] = useState(false);
+    const [viewAllEpisodesDialog, setViewAllEpisodesDialog] = useState(false);
+    const [allEpisodesFromApi, setAllEpisodesFromApi] = useState([]);
+    const [displayedEpisodes, setDisplayedEpisodes] = useState([]);
+    const [loadingAllEpisodes, setLoadingAllEpisodes] = useState(false);
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -102,23 +106,6 @@ function PodcastSeriesProfile() {
         }
     };
 
-    const handleSubscribe = async () => {
-        try {
-            if (series.isSubscribed) {
-                await unsubscribeFromPodcastSeries(id);
-                setSeries({ ...series, isSubscribed: false });
-                setSnackbar({ open: true, message: 'Unsubscribed from podcast', severity: 'info' });
-            } else {
-                await subscribeToPodcastSeries(id);
-                setSeries({ ...series, isSubscribed: true });
-                setSnackbar({ open: true, message: 'Subscribed to podcast!', severity: 'success' });
-            }
-        } catch (error) {
-            console.error('Error toggling subscription:', error);
-            setSnackbar({ open: true, message: 'Failed to update subscription', severity: 'error' });
-        }
-    };
-
     const handleDelete = async () => {
         try {
             await deletePodcastSeries(id);
@@ -133,13 +120,49 @@ function PodcastSeriesProfile() {
 
     const handleAddToMixlist = async (mixlistId) => {
         try {
-            await addMediaToMixlist(mixlistId, id);
+            const response = await addMediaToMixlist(mixlistId, id);
+            console.log('Add to mixlist response:', response);
             setSnackbar({ open: true, message: 'Added to mixlist!', severity: 'success' });
             setAddToMixlistDialog(false);
         } catch (error) {
             console.error('Error adding to mixlist:', error);
-            setSnackbar({ open: true, message: 'Failed to add to mixlist', severity: 'error' });
+            console.error('Error details:', error.response?.data || error.message);
+            const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to add to mixlist';
+            setSnackbar({ open: true, message: errorMessage, severity: 'error' });
         }
+    };
+
+    const handleViewAllEpisodes = async () => {
+        if (!series?.externalId) {
+            setSnackbar({ open: true, message: 'No external ID available for this series', severity: 'error' });
+            return;
+        }
+
+        try {
+            setLoadingAllEpisodes(true);
+            setViewAllEpisodesDialog(true);
+            
+            // Fetch all episodes from ListenNotes API without saving
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5033/api';
+            const response = await axios.get(`${API_URL}/ListenNotes/podcasts/${series.externalId}`);
+            
+            // Store all episodes and display first 10
+            const allEpisodes = response.data.episodes || [];
+            setAllEpisodesFromApi(allEpisodes);
+            setDisplayedEpisodes(allEpisodes.slice(0, 10));
+            setLoadingAllEpisodes(false);
+        } catch (error) {
+            console.error('Error fetching all episodes:', error);
+            setSnackbar({ open: true, message: 'Failed to fetch episodes from ListenNotes', severity: 'error' });
+            setLoadingAllEpisodes(false);
+            setViewAllEpisodesDialog(false);
+        }
+    };
+
+    const handleLoadMoreEpisodes = () => {
+        const currentLength = displayedEpisodes.length;
+        const nextBatch = allEpisodesFromApi.slice(0, currentLength + 10);
+        setDisplayedEpisodes(nextBatch);
     };
 
     const formatDuration = (seconds) => {
@@ -166,11 +189,9 @@ function PodcastSeriesProfile() {
     const getStatusColor = (status) => {
         const statusColors = {
             0: '#9e9e9e', // Uncharted - gray
-            1: '#2196f3', // InProgress - blue
+            1: '#2196f3', // ActivelyExploring - blue
             2: '#4caf50', // Completed - green
-            3: '#ff9800', // OnHold - orange
-            4: '#f44336', // Dropped - red
-            5: '#9c27b0'  // PlanTo - purple
+            3: '#f44336'  // Abandoned - red
         };
         return statusColors[status] || '#9e9e9e';
     };
@@ -178,13 +199,29 @@ function PodcastSeriesProfile() {
     const getStatusText = (status) => {
         const statusText = {
             0: 'Uncharted',
-            1: 'In Progress',
+            1: 'Actively Exploring',
             2: 'Completed',
-            3: 'On Hold',
-            4: 'Dropped',
-            5: 'Plan To'
+            3: 'Abandoned'
         };
         return statusText[status] || 'Unknown';
+    };
+
+    const formatEpisodeDuration = (seconds) => {
+        if (!seconds) return 'N/A';
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        
+        if (hours > 0) {
+            return `${hours}h ${minutes}m`;
+        }
+        return `${minutes}m`;
+    };
+
+    const getListenNotesUrl = () => {
+        if (series?.externalId) {
+            return `https://www.listennotes.com/podcasts/${series.externalId}/`;
+        }
+        return series?.link || null;
     };
 
     if (loading) {
@@ -217,28 +254,48 @@ function PodcastSeriesProfile() {
             <Card sx={{ mb: 3 }}>
                 <Grid container>
                     <Grid item xs={12} md={4}>
-                        {series.thumbnail && (
+                        {series.thumbnail ? (
                             <Box sx={{
                                 position: 'relative',
                                 width: '100%',
-                                paddingTop: '150%', // 2:3 aspect ratio for podcasts
+                                paddingTop: '100%', // 1:1 aspect ratio for podcast covers
                                 overflow: 'hidden',
                                 backgroundColor: 'rgba(255, 255, 255, 0.05)'
                             }}>
-                                <CardMedia
+                                <Box
                                     component="img"
-                                    image={series.thumbnail}
+                                    src={series.thumbnail}
                                     alt={series.title}
                                     crossOrigin="anonymous"
+                                    onError={(e) => {
+                                        console.error('Image failed to load:', series.thumbnail);
+                                        e.target.style.display = 'none';
+                                    }}
+                                    onLoad={() => {
+                                        console.log('Image loaded successfully:', series.thumbnail);
+                                    }}
                                     sx={{
                                         position: 'absolute',
                                         top: 0,
                                         left: 0,
                                         width: '100%',
                                         height: '100%',
-                                        objectFit: 'contain'
+                                        objectFit: 'cover'
                                     }}
                                 />
+                            </Box>
+                        ) : (
+                            <Box sx={{
+                                position: 'relative',
+                                width: '100%',
+                                paddingTop: '100%',
+                                overflow: 'hidden',
+                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <Podcasts sx={{ fontSize: 80, opacity: 0.3, position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }} />
                             </Box>
                         )}
                     </Grid>
@@ -247,23 +304,15 @@ function PodcastSeriesProfile() {
                             <Typography variant="h5" gutterBottom>{series.title}</Typography>
                             
                             <Box display="flex" gap={1} flexWrap="wrap" mb={2}>
-                                <Chip label="Podcast Series" icon={<Podcasts />} color="primary" />
-                                {series.isSubscribed && (
-                                    <Chip 
-                                        label="Subscribed" 
-                                        icon={<Notifications />} 
-                                        color="success" 
-                                        size="small"
-                                    />
-                                )}
+                                <Chip label="Podcast Series" icon={<Podcasts />} color="primary" size="medium" />
                                 {series.totalEpisodes > 0 && (
-                                    <Chip label={`${series.totalEpisodes} episodes`} size="small" />
+                                    <Chip label={`${series.totalEpisodes} episodes`} size="medium" variant="outlined" />
                                 )}
                                 {series.status !== undefined && (
                                     <Chip 
                                         label={getStatusText(series.status)} 
                                         sx={{ backgroundColor: getStatusColor(series.status), color: 'white' }}
-                                        size="small"
+                                        size="medium"
                                     />
                                 )}
                             </Box>
@@ -280,35 +329,62 @@ function PodcastSeriesProfile() {
 
                             {/* Action Buttons */}
                             <Box display="flex" gap={1} flexWrap="wrap" mb={2}>
-                                {series.link && (
+                                {getListenNotesUrl() && (
                                     <Button
                                         variant="outlined"
                                         size="small"
                                         startIcon={<OpenInNew />}
-                                        href={series.link}
+                                        href={getListenNotesUrl()}
                                         target="_blank"
                                         rel="noopener noreferrer"
+                                        sx={{
+                                            color: 'white',
+                                            borderColor: 'rgba(255, 255, 255, 0.5)',
+                                            '&:hover': {
+                                                borderColor: 'white',
+                                                backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                            }
+                                        }}
                                     >
                                         View on ListenNotes
                                     </Button>
                                 )}
-                                <Button
-                                    variant={series.isSubscribed ? "outlined" : "contained"}
-                                    size="small"
-                                    startIcon={series.isSubscribed ? <NotificationsOff /> : <Notifications />}
-                                    onClick={handleSubscribe}
-                                    color={series.isSubscribed ? "inherit" : "primary"}
-                                >
-                                    {series.isSubscribed ? 'Unsubscribe' : 'Subscribe'}
-                                </Button>
                                 <Button
                                     variant="outlined"
                                     size="small"
                                     startIcon={<Sync />}
                                     onClick={handleSync}
                                     disabled={syncing}
+                                    sx={{
+                                        color: 'white',
+                                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                                        '&:hover': {
+                                            borderColor: 'white',
+                                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                        },
+                                        '&:disabled': {
+                                            color: 'rgba(255, 255, 255, 0.3)',
+                                            borderColor: 'rgba(255, 255, 255, 0.2)'
+                                        }
+                                    }}
                                 >
                                     {syncing ? <CircularProgress size={20} /> : 'Sync Episodes'}
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<Visibility />}
+                                    onClick={handleViewAllEpisodes}
+                                    sx={{
+                                        color: 'white',
+                                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                                        '&:hover': {
+                                            borderColor: 'white',
+                                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                        }
+                                    }}
+                                >
+                                    View All Episodes
                                 </Button>
                                 <Button
                                     variant="contained"
@@ -320,10 +396,18 @@ function PodcastSeriesProfile() {
                                 </Button>
                                 <Button
                                     variant="outlined"
-                                    color="error"
                                     size="small"
                                     startIcon={<Delete />}
                                     onClick={() => setDeleteConfirmDialog(true)}
+                                    sx={{
+                                        color: 'white',
+                                        borderColor: 'rgba(255, 255, 255, 0.5)',
+                                        '&:hover': {
+                                            borderColor: '#f44336',
+                                            backgroundColor: 'rgba(211, 47, 47, 0.1)',
+                                            color: '#f44336'
+                                        }
+                                    }}
                                 >
                                     Delete
                                 </Button>
@@ -370,7 +454,7 @@ function PodcastSeriesProfile() {
                                                     {getEpisodeIdentifier(episode) && (
                                                         <Chip 
                                                             label={getEpisodeIdentifier(episode)} 
-                                                            size="small" 
+                                                            size="medium" 
                                                             color="primary"
                                                             variant="outlined"
                                                         />
@@ -382,7 +466,7 @@ function PodcastSeriesProfile() {
                                                 {episode.status !== undefined && (
                                                     <Chip 
                                                         label={getStatusText(episode.status)} 
-                                                        size="small"
+                                                        size="medium"
                                                         sx={{ 
                                                             backgroundColor: getStatusColor(episode.status), 
                                                             color: 'white',
@@ -451,6 +535,97 @@ function PodcastSeriesProfile() {
                     <Button onClick={handleDelete} color="error" variant="contained">
                         Delete
                     </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* View All Episodes Dialog */}
+            <Dialog 
+                open={viewAllEpisodesDialog} 
+                onClose={() => setViewAllEpisodesDialog(false)}
+                maxWidth="lg"
+                fullWidth
+            >
+                <DialogTitle>
+                    All Episodes from ListenNotes
+                    <Typography variant="caption" display="block" color="text.secondary">
+                        Viewing episodes from ListenNotes API (not saved to database)
+                    </Typography>
+                </DialogTitle>
+                <DialogContent>
+                    {loadingAllEpisodes && allEpisodesFromApi.length === 0 ? (
+                        <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+                            <CircularProgress />
+                        </Box>
+                    ) : allEpisodesFromApi.length === 0 ? (
+                        <Typography>No episodes available from ListenNotes API.</Typography>
+                    ) : (
+                        <>
+                            <TableContainer component={Paper} sx={{ maxHeight: 600 }}>
+                                <Table stickyHeader>
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Episode</TableCell>
+                                            <TableCell>Title</TableCell>
+                                            <TableCell>Released</TableCell>
+                                            <TableCell>Duration</TableCell>
+                                            <TableCell>Actions</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {displayedEpisodes.map((episode, index) => (
+                                            <TableRow key={episode.id || index} hover>
+                                                <TableCell>{index + 1}</TableCell>
+                                                <TableCell>
+                                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                        {episode.title}
+                                                    </Typography>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {episode.pub_date_ms 
+                                                        ? new Date(episode.pub_date_ms).toLocaleDateString()
+                                                        : 'N/A'
+                                                    }
+                                                </TableCell>
+                                                <TableCell>
+                                                    {formatEpisodeDuration(episode.audio_length_sec)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {episode.link && (
+                                                        <IconButton
+                                                            size="small"
+                                                            href={episode.link}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            title="Open in ListenNotes"
+                                                        >
+                                                            <OpenInNew fontSize="small" />
+                                                        </IconButton>
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                            {displayedEpisodes.length < allEpisodesFromApi.length && (
+                                <Box display="flex" justifyContent="center" mt={2}>
+                                    <Button
+                                        variant="contained"
+                                        onClick={handleLoadMoreEpisodes}
+                                        disabled={loadingAllEpisodes}
+                                    >
+                                        Load More Episodes ({displayedEpisodes.length} of {allEpisodesFromApi.length})
+                                    </Button>
+                                </Box>
+                            )}
+                        </>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Typography variant="caption" sx={{ flex: 1, ml: 2 }}>
+                        Showing: {displayedEpisodes.length} of {allEpisodesFromApi.length} episodes
+                    </Typography>
+                    <Button onClick={() => setViewAllEpisodesDialog(false)}>Close</Button>
                 </DialogActions>
             </Dialog>
 

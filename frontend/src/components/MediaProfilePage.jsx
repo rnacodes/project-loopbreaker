@@ -1,5 +1,9 @@
 //TODO: Update to reflect latest changes to the API and frontend.
-
+//TODO: Ensure profile image shows correctly
+//TODO: "Flatten" text formatting so that it is all 14 pt font
+//TODO: Add "Read More" expander if description is over 500 words.
+//TODO: Update the link to series homepage under TV Details
+//TODO: Ensure that the Notes and Highlights sections are showing the correct one for all media items - some have the old "Related Notes" box but others have the Readwise mention
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
@@ -23,6 +27,7 @@ import {
     getMovieById, getTvShowById, getVideoById, getArticleById,
     getHighlightsByArticle, getHighlightsByBook
 } from '../services/apiService';
+import { formatMediaType, formatStatus } from '../utils/formatters';
 
 function MediaProfilePage() {
   const [mediaItem, setMediaItem] = useState(null);
@@ -252,10 +257,7 @@ function MediaProfilePage() {
     return colors[status] || colors['Uncharted'];
   };
 
-  const getStatusDisplayText = (status) => {
-    if (status === 'ActivelyExploring') return 'Actively Exploring';
-    return status;
-  };
+  // Removed getStatusDisplayText - now using formatStatus from utils/formatters
 
   const getRatingIcon = (rating) => {
     switch (rating?.toLowerCase()) {
@@ -527,7 +529,7 @@ function MediaProfilePage() {
                     justifyContent: { xs: 'center', md: 'flex-start' }
                   }}>
                     <Chip
-                      label={mediaItem.mediaType || 'Unknown'}
+                      label={formatMediaType(mediaItem.mediaType) || 'Unknown'}
                       sx={{
                         backgroundColor: getMediaTypeColor(mediaItem.mediaType),
                         color: 'white',
@@ -549,7 +551,7 @@ function MediaProfilePage() {
                     )}
                     {mediaItem.status && (
                       <Chip
-                        label={getStatusDisplayText(mediaItem.status)}
+                        label={formatStatus(mediaItem.status)}
                         sx={{
                           backgroundColor: getStatusColor(mediaItem.status),
                           color: 'white',
@@ -569,10 +571,10 @@ function MediaProfilePage() {
                     <strong>Title:</strong> {mediaItem.title || 'N/A'}
                   </Typography>
                   <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Type:</strong> {mediaItem.mediaType || 'N/A'}
+                    <strong>Type:</strong> {formatMediaType(mediaItem.mediaType) || 'N/A'}
                   </Typography>
                   <Typography variant="body1" sx={{ mb: 2 }}>
-                    <strong>Status:</strong> {getStatusDisplayText(mediaItem.status) || 'N/A'}
+                    <strong>Status:</strong> {formatStatus(mediaItem.status) || 'N/A'}
                   </Typography>
                   
                   {/* Rating Display */}

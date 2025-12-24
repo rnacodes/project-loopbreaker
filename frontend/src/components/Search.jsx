@@ -15,6 +15,7 @@ import {
 } from '@mui/icons-material';
 import { typesenseAdvancedSearch, typesenseAdvancedSearchMixlists } from '../services/apiService';
 import { getAllTopics, getAllGenres } from '../services/apiService';
+import { formatMediaType, formatStatus } from '../utils/formatters';
 
 const mediaTypeOptions = [
     { value: 'all', label: 'All Media Types' },
@@ -124,7 +125,7 @@ const MediaCard = ({ item }) => {
 
             <Box sx={{ mb: 1.5, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
                 <Chip 
-                    label={item.mediaType} 
+                    label={formatMediaType(item.mediaType)} 
                     size="small" 
                     sx={{ 
                         backgroundColor: 'rgba(105, 90, 140, 0.2)',
@@ -133,7 +134,7 @@ const MediaCard = ({ item }) => {
                     }}
                 />
                 <Chip 
-                    label={item.status === 'ActivelyExploring' ? 'Actively Exploring' : item.status} 
+                    label={formatStatus(item.status)} 
                     size="small" 
                     color={
                         item.status === 'ActivelyExploring' ? 'success' :
@@ -283,7 +284,7 @@ const MediaListItem = ({ item }) => {
             <Grid item xs={12} md={3}>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
                     <Chip 
-                        label={item.mediaType} 
+                        label={formatMediaType(item.mediaType)} 
                         size="small" 
                         sx={{ 
                             backgroundColor: 'rgba(105, 90, 140, 0.2)',
@@ -292,7 +293,7 @@ const MediaListItem = ({ item }) => {
                         }}
                     />
                     <Chip 
-                        label={item.status === 'ActivelyExploring' ? 'Actively Exploring' : item.status} 
+                        label={formatStatus(item.status)} 
                         size="small" 
                         color={
                             item.status === 'ActivelyExploring' ? 'success' :

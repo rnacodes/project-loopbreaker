@@ -23,6 +23,7 @@ import {
   AutoAwesome
 } from '@mui/icons-material';
 import { getMediaTypeColor, getStatusColor, commonStyles } from './DesignSystem';
+import { formatMediaType, formatStatus } from '../../utils/formatters';
 
 // Media type icons mapping
 const mediaTypeIcons = {
@@ -144,7 +145,7 @@ const MediaCard = ({
         {/* Media Type and Status Chips */}
         <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
           <Chip
-            label={media.mediaType}
+            label={formatMediaType(media.mediaType)}
             size="medium"
             sx={{
               backgroundColor: getMediaTypeColor(media.mediaType),
@@ -155,7 +156,7 @@ const MediaCard = ({
           />
           {media.status && (
             <Chip
-              label={media.status}
+              label={formatStatus(media.status)}
               size="medium"
               sx={{
                 backgroundColor: getStatusColor(media.status),

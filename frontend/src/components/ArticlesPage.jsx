@@ -14,6 +14,7 @@ import {
 } from '@mui/icons-material';
 import { getAllArticles } from '../services/apiService';
 import ArticleCard from './shared/ArticleCard';
+import { formatStatus } from '../utils/formatters';
 
 function ArticlesPage() {
     const navigate = useNavigate();
@@ -408,7 +409,7 @@ function ArticlesPage() {
                                                             )}
                                                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
                                                                 <Chip
-                                                                    label={article.status === 'ActivelyExploring' ? 'Reading' : article.status === 'Uncharted' ? 'To Read' : article.status}
+                                                                    label={formatStatus(article.status)}
                                                                     size="small"
                                                                     color={article.status === 'Completed' ? 'success' : article.status === 'ActivelyExploring' ? 'primary' : 'default'}
                                                                 />
