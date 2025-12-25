@@ -417,6 +417,18 @@ export const importPodcastSeriesByName = (podcastName) => {
 };
 
 // Podcast Episode API calls
+
+// Import a single podcast episode from the ListenNotes API
+// Note: Backend endpoint not yet implemented
+export const importPodcastEpisodeFromApi = async (episodeId, seriesId) => {
+    try {
+        // TODO: Implement backend endpoint POST /podcast/episodes/from-api/{episodeId}?seriesId={seriesId}
+        throw new Error('Import individual podcast episodes feature is not yet implemented. Please use the series sync feature to import all episodes.');
+    } catch (error) {
+        console.error('Error importing podcast episode from API:', error);
+        throw error;
+    }
+};
 export const getEpisodesBySeriesId = (seriesId) => {
     return apiClient.get(`/podcast/series/${seriesId}/episodes`);
 };

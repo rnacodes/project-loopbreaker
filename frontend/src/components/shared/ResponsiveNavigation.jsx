@@ -51,8 +51,10 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const ResponsiveNavigation = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [browseMediaMenuAnchor, setBrowseMediaMenuAnchor] = useState(null);
   const [mediaMenuAnchor, setMediaMenuAnchor] = useState(null);
   const [adminMenuAnchor, setAdminMenuAnchor] = useState(null);
+  const [mobileBrowseMediaOpen, setMobileBrowseMediaOpen] = useState(false);
   const [mobileMediaOpen, setMobileMediaOpen] = useState(false);
   const [mobileAdminOpen, setMobileAdminOpen] = useState(false);
   const theme = useTheme();
@@ -87,6 +89,7 @@ const ResponsiveNavigation = () => {
   };
 
   const handleCloseMenus = () => {
+    setBrowseMediaMenuAnchor(null);
     setMediaMenuAnchor(null);
     setAdminMenuAnchor(null);
   };
@@ -94,16 +97,25 @@ const ResponsiveNavigation = () => {
   const navigationItems = [
     { text: 'Home', path: '/', icon: <Home /> },
     { text: 'Search', path: '/search', icon: <Search /> },
-    { text: 'Browse Topics & Genres', path: '/search-by-topic-genre', icon: <Category /> },
+    { text: 'Topics and Genres', path: '/search-by-topic-genre', icon: <Category /> },
     { text: 'Mixlists', path: '/mixlists', icon: <QueueMusic /> }
+  ];
+
+  const browseMediaMenuItems = [
+    { text: 'Articles', path: '/articles', icon: <Article /> },
+    { text: 'Books', path: '/search?mediaType=Book', icon: <Movie /> },
+    { text: 'Movies', path: '/search?mediaType=Movie', icon: <Movie /> },
+    { text: 'Music', path: '/search?mediaType=Music', icon: <Movie /> },
+    { text: 'Podcasts', path: '/search?mediaType=Podcast', icon: <Movie /> },
+    { text: 'TV Shows', path: '/search?mediaType=TVShow', icon: <Movie /> },
+    { text: 'Videos', path: '/search?mediaType=Video', icon: <Movie /> },
+    { text: 'Websites', path: '/websites', icon: <Language /> }
   ];
 
   const mediaMenuItems = [
     { text: 'Add Media', path: '/add-media', icon: <Add /> },
-    { text: 'Articles', path: '/articles', icon: <Article /> },
     { text: 'Import Media', path: '/import-media', icon: <Download /> },
-    { text: 'Upload Media', path: '/upload-media', icon: <Upload /> },
-    { text: 'Websites', path: '/websites', icon: <Language /> }
+    { text: 'Upload Media', path: '/upload-media', icon: <Upload /> }
   ];
 
   const adminMenuItems = [
@@ -170,6 +182,59 @@ const ResponsiveNavigation = () => {
             />
           </ListItem>
         ))}
+        
+        {/* Browse Media Submenu */}
+        <ListItem
+          button
+          onClick={() => setMobileBrowseMediaOpen(!mobileBrowseMediaOpen)}
+          sx={{
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            }
+          }}
+        >
+          <ListItemIcon sx={{ color: 'primary.main' }}>
+            <Movie />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Browse Media"
+            sx={{
+              '& .MuiListItemText-primary': {
+                fontWeight: 'medium'
+              }
+            }}
+          />
+          {mobileBrowseMediaOpen ? <ExpandLess /> : <ExpandMore />}
+        </ListItem>
+        <Collapse in={mobileBrowseMediaOpen} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding>
+            {browseMediaMenuItems.map((item) => (
+              <ListItem
+                button
+                key={item.text}
+                onClick={() => handleNavigation(item.path)}
+                sx={{
+                  pl: 4,
+                  '&:hover': {
+                    backgroundColor: 'action.hover',
+                  }
+                }}
+              >
+                <ListItemIcon sx={{ color: 'primary.main', minWidth: 40 }}>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText 
+                  primary={item.text}
+                  sx={{
+                    '& .MuiListItemText-primary': {
+                      fontSize: '0.9rem'
+                    }
+                  }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Collapse>
         
         {/* Media Submenu */}
         <ListItem
@@ -371,6 +436,37 @@ const ResponsiveNavigation = () => {
                   {item.text}
                 </Button>
               ))}
+              
+              {/* Browse Media Menu */}
+              <Button
+                color="inherit"
+                onClick={(e) => setBrowseMediaMenuAnchor(e.currentTarget)}
+                endIcon={<ExpandMore />}
+                sx={{ 
+                  textTransform: 'none',
+                  minWidth: 'auto',
+                  px: 2
+                }}
+              >
+                Browse Media
+              </Button>
+              <Menu
+                anchorEl={browseMediaMenuAnchor}
+                open={Boolean(browseMediaMenuAnchor)}
+                onClose={handleCloseMenus}
+              >
+                {browseMediaMenuItems.map((item) => (
+                  <MenuItem
+                    key={item.text}
+                    onClick={() => handleNavigation(item.path)}
+                  >
+                    <ListItemIcon>
+                      {item.icon}
+                    </ListItemIcon>
+                    <ListItemText>{item.text}</ListItemText>
+                  </MenuItem>
+                ))}
+              </Menu>
               
               {/* Media Menu */}
               <Button

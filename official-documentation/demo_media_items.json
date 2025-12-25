@@ -1,0 +1,22 @@
+{
+  "name": "demo_media_items",
+  "fields": [
+    { "name": "id", "type": "string" },
+    { "name": "title", "type": "string" },
+    { "name": "media_type", "type": "string", "facet": true },
+    { "name": "description", "type": "string", "optional": true },
+    { "name": "topics", "type": "string[]", "facet": true },
+    { "name": "genres", "type": "string[]", "facet": true },
+    { "name": "date_added", "type": "int64" },
+    { "name": "status", "type": "string", "facet": true },
+    { "name": "rating", "type": "string", "facet": true, "optional": true },
+    { "name": "thumbnail", "type": "string", "optional": true, "index": false },
+    { "name": "author", "type": "string", "facet": true, "optional": true },
+    { "name": "director", "type": "string", "facet": true, "optional": true },
+    { "name": "creator", "type": "string", "facet": true, "optional": true },
+    { "name": "publisher", "type": "string", "facet": true, "optional": true },
+    { "name": "release_year", "type": "int32", "facet": true, "optional": true },
+    { "name": "platform", "type": "string", "facet": true, "optional": true }
+  ],
+  "default_sorting_field": "date_added"
+}
