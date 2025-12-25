@@ -81,7 +81,11 @@ builder.Services.AddCors(options =>
 });
 
 // Configure JSON serialization to return enums as strings and handle circular references
-builder.Services.AddControllers()
+builder.Services.AddControllers(options =>
+    {
+        // Add DemoReadOnlyFilter globally - blocks write operations in Demo environment
+        options.Filters.Add<ProjectLoopbreaker.Web.API.Filters.DemoReadOnlyFilter>();
+    })
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
