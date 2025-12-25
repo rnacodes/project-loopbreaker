@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import WarningIcon from '@mui/icons-material/Warning';
+import AddIcon from '@mui/icons-material/Add';
 import {
     cleanupYouTubeData,
     cleanupPodcasts,
@@ -31,7 +32,8 @@ import {
     cleanupAllGenres,
     cleanupOrphanedTopics,
     cleanupOrphanedGenres,
-    cleanupAllMedia
+    cleanupAllMedia,
+    seedDemoData
 } from '../services/apiService';
 
 const CleanupManagementPage = () => {
@@ -181,6 +183,48 @@ const CleanupManagementPage = () => {
                     <strong>Warning:</strong> These operations permanently delete data from your database. Use with caution, especially in production environments.
                 </Alert>
             </Box>
+
+            {/* Seed Demo Data Section */}
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid item xs={12}>
+                    <Card 
+                        sx={{ 
+                            borderLeft: 4,
+                            borderColor: 'success.main',
+                            bgcolor: 'success.light',
+                            color: 'success.contrastText'
+                        }}
+                    >
+                        <CardContent>
+                            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                <AddIcon sx={{ fontSize: 40, mr: 2 }} />
+                                <Box>
+                                    <Typography variant="h5" component="h2" gutterBottom>
+                                        Seed Demo Data
+                                    </Typography>
+                                    <Typography variant="body1">
+                                        Populate your database with sample media items, mixlists, topics, and genres for testing and demonstration purposes.
+                                    </Typography>
+                                </Box>
+                            </Box>
+                            <Alert severity="info" sx={{ mb: 2, bgcolor: 'white' }}>
+                                <strong>Demo Data Includes:</strong> 2 Books, 2 Movies, 2 Videos, 2 Articles, 3 Mixlists, and Topics/Genres.
+                                Perfect for testing your demo site!
+                            </Alert>
+                            <Button
+                                variant="contained"
+                                color="success"
+                                size="large"
+                                startIcon={<AddIcon />}
+                                disabled={loading}
+                                onClick={() => executeCleanup(seedDemoData, 'Demo data seeded successfully!')}
+                            >
+                                SEED DEMO DATA
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </Grid>
+            </Grid>
 
             <Grid container spacing={3}>
                 {cleanupActions.map((item, index) => (

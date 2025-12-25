@@ -428,6 +428,16 @@ export const deletePodcastEpisode = (id) => {
     return apiClient.delete(`/podcast/episodes/${id}`);
 };
 
+export const importPodcastEpisodeFromApi = async (episodeId, seriesId) => {
+    try {
+        const response = await apiClient.post(`/ListenNotes/import/episode/${episodeId}?seriesId=${seriesId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error importing podcast episode:', error);
+        throw error;
+    }
+};
+
 // Media filtering API calls
 export const getMediaByTopic = (topicId) => {
     return apiClient.get(`/media/by-topic/${topicId}`);
@@ -1675,6 +1685,16 @@ export const cleanupAllMedia = async () => {
         return response.data;
     } catch (error) {
         console.error('Error cleaning up all media:', error);
+        throw error;
+    }
+};
+
+export const seedDemoData = async () => {
+    try {
+        const response = await apiClient.post('/dev/seed-demo-data');
+        return response.data;
+    } catch (error) {
+        console.error('Error seeding demo data:', error);
         throw error;
     }
 };

@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import {
     ArrowBack, Edit, OpenInNew, Sync, Delete,
-    PlaylistAdd, Podcasts, ExpandMore, Visibility
+    PlaylistAdd, Podcasts, ExpandMore, Visibility, Add, CheckCircle
 } from '@mui/icons-material';
 import axios from 'axios';
 import {
@@ -18,7 +18,8 @@ import {
     syncPodcastSeriesEpisodes,
     deletePodcastSeries,
     getAllMixlists,
-    addMediaToMixlist
+    addMediaToMixlist,
+    importPodcastEpisodeFromApi
 } from '../services/apiService';
 
 function PodcastSeriesProfile() {
@@ -34,6 +35,10 @@ function PodcastSeriesProfile() {
     const [allEpisodesFromApi, setAllEpisodesFromApi] = useState([]);
     const [displayedEpisodes, setDisplayedEpisodes] = useState([]);
     const [loadingAllEpisodes, setLoadingAllEpisodes] = useState(false);
+    const [importedEpisodes, setImportedEpisodes] = useState(new Map()); // Map of externalId -> episodeId
+    const [importingEpisode, setImportingEpisode] = useState(null);
+    const [importSuccessDialog, setImportSuccessDialog] = useState(false);
+    const [lastImportedEpisode, setLastImportedEpisode] = useState(null);
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -150,6 +155,10 @@ function PodcastSeriesProfile() {
             const allEpisodes = response.data.episodes || [];
             setAllEpisodesFromApi(allEpisodes);
             setDisplayedEpisodes(allEpisodes.slice(0, 10));
+            
+            // Check which episodes are already imported
+            await checkImportedEpisodes(allEpisodes);
+            
             setLoadingAllEpisodes(false);
         } catch (error) {
             console.error('Error fetching all episodes:', error);
@@ -159,10 +168,77 @@ function PodcastSeriesProfile() {
         }
     };
 
+    const checkImportedEpisodes = async (apiEpisodes) => {
+        try {
+            // Get all episodes for this series from the database
+            const dbEpisodesResponse = await getEpisodesBySeriesId(id);
+            const dbEpisodes = dbEpisodesResponse.data || [];
+            
+            // Create a map of external IDs to episode IDs
+            const importedMap = new Map();
+            dbEpisodes.forEach(ep => {
+                if (ep.externalId) {
+                    importedMap.set(ep.externalId, ep.id);
+                }
+            });
+            
+            setImportedEpisodes(importedMap);
+        } catch (error) {
+            console.error('Error checking imported episodes:', error);
+        }
+    };
+
+    const handleImportEpisode = async (episode) => {
+        if (!episode.id) {
+            setSnackbar({ open: true, message: 'Episode ID not available', severity: 'error' });
+            return;
+        }
+
+        try {
+            setImportingEpisode(episode.id);
+            
+            const importedEp = await importPodcastEpisodeFromApi(episode.id, id);
+            
+            // Update the imported episodes map
+            const newImportedMap = new Map(importedEpisodes);
+            newImportedMap.set(episode.id, importedEp.id);
+            setImportedEpisodes(newImportedMap);
+            
+            // Store the imported episode for the success dialog
+            setLastImportedEpisode({
+                title: episode.title,
+                id: importedEp.id
+            });
+            
+            setImportingEpisode(null);
+            setImportSuccessDialog(true);
+            
+            // Refresh the episodes list to update count
+            await fetchSeriesData();
+        } catch (error) {
+            console.error('Error importing episode:', error);
+            const errorMsg = error.response?.data?.message || error.message || 'Failed to import episode';
+            setSnackbar({ open: true, message: errorMsg, severity: 'error' });
+            setImportingEpisode(null);
+        }
+    };
+
+    const handleGoToEpisode = () => {
+        if (lastImportedEpisode?.id) {
+            navigate(`/media/${lastImportedEpisode.id}`);
+        }
+        setImportSuccessDialog(false);
+    };
+
+    const handleContinueImporting = () => {
+        setImportSuccessDialog(false);
+    };
+
     const handleLoadMoreEpisodes = () => {
         const currentLength = displayedEpisodes.length;
         const nextBatch = allEpisodesFromApi.slice(0, currentLength + 10);
         setDisplayedEpisodes(nextBatch);
+        // No need to re-check imported episodes as the map already contains all
     };
 
     const formatDuration = (seconds) => {
@@ -538,6 +614,27 @@ function PodcastSeriesProfile() {
                 </DialogActions>
             </Dialog>
 
+            {/* Import Success Dialog */}
+            <Dialog open={importSuccessDialog} onClose={handleContinueImporting}>
+                <DialogTitle>Episode Imported Successfully!</DialogTitle>
+                <DialogContent>
+                    <Typography gutterBottom>
+                        "{lastImportedEpisode?.title}" has been imported to your library.
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Would you like to go to the episode's profile page or continue importing episodes?
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleContinueImporting} variant="outlined">
+                        Continue Importing
+                    </Button>
+                    <Button onClick={handleGoToEpisode} variant="contained" color="primary">
+                        Go to Episode
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {/* View All Episodes Dialog */}
             <Dialog 
                 open={viewAllEpisodesDialog} 
@@ -564,46 +661,94 @@ function PodcastSeriesProfile() {
                                 <Table stickyHeader>
                                     <TableHead>
                                         <TableRow>
-                                            <TableCell>Episode</TableCell>
+                                            <TableCell width="60px">Import</TableCell>
+                                            <TableCell width="80px">Episode</TableCell>
                                             <TableCell>Title</TableCell>
-                                            <TableCell>Released</TableCell>
-                                            <TableCell>Duration</TableCell>
-                                            <TableCell>Actions</TableCell>
+                                            <TableCell width="120px">Released</TableCell>
+                                            <TableCell width="100px">Duration</TableCell>
+                                            <TableCell width="80px">Actions</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {displayedEpisodes.map((episode, index) => (
-                                            <TableRow key={episode.id || index} hover>
-                                                <TableCell>{index + 1}</TableCell>
-                                                <TableCell>
-                                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                                        {episode.title}
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell>
-                                                    {episode.pub_date_ms 
-                                                        ? new Date(episode.pub_date_ms).toLocaleDateString()
-                                                        : 'N/A'
-                                                    }
-                                                </TableCell>
-                                                <TableCell>
-                                                    {formatEpisodeDuration(episode.audio_length_sec)}
-                                                </TableCell>
-                                                <TableCell>
-                                                    {episode.link && (
-                                                        <IconButton
-                                                            size="small"
-                                                            href={episode.link}
-                                                            target="_blank"
-                                                            rel="noopener noreferrer"
-                                                            title="Open in ListenNotes"
-                                                        >
-                                                            <OpenInNew fontSize="small" />
-                                                        </IconButton>
-                                                    )}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
+                                        {displayedEpisodes.map((episode, index) => {
+                                            const isImported = importedEpisodes.has(episode.id);
+                                            const episodeDbId = importedEpisodes.get(episode.id);
+                                            const isImporting = importingEpisode === episode.id;
+                                            
+                                            return (
+                                                <TableRow key={episode.id || index} hover>
+                                                    <TableCell>
+                                                        {isImported ? (
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => navigate(`/media/${episodeDbId}`)}
+                                                                color="success"
+                                                                title="Go to episode profile"
+                                                            >
+                                                                <CheckCircle />
+                                                            </IconButton>
+                                                        ) : (
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => handleImportEpisode(episode)}
+                                                                disabled={isImporting}
+                                                                color="primary"
+                                                                title="Import episode"
+                                                            >
+                                                                {isImporting ? (
+                                                                    <CircularProgress size={20} />
+                                                                ) : (
+                                                                    <Add />
+                                                                )}
+                                                            </IconButton>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>{index + 1}</TableCell>
+                                                    <TableCell>
+                                                        {isImported ? (
+                                                            <Button
+                                                                variant="text"
+                                                                onClick={() => navigate(`/media/${episodeDbId}`)}
+                                                                sx={{ 
+                                                                    textTransform: 'none',
+                                                                    justifyContent: 'flex-start',
+                                                                    textAlign: 'left',
+                                                                    fontWeight: 500
+                                                                }}
+                                                            >
+                                                                {episode.title}
+                                                            </Button>
+                                                        ) : (
+                                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                                {episode.title}
+                                                            </Typography>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {episode.pub_date_ms 
+                                                            ? new Date(episode.pub_date_ms).toLocaleDateString()
+                                                            : 'N/A'
+                                                        }
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {formatEpisodeDuration(episode.audio_length_sec)}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        {episode.link && (
+                                                            <IconButton
+                                                                size="small"
+                                                                href={episode.link}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                title="Open in ListenNotes"
+                                                            >
+                                                                <OpenInNew fontSize="small" />
+                                                            </IconButton>
+                                                        )}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
                                     </TableBody>
                                 </Table>
                             </TableContainer>
