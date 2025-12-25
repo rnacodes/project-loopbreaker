@@ -78,7 +78,8 @@ function InstapaperAuthPage() {
                     startIcon={<ArrowBack />}
                     onClick={() => navigate('/')}
                     sx={{
-                        mb: 3
+                        mb: 3,
+                        color: 'white'
                     }}
                 >
                     Back to Home
@@ -94,7 +95,7 @@ function InstapaperAuthPage() {
                     }}
                 >
                     <Box sx={{ textAlign: 'center', mb: 4 }}>
-                        <ArticleIcon sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
+                        <ArticleIcon sx={{ fontSize: 60, color: 'white', mb: 2 }} />
                         <Typography variant="h4" gutterBottom fontWeight="bold">
                             Connect to Instapaper
                         </Typography>

@@ -4,6 +4,7 @@
 //TODO: Add "Read More" expander if description is over 500 words.
 //TODO: Update the link to series homepage under TV Details
 //TODO: Ensure that the Notes and Highlights sections are showing the correct one for all media items - some have the old "Related Notes" box but others have the Readwise mention
+//TODO: Remove "Media Profile" from the title of the page
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
@@ -13,13 +14,14 @@ import {
     Chip, Divider, Paper, Link, IconButton, Fab,
     Dialog, DialogTitle, DialogContent, DialogActions,
     List, ListItem, ListItemText, Collapse, Snackbar, Alert,
-    CircularProgress, Accordion, AccordionSummary, AccordionDetails
+    CircularProgress, Accordion, AccordionSummary, AccordionDetails,
+    TextField, InputAdornment
 } from '@mui/material';
 import { 
     ArrowBack, Edit, OpenInNew, FileDownload, 
     ExpandLess, ExpandMore, PlaylistAdd, 
     ChevronLeft, ChevronRight, ThumbDown, 
-    ThumbUp, Help, Star, Notes
+    ThumbUp, Help, Star, Notes, Search
 } from '@mui/icons-material';
 import { 
     getMediaById, getAllMixlists, addMediaToMixlist, 
@@ -36,6 +38,8 @@ function MediaProfilePage() {
   const [currentMixlists, setCurrentMixlists] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [addToMixlistDialog, setAddToMixlistDialog] = useState(false);
+  const [selectedMixlistId, setSelectedMixlistId] = useState(null);
+  const [mixlistSearchQuery, setMixlistSearchQuery] = useState('');
   const [highlights, setHighlights] = useState([]);
   const [highlightsLoading, setHighlightsLoading] = useState(false);
 
@@ -279,11 +283,19 @@ function MediaProfilePage() {
     return rating.charAt(0).toUpperCase() + rating.slice(1).toLowerCase();
   };
 
-  const handleAddToMixlist = async (mixlistId) => {
+  const handleAddToMixlist = async () => {
+    if (!selectedMixlistId) {
+      setSnackbar({ open: true, message: 'Please select a mixlist first', severity: 'warning' });
+      return;
+    }
+    
     try {
-      await addMediaToMixlist(mixlistId, id);
+      console.log('Adding media to mixlist:', { mixlistId: selectedMixlistId, mediaId: id });
+      await addMediaToMixlist(selectedMixlistId, id);
       setSnackbar({ open: true, message: 'Media added to mixlist successfully!', severity: 'success' });
       setAddToMixlistDialog(false);
+      setSelectedMixlistId(null);
+      setMixlistSearchQuery('');
       
       // Refresh the current mixlists
       const updatedMediaResponse = await getMediaById(id);
@@ -303,9 +315,27 @@ function MediaProfilePage() {
       }
     } catch (error) {
       console.error('Failed to add media to mixlist:', error);
-      setSnackbar({ open: true, message: 'Failed to add media to mixlist', severity: 'error' });
+      console.error('Error details:', error.response || error);
+      setSnackbar({ 
+        open: true, 
+        message: `Failed to add media to mixlist: ${error.response?.data?.message || error.message || 'Unknown error'}`, 
+        severity: 'error' 
+      });
     }
   };
+
+  const handleCloseMixlistDialog = () => {
+    setAddToMixlistDialog(false);
+    setSelectedMixlistId(null);
+    setMixlistSearchQuery('');
+  };
+
+  const filteredAvailableMixlists = availableMixlists
+    .filter(mixlist => !currentMixlists.some(current => current.id === mixlist.id))
+    .filter(mixlist => 
+      mixlist.name?.toLowerCase().includes(mixlistSearchQuery.toLowerCase()) ||
+      mixlist.description?.toLowerCase().includes(mixlistSearchQuery.toLowerCase())
+    );
 
   const handleCreateNewMixlist = () => {
     navigate('/create-mixlist');
@@ -2050,7 +2080,7 @@ function MediaProfilePage() {
         {/* Add to Mixlist Dialog */}
         <Dialog 
           open={addToMixlistDialog} 
-          onClose={() => setAddToMixlistDialog(false)}
+          onClose={handleCloseMixlistDialog}
           maxWidth="sm"
           fullWidth
         >
@@ -2059,19 +2089,65 @@ function MediaProfilePage() {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Select a mixlist to add "{mediaItem?.title}" to:
             </Typography>
-            <List>
-              {availableMixlists
-                .filter(mixlist => !currentMixlists.some(current => current.id === mixlist.id))
-                .map((mixlist) => (
+            
+            {/* Search Bar */}
+            <Box sx={{ mb: 2 }}>
+              <TextField
+                fullWidth
+                placeholder="Search mixlists..."
+                value={mixlistSearchQuery}
+                onChange={(e) => setMixlistSearchQuery(e.target.value)}
+                variant="outlined"
+                size="small"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search sx={{ color: 'rgba(255, 255, 255, 0.5)' }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    color: 'white',
+                    '& fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.3)',
+                    },
+                    '&:hover fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.5)',
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.7)',
+                    },
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: 'rgba(255, 255, 255, 0.5)',
+                    opacity: 1,
+                  },
+                }}
+              />
+            </Box>
+
+            {/* Mixlist List */}
+            <List sx={{ maxHeight: '300px', overflowY: 'auto' }}>
+              {filteredAvailableMixlists.length > 0 ? (
+                filteredAvailableMixlists.map((mixlist) => (
                   <ListItem 
                     key={mixlist.id}
-                    button
-                    onClick={() => handleAddToMixlist(mixlist.id)}
+                    onClick={() => setSelectedMixlistId(mixlist.id)}
                     sx={{
                       borderRadius: 1,
                       mb: 1,
+                      cursor: 'pointer',
+                      backgroundColor: selectedMixlistId === mixlist.id 
+                        ? 'rgba(25, 118, 210, 0.3)' 
+                        : 'transparent',
+                      border: selectedMixlistId === mixlist.id 
+                        ? '2px solid rgba(25, 118, 210, 0.8)' 
+                        : '1px solid rgba(255, 255, 255, 0.1)',
                       '&:hover': {
-                        backgroundColor: 'action.hover'
+                        backgroundColor: selectedMixlistId === mixlist.id 
+                          ? 'rgba(25, 118, 210, 0.4)' 
+                          : 'rgba(255, 255, 255, 0.05)'
                       }
                     }}
                   >
@@ -2080,17 +2156,29 @@ function MediaProfilePage() {
                       secondary={mixlist.description || `${mixlist.mediaItems?.length || 0} items`}
                     />
                   </ListItem>
-                ))}
+                ))
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                  {mixlistSearchQuery 
+                    ? 'No mixlists match your search.' 
+                    : 'No available mixlists to add to. Create a new mixlist first.'}
+                </Typography>
+              )}
             </List>
-            {availableMixlists.filter(mixlist => !currentMixlists.some(current => current.id === mixlist.id)).length === 0 && (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                No available mixlists to add to. Create a new mixlist first.
-              </Typography>
-            )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setAddToMixlistDialog(false)}>
+            <Button 
+              onClick={handleCloseMixlistDialog}
+              sx={{ color: 'white' }}
+            >
               Cancel
+            </Button>
+            <Button 
+              onClick={handleAddToMixlist}
+              sx={{ color: 'white' }}
+              disabled={!selectedMixlistId}
+            >
+              Save
             </Button>
           </DialogActions>
         </Dialog>

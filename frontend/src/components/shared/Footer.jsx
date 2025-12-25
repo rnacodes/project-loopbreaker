@@ -57,14 +57,13 @@ const Footer = () => {
               target="_blank"
               rel="noopener noreferrer"
               sx={{
-                color: COLORS.primary.main,
-                textDecoration: 'none',
+                color: COLORS.text.primary,
+                textDecoration: 'underline',
                 fontSize: '1rem',
                 fontWeight: 500,
                 transition: 'color 0.3s ease',
                 '&:hover': {
-                  color: COLORS.primary.light,
-                  textDecoration: 'underline'
+                  color: COLORS.primary.light
                 }
               }}
             >
@@ -78,14 +77,13 @@ const Footer = () => {
               target="_blank"
               rel="noopener noreferrer"
               sx={{
-                color: COLORS.primary.main,
-                textDecoration: 'none',
+                color: COLORS.text.primary,
+                textDecoration: 'underline',
                 fontSize: '1rem',
                 fontWeight: 500,
                 transition: 'color 0.3s ease',
                 '&:hover': {
-                  color: COLORS.primary.light,
-                  textDecoration: 'underline'
+                  color: COLORS.primary.light
                 }
               }}
             >

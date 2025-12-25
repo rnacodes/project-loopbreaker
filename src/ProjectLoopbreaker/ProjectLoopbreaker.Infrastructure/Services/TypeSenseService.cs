@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Infrastructure.Models;
@@ -17,17 +18,30 @@ namespace ProjectLoopbreaker.Infrastructure.Services
         private readonly ITypesenseClient _typesenseClient;
         private readonly IApplicationDbContext _context;
         private readonly ILogger<TypeSenseService> _logger;
-        private const string COLLECTION_NAME = "media_items";
-        private const string MIXLIST_COLLECTION_NAME = "mixlists";
+        private readonly string _mediaCollectionName;
+        private readonly string _mixlistCollectionName;
 
         public TypeSenseService(
             ITypesenseClient typesenseClient,
             IApplicationDbContext context,
-            ILogger<TypeSenseService> logger)
+            ILogger<TypeSenseService> logger,
+            IConfiguration configuration)
         {
             _typesenseClient = typesenseClient;
             _context = context;
             _logger = logger;
+            
+            // Get the collection prefix from configuration (e.g., "demo_" for demo site)
+            var collectionPrefix = Environment.GetEnvironmentVariable("TYPESENSE_COLLECTION_PREFIX") ?? 
+                                 configuration["Typesense:CollectionPrefix"] ?? 
+                                 string.Empty;
+            
+            // Dynamically set collection names with prefix
+            _mediaCollectionName = $"{collectionPrefix}media_items";
+            _mixlistCollectionName = $"{collectionPrefix}mixlists";
+            
+            _logger.LogInformation("TypeSense collections configured with prefix '{Prefix}': {MediaCollection}, {MixlistCollection}", 
+                collectionPrefix, _mediaCollectionName, _mixlistCollectionName);
         }
 
         /// <summary>
@@ -39,15 +53,15 @@ namespace ProjectLoopbreaker.Infrastructure.Services
             try
             {
                 // Try to retrieve the collection to check if it exists
-                await _typesenseClient.RetrieveCollection(COLLECTION_NAME);
-                _logger.LogInformation("Typesense collection '{CollectionName}' already exists.", COLLECTION_NAME);
+                await _typesenseClient.RetrieveCollection(_mediaCollectionName);
+                _logger.LogInformation("Typesense collection '{CollectionName}' already exists.", _mediaCollectionName);
             }
             catch (TypesenseApiNotFoundException)
             {
                 // Collection doesn't exist, create it
-                _logger.LogInformation("Creating Typesense collection '{CollectionName}'...", COLLECTION_NAME);
+                _logger.LogInformation("Creating Typesense collection '{CollectionName}'...", _mediaCollectionName);
 
-                var schema = new Schema(COLLECTION_NAME, new List<Field>
+                var schema = new Schema(_mediaCollectionName, new List<Field>
                 {
                     new Field("id", FieldType.String, false), // Not facet, primary key
                     new Field("title", FieldType.String, false), // Searchable
@@ -71,7 +85,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
                 };
 
                 await _typesenseClient.CreateCollection(schema);
-                _logger.LogInformation("Successfully created Typesense collection '{CollectionName}'.", COLLECTION_NAME);
+                _logger.LogInformation("Successfully created Typesense collection '{CollectionName}'.", _mediaCollectionName);
             }
             catch (Exception ex)
             {
@@ -136,7 +150,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
                 }
 
                 // Upsert: creates if new, updates if exists
-                await _typesenseClient.UpsertDocument<MediaItemDocument>(COLLECTION_NAME, document);
+                await _typesenseClient.UpsertDocument<MediaItemDocument>(_mediaCollectionName, document);
                 
                 _logger.LogDebug("Successfully indexed media item {Id} ({Title}) in Typesense.", id, title);
             }
@@ -154,7 +168,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
         {
             try
             {
-                await _typesenseClient.DeleteDocument<MediaItemDocument>(COLLECTION_NAME, id.ToString());
+                await _typesenseClient.DeleteDocument<MediaItemDocument>(_mediaCollectionName, id.ToString());
                 _logger.LogDebug("Successfully deleted media item {Id} from Typesense.", id);
             }
             catch (TypesenseApiNotFoundException)
@@ -195,7 +209,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
                     searchParameters.FilterBy = filters;
                 }
 
-                var searchResult = await _typesenseClient.Search<MediaItemDocument>(COLLECTION_NAME, searchParameters);
+                var searchResult = await _typesenseClient.Search<MediaItemDocument>(_mediaCollectionName, searchParameters);
                 
                 _logger.LogDebug("Search for '{Query}' returned {Count} results.", query, searchResult.Found);
                 
@@ -314,7 +328,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
 
                 // Import documents in batch (more efficient than individual upserts)
                 var importResults = await _typesenseClient.ImportDocuments<MediaItemDocument>(
-                    COLLECTION_NAME, 
+                    _mediaCollectionName, 
                     documents, 
                     40, // Batch size
                     ImportType.Upsert
@@ -352,15 +366,15 @@ namespace ProjectLoopbreaker.Infrastructure.Services
             try
             {
                 // Try to retrieve the collection to check if it exists
-                await _typesenseClient.RetrieveCollection(MIXLIST_COLLECTION_NAME);
-                _logger.LogInformation("Typesense collection '{CollectionName}' already exists.", MIXLIST_COLLECTION_NAME);
+                await _typesenseClient.RetrieveCollection(_mixlistCollectionName);
+                _logger.LogInformation("Typesense collection '{CollectionName}' already exists.", _mixlistCollectionName);
             }
             catch (TypesenseApiNotFoundException)
             {
                 // Collection doesn't exist, create it
-                _logger.LogInformation("Creating Typesense collection '{CollectionName}'...", MIXLIST_COLLECTION_NAME);
+                _logger.LogInformation("Creating Typesense collection '{CollectionName}'...", _mixlistCollectionName);
 
-                var schema = new Schema(MIXLIST_COLLECTION_NAME, new List<Field>
+                var schema = new Schema(_mixlistCollectionName, new List<Field>
                 {
                     new Field("id", FieldType.String, false), // Primary key
                     new Field("name", FieldType.String, false), // Searchable
@@ -377,7 +391,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
                 };
 
                 await _typesenseClient.CreateCollection(schema);
-                _logger.LogInformation("Successfully created Typesense collection '{CollectionName}'.", MIXLIST_COLLECTION_NAME);
+                _logger.LogInformation("Successfully created Typesense collection '{CollectionName}'.", _mixlistCollectionName);
             }
             catch (Exception ex)
             {
@@ -416,7 +430,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
                 };
 
                 // Upsert: creates if new, updates if exists
-                await _typesenseClient.UpsertDocument<MixlistDocument>(MIXLIST_COLLECTION_NAME, document);
+                await _typesenseClient.UpsertDocument<MixlistDocument>(_mixlistCollectionName, document);
                 
                 _logger.LogDebug("Successfully indexed mixlist {Id} ({Name}) in Typesense.", id, name);
             }
@@ -434,7 +448,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
         {
             try
             {
-                await _typesenseClient.DeleteDocument<MixlistDocument>(MIXLIST_COLLECTION_NAME, id.ToString());
+                await _typesenseClient.DeleteDocument<MixlistDocument>(_mixlistCollectionName, id.ToString());
                 _logger.LogDebug("Successfully deleted mixlist {Id} from Typesense.", id);
             }
             catch (TypesenseApiNotFoundException)
@@ -475,7 +489,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
                     searchParameters.FilterBy = filters;
                 }
 
-                var searchResult = await _typesenseClient.Search<MixlistDocument>(MIXLIST_COLLECTION_NAME, searchParameters);
+                var searchResult = await _typesenseClient.Search<MixlistDocument>(_mixlistCollectionName, searchParameters);
                 
                 _logger.LogDebug("Mixlist search for '{Query}' returned {Count} results.", query, searchResult.Found);
                 
@@ -539,7 +553,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
 
                 // Import documents in batch (more efficient than individual upserts)
                 var importResults = await _typesenseClient.ImportDocuments<MixlistDocument>(
-                    MIXLIST_COLLECTION_NAME, 
+                    _mixlistCollectionName, 
                     documents, 
                     40, // Batch size
                     ImportType.Upsert
@@ -575,27 +589,27 @@ namespace ProjectLoopbreaker.Infrastructure.Services
         {
             try
             {
-                _logger.LogInformation("Resetting Typesense collection '{CollectionName}'...", COLLECTION_NAME);
+                _logger.LogInformation("Resetting Typesense collection '{CollectionName}'...", _mediaCollectionName);
 
                 // Delete the collection if it exists
                 try
                 {
-                    await _typesenseClient.DeleteCollection(COLLECTION_NAME);
-                    _logger.LogInformation("Deleted existing collection '{CollectionName}'.", COLLECTION_NAME);
+                    await _typesenseClient.DeleteCollection(_mediaCollectionName);
+                    _logger.LogInformation("Deleted existing collection '{CollectionName}'.", _mediaCollectionName);
                 }
                 catch (TypesenseApiNotFoundException)
                 {
-                    _logger.LogInformation("Collection '{CollectionName}' doesn't exist, skipping delete.", COLLECTION_NAME);
+                    _logger.LogInformation("Collection '{CollectionName}' doesn't exist, skipping delete.", _mediaCollectionName);
                 }
 
                 // Recreate the collection with the schema
                 await EnsureCollectionExistsAsync();
                 
-                _logger.LogInformation("Successfully reset collection '{CollectionName}'.", COLLECTION_NAME);
+                _logger.LogInformation("Successfully reset collection '{CollectionName}'.", _mediaCollectionName);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error resetting Typesense collection '{CollectionName}'.", COLLECTION_NAME);
+                _logger.LogError(ex, "Error resetting Typesense collection '{CollectionName}'.", _mediaCollectionName);
                 throw;
             }
         }
@@ -607,27 +621,27 @@ namespace ProjectLoopbreaker.Infrastructure.Services
         {
             try
             {
-                _logger.LogInformation("Resetting Typesense collection '{CollectionName}'...", MIXLIST_COLLECTION_NAME);
+                _logger.LogInformation("Resetting Typesense collection '{CollectionName}'...", _mixlistCollectionName);
 
                 // Delete the collection if it exists
                 try
                 {
-                    await _typesenseClient.DeleteCollection(MIXLIST_COLLECTION_NAME);
-                    _logger.LogInformation("Deleted existing collection '{CollectionName}'.", MIXLIST_COLLECTION_NAME);
+                    await _typesenseClient.DeleteCollection(_mixlistCollectionName);
+                    _logger.LogInformation("Deleted existing collection '{CollectionName}'.", _mixlistCollectionName);
                 }
                 catch (TypesenseApiNotFoundException)
                 {
-                    _logger.LogInformation("Collection '{CollectionName}' doesn't exist, skipping delete.", MIXLIST_COLLECTION_NAME);
+                    _logger.LogInformation("Collection '{CollectionName}' doesn't exist, skipping delete.", _mixlistCollectionName);
                 }
 
                 // Recreate the collection with the schema
                 await EnsureMixlistCollectionExistsAsync();
                 
-                _logger.LogInformation("Successfully reset collection '{CollectionName}'.", MIXLIST_COLLECTION_NAME);
+                _logger.LogInformation("Successfully reset collection '{CollectionName}'.", _mixlistCollectionName);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error resetting Typesense collection '{CollectionName}'.", MIXLIST_COLLECTION_NAME);
+                _logger.LogError(ex, "Error resetting Typesense collection '{CollectionName}'.", _mixlistCollectionName);
                 throw;
             }
         }
