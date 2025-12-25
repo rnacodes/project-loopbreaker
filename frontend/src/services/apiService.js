@@ -66,8 +66,17 @@ apiClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
         
+        // Check if we're in demo mode - skip authentication logic in demo
+        const isDemoMode = import.meta.env.VITE_DEMO_MODE === 'true';
+        
         // If the error is 401 and we haven't already tried to refresh
         if (error.response?.status === 401 && !originalRequest._retry) {
+            // In demo mode, don't try to refresh or redirect - just reject the error
+            if (isDemoMode) {
+                console.log('Demo mode: Skipping authentication for 401 error');
+                return Promise.reject(error);
+            }
+            
             // Don't try to refresh on login or refresh endpoints
             const isAuthEndpoint = originalRequest.url?.includes('/auth/login') || 
                                   originalRequest.url?.includes('/auth/refresh');
