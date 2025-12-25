@@ -7,10 +7,10 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     /// <summary>
     /// Controller for handling search operations using Typesense.
     /// Provides a secure proxy between the frontend and Typesense server.
+    /// Read operations (search) are public. Write operations (reindex) require authorization.
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize] // Require authentication for search
     public class SearchController : ControllerBase
     {
         private readonly ITypeSenseService _typeSenseService;
@@ -179,6 +179,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         /// This is an admin operation and should be used sparingly.
         /// </summary>
         [HttpPost("reindex")]
+        [Authorize] // Require authorization for admin operations
         public async Task<IActionResult> ReindexAll()
         {
             try
@@ -208,6 +209,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         /// This is an admin operation and should be used sparingly.
         /// </summary>
         [HttpPost("reindex-mixlists")]
+        [Authorize] // Require authorization for admin operations
         public async Task<IActionResult> ReindexAllMixlists()
         {
             try
@@ -262,6 +264,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         /// WARNING: This will delete all indexed media items from Typesense!
         /// </summary>
         [HttpPost("reset")]
+        [Authorize] // Require authorization for admin operations
         public async Task<IActionResult> ResetMediaItemsCollection()
         {
             try
@@ -291,6 +294,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         /// WARNING: This will delete all indexed mixlists from Typesense!
         /// </summary>
         [HttpPost("reset-mixlists")]
+        [Authorize] // Require authorization for admin operations
         public async Task<IActionResult> ResetMixlistsCollection()
         {
             try

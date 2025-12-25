@@ -1,6 +1,7 @@
 //TODO: Update to reflect latest changes to the API and frontend.
 //TODO: Make Close button in the "View Details" box white outline
 //TODO: Put media types in alphabetical order
+//TODO: Eliminate the extra fields for movies and tv shows
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
