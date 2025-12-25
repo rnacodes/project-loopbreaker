@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
-import { ThemeProvider, CssBaseline, Typography, Button } from '@mui/material';
+import { ThemeProvider, CssBaseline, Typography, Button, Box } from '@mui/material';
 
 // --- Import Auth Context ---
 import { AuthProvider } from './contexts/AuthContext';
@@ -47,6 +47,7 @@ import TypesenseAdminPage from './components/TypesenseAdminPage';
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
 import ResponsiveNavigation from './components/shared/ResponsiveNavigation';
+import Footer from './components/shared/Footer';
 
 function App() {
   return (
@@ -55,11 +56,19 @@ function App() {
       <CssBaseline />
       <Router>
         <AuthProvider>
-          {/* Responsive Navigation Component */}
-          <ResponsiveNavigation />
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: '100vh'
+            }}
+          >
+            {/* Responsive Navigation Component */}
+            <ResponsiveNavigation />
 
-          {/* Routes without outer container - each component handles its own layout */}
-          <Routes>
+            {/* Routes without outer container - each component handles its own layout */}
+            <Box component="main" sx={{ flexGrow: 1 }}>
+              <Routes>
             {/* Public routes - always accessible */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/demo" element={<DemoPage />} />
@@ -168,7 +177,12 @@ function App() {
               </Button>
             </div>
           } />
-        </Routes>
+              </Routes>
+            </Box>
+
+            {/* Footer Component */}
+            <Footer />
+          </Box>
         </AuthProvider>
       </Router>
     </ThemeProvider>

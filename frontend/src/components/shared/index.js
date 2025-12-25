@@ -7,3 +7,4 @@ export { default as SearchBar } from './SearchBar';
 export { default as LoadingSpinner } from './LoadingSpinner';
 export { default as MediaCarousel } from './MediaCarousel';
 export { default as SimpleMediaCarousel } from './SimpleMediaCarousel';
+export { default as Footer } from './Footer';
