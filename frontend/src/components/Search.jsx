@@ -1,4 +1,3 @@
-// TODO: Change the following to white: Clear All, checkmarks under media type, and browse all topics/genres, as well as pagination at bottom of page
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -85,6 +84,72 @@ const MediaCard = ({ item }) => {
         }
     };
     
+    // Helper function to get the primary creator/author/maker
+    const getPrimaryCredit = () => {
+        switch (item.mediaType) {
+            case 'Book':
+            case 'Article':
+                return item.author;
+            case 'Movie':
+                return item.director ? `Dir: ${item.director}` : null;
+            case 'TVShow':
+                return item.creator ? `Created by ${item.creator}` : null;
+            case 'Video':
+                return item.channel || item.platform;
+            case 'Podcast':
+                return item.publisher;
+            case 'Mixlist':
+                return null; // Mixlists don't have a primary credit
+            default:
+                return item.creator || item.author || null;
+        }
+    };
+
+    // Helper function to get meaningful metadata line
+    const getMetadataLine = () => {
+        const parts = [];
+        
+        switch (item.mediaType) {
+            case 'Book':
+                if (item.goodreadsRating) parts.push(`${item.goodreadsRating}★`);
+                break;
+            case 'Movie':
+                if (item.releaseYear) parts.push(item.releaseYear);
+                if (item.runtimeMinutes) parts.push(`${item.runtimeMinutes} min`);
+                if (item.tmdbRating) parts.push(`${item.tmdbRating}★`);
+                break;
+            case 'TVShow':
+                if (item.tmdbRating) parts.push(`${item.tmdbRating}★`);
+                break;
+            case 'Video':
+                if (item.lengthInSeconds) {
+                    const hours = Math.floor(item.lengthInSeconds / 3600);
+                    const minutes = Math.floor((item.lengthInSeconds % 3600) / 60);
+                    parts.push(hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`);
+                }
+                if (item.platform) parts.push(item.platform);
+                break;
+            case 'Podcast':
+                if (item.podcastType) parts.push(item.podcastType === 'Series' ? 'Series' : 'Episode');
+                if (item.durationInSeconds) {
+                    const minutes = Math.floor(item.durationInSeconds / 60);
+                    parts.push(`${minutes} min`);
+                }
+                break;
+            case 'Article':
+                if (item.publication) parts.push(item.publication);
+                if (item.estimatedReadingTimeMinutes) parts.push(`${item.estimatedReadingTimeMinutes} min read`);
+                if (item.wordCount) parts.push(`${(item.wordCount / 1000).toFixed(1)}k words`);
+                break;
+            case 'Mixlist':
+                return null; // Handled separately with item count
+            default:
+                break;
+        }
+        
+        return parts.length > 0 ? parts.join(' • ') : null;
+    };
+    
     return (
         <Card 
             onClick={handleClick}
@@ -104,6 +169,7 @@ const MediaCard = ({ item }) => {
             }}
         >
         <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
+            {/* HEADER ROW: Title + Rating Icon */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                 <Typography 
                     variant="h6" 
@@ -123,6 +189,7 @@ const MediaCard = ({ item }) => {
                 )}
             </Box>
 
+            {/* CHIPS ROW: Media Type + Status + Optional Extras */}
             <Box sx={{ mb: 1.5, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
                 <Chip 
                     label={formatMediaType(item.mediaType)} 
@@ -133,24 +200,61 @@ const MediaCard = ({ item }) => {
                         fontWeight: 'bold'
                     }}
                 />
-                <Chip 
-                    label={formatStatus(item.status)} 
-                    size="small" 
-                    color={
-                        item.status === 'ActivelyExploring' ? 'success' :
-                        item.status === 'Uncharted' ? 'info' :
-                        item.status === 'Completed' ? 'default' :
-                        'warning'
-                    }
-                    variant="outlined"
-                    sx={{ fontSize: '0.7rem' }}
-                />
+                {item.status && (
+                    <Chip 
+                        label={formatStatus(item.status)} 
+                        size="small" 
+                        color={
+                            item.status === 'ActivelyExploring' ? 'success' :
+                            item.status === 'Uncharted' ? 'info' :
+                            item.status === 'Completed' ? 'default' :
+                            'warning'
+                        }
+                        variant="outlined"
+                        sx={{ fontSize: '0.7rem' }}
+                    />
+                )}
+                
+                {/* Conditional extra chips */}
+                {item.mediaType === 'Podcast' && item.podcastType && (
+                    <Chip 
+                        label={item.podcastType === 'Series' ? 'Series' : 'Episode'} 
+                        size="small"
+                        sx={{ fontSize: '0.7rem' }}
+                    />
+                )}
+                {item.mediaType === 'Video' && item.videoType && (
+                    <Chip 
+                        label={item.videoType} 
+                        size="small"
+                        sx={{ fontSize: '0.7rem' }}
+                    />
+                )}
+                {item.mediaType === 'Article' && item.isStarred && (
+                    <Chip 
+                        icon={<Star sx={{ fontSize: 14 }} />} 
+                        label="Starred" 
+                        size="small"
+                        sx={{ fontSize: '0.7rem' }}
+                    />
+                )}
             </Box>
 
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                {item.author} • {item.duration}
-            </Typography>
+            {/* PRIMARY CREDIT (Author/Director/Creator/Channel) */}
+            {getPrimaryCredit() && (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                    {getPrimaryCredit()}
+                </Typography>
+            )}
 
+            {/* METADATA LINE (Year, duration, rating, etc) */}
+            {getMetadataLine() && (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, fontSize: '0.85rem' }}>
+                    {getMetadataLine()}
+                </Typography>
+            )}
+
+            {/* DESCRIPTION/NOTES - Truncated */}
             {item.notes && (
                 <Typography 
                     variant="body2" 
@@ -168,6 +272,7 @@ const MediaCard = ({ item }) => {
                 </Typography>
             )}
 
+            {/* TOPICS - First 3 with overflow indicator */}
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
                 {item.topics.slice(0, 3).map((topic, index) => (
                     <Chip
@@ -191,6 +296,7 @@ const MediaCard = ({ item }) => {
                 )}
             </Box>
 
+            {/* FOOTER: Date Added */}
             <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.7rem' }}>
                 <AccessTime sx={{ fontSize: 12 }} />
                 Added {new Date(item.dateAdded).toLocaleDateString()}
@@ -212,6 +318,72 @@ const MediaListItem = ({ item }) => {
         }
     };
     
+    // Helper function to get the primary creator/author/maker
+    const getPrimaryCredit = () => {
+        switch (item.mediaType) {
+            case 'Book':
+            case 'Article':
+                return item.author;
+            case 'Movie':
+                return item.director ? `Dir: ${item.director}` : null;
+            case 'TVShow':
+                return item.creator ? `Created by ${item.creator}` : null;
+            case 'Video':
+                return item.channel || item.platform;
+            case 'Podcast':
+                return item.publisher;
+            case 'Mixlist':
+                return null;
+            default:
+                return item.creator || item.author || null;
+        }
+    };
+
+    // Helper function to get meaningful metadata line
+    const getMetadataLine = () => {
+        const parts = [];
+        
+        switch (item.mediaType) {
+            case 'Book':
+                if (item.goodreadsRating) parts.push(`${item.goodreadsRating}★`);
+                break;
+            case 'Movie':
+                if (item.releaseYear) parts.push(item.releaseYear);
+                if (item.runtimeMinutes) parts.push(`${item.runtimeMinutes} min`);
+                if (item.tmdbRating) parts.push(`${item.tmdbRating}★`);
+                break;
+            case 'TVShow':
+                if (item.tmdbRating) parts.push(`${item.tmdbRating}★`);
+                break;
+            case 'Video':
+                if (item.lengthInSeconds) {
+                    const hours = Math.floor(item.lengthInSeconds / 3600);
+                    const minutes = Math.floor((item.lengthInSeconds % 3600) / 60);
+                    parts.push(hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`);
+                }
+                if (item.platform) parts.push(item.platform);
+                break;
+            case 'Podcast':
+                if (item.podcastType) parts.push(item.podcastType === 'Series' ? 'Series' : 'Episode');
+                if (item.durationInSeconds) {
+                    const minutes = Math.floor(item.durationInSeconds / 60);
+                    parts.push(`${minutes} min`);
+                }
+                break;
+            case 'Article':
+                if (item.publication) parts.push(item.publication);
+                if (item.estimatedReadingTimeMinutes) parts.push(`${item.estimatedReadingTimeMinutes} min read`);
+                if (item.wordCount) parts.push(`${(item.wordCount / 1000).toFixed(1)}k words`);
+                break;
+            case 'Mixlist':
+                return null;
+            default:
+                break;
+        }
+        
+        return parts.length > 0 ? parts.join(' • ') : null;
+    };
+    
     return (
     <Paper
         onClick={handleClick}
@@ -228,7 +400,8 @@ const MediaListItem = ({ item }) => {
         >
         <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={6}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                {/* Title and Rating */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                     <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
                         {item.title}
                     </Typography>
@@ -238,9 +411,22 @@ const MediaListItem = ({ item }) => {
                         </Box>
                     )}
                 </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    {item.author} • {item.duration}
-                </Typography>
+                
+                {/* Primary Credit */}
+                {getPrimaryCredit() && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
+                        {getPrimaryCredit()}
+                    </Typography>
+                )}
+                
+                {/* Metadata Line */}
+                {getMetadataLine() && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: '0.85rem' }}>
+                        {getMetadataLine()}
+                    </Typography>
+                )}
+                
+                {/* Description/Notes */}
                 {item.notes && (
                     <Typography 
                         variant="body2" 
@@ -250,13 +436,16 @@ const MediaListItem = ({ item }) => {
                             display: '-webkit-box',
                             WebkitLineClamp: 1,
                             WebkitBoxOrient: 'vertical',
-                            color: 'text.secondary'
+                            color: 'text.secondary',
+                            fontSize: '0.85rem'
                         }}
                     >
                         {item.notes}
                     </Typography>
                 )}
             </Grid>
+            
+            {/* Topics Column */}
             <Grid item xs={12} md={3}>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                     {item.topics.slice(0, 4).map((topic, index) => (
@@ -281,6 +470,8 @@ const MediaListItem = ({ item }) => {
                     )}
                 </Box>
             </Grid>
+            
+            {/* Chips Column */}
             <Grid item xs={12} md={3}>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
                     <Chip 
@@ -292,17 +483,43 @@ const MediaListItem = ({ item }) => {
                             fontWeight: 'bold'
                         }}
                     />
-                    <Chip 
-                        label={formatStatus(item.status)} 
-                        size="small" 
-                        color={
-                            item.status === 'ActivelyExploring' ? 'success' :
-                            item.status === 'Uncharted' ? 'info' :
-                            item.status === 'Completed' ? 'default' :
-                            'warning'
-                        }
-                        variant="outlined"
-                    />
+                    {item.status && (
+                        <Chip 
+                            label={formatStatus(item.status)} 
+                            size="small" 
+                            color={
+                                item.status === 'ActivelyExploring' ? 'success' :
+                                item.status === 'Uncharted' ? 'info' :
+                                item.status === 'Completed' ? 'default' :
+                                'warning'
+                            }
+                            variant="outlined"
+                        />
+                    )}
+                    
+                    {/* Conditional extra chips */}
+                    {item.mediaType === 'Podcast' && item.podcastType && (
+                        <Chip 
+                            label={item.podcastType === 'Series' ? 'Series' : 'Episode'} 
+                            size="small"
+                            sx={{ fontSize: '0.7rem' }}
+                        />
+                    )}
+                    {item.mediaType === 'Video' && item.videoType && (
+                        <Chip 
+                            label={item.videoType} 
+                            size="small"
+                            sx={{ fontSize: '0.7rem' }}
+                        />
+                    )}
+                    {item.mediaType === 'Article' && item.isStarred && (
+                        <Chip 
+                            icon={<Star sx={{ fontSize: 14 }} />} 
+                            label="Starred" 
+                            size="small"
+                            sx={{ fontSize: '0.7rem' }}
+                        />
+                    )}
                 </Box>
             </Grid>
         </Grid>
@@ -458,12 +675,38 @@ export default function Search() {
                         ratingType: doc.rating?.toLowerCase() || null,
                         topics: doc.topics || [],
                         genres: doc.genres || [],
-                        author: doc.author || doc.director || doc.creator || doc.publisher || 'Unknown',
-                        duration: getDuration(doc),
                         dateAdded: new Date(doc.date_added * 1000).toISOString().split('T')[0],
                         notes: doc.description || '',
                         thumbnail: doc.thumbnail,
-                        isMixlist: false
+                        isMixlist: false,
+                        
+                        // Media-type specific fields
+                        author: doc.author || null,
+                        director: doc.director || null,
+                        creator: doc.creator || null,
+                        publisher: doc.publisher || null,
+                        channel: doc.channel_title || doc.channel || null,
+                        platform: doc.platform || null,
+                        
+                        // Ratings and metadata
+                        goodreadsRating: doc.goodreads_rating || null,
+                        tmdbRating: doc.tmdb_rating || null,
+                        releaseYear: doc.release_year || null,
+                        runtimeMinutes: doc.runtime_minutes || null,
+                        
+                        // Duration fields
+                        lengthInSeconds: doc.length_in_seconds || null,
+                        durationInSeconds: doc.duration_in_seconds || null,
+                        
+                        // Type fields
+                        podcastType: doc.podcast_type || null,
+                        videoType: doc.video_type || null,
+                        
+                        // Article fields
+                        publication: doc.publication || null,
+                        estimatedReadingTimeMinutes: doc.estimated_reading_time_minutes || null,
+                        wordCount: doc.word_count || null,
+                        isStarred: doc.is_starred || false
                     };
                 });
 
@@ -478,14 +721,6 @@ export default function Search() {
         } finally {
             setLoading(false);
         }
-    };
-
-    const getDuration = (doc) => {
-        // Helper function to extract duration from different media types
-        if (doc.runtime_minutes) return `${doc.runtime_minutes} min`;
-        if (doc.release_year) return `${doc.release_year}`;
-        if (doc.season_count) return `${doc.season_count} seasons`;
-        return 'Various';
     };
 
     const handleMediaTypeToggle = (value) => {
@@ -666,6 +901,7 @@ export default function Search() {
                                         size="small" 
                                         onClick={handleClearFilters}
                                         startIcon={<Clear />}
+                                        sx={{ color: 'white' }}
                                     >
                                         Clear All
                                     </Button>
@@ -685,18 +921,19 @@ export default function Search() {
                                             <AccordionDetails sx={{ pt: 0 }}>
                                                 <FormGroup>
                                                     {mediaTypeOptions.map((option) => (
-                                                        <FormControlLabel
-                                                            key={option.value}
-                                                            control={
-                                                                <Checkbox
-                                                                    checked={selectedMediaTypes.includes(option.value)}
-                                                                    onChange={() => handleMediaTypeToggle(option.value)}
-                                                                    size="small"
-                                                                />
-                                                            }
-                                                            label={<Typography variant="body2">{option.label}</Typography>}
-                                                            sx={{ mb: 0.5 }}
-                                                        />
+                                                <FormControlLabel
+                                                        key={option.value}
+                                                        control={
+                                                            <Checkbox
+                                                                checked={selectedMediaTypes.includes(option.value)}
+                                                                onChange={() => handleMediaTypeToggle(option.value)}
+                                                                size="small"
+                                                                sx={{ color: 'white', '&.Mui-checked': { color: 'white' } }}
+                                                            />
+                                                        }
+                                                        label={<Typography variant="body2">{option.label}</Typography>}
+                                                        sx={{ mb: 0.5 }}
+                                                    />
                                                     ))}
                                                 </FormGroup>
                                             </AccordionDetails>
@@ -772,7 +1009,7 @@ export default function Search() {
                                             fullWidth
                                             variant="text"
                                             onClick={() => navigate('/search-by-topic-genre')}
-                                            sx={{ textTransform: 'none', justifyContent: 'flex-start' }}
+                                            sx={{ textTransform: 'none', justifyContent: 'flex-start', color: 'white' }}
                                         >
                                             Browse all topics →
                                         </Button>
@@ -847,7 +1084,7 @@ export default function Search() {
                                             fullWidth
                                             variant="text"
                                             onClick={() => navigate('/search-by-topic-genre')}
-                                            sx={{ textTransform: 'none', justifyContent: 'flex-start' }}
+                                            sx={{ textTransform: 'none', justifyContent: 'flex-start', color: 'white' }}
                                         >
                                             Browse all genres →
                                         </Button>
@@ -1060,7 +1297,7 @@ export default function Search() {
                         {/* Pagination */}
                         {!loading && searchResults.length > 0 && totalPages > 1 && (
                             <Box sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
-                                <ButtonGroup variant="outlined">
+                                <ButtonGroup variant="outlined" sx={{ '& .MuiButton-outlined': { color: 'white', borderColor: 'white' } }}>
                                     <Button 
                                         disabled={currentPage === 1}
                                         onClick={() => setCurrentPage(prev => prev - 1)}
