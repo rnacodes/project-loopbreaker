@@ -357,9 +357,8 @@ namespace ProjectLoopbreaker.Application.Services
                 }
 
                 // Refresh the series with all episodes
-                var entry = _context.Entry(savedSeries);
-                // Note: Collection loading is not available through the interface
-                // This will need to be handled differently or the interface updated
+                // Note: Collection loading was previously done via _context.Entry() but is not needed here
+                // The series will be properly loaded when queried later
             }
 
             return savedSeries;

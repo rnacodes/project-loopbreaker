@@ -628,5 +628,61 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return StatusCode(500, new { error = "Failed to retrieve podcast episodes", details = ex.Message });
             }
         }
+
+        // POST: api/podcast/episodes/from-api/{episodeId}
+        [HttpPost("episodes/from-api/{episodeId}")]
+        public async Task<IActionResult> ImportPodcastEpisodeFromApi(string episodeId, [FromQuery] Guid seriesId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(episodeId))
+                {
+                    return BadRequest("Episode ID is required");
+                }
+
+                if (seriesId == Guid.Empty)
+                {
+                    return BadRequest("Series ID is required");
+                }
+
+                _logger.LogInformation("Importing podcast episode from API - Episode ID: {EpisodeId}, Series ID: {SeriesId}", 
+                    episodeId, seriesId);
+
+                var episode = await _listenNotesService.ImportPodcastEpisodeAsync(episodeId, seriesId);
+
+                var response = new PodcastEpisodeResponseDto
+                {
+                    Id = episode.Id,
+                    Title = episode.Title,
+                    Description = episode.Description,
+                    MediaType = episode.MediaType,
+                    Status = episode.Status,
+                    DateAdded = episode.DateAdded,
+                    DateCompleted = episode.DateCompleted,
+                    Rating = episode.Rating,
+                    Link = episode.Link,
+                    Thumbnail = episode.Thumbnail,
+                    SeriesId = episode.SeriesId,
+                    SeriesTitle = episode.Series?.Title,
+                    AudioLink = episode.AudioLink,
+                    ReleaseDate = episode.ReleaseDate,
+                    DurationInSeconds = episode.DurationInSeconds,
+                    EpisodeNumber = episode.EpisodeNumber,
+                    SeasonNumber = episode.SeasonNumber,
+                    ExternalId = episode.ExternalId,
+                    Publisher = episode.Publisher
+                };
+
+                _logger.LogInformation("Successfully imported podcast episode: {Title} (ID: {Id})", episode.Title, episode.Id);
+
+                return CreatedAtAction(nameof(GetPodcastEpisode), new { id = episode.Id }, response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing podcast episode from API - Episode ID: {EpisodeId}, Series ID: {SeriesId}", 
+                    episodeId, seriesId);
+                return StatusCode(500, new { error = "Failed to import podcast episode from API", details = ex.Message });
+            }
+        }
     }
 }

@@ -687,5 +687,7 @@ ProjectLoopbreaker.Web.API/Controllers/DevController.cs
 temp-docs/
 docs/
 temp-yaml/
-scripts/
 info/
+scripts/temp-batches/
+*.csv
+!scripts/example-mixed-media.csv
