@@ -1,7 +1,3 @@
-//TODO: Update to reflect latest changes to the API and frontend.
-//TODO: Make Close button in the "View Details" box white outline
-//TODO: Put media types in alphabetical order
-//TODO: Eliminate the extra fields for movies and tv shows
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -869,58 +865,6 @@ function ImportMediaPage() {
                 Import media from external sources into your library.
             </Typography>
 
-            {/* Podcast Import Section */}
-            <Accordion 
-                expanded={expanded === 'podcasts'} 
-                onChange={handleAccordionChange('podcasts')}
-                sx={{ mb: 2 }}
-            >
-                <AccordionSummary
-                    expandIcon={<ExpandMore />}
-                    aria-controls="podcasts-content"
-                    id="podcasts-header"
-                >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-                        <Podcasts />
-                        <Typography variant="h6">
-                            Podcasts
-                        </Typography>
-                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                Powered by
-                            </Typography>
-                            <Button
-                                variant="text"
-                                size="small"
-                                href="https://www.listennotes.com"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                endIcon={<OpenInNew fontSize="small" />}
-                                sx={{ 
-                                    minWidth: 'auto',
-                                    textTransform: 'none',
-                                    color: '#ffffff',
-                                    '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                ListenNotes
-                            </Button>
-                        </Box>
-                    </Box>
-                </AccordionSummary>
-                <AccordionDetails>
-                    {renderPodcastImportSection(
-                        podcastImportMethod, setPodcastImportMethod,
-                        podcastSearchQuery, setPodcastSearchQuery, handlePodcastSearch,
-                        podcastId, setPodcastId, handlePodcastImportById,
-                        podcastName, setPodcastName, handlePodcastImportByName,
-                        podcastSearchResults, handleImportPodcast,
-                        podcastIsLoading, podcastError, podcastSuccess
-                    )}
-                </AccordionDetails>
-            </Accordion>
-
             {/* Book Import Section */}
             <Accordion 
                 expanded={expanded === 'books'} 
@@ -1163,6 +1107,85 @@ function ImportMediaPage() {
                 </AccordionDetails>
             </Accordion>
 
+            {/* Instapaper Import Section */}
+            <Accordion 
+                expanded={expanded === 'instapaper'} 
+                onChange={handleAccordionChange('instapaper')}
+                sx={{ mb: 2 }}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMore />}
+                    aria-controls="instapaper-content"
+                    id="instapaper-header"
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                        <Article />
+                        <Typography variant="h6">
+                            Articles from Instapaper
+                        </Typography>
+                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Powered by
+                            </Typography>
+                            <Button
+                                variant="text"
+                                size="small"
+                                href="https://www.instapaper.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                endIcon={<OpenInNew fontSize="small" />}
+                                sx={{ 
+                                    minWidth: 'auto',
+                                    textTransform: 'none',
+                                    color: '#ffffff',
+                                    '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                Instapaper
+                            </Button>
+                        </Box>
+                    </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <Box sx={{ padding: 2 }}>
+                        <Typography variant="body1" paragraph>
+                            Import articles from your Instapaper account. Connect your account to:
+                        </Typography>
+                        <Box component="ul" sx={{ mb: 2, pl: 3 }}>
+                            <li>
+                                <Typography variant="body2">
+                                    Import articles from Unread, Starred, or Archive folders
+                                </Typography>
+                            </li>
+                            <li>
+                                <Typography variant="body2">
+                                    Preserve reading progress and metadata
+                                </Typography>
+                            </li>
+                            <li>
+                                <Typography variant="body2">
+                                    Automatically detect and skip duplicates
+                                </Typography>
+                            </li>
+                            <li>
+                                <Typography variant="body2">
+                                    Sync existing articles with latest progress
+                                </Typography>
+                            </li>
+                        </Box>
+                        <Button
+                            variant="contained"
+                            startIcon={<Article />}
+                            onClick={() => navigate('/instapaper/auth')}
+                            sx={{ mt: 2 }}
+                        >
+                            Connect to Instapaper
+                        </Button>
+                    </Box>
+                </AccordionDetails>
+            </Accordion>
+
             {/* TMDB Movies & TV Shows Import Section */}
             <Accordion 
                 expanded={expanded === 'tmdb'} 
@@ -1395,6 +1418,194 @@ function ImportMediaPage() {
                                 {tmdbSuccess}
                             </Alert>
                         )}
+                    </Box>
+                </AccordionDetails>
+            </Accordion>
+
+            {/* Podcast Import Section */}
+            <Accordion 
+                expanded={expanded === 'podcasts'} 
+                onChange={handleAccordionChange('podcasts')}
+                sx={{ mb: 2 }}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMore />}
+                    aria-controls="podcasts-content"
+                    id="podcasts-header"
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                        <Podcasts />
+                        <Typography variant="h6">
+                            Podcasts
+                        </Typography>
+                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Powered by
+                            </Typography>
+                            <Button
+                                variant="text"
+                                size="small"
+                                href="https://www.listennotes.com"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                endIcon={<OpenInNew fontSize="small" />}
+                                sx={{ 
+                                    minWidth: 'auto',
+                                    textTransform: 'none',
+                                    color: '#ffffff',
+                                    '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                ListenNotes
+                            </Button>
+                        </Box>
+                    </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+                    {renderPodcastImportSection(
+                        podcastImportMethod, setPodcastImportMethod,
+                        podcastSearchQuery, setPodcastSearchQuery, handlePodcastSearch,
+                        podcastId, setPodcastId, handlePodcastImportById,
+                        podcastName, setPodcastName, handlePodcastImportByName,
+                        podcastSearchResults, handleImportPodcast,
+                        podcastIsLoading, podcastError, podcastSuccess
+                    )}
+                </AccordionDetails>
+            </Accordion>
+
+            {/* Readwise Import Section */}
+            <Accordion 
+                expanded={expanded === 'readwise'} 
+                onChange={handleAccordionChange('readwise')}
+                sx={{ mb: 2 }}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMore />}
+                    aria-controls="readwise-content"
+                    id="readwise-header"
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                        <AutoStories />
+                        <Typography variant="h6">
+                            Highlights from Readwise
+                        </Typography>
+                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Powered by
+                            </Typography>
+                            <Button
+                                variant="text"
+                                size="small"
+                                href="https://readwise.io"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                endIcon={<OpenInNew fontSize="small" />}
+                                sx={{ 
+                                    minWidth: 'auto',
+                                    textTransform: 'none',
+                                    color: '#ffffff',
+                                    '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                Readwise
+                            </Button>
+                        </Box>
+                    </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <Box sx={{ padding: 2 }}>
+                        <Typography variant="body1" paragraph>
+                            Sync your highlights and documents from Readwise and Readwise Reader:
+                        </Typography>
+                        <Box component="ul" sx={{ mb: 2, pl: 3 }}>
+                            <li>
+                                <Typography variant="body2">
+                                    Import highlights from Kindle, Instapaper, Reader, and more
+                                </Typography>
+                            </li>
+                            <li>
+                                <Typography variant="body2">
+                                    Sync documents saved in Readwise Reader
+                                </Typography>
+                            </li>
+                            <li>
+                                <Typography variant="body2">
+                                    Validate your API connection before syncing
+                                </Typography>
+                            </li>
+                            <li>
+                                <Typography variant="body2">
+                                    Track sync history and manage imported content
+                                </Typography>
+                            </li>
+                        </Box>
+                        <Button
+                            variant="contained"
+                            startIcon={<AutoStories />}
+                            onClick={() => navigate('/readwise-sync')}
+                            sx={{ mt: 2 }}
+                        >
+                            Go to Readwise Sync
+                        </Button>
+                    </Box>
+                </AccordionDetails>
+            </Accordion>
+
+            {/* Websites Import Section */}
+            <Accordion 
+                expanded={expanded === 'websites'} 
+                onChange={handleAccordionChange('websites')}
+                sx={{ mb: 2 }}
+            >
+                <AccordionSummary
+                    expandIcon={<ExpandMore />}
+                    aria-controls="websites-content"
+                    id="websites-header"
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+                        <Language />
+                        <Typography variant="h6">
+                            Websites
+                        </Typography>
+                    </Box>
+                </AccordionSummary>
+                <AccordionDetails>
+                    <Box sx={{ padding: 2 }}>
+                        <Typography variant="body1" paragraph>
+                            Import websites and web pages to track and organize:
+                        </Typography>
+                        <Box component="ul" sx={{ mb: 2, pl: 3 }}>
+                            <li>
+                                <Typography variant="body2">
+                                    Scrape and preview website metadata before importing
+                                </Typography>
+                            </li>
+                            <li>
+                                <Typography variant="body2">
+                                    Automatically extract title, description, and images
+                                </Typography>
+                            </li>
+                            <li>
+                                <Typography variant="body2">
+                                    Track RSS feeds for websites with available feeds
+                                </Typography>
+                            </li>
+                            <li>
+                                <Typography variant="body2">
+                                    Organize and manage your saved websites
+                                </Typography>
+                            </li>
+                        </Box>
+                        <Button
+                            variant="contained"
+                            startIcon={<Language />}
+                            onClick={() => navigate('/import-website')}
+                            sx={{ mt: 2 }}
+                        >
+                            Import Website
+                        </Button>
                     </Box>
                 </AccordionDetails>
             </Accordion>
@@ -1646,221 +1857,6 @@ function ImportMediaPage() {
                 </AccordionDetails>
             </Accordion>
 
-            {/* Instapaper Import Section */}
-            <Accordion 
-                expanded={expanded === 'instapaper'} 
-                onChange={handleAccordionChange('instapaper')}
-                sx={{ mb: 2 }}
-            >
-                <AccordionSummary
-                    expandIcon={<ExpandMore />}
-                    aria-controls="instapaper-content"
-                    id="instapaper-header"
-                >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-                        <Article />
-                        <Typography variant="h6">
-                            Articles from Instapaper
-                        </Typography>
-                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                Powered by
-                            </Typography>
-                            <Button
-                                variant="text"
-                                size="small"
-                                href="https://www.instapaper.com"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                endIcon={<OpenInNew fontSize="small" />}
-                                sx={{ 
-                                    minWidth: 'auto',
-                                    textTransform: 'none',
-                                    color: '#ffffff',
-                                    '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                Instapaper
-                            </Button>
-                        </Box>
-                    </Box>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <Box sx={{ padding: 2 }}>
-                        <Typography variant="body1" paragraph>
-                            Import articles from your Instapaper account. Connect your account to:
-                        </Typography>
-                        <Box component="ul" sx={{ mb: 2, pl: 3 }}>
-                            <li>
-                                <Typography variant="body2">
-                                    Import articles from Unread, Starred, or Archive folders
-                                </Typography>
-                            </li>
-                            <li>
-                                <Typography variant="body2">
-                                    Preserve reading progress and metadata
-                                </Typography>
-                            </li>
-                            <li>
-                                <Typography variant="body2">
-                                    Automatically detect and skip duplicates
-                                </Typography>
-                            </li>
-                            <li>
-                                <Typography variant="body2">
-                                    Sync existing articles with latest progress
-                                </Typography>
-                            </li>
-                        </Box>
-                        <Button
-                            variant="contained"
-                            startIcon={<Article />}
-                            onClick={() => navigate('/instapaper/auth')}
-                            sx={{ mt: 2 }}
-                        >
-                            Connect to Instapaper
-                        </Button>
-                    </Box>
-                </AccordionDetails>
-            </Accordion>
-
-            {/* Readwise Import Section */}
-            <Accordion 
-                expanded={expanded === 'readwise'} 
-                onChange={handleAccordionChange('readwise')}
-                sx={{ mb: 2 }}
-            >
-                <AccordionSummary
-                    expandIcon={<ExpandMore />}
-                    aria-controls="readwise-content"
-                    id="readwise-header"
-                >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-                        <AutoStories />
-                        <Typography variant="h6">
-                            Highlights from Readwise
-                        </Typography>
-                        <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="body2" color="text.secondary">
-                                Powered by
-                            </Typography>
-                            <Button
-                                variant="text"
-                                size="small"
-                                href="https://readwise.io"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                endIcon={<OpenInNew fontSize="small" />}
-                                sx={{ 
-                                    minWidth: 'auto',
-                                    textTransform: 'none',
-                                    color: '#ffffff',
-                                    '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' }
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                Readwise
-                            </Button>
-                        </Box>
-                    </Box>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <Box sx={{ padding: 2 }}>
-                        <Typography variant="body1" paragraph>
-                            Sync your highlights and documents from Readwise and Readwise Reader:
-                        </Typography>
-                        <Box component="ul" sx={{ mb: 2, pl: 3 }}>
-                            <li>
-                                <Typography variant="body2">
-                                    Import highlights from Kindle, Instapaper, Reader, and more
-                                </Typography>
-                            </li>
-                            <li>
-                                <Typography variant="body2">
-                                    Sync documents saved in Readwise Reader
-                                </Typography>
-                            </li>
-                            <li>
-                                <Typography variant="body2">
-                                    Validate your API connection before syncing
-                                </Typography>
-                            </li>
-                            <li>
-                                <Typography variant="body2">
-                                    Track sync history and manage imported content
-                                </Typography>
-                            </li>
-                        </Box>
-                        <Button
-                            variant="contained"
-                            startIcon={<AutoStories />}
-                            onClick={() => navigate('/readwise-sync')}
-                            sx={{ mt: 2 }}
-                        >
-                            Go to Readwise Sync
-                        </Button>
-                    </Box>
-                </AccordionDetails>
-            </Accordion>
-
-            {/* Websites Import Section */}
-            <Accordion 
-                expanded={expanded === 'websites'} 
-                onChange={handleAccordionChange('websites')}
-                sx={{ mb: 2 }}
-            >
-                <AccordionSummary
-                    expandIcon={<ExpandMore />}
-                    aria-controls="websites-content"
-                    id="websites-header"
-                >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-                        <Language />
-                        <Typography variant="h6">
-                            Websites
-                        </Typography>
-                    </Box>
-                </AccordionSummary>
-                <AccordionDetails>
-                    <Box sx={{ padding: 2 }}>
-                        <Typography variant="body1" paragraph>
-                            Import websites and web pages to track and organize:
-                        </Typography>
-                        <Box component="ul" sx={{ mb: 2, pl: 3 }}>
-                            <li>
-                                <Typography variant="body2">
-                                    Scrape and preview website metadata before importing
-                                </Typography>
-                            </li>
-                            <li>
-                                <Typography variant="body2">
-                                    Automatically extract title, description, and images
-                                </Typography>
-                            </li>
-                            <li>
-                                <Typography variant="body2">
-                                    Track RSS feeds for websites with available feeds
-                                </Typography>
-                            </li>
-                            <li>
-                                <Typography variant="body2">
-                                    Organize and manage your saved websites
-                                </Typography>
-                            </li>
-                        </Box>
-                        <Button
-                            variant="contained"
-                            startIcon={<Language />}
-                            onClick={() => navigate('/import-website')}
-                            sx={{ mt: 2 }}
-                        >
-                            Import Website
-                        </Button>
-                    </Box>
-                </AccordionDetails>
-            </Accordion>
-
             <Divider sx={{ my: 4 }} />
             
             <Box sx={{ textAlign: 'center' }}>
@@ -1906,12 +1902,12 @@ function ImportMediaPage() {
                             <Typography variant="h4" sx={{ flex: 1, mr: 2, color: '#ffffff' }}>
                                 {selectedTmdbItem.title || selectedTmdbItem.name}
                             </Typography>
-                            <Button
+                            <WhiteOutlineButton
                                 onClick={() => setShowTmdbDetails(false)}
                                 sx={{ minWidth: 'auto', p: 1 }}
                             >
                                 ×
-                            </Button>
+                            </WhiteOutlineButton>
                         </Box>
 
                         <Box sx={{ display: 'flex', gap: 3, mb: 3 }}>
@@ -1953,45 +1949,7 @@ function ImportMediaPage() {
                                             {selectedTmdbItem.vote_average ? `⭐ ${selectedTmdbItem.vote_average.toFixed(1)}` : 'N/A'}
                                         </Typography>
                                     </Box>
-                                    {selectedTmdbItem.runtime && (
-                                        <Box>
-                                            <Typography variant="subtitle2" sx={{ color: '#fcfafa' }}>
-                                                Runtime
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ color: '#ffffff' }}>
-                                                {selectedTmdbItem.runtime} minutes
-                                            </Typography>
-                                        </Box>
-                                    )}
-                                    {selectedTmdbItem.number_of_seasons && (
-                                        <Box>
-                                            <Typography variant="subtitle2" sx={{ color: '#fcfafa' }}>
-                                                Seasons
-                                            </Typography>
-                                            <Typography variant="body2" sx={{ color: '#ffffff' }}>
-                                                {selectedTmdbItem.number_of_seasons}
-                                            </Typography>
-                                        </Box>
-                                    )}
                                 </Box>
-
-                                {selectedTmdbItem.genres && selectedTmdbItem.genres.length > 0 && (
-                                    <Box sx={{ mb: 3 }}>
-                                        <Typography variant="subtitle2" sx={{ color: '#fcfafa' }} gutterBottom>
-                                            Genres
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                            {selectedTmdbItem.genres.map((genre, index) => (
-                                                <Chip
-                                                    key={index}
-                                                    label={genre.name}
-                                                    size="small"
-                                                    variant="outlined"
-                                                />
-                                            ))}
-                                        </Box>
-                                    </Box>
-                                )}
 
                                 <Box sx={{ display: 'flex', gap: 2 }}>
                                     <Button
@@ -2005,12 +1963,11 @@ function ImportMediaPage() {
                                     >
                                         Import to Library
                                     </Button>
-                                    <Button
-                                        variant="outlined"
+                                    <WhiteOutlineButton
                                         onClick={() => setShowTmdbDetails(false)}
                                     >
                                         Close
-                                    </Button>
+                                    </WhiteOutlineButton>
                                 </Box>
                             </Box>
                         </Box>

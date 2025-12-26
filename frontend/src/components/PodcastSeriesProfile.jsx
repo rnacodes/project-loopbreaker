@@ -692,13 +692,13 @@ function PodcastSeriesProfile() {
                                                                 size="small"
                                                                 onClick={() => handleImportEpisode(episode)}
                                                                 disabled={isImporting}
-                                                                color="primary"
                                                                 title="Import episode"
+                                                                sx={{ color: 'white' }}
                                                             >
                                                                 {isImporting ? (
-                                                                    <CircularProgress size={20} />
+                                                                    <CircularProgress size={20} sx={{ color: 'white' }} />
                                                                 ) : (
-                                                                    <Add />
+                                                                    <Add sx={{ color: 'white' }} />
                                                                 )}
                                                             </IconButton>
                                                         )}
@@ -734,16 +734,27 @@ function PodcastSeriesProfile() {
                                                         {formatEpisodeDuration(episode.audio_length_sec)}
                                                     </TableCell>
                                                     <TableCell>
-                                                        {episode.link && (
+                                                        {isImported ? (
                                                             <IconButton
                                                                 size="small"
-                                                                href={episode.link}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                title="Open in ListenNotes"
+                                                                onClick={() => navigate(`/media/${episodeDbId}`)}
+                                                                color="primary"
+                                                                title="View episode profile"
                                                             >
-                                                                <OpenInNew fontSize="small" />
+                                                                <Visibility fontSize="small" />
                                                             </IconButton>
+                                                        ) : (
+                                                            episode.link && (
+                                                                <IconButton
+                                                                    size="small"
+                                                                    href={episode.link}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    title="Open in ListenNotes"
+                                                                >
+                                                                    <OpenInNew fontSize="small" />
+                                                                </IconButton>
+                                                            )
                                                         )}
                                                     </TableCell>
                                                 </TableRow>
@@ -767,10 +778,12 @@ function PodcastSeriesProfile() {
                     )}
                 </DialogContent>
                 <DialogActions>
-                    <Typography variant="caption" sx={{ flex: 1, ml: 2 }}>
+                    <Typography variant="caption" sx={{ flex: 1, ml: 2, color: 'white' }}>
                         Showing: {displayedEpisodes.length} of {allEpisodesFromApi.length} episodes
                     </Typography>
-                    <Button onClick={() => setViewAllEpisodesDialog(false)}>Close</Button>
+                    <Button onClick={() => setViewAllEpisodesDialog(false)} sx={{ color: 'white' }}>
+                        Close
+                    </Button>
                 </DialogActions>
             </Dialog>
 
