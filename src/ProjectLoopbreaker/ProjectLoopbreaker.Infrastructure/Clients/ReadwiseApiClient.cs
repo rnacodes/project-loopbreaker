@@ -41,21 +41,46 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
 
         public async Task<bool> ValidateTokenAsync()
         {
-            if (string.IsNullOrEmpty(_apiToken))
+            if (string.IsNullOrEmpty(_apiToken) || _apiToken == "READWISE_API_TOKEN")
             {
-                _logger.LogWarning("Readwise API token not configured");
-                return false;
+                _logger.LogWarning("Readwise API token not configured. Please set ApiKeys:Readwise in appsettings.json or READWISE_API_KEY environment variable.");
+                throw new InvalidOperationException("Readwise API token not configured. Please configure your API key in appsettings.json (ApiKeys:Readwise) or as environment variable READWISE_API_KEY.");
             }
 
             try
             {
+                _logger.LogInformation("Validating Readwise API token...");
                 var response = await _httpClient.GetAsync("auth/");
-                return response.StatusCode == System.Net.HttpStatusCode.NoContent;
+                
+                _logger.LogInformation("Readwise auth endpoint returned status: {StatusCode}", response.StatusCode);
+                
+                if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+                {
+                    _logger.LogInformation("Readwise API token is valid");
+                    return true;
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    _logger.LogWarning("Readwise API token is invalid or expired");
+                    throw new UnauthorizedAccessException("Readwise API token is invalid or expired. Please check your API key.");
+                }
+                else
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("Unexpected response from Readwise API: {StatusCode} - {Content}", 
+                        response.StatusCode, responseContent);
+                    throw new HttpRequestException($"Readwise API returned unexpected status: {response.StatusCode}");
+                }
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Network error while validating Readwise API token");
+                throw new HttpRequestException("Failed to connect to Readwise API. Please check your internet connection.", ex);
+            }
+            catch (Exception ex) when (ex is not InvalidOperationException && ex is not UnauthorizedAccessException)
             {
                 _logger.LogError(ex, "Error validating Readwise API token");
-                return false;
+                throw new Exception("Unexpected error validating Readwise connection: " + ex.Message, ex);
             }
         }
 
