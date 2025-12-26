@@ -23,9 +23,19 @@ const ReadwiseSyncPage = () => {
     try {
       const response = await validateReadwiseConnection();
       setConnectionStatus(response.data);
+      
+      // Show detailed error if connection failed
+      if (!response.data.connected && response.data.details) {
+        setError(response.data.details);
+      }
     } catch (err) {
-      setError(`Connection validation failed: ${err.response?.data?.details || err.message}`);
-      setConnectionStatus({ connected: false, message: 'Connection failed' });
+      const errorDetails = err.response?.data?.details || err.response?.data?.message || err.message;
+      setError(`Connection validation failed: ${errorDetails}`);
+      setConnectionStatus({ 
+        connected: false, 
+        message: err.response?.data?.message || 'Connection failed',
+        details: errorDetails
+      });
     } finally {
       setLoading(false);
     }

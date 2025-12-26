@@ -1,4 +1,4 @@
-/*TODO: Update color scheme to be more readable*/
+/* Updated color scheme matching design system */
 
 .readwise-sync-page {
   max-width: 1200px;
@@ -17,33 +17,33 @@
 .page-header h1 {
   font-size: 2.5rem;
   margin-bottom: 0.5rem;
-  color: #1a202c;
+  color: #fcfafa; /* white text for dark background */
 }
 
 .subtitle {
   font-size: 1.125rem;
-  color: #718096;
+  color: #fcfafa; /* white text for dark background */
   margin: 0;
 }
 
 .sync-section {
   margin-bottom: 2.5rem;
   padding: 2rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #4f3a7a; /* primary light */
   border-radius: 12px;
-  background: #ffffff;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  background: #474350; /* davys-gray paper */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .sync-section h2 {
   margin-top: 0;
   margin-bottom: 0.5rem;
-  color: #2d3748;
+  color: #fcfafa; /* white text */
   font-size: 1.5rem;
 }
 
 .sync-section p {
-  color: #718096;
+  color: #fcfafa; /* white text */
   margin-bottom: 1.5rem;
 }
 
@@ -73,25 +73,25 @@
 }
 
 .btn-primary {
-  background-color: #4299e1;
-  color: white;
+  background-color: #362759; /* primary main */
+  color: #fcfafa;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #3182ce;
+  background-color: #4f3a7a; /* primary light */
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(66, 153, 225, 0.3);
+  box-shadow: 0 4px 6px rgba(54, 39, 89, 0.4);
 }
 
 .btn-secondary {
-  background-color: #48bb78;
-  color: white;
+  background-color: #4caf50; /* success green */
+  color: #fcfafa;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #38a169;
+  background-color: #45a049;
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(72, 187, 120, 0.3);
+  box-shadow: 0 4px 6px rgba(76, 175, 80, 0.4);
 }
 
 .connection-status {
@@ -105,15 +105,15 @@
 }
 
 .connection-status.connected {
-  background-color: #c6f6d5;
-  color: #22543d;
-  border: 1px solid #9ae6b4;
+  background-color: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+  border: 1px solid #4caf50;
 }
 
 .connection-status.disconnected {
-  background-color: #fed7d7;
-  color: #742a2a;
-  border: 1px solid #fc8181;
+  background-color: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+  border: 1px solid #f44336;
 }
 
 .status-icon {
@@ -127,25 +127,25 @@
 .sync-result {
   margin-top: 1.5rem;
   padding: 1.5rem;
-  background: #f7fafc;
+  background: rgba(54, 39, 89, 0.3);
   border-radius: 8px;
-  border-left: 4px solid #4299e1;
+  border-left: 4px solid #362759;
 }
 
 .sync-result.success {
-  border-left-color: #48bb78;
-  background-color: #f0fff4;
+  border-left-color: #4caf50;
+  background-color: rgba(76, 175, 80, 0.15);
 }
 
 .sync-result.error {
-  border-left-color: #f56565;
-  background-color: #fff5f5;
+  border-left-color: #f44336;
+  background-color: rgba(244, 67, 54, 0.15);
 }
 
 .sync-result h3 {
   margin-top: 0;
   margin-bottom: 1rem;
-  color: #2d3748;
+  color: #fcfafa;
   font-size: 1.125rem;
 }
 
@@ -167,13 +167,14 @@
 
 .result-label {
   font-size: 0.875rem;
-  color: #718096;
+  color: #fcfafa;
   font-weight: 500;
+  opacity: 0.8;
 }
 
 .result-value {
   font-size: 1.125rem;
-  color: #2d3748;
+  color: #fcfafa;
   font-weight: 600;
 }
 
@@ -187,9 +188,9 @@
 }
 
 .alert-error {
-  background-color: #fff5f5;
-  color: #742a2a;
-  border: 1px solid #fc8181;
+  background-color: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+  border: 1px solid #f44336;
 }
 
 .alert strong {
@@ -197,11 +198,12 @@
 }
 
 .info-box {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, #362759 0%, #4f3a7a 100%);
+  color: #fcfafa;
   padding: 2rem;
   border-radius: 12px;
   margin-top: 3rem;
+  border: 1px solid #4f3a7a;
 }
 
 .info-box h3 {

@@ -253,14 +253,45 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return Ok(new { 
                     connected = isValid,
                     message = isValid 
-                        ? "Readwise API connection is valid" 
+                        ? "Readwise API connection is valid ✓" 
                         : "Readwise API connection failed"
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Readwise API not configured");
+                return Ok(new { 
+                    connected = false,
+                    message = "Readwise API not configured",
+                    details = ex.Message 
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Readwise API token invalid");
+                return Ok(new { 
+                    connected = false,
+                    message = "Invalid API token",
+                    details = ex.Message 
+                });
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "Network error validating Readwise connection");
+                return Ok(new { 
+                    connected = false,
+                    message = "Network error",
+                    details = ex.Message 
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error validating Readwise connection");
-                return StatusCode(500, new { error = "Failed to validate connection", details = ex.Message });
+                return Ok(new { 
+                    connected = false,
+                    message = "Connection validation failed",
+                    details = ex.Message 
+                });
             }
         }
 
