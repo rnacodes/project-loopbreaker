@@ -1949,7 +1949,45 @@ function ImportMediaPage() {
                                             {selectedTmdbItem.vote_average ? `⭐ ${selectedTmdbItem.vote_average.toFixed(1)}` : 'N/A'}
                                         </Typography>
                                     </Box>
+                                    {selectedTmdbItem.runtime && (
+                                        <Box>
+                                            <Typography variant="subtitle2" sx={{ color: '#fcfafa' }}>
+                                                Runtime
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: '#ffffff' }}>
+                                                {selectedTmdbItem.runtime} minutes
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                    {selectedTmdbItem.number_of_seasons && (
+                                        <Box>
+                                            <Typography variant="subtitle2" sx={{ color: '#fcfafa' }}>
+                                                Seasons
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: '#ffffff' }}>
+                                                {selectedTmdbItem.number_of_seasons}
+                                            </Typography>
+                                        </Box>
+                                    )}
                                 </Box>
+
+                                {selectedTmdbItem.genres && selectedTmdbItem.genres.length > 0 && (
+                                    <Box sx={{ mb: 3 }}>
+                                        <Typography variant="subtitle2" sx={{ color: '#fcfafa' }} gutterBottom>
+                                            Genres
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                                            {selectedTmdbItem.genres.map((genre, index) => (
+                                                <Chip
+                                                    key={index}
+                                                    label={genre.name}
+                                                    size="small"
+                                                    variant="outlined"
+                                                />
+                                            ))}
+                                        </Box>
+                                    </Box>
+                                )}
 
                                 <Box sx={{ display: 'flex', gap: 2 }}>
                                     <Button

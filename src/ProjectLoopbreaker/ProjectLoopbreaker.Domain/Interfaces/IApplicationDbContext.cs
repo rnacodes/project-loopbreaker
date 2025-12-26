@@ -35,8 +35,5 @@ namespace ProjectLoopbreaker.Domain.Interfaces
         
         // Entity finding
         Task<TEntity?> FindAsync<TEntity>(params object[] keyValues) where TEntity : class;
-        
-        // Entity entry for complex operations
-        object Entry<TEntity>(TEntity entity) where TEntity : class;
     }
 }

@@ -681,10 +681,5 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         {
             return await base.FindAsync<TEntity>(keyValues);
         }
-
-        public new object Entry<TEntity>(TEntity entity) where TEntity : class
-        {
-            return base.Entry(entity);
-        }
     }
 }

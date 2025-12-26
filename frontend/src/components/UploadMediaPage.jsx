@@ -99,9 +99,12 @@ function UploadMediaPage() {
             <Alert severity="info" sx={{ mb: 3 }}>
                 <AlertTitle>CSV Format Requirement</AlertTitle>
                 Your CSV file must include <strong>MediaType</strong> as a column. Each row can have a different type! 
-                Supported types: Article, Book, Movie, TVShow, Video, Website.
                 <br />
-                <strong>Note:</strong> Podcast import is not yet supported via CSV. Please use the Import Media page for podcasts.
+                <strong>Supported types via CSV:</strong> Article, Book, Movie, TVShow, Video, Website
+                <br />
+                <strong>Not supported via CSV:</strong> Podcast, Channel, Document, Music, Other, Playlist, VideoGame
+                <br />
+                <em>For podcasts, please use the Import Media page. Other types will be added in future updates.</em>
             </Alert>
 
             <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
@@ -361,7 +364,7 @@ function UploadMediaPage() {
                 <Alert severity="info" sx={{ mb: 2 }}>
                     <Typography variant="body2">
                         <strong>Common Columns (All Media Types):</strong>
-                        <br />• <strong>MediaType</strong> (Required, First Column): Article, Book, Movie, Podcast, TVShow, Video, Website
+                        <br />• <strong>MediaType</strong> (Required): Article, Book, Movie, TVShow, Video, Website
                         <br />• <strong>Title</strong> (Required): The title of the media item
                         <br />• <strong>Description</strong> (Optional): A description of the media item
                         <br />• <strong>Link</strong> (Optional): URL to the media item
@@ -372,8 +375,8 @@ function UploadMediaPage() {
                         <br />• <strong>Rating</strong> (Optional): SuperLike, Like, Neutral, Dislike
                         <br />• <strong>OwnershipStatus</strong> (Optional): Own, Rented, Streamed
                         <br />• <strong>DateCompleted</strong> (Optional): Date format like "2024-01-15"
-                        <br />• <strong>Topics</strong> (Optional): Comma-separated topic names
-                        <br />• <strong>Genres</strong> (Optional): Comma-separated genre names
+                        <br />• <strong>Topics</strong> (Optional): Comma-separated topic names (will be converted to lowercase)
+                        <br />• <strong>Genres</strong> (Optional): Comma-separated genre names (will be converted to lowercase)
                     </Typography>
                 </Alert>
 
@@ -418,26 +421,6 @@ function UploadMediaPage() {
                         <Typography variant="body2" paragraph>
                             <strong>TV Show-Specific Columns:</strong> Creator, FirstAirYear, LastAirYear, 
                             NumberOfSeasons, NumberOfEpisodes, TmdbId
-                        </Typography>
-                    </AccordionDetails>
-                </Accordion>
-
-                <Accordion>
-                    <AccordionSummary expandIcon={<ExpandMore />}>
-                        <Typography variant="subtitle1">🎙️ Podcast Format</Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                        <Typography variant="body2" paragraph>
-                            <strong>Required:</strong> MediaType (Podcast), Title
-                        </Typography>
-                        <Typography variant="body2" paragraph>
-                            <strong>Podcast-Specific Columns:</strong> Publisher, AudioLink, ExternalId (ListenNotes ID), 
-                            PodcastType (Series/Episode), DurationInSeconds, ReleaseDate, EpisodeNumber, 
-                            SeriesId (for episodes)
-                        </Typography>
-                        <Typography variant="body2" color="warning.main">
-                            <strong>Note:</strong> Podcast CSV import is currently being updated. Please use the 
-                            Import Media page for podcasts.
                         </Typography>
                     </AccordionDetails>
                 </Accordion>
@@ -493,13 +476,14 @@ function UploadMediaPage() {
                         <strong>Important Tips:</strong>
                         <br />• Your CSV file MUST include a "MediaType" column
                         <br />• <strong>NEW:</strong> You can mix different media types in the same CSV! Each row can have its own MediaType.
+                        <br />• Only these types are supported via CSV: Article, Book, Movie, TVShow, Video, Website
+                        <br />• For Podcasts, use the Import Media page (ListenNotes integration)
                         <br />• Ensure your CSV file is properly formatted with commas as separators
                         <br />• Use quotes around text that contains commas
                         <br />• For boolean fields, use "TRUE" or "FALSE" (case-insensitive)
                         <br />• For date fields, use formats like "2024-01-15" or "01/15/2024"
-                        <br />• Multiple topics/genres within a cell can be separated by semicolons
+                        <br />• Multiple topics/genres within a cell can be separated by semicolons (they will be converted to lowercase)
                         <br />• Leave optional columns empty if not applicable
-                        <br />• <strong>Podcast Note:</strong> CSV import for podcasts is not yet supported. Use the Import Media page instead.
                     </Typography>
                 </Alert>
 
@@ -558,8 +542,8 @@ function UploadMediaPage() {
                     <Button
                         variant="outlined"
                         size="small"
-                        href="/sample-podcast-import.csv"
-                        download="sample-podcast-import.csv"
+                        href="/sample-video-import.csv"
+                        download="sample-video-import.csv"
                         sx={{ 
                             borderColor: 'rgba(255, 255, 255, 0.5)',
                             color: 'text.primary',
@@ -569,7 +553,39 @@ function UploadMediaPage() {
                             }
                         }}
                     >
-                        🎙️ Podcast Sample
+                        📹 Video Sample
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        href="/sample-article-import.csv"
+                        download="sample-article-import.csv"
+                        sx={{ 
+                            borderColor: 'rgba(255, 255, 255, 0.5)',
+                            color: 'text.primary',
+                            '&:hover': {
+                                borderColor: 'rgba(255, 255, 255, 0.8)',
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }}
+                    >
+                        📰 Article Sample
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        href="/sample-website-import.csv"
+                        download="sample-website-import.csv"
+                        sx={{ 
+                            borderColor: 'rgba(255, 255, 255, 0.5)',
+                            color: 'text.primary',
+                            '&:hover': {
+                                borderColor: 'rgba(255, 255, 255, 0.8)',
+                                backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                            }
+                        }}
+                    >
+                        🌐 Website Sample
                     </Button>
                 </Box>
             </Paper>

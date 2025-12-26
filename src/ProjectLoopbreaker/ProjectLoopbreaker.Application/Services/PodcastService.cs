@@ -312,6 +312,10 @@ namespace ProjectLoopbreaker.Application.Services
                     { "publisher", episode.Publisher ?? "" }
                 });
 
+            // Load the Series navigation property
+            episode.Series = await _context.PodcastSeries
+                .FirstOrDefaultAsync(s => s.Id == episode.SeriesId);
+
             return episode;
         }
 
