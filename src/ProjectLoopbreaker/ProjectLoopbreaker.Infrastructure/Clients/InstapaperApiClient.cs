@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using ProjectLoopbreaker.Shared.Interfaces;
 using ProjectLoopbreaker.Shared.DTOs.Instapaper;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
@@ -20,6 +21,7 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
         private readonly IConfiguration _configuration;
         private readonly string? _consumerKey;
         private readonly string? _consumerSecret;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         public InstapaperApiClient(
             HttpClient httpClient,
@@ -29,6 +31,14 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
             _httpClient = httpClient;
             _logger = logger;
             _configuration = configuration;
+
+            // Configure JSON serialization options
+            _jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                NumberHandling = JsonNumberHandling.AllowReadingFromString
+            };
 
             // Load Instapaper API credentials from configuration
             // Try ApiKeys:Instapaper first, then fall back to InstapaperApiSettings
@@ -54,37 +64,49 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
 
                 // Instapaper uses xAuth (a variant of OAuth 1.0a)
                 var endpoint = "oauth/access_token";
-                var url = $"{_httpClient.BaseAddress}{endpoint}";
+                var url = "https://www.instapaper.com/api/1/oauth/access_token";
                 
-                // Prepare OAuth parameters
+                // Prepare OAuth parameters (without x_auth params for signature)
                 var oauthParams = new Dictionary<string, string>
                 {
                     { "oauth_consumer_key", _consumerKey! },
                     { "oauth_signature_method", "HMAC-SHA1" },
                     { "oauth_timestamp", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString() },
                     { "oauth_nonce", Guid.NewGuid().ToString("N") },
-                    { "oauth_version", "1.0" },
+                    { "oauth_version", "1.0" }
+                };
+
+                // Add xAuth parameters for request body (these are included in signature for xAuth)
+                var allParams = new Dictionary<string, string>(oauthParams)
+                {
                     { "x_auth_username", username },
                     { "x_auth_password", password },
                     { "x_auth_mode", "client_auth" }
                 };
 
-                // Generate signature
-                var signature = GenerateSignature("POST", url, oauthParams, _consumerSecret!, "");
-                oauthParams["oauth_signature"] = signature;
+                // Generate signature with all parameters
+                _logger.LogDebug("Generating signature for URL: {Url}", url);
+                _logger.LogDebug("Consumer Key: {ConsumerKey}", _consumerKey);
+                var signature = GenerateSignature("POST", url, allParams, _consumerSecret!, "");
+                allParams["oauth_signature"] = signature;
+                
+                _logger.LogDebug("Generated OAuth signature: {Signature}", signature);
 
-                // Create form content
-                var formContent = new FormUrlEncodedContent(oauthParams);
+                // Create form content with all parameters
+                var formContent = new FormUrlEncodedContent(allParams);
 
                 // Make request
                 var response = await _httpClient.PostAsync(endpoint, formContent);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
+                _logger.LogInformation("xAuth response status: {Status}", response.StatusCode);
+                _logger.LogDebug("xAuth response content: {Content}", responseContent);
+
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError("Instapaper authentication failed. Status: {Status}, Response: {Response}", 
                         response.StatusCode, responseContent);
-                    throw new InvalidOperationException($"Instapaper authentication failed: {responseContent}");
+                    throw new InvalidOperationException($"Instapaper authentication failed (HTTP {response.StatusCode}): {responseContent}");
                 }
 
                 // Parse response (format: oauth_token=xxx&oauth_token_secret=yyy)
@@ -114,7 +136,7 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                 _logger.LogInformation("Verifying credentials with access token");
 
                 var endpoint = "account/verify_credentials";
-                var url = $"{_httpClient.BaseAddress}{endpoint}";
+                var url = "https://www.instapaper.com/api/1/account/verify_credentials";
                 
                 // Prepare OAuth parameters
                 var oauthParams = new Dictionary<string, string>
@@ -128,6 +150,7 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                 };
 
                 // Generate signature
+                _logger.LogDebug("Generating signature for verify_credentials");
                 var signature = GenerateSignature("POST", url, oauthParams, _consumerSecret!, accessTokenSecret);
                 oauthParams["oauth_signature"] = signature;
 
@@ -138,22 +161,33 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                 var response = await _httpClient.PostAsync(endpoint, formContent);
                 var responseContent = await response.Content.ReadAsStringAsync();
 
+                _logger.LogInformation("Verify credentials response status: {Status}", response.StatusCode);
+                _logger.LogDebug("Verify credentials response content: {Content}", responseContent);
+
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogError("Credentials verification failed. Status: {Status}, Response: {Response}", 
                         response.StatusCode, responseContent);
-                    throw new InvalidOperationException($"Credentials verification failed: {responseContent}");
+                    throw new InvalidOperationException($"Credentials verification failed (HTTP {response.StatusCode}): {responseContent}");
                 }
 
                 // Parse response - Instapaper returns an array with user object as first element
-                var responseArray = JsonSerializer.Deserialize<List<InstapaperUserDto>>(responseContent);
+                // Use InstapaperResponseItem for deserialization since it has correct types
+                var responseArray = JsonSerializer.Deserialize<List<InstapaperResponseItem>>(responseContent, _jsonOptions);
                 
-                if (responseArray == null || responseArray.Count == 0)
+                if (responseArray == null || responseArray.Count == 0 || responseArray[0].Type != "user")
                 {
                     throw new InvalidOperationException("Invalid response format from Instapaper API");
                 }
 
-                var user = responseArray[0];
+                var userItem = responseArray[0];
+                var user = new InstapaperUserDto
+                {
+                    UserId = userItem.UserId?.ToString() ?? "",
+                    Username = userItem.Username ?? "",
+                    SubscriptionIsActive = userItem.SubscriptionIsActive ?? "0"
+                };
+                
                 _logger.LogInformation("Successfully verified credentials for user: {Username}", user.Username);
                 return user;
             }
@@ -181,7 +215,7 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                 _logger.LogInformation("Fetching {Limit} bookmarks from folder: {FolderId}", limit, folderId);
 
                 var endpoint = "bookmarks/list";
-                var url = $"{_httpClient.BaseAddress}{endpoint}";
+                var url = "https://www.instapaper.com/api/1/bookmarks/list";
                 
                 // Prepare OAuth parameters
                 var oauthParams = new Dictionary<string, string>
@@ -197,6 +231,7 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                 };
 
                 // Generate signature
+                _logger.LogDebug("Generating signature for bookmarks/list");
                 var signature = GenerateSignature("POST", url, oauthParams, _consumerSecret!, accessTokenSecret);
                 oauthParams["oauth_signature"] = signature;
 
@@ -215,7 +250,7 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                 }
 
                 // Parse response - Instapaper returns an array of items
-                var responseArray = JsonSerializer.Deserialize<List<InstapaperResponseItem>>(responseContent);
+                var responseArray = JsonSerializer.Deserialize<List<InstapaperResponseItem>>(responseContent, _jsonOptions);
                 
                 if (responseArray == null)
                 {
@@ -278,10 +313,10 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                 
                 // Placeholder for now - full implementation would be similar to other methods
                 return new InstapaperBookmarkTextResponseDto
-                {
-                    Html = string.Empty,
-                    Url = string.Empty,
-                    Title = string.Empty
+            {
+                Html = string.Empty,
+                Url = string.Empty,
+                Title = string.Empty
                 };
             }
             catch (Exception ex)
@@ -308,7 +343,7 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                 _logger.LogInformation("Adding bookmark for URL: {Url}", url);
 
                 var endpoint = "bookmarks/add";
-                var apiUrl = $"{_httpClient.BaseAddress}{endpoint}";
+                var apiUrl = "https://www.instapaper.com/api/1/bookmarks/add";
                 
                 // Prepare OAuth parameters
                 var oauthParams = new Dictionary<string, string>
@@ -329,6 +364,7 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                     oauthParams["selection"] = selection;
 
                 // Generate signature
+                _logger.LogDebug("Generating signature for bookmarks/add");
                 var signature = GenerateSignature("POST", apiUrl, oauthParams, _consumerSecret!, accessTokenSecret);
                 oauthParams["oauth_signature"] = signature;
 
@@ -347,7 +383,7 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                 }
 
                 // Parse response - Instapaper returns an array with bookmark as first element
-                var responseArray = JsonSerializer.Deserialize<List<InstapaperResponseItem>>(responseContent);
+                var responseArray = JsonSerializer.Deserialize<List<InstapaperResponseItem>>(responseContent, _jsonOptions);
                 
                 if (responseArray == null || responseArray.Count == 0)
                 {
@@ -390,8 +426,10 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
         private string GenerateSignature(string httpMethod, string url, Dictionary<string, string> parameters, 
             string consumerSecret, string tokenSecret)
         {
-            // Sort parameters alphabetically
-            var sortedParams = parameters.OrderBy(p => p.Key)
+            // Sort parameters alphabetically (case-sensitive, as per OAuth spec)
+            var sortedParams = parameters
+                .Where(p => p.Key != "oauth_signature") // Exclude signature itself
+                .OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}");
             
             var paramString = string.Join("&", sortedParams);
@@ -402,10 +440,17 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
             // Build signing key
             var signingKey = $"{Uri.EscapeDataString(consumerSecret)}&{Uri.EscapeDataString(tokenSecret)}";
             
+            // Log for debugging
+            _logger.LogDebug("Signature base string: {BaseString}", signatureBaseString);
+            _logger.LogDebug("Signing key length: {Length}", signingKey.Length);
+            
             // Generate HMAC-SHA1 signature
             using var hmac = new HMACSHA1(Encoding.ASCII.GetBytes(signingKey));
             var hash = hmac.ComputeHash(Encoding.ASCII.GetBytes(signatureBaseString));
-            return Convert.ToBase64String(hash);
+            var signature = Convert.ToBase64String(hash);
+            
+            _logger.LogDebug("Generated signature: {Signature}", signature);
+            return signature;
         }
     }
 }
