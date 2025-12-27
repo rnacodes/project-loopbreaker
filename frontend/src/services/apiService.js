@@ -1238,6 +1238,34 @@ export const saveToInstapaper = async (accessToken, accessTokenSecret, url, titl
     }
 };
 
+// ========== Article Deduplication API Methods ==========
+
+/**
+ * Finds duplicate articles based on normalized URLs
+ */
+export const findDuplicateArticles = async () => {
+    try {
+        const response = await apiClient.get('/article/duplicates');
+        return response;
+    } catch (error) {
+        console.error('Error finding duplicate articles:', error);
+        throw error;
+    }
+};
+
+/**
+ * Deduplicates articles by merging articles with the same normalized URL
+ */
+export const deduplicateArticles = async () => {
+    try {
+        const response = await apiClient.post('/article/deduplicate');
+        return response;
+    } catch (error) {
+        console.error('Error deduplicating articles:', error);
+        throw error;
+    }
+};
+
 // ========== Readwise & Reader API Methods ==========
 
 /**

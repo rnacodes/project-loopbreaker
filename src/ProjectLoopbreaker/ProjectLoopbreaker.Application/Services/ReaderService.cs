@@ -1,14 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Utilities;
 using ProjectLoopbreaker.Domain.Entities;
+using ProjectLoopbreaker.Domain.Enums;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.Shared.Interfaces;
-using Amazon.S3;
-using Amazon.S3.Model;
-using System.Text;
 
 namespace ProjectLoopbreaker.Application.Services
 {
@@ -16,21 +14,15 @@ namespace ProjectLoopbreaker.Application.Services
     {
         private readonly IApplicationDbContext _context;
         private readonly IReaderApiClient _readerClient;
-        private readonly IAmazonS3? _s3Client;
-        private readonly IConfiguration _configuration;
         private readonly ILogger<ReaderService> _logger;
 
         public ReaderService(
             IApplicationDbContext context,
             IReaderApiClient readerClient,
-            IAmazonS3? s3Client,
-            IConfiguration configuration,
             ILogger<ReaderService> logger)
         {
             _context = context;
             _readerClient = readerClient;
-            _s3Client = s3Client;
-            _configuration = configuration;
             _logger = logger;
         }
 
@@ -118,22 +110,15 @@ namespace ProjectLoopbreaker.Application.Services
                     return false;
                 }
 
-                // Upload to S3
-                var s3Key = await UploadContentToS3Async(article.Id, document.html);
-                if (s3Key == null)
-                {
-                    return false;
-                }
-
-                // Update article
-                article.ContentStoragePath = s3Key;
+                // Store content directly in database
+                article.FullTextContent = document.html;
                 article.WordCount = document.word_count;
                 article.LastReaderSync = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Successfully stored content for article {ArticleId} at {S3Key}",
-                    articleId, s3Key);
+                _logger.LogInformation("Successfully stored content for article {ArticleId} in database ({Size} chars)",
+                    articleId, document.html.Length);
 
                 return true;
             }
@@ -150,7 +135,7 @@ namespace ProjectLoopbreaker.Application.Services
             {
                 // Get articles with Reader document ID but no content
                 var articles = await _context.Articles
-                    .Where(a => a.ReadwiseDocumentId != null && a.ContentStoragePath == null)
+                    .Where(a => a.ReadwiseDocumentId != null && a.FullTextContent == null)
                     .Take(batchSize)
                     .ToListAsync();
 
@@ -186,13 +171,19 @@ namespace ProjectLoopbreaker.Application.Services
             ProjectLoopbreaker.Shared.DTOs.ReadwiseReader.ReaderDocumentDto dto,
             ReaderSyncResultDto result)
         {
-            // Check if article exists by Reader document ID
+            // Normalize URL for consistent comparison
+            var normalizedUrl = UrlNormalizer.Normalize(dto.url);
+            
+            // Check if article exists by Reader document ID OR normalized URL
             var existing = await _context.Articles
-                .FirstOrDefaultAsync(a => a.ReadwiseDocumentId == dto.id);
+                .FirstOrDefaultAsync(a => 
+                    a.ReadwiseDocumentId == dto.id ||
+                    (a.Link != null && EF.Functions.ILike(a.Link, normalizedUrl)));
 
             if (existing != null)
             {
-                // Update existing article
+                // Update existing article with Reader data
+                existing.ReadwiseDocumentId = dto.id;
                 existing.ReaderLocation = dto.location.ToLowerInvariant();
                 existing.IsArchived = dto.location.Equals("archive", StringComparison.OrdinalIgnoreCase);
                 existing.IsStarred = dto.favorite ?? false;
@@ -200,12 +191,29 @@ namespace ProjectLoopbreaker.Application.Services
                     ? (int)(dto.reading_progress.Value * 100) 
                     : null;
                 existing.LastReaderSync = DateTime.UtcNow;
+                
+                // Mark as synced with Reader
+                existing.SyncStatus |= SyncStatus.ReaderSynced;
 
-                // Update other fields if they've changed
-                if (!string.IsNullOrEmpty(dto.title))
+                // Update metadata fields (prefer Reader's data if more complete)
+                if (!string.IsNullOrEmpty(dto.title) && 
+                    (string.IsNullOrEmpty(existing.Title) || existing.Title == "Untitled"))
                     existing.Title = dto.title;
-                if (!string.IsNullOrEmpty(dto.summary))
+                    
+                if (!string.IsNullOrEmpty(dto.summary) && string.IsNullOrEmpty(existing.Description))
                     existing.Description = dto.summary;
+                    
+                if (!string.IsNullOrEmpty(dto.author) && string.IsNullOrEmpty(existing.Author))
+                    existing.Author = dto.author;
+                    
+                if (!string.IsNullOrEmpty(dto.site_name) && string.IsNullOrEmpty(existing.Publication))
+                    existing.Publication = dto.site_name;
+                    
+                if (!string.IsNullOrEmpty(dto.image_url) && string.IsNullOrEmpty(existing.Thumbnail))
+                    existing.Thumbnail = dto.image_url;
+                    
+                if (dto.word_count.HasValue && (!existing.WordCount.HasValue || existing.WordCount == 0))
+                    existing.WordCount = dto.word_count;
 
                 result.UpdatedCount++;
 
@@ -214,7 +222,7 @@ namespace ProjectLoopbreaker.Application.Services
             }
             else
             {
-                // Create new article
+                // Create new article with normalized URL
                 var article = new Article
                 {
                     Id = Guid.NewGuid(),
@@ -222,7 +230,7 @@ namespace ProjectLoopbreaker.Application.Services
                     Description = dto.summary,
                     Author = dto.author,
                     Publication = dto.site_name,
-                    Link = dto.url,
+                    Link = normalizedUrl,  // Store normalized URL
                     Thumbnail = dto.image_url,
                     ReadwiseDocumentId = dto.id,
                     ReaderLocation = dto.location.ToLowerInvariant(),
@@ -238,7 +246,8 @@ namespace ProjectLoopbreaker.Application.Services
                     LastReaderSync = DateTime.UtcNow,
                     DateAdded = DateTime.UtcNow,
                     MediaType = Domain.Entities.MediaType.Article,
-                    Status = Domain.Entities.Status.Uncharted
+                    Status = Domain.Entities.Status.Uncharted,
+                    SyncStatus = SyncStatus.ReaderSynced  // Mark as synced from Reader
                 };
 
                 _context.Add(article);
@@ -251,49 +260,6 @@ namespace ProjectLoopbreaker.Application.Services
             await _context.SaveChangesAsync();
         }
 
-        private async Task<string?> UploadContentToS3Async(Guid articleId, string htmlContent)
-        {
-            if (_s3Client == null)
-            {
-                _logger.LogWarning("S3 client not configured");
-                return null;
-            }
-
-            try
-            {
-                var spacesConfig = _configuration.GetSection("DigitalOceanSpaces");
-                var bucketName = spacesConfig["BucketName"];
-
-                if (string.IsNullOrEmpty(bucketName))
-                {
-                    _logger.LogWarning("DigitalOcean Spaces bucket name not configured");
-                    return null;
-                }
-
-                var s3Key = $"articles/{articleId}.html";
-                var bytes = Encoding.UTF8.GetBytes(htmlContent);
-
-                using var stream = new MemoryStream(bytes);
-                var uploadRequest = new PutObjectRequest
-                {
-                    BucketName = bucketName,
-                    Key = s3Key,
-                    InputStream = stream,
-                    ContentType = "text/html",
-                    CannedACL = S3CannedACL.Private // Content is private, not public
-                };
-
-                await _s3Client.PutObjectAsync(uploadRequest);
-                _logger.LogInformation("Uploaded article content to S3: {S3Key}", s3Key);
-
-                return s3Key;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error uploading article {ArticleId} content to S3", articleId);
-                return null;
-            }
-        }
     }
 }
 

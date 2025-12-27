@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProjectLoopbreaker.Shared.Interfaces;
 using ProjectLoopbreaker.Shared.DTOs.Readwise;
+using System;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text;
@@ -24,8 +25,11 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
             _logger = logger;
             _configuration = configuration;
 
-            // Load Readwise API token from configuration
-            _apiToken = _configuration["ApiKeys:Readwise"];
+            // Load Readwise API token from environment variables or configuration
+            // Check both common environment variable names for flexibility
+            _apiToken = Environment.GetEnvironmentVariable("READWISE_API_KEY") ??
+                       Environment.GetEnvironmentVariable("READWISE_API_TOKEN") ??
+                       _configuration["ApiKeys:Readwise"];
 
             if (_httpClient.BaseAddress == null)
             {
@@ -43,8 +47,8 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
         {
             if (string.IsNullOrEmpty(_apiToken) || _apiToken == "READWISE_API_TOKEN")
             {
-                _logger.LogWarning("Readwise API token not configured. Please set ApiKeys:Readwise in appsettings.json or READWISE_API_KEY environment variable.");
-                throw new InvalidOperationException("Readwise API token not configured. Please configure your API key in appsettings.json (ApiKeys:Readwise) or as environment variable READWISE_API_KEY.");
+                _logger.LogWarning("Readwise API token not configured. Please set READWISE_API_KEY/READWISE_API_TOKEN environment variable or ApiKeys:Readwise in appsettings.json.");
+                throw new InvalidOperationException("Readwise API token not configured. Please configure your API key as environment variable (READWISE_API_KEY or READWISE_API_TOKEN) or in appsettings.json (ApiKeys:Readwise).");
             }
 
             try

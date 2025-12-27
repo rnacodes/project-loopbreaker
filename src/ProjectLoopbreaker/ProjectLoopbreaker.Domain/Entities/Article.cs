@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ProjectLoopbreaker.Domain.Enums;
 
 namespace ProjectLoopbreaker.Domain.Entities
 {
@@ -12,9 +13,14 @@ namespace ProjectLoopbreaker.Domain.Entities
         public string? InstapaperBookmarkId { get; set; }
         
         /// <summary>
-        /// S3 path/key to the full article content stored in DigitalOcean Spaces.
-        /// The actual HTML content is NOT stored in the database, only the reference to S3.
-        /// Example: "articles/content_guid.html"
+        /// Full HTML content of the article stored directly in PostgreSQL.
+        /// Fetched from Readwise Reader or Instapaper APIs.
+        /// </summary>
+        public string? FullTextContent { get; set; }
+        
+        /// <summary>
+        /// Legacy S3 path/key - kept for backwards compatibility but no longer used.
+        /// New articles store content in FullTextContent column instead.
         /// </summary>
         [StringLength(500)]
         public string? ContentStoragePath { get; set; }
@@ -91,6 +97,17 @@ namespace ProjectLoopbreaker.Domain.Entities
         /// Last synced from Readwise Reader
         /// </summary>
         public DateTime? LastReaderSync { get; set; }
+        
+        /// <summary>
+        /// Date when this article was saved to Instapaper
+        /// </summary>
+        public DateTime? SavedToInstapaperDate { get; set; }
+        
+        /// <summary>
+        /// Tracks which external services have synced this article.
+        /// Uses Flags to allow combining multiple sync states.
+        /// </summary>
+        public SyncStatus SyncStatus { get; set; } = SyncStatus.LocalOnly;
         
         /// <summary>
         /// Navigation property: Highlights associated with this article

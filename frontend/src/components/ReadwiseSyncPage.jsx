@@ -264,7 +264,7 @@ const ReadwiseSyncPage = () => {
       {/* Content Fetch Section */}
       <section className="sync-section">
         <h2>💾 Fetch Article Content (HTML)</h2>
-        <p>Download full HTML content for articles and store in S3</p>
+        <p>Download full HTML content for articles and store in S3. Note: You must sync documents from Reader first.</p>
         
         <div className="sync-buttons">
           <button
@@ -284,15 +284,16 @@ const ReadwiseSyncPage = () => {
         </div>
 
         {contentFetchResult && (
-          <div className="sync-result success">
+          <div className={`sync-result ${contentFetchResult.fetchedCount > 0 ? 'success' : ''}`}>
             <h3>Content Fetch Results</h3>
             <div className="result-grid">
               <div className="result-item">
                 <span className="result-label">Fetched:</span>
-                <span className="result-value">{contentFetchResult.fetchedCount} articles</span>
+                <span className="result-value">{contentFetchResult.fetchedCount} article{contentFetchResult.fetchedCount === 1 ? '' : 's'}</span>
               </div>
               {contentFetchResult.message && (
                 <div className="result-item full-width">
+                  <span className="result-label">Message:</span>
                   <span className="result-value">{contentFetchResult.message}</span>
                 </div>
               )}

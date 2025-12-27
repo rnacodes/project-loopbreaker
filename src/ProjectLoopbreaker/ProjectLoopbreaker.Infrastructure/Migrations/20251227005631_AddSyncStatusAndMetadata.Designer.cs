@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ProjectLoopbreaker.Infrastructure.Data;
@@ -11,9 +12,11 @@ using ProjectLoopbreaker.Infrastructure.Data;
 namespace ProjectLoopbreaker.Infrastructure.Migrations
 {
     [DbContext(typeof(MediaLibraryDbContext))]
-    partial class MediaLibraryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251227005631_AddSyncStatusAndMetadata")]
+    partial class AddSyncStatusAndMetadata
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -385,9 +388,6 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                     b.Property<string>("ContentStoragePath")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
-
-                    b.Property<string>("FullTextContent")
-                        .HasColumnType("text");
 
                     b.Property<string>("InstapaperBookmarkId")
                         .HasMaxLength(100)

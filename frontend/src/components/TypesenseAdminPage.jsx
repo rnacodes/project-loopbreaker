@@ -1,3 +1,5 @@
+//TODO: Change refresh button color to white
+//TODO: Media Items Reindex Complete message and similar text to be white
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -33,7 +35,7 @@ import {
   Error as ErrorIcon,
   Info as InfoIcon,
 } from '@mui/icons-material';
-import { typesenseReindex, reindexMixlists, typesenseHealth, typesenseSearch, typesenseResetMediaItems, typesenseResetMixlists } from '../services/apiService';
+import { typesenseReindex, reindexMixlists, typesenseHealth, typesenseSearch, typesenseResetMediaItems, typesenseResetMixlists, findDuplicateArticles, deduplicateArticles } from '../services/apiService';
 import { formatStatus } from '../utils/formatters';
 
 const TypesenseAdminPage = () => {
@@ -63,6 +65,13 @@ const TypesenseAdminPage = () => {
   const [resetting, setResetting] = useState(false);
   const [resetResult, setResetResult] = useState(null);
   const [resetError, setResetError] = useState(null);
+
+  // State for deduplication
+  const [deduplicating, setDeduplicating] = useState(false);
+  const [deduplicationResult, setDeduplicationResult] = useState(null);
+  const [deduplicationError, setDeduplicationError] = useState(null);
+  const [duplicates, setDuplicates] = useState(null);
+  const [findingDuplicates, setFindingDuplicates] = useState(false);
 
   // Check health on component mount
   useEffect(() => {
@@ -175,6 +184,44 @@ const TypesenseAdminPage = () => {
       setResetError(error.response?.data?.message || error.message || 'Failed to reset mixlists collection');
     } finally {
       setResetting(false);
+    }
+  };
+
+  const handleFindDuplicates = async () => {
+    setFindingDuplicates(true);
+    setDuplicates(null);
+    setDeduplicationError(null);
+
+    try {
+      const response = await findDuplicateArticles();
+      setDuplicates(response.data);
+    } catch (error) {
+      setDeduplicationError(error.response?.data?.message || error.message || 'Failed to find duplicate articles');
+    } finally {
+      setFindingDuplicates(false);
+    }
+  };
+
+  const handleDeduplicate = async () => {
+    if (!window.confirm('⚠️ This will merge duplicate articles based on normalized URLs. Articles from Instapaper and Readwise Reader with the same URL will be combined. Continue?')) {
+      return;
+    }
+
+    setDeduplicating(true);
+    setDeduplicationResult(null);
+    setDeduplicationError(null);
+
+    try {
+      const response = await deduplicateArticles();
+      setDeduplicationResult(response.data);
+      // Refresh duplicates list after deduplication
+      if (response.data.success) {
+        setDuplicates(null);
+      }
+    } catch (error) {
+      setDeduplicationError(error.response?.data?.message || error.message || 'Failed to deduplicate articles');
+    } finally {
+      setDeduplicating(false);
     }
   };
 
@@ -435,6 +482,154 @@ const TypesenseAdminPage = () => {
           <Alert severity="success" sx={{ mt: 2 }}>
             <strong>✓ Reset Complete:</strong> {resetResult.message || 'Collection has been reset successfully.'}
           </Alert>
+        )}
+      </Paper>
+
+      {/* Article Deduplication Section */}
+      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+          Article Deduplication
+        </Typography>
+        
+        <Alert severity="info" icon={<InfoIcon />} sx={{ mb: 2 }}>
+          Find and merge duplicate articles from Instapaper and Readwise Reader. Articles with the same normalized URL will be combined into a single article, preserving all metadata from both sources.
+        </Alert>
+
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Find Duplicates
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  Scan for articles with matching URLs (after normalization). This is a preview only - no changes will be made.
+                </Typography>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={findingDuplicates ? <CircularProgress size={20} color="inherit" /> : <SearchIcon />}
+                  onClick={handleFindDuplicates}
+                  disabled={findingDuplicates || deduplicating}
+                  fullWidth
+                >
+                  {findingDuplicates ? 'Scanning...' : 'Find Duplicates'}
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Merge Duplicates
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  Automatically merge duplicate articles. The most complete article will be kept, with data from duplicates merged in.
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="warning"
+                  startIcon={deduplicating ? <CircularProgress size={20} color="inherit" /> : <RefreshIcon />}
+                  onClick={handleDeduplicate}
+                  disabled={deduplicating || findingDuplicates}
+                  fullWidth
+                >
+                  {deduplicating ? 'Merging...' : 'Merge Duplicates'}
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* Duplicates Found Results */}
+        {duplicates && (
+          <Card variant="outlined" sx={{ mt: 2 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                Duplicate Scan Results
+              </Typography>
+              
+              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                <Chip 
+                  label={`${duplicates.count} Duplicate Groups`} 
+                  color="primary" 
+                  sx={{ fontWeight: 'bold' }}
+                />
+                <Chip 
+                  label={`${duplicates.totalDuplicates} Articles to Merge`} 
+                  color="warning" 
+                  sx={{ fontWeight: 'bold' }}
+                />
+              </Box>
+
+              {duplicates.count > 0 ? (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  Found {duplicates.totalDuplicates} duplicate article{duplicates.totalDuplicates !== 1 ? 's' : ''} across {duplicates.count} URL{duplicates.count !== 1 ? 's' : ''}. Click "Merge Duplicates" to combine them.
+                </Alert>
+              ) : (
+                <Alert severity="success">
+                  No duplicate articles found! Your article library is clean.
+                </Alert>
+              )}
+
+              {duplicates.groups && duplicates.groups.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 'bold' }}>
+                    Duplicate Groups (showing first 5):
+                  </Typography>
+                  <List>
+                    {duplicates.groups.slice(0, 5).map((group, index) => (
+                      <ListItem key={index} divider>
+                        <ListItemText
+                          primary={group.normalizedUrl}
+                          secondary={`${group.articles.length} articles with this URL`}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                  {duplicates.groups.length > 5 && (
+                    <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
+                      ...and {duplicates.groups.length - 5} more group{duplicates.groups.length - 5 !== 1 ? 's' : ''}
+                    </Typography>
+                  )}
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Deduplication Results */}
+        {deduplicationError && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            <strong>Deduplication Failed:</strong> {deduplicationError}
+          </Alert>
+        )}
+
+        {deduplicationResult && (
+          <Card variant="outlined" sx={{ mt: 2, bgcolor: 'success.light' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+                ✓ Deduplication Complete
+              </Typography>
+              
+              <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                  {deduplicationResult.mergedCount || 0}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Articles Merged into {deduplicationResult.groupCount || 0} Primary Article{deduplicationResult.groupCount !== 1 ? 's' : ''}
+                </Typography>
+              </Box>
+
+              {deduplicationResult.duration && (
+                <Typography variant="body2" sx={{ mt: 2, textAlign: 'center', fontStyle: 'italic' }}>
+                  Completed in {Math.round(deduplicationResult.duration.totalSeconds || 0)} seconds
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
         )}
       </Paper>
 

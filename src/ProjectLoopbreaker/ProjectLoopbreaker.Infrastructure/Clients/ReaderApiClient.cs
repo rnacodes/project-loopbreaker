@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ProjectLoopbreaker.Shared.Interfaces;
 using ProjectLoopbreaker.Shared.DTOs.ReadwiseReader;
+using System;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text;
@@ -24,8 +25,10 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
             _logger = logger;
             _configuration = configuration;
 
-            // Reuse same token as Readwise API
-            _apiToken = _configuration["ApiKeys:Readwise"];
+            // Reuse same token as Readwise API - check environment variables first
+            _apiToken = Environment.GetEnvironmentVariable("READWISE_API_KEY") ??
+                       Environment.GetEnvironmentVariable("READWISE_API_TOKEN") ??
+                       _configuration["ApiKeys:Readwise"];
 
             if (_httpClient.BaseAddress == null)
             {

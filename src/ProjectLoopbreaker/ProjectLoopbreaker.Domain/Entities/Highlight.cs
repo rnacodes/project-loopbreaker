@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProjectLoopbreaker.Domain.Entities
 {
@@ -148,6 +149,15 @@ namespace ProjectLoopbreaker.Domain.Entities
         /// </summary>
         [StringLength(50)]
         public string? Color { get; set; }
+        
+        /// <summary>
+        /// Raw metadata from external API (Readwise, Instapaper, etc.)
+        /// Stored as JSONB for flexibility and future-proofing.
+        /// Can include source-specific fields that don't fit into standard columns.
+        /// </summary>
+        [Column(TypeName = "jsonb")]
+        public string? Metadata { get; set; }
     }
 }
+
 
