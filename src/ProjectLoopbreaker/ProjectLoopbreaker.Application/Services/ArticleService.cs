@@ -3,9 +3,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
+using ProjectLoopbreaker.Domain.Enums;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Application.Helpers;
+using ProjectLoopbreaker.Application.Utilities;
 using ProjectLoopbreaker.Shared.Interfaces;
 using Amazon.S3;
 using Amazon.S3.Model;
@@ -152,11 +154,37 @@ namespace ProjectLoopbreaker.Application.Services
         {
             try
             {
+                // Normalize URL before saving to prevent duplicates
+                var normalizedUrl = !string.IsNullOrWhiteSpace(dto.Link) 
+                    ? UrlNormalizer.Normalize(dto.Link) 
+                    : null;
+
+                // Check for existing article with same normalized URL
+                if (!string.IsNullOrWhiteSpace(normalizedUrl))
+                {
+                    var existingArticle = await _context.Articles
+                        .FirstOrDefaultAsync(a => a.Link != null && EF.Functions.ILike(a.Link, normalizedUrl));
+                        
+                    if (existingArticle != null)
+                    {
+                        _logger.LogWarning("Article with URL already exists: {Url} (ID: {Id})", 
+                            normalizedUrl, existingArticle.Id);
+                        throw new InvalidOperationException(
+                            $"An article with this URL already exists (ID: {existingArticle.Id}). " +
+                            "Use the deduplication feature to merge duplicate articles.");
+                    }
+                }
+
+                // Determine initial sync status based on external IDs
+                var syncStatus = SyncStatus.LocalOnly;
+                if (!string.IsNullOrEmpty(dto.InstapaperBookmarkId))
+                    syncStatus |= SyncStatus.InstapaperSynced;
+                    
                 var article = new Article
                 {
                     Title = dto.Title,
                     MediaType = MediaType.Article,
-                    Link = dto.Link,
+                    Link = normalizedUrl,  // Store normalized URL
                     Notes = dto.Notes,
                     Status = dto.Status,
                     DateAdded = DateTime.UtcNow,
@@ -175,7 +203,8 @@ namespace ProjectLoopbreaker.Application.Services
                     Publication = dto.Publication,
                     PublicationDate = dto.PublicationDate,
                     ReadingProgress = dto.ReadingProgress,
-                    WordCount = dto.WordCount
+                    WordCount = dto.WordCount,
+                    SyncStatus = syncStatus
                 };
 
                 // Handle Topics array conversion
@@ -281,26 +310,7 @@ namespace ProjectLoopbreaker.Application.Services
                 var articleId = article.Id;
                 var articleTitle = article.Title;
 
-                // Delete content from S3 if it exists
-                if (!string.IsNullOrEmpty(article.ContentStoragePath) && _s3Client != null)
-                {
-                    try
-                    {
-                        var spacesConfig = _configuration.GetSection("DigitalOceanSpaces");
-                        var bucketName = spacesConfig["BucketName"];
-                        
-                        if (!string.IsNullOrEmpty(bucketName))
-                        {
-                            await _s3Client.DeleteObjectAsync(bucketName, article.ContentStoragePath);
-                            _logger.LogInformation("Deleted article content from S3: {ContentStoragePath}", article.ContentStoragePath);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, "Failed to delete article content from S3, continuing with database deletion");
-                    }
-                }
-
+                // Content is stored in database, so just delete the article record
                 _context.Remove(article);
                 await _context.SaveChangesAsync();
 
@@ -374,38 +384,13 @@ namespace ProjectLoopbreaker.Application.Services
             try
             {
                 var article = await _context.FindAsync<Article>(id);
-                if (article == null || string.IsNullOrEmpty(article.ContentStoragePath))
+                if (article == null)
                 {
                     return null;
                 }
 
-                if (_s3Client == null)
-                {
-                    _logger.LogWarning("S3 client not configured, cannot retrieve article content");
-                    return null;
-                }
-
-                var spacesConfig = _configuration.GetSection("DigitalOceanSpaces");
-                var bucketName = spacesConfig["BucketName"];
-
-                if (string.IsNullOrEmpty(bucketName))
-                {
-                    _logger.LogWarning("DigitalOcean Spaces bucket name not configured");
-                    return null;
-                }
-
-                var request = new GetObjectRequest
-                {
-                    BucketName = bucketName,
-                    Key = article.ContentStoragePath
-                };
-
-                using var response = await _s3Client.GetObjectAsync(request);
-                using var reader = new StreamReader(response.ResponseStream);
-                var content = await reader.ReadToEndAsync();
-
-                _logger.LogInformation("Retrieved article content from S3 for article: {Title}", article.Title);
-                return content;
+                _logger.LogInformation("Retrieved article content from database for article: {Title}", article.Title);
+                return article.FullTextContent;
             }
             catch (Exception ex)
             {
@@ -424,43 +409,11 @@ namespace ProjectLoopbreaker.Application.Services
                     return false;
                 }
 
-                if (_s3Client == null)
-                {
-                    _logger.LogWarning("S3 client not configured, cannot store article content");
-                    return false;
-                }
-
-                var spacesConfig = _configuration.GetSection("DigitalOceanSpaces");
-                var bucketName = spacesConfig["BucketName"];
-                var endpoint = spacesConfig["Endpoint"];
-
-                if (string.IsNullOrEmpty(bucketName) || string.IsNullOrEmpty(endpoint))
-                {
-                    _logger.LogWarning("DigitalOcean Spaces configuration incomplete");
-                    return false;
-                }
-
-                // Generate storage path if not exists
-                if (string.IsNullOrEmpty(article.ContentStoragePath))
-                {
-                    article.ContentStoragePath = $"articles/content_{article.Id}.html";
-                }
-
-                // Upload content to S3
-                using var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(htmlContent));
-                var request = new PutObjectRequest
-                {
-                    BucketName = bucketName,
-                    Key = article.ContentStoragePath,
-                    InputStream = memoryStream,
-                    ContentType = "text/html",
-                    CannedACL = S3CannedACL.Private // Keep article content private
-                };
-
-                await _s3Client.PutObjectAsync(request);
+                // Store content directly in database
+                article.FullTextContent = htmlContent;
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Uploaded article content to S3 for article: {Title}", article.Title);
+                _logger.LogInformation("Updated article content in database for article: {Title}", article.Title);
                 return true;
             }
             catch (Exception ex)

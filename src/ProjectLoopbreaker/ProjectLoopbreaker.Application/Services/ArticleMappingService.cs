@@ -20,19 +20,9 @@ namespace ProjectLoopbreaker.Application.Services
 
         public async Task<ArticleResponseDto> MapToResponseDtoAsync(Article article)
         {
-            // Get DigitalOcean Spaces configuration for content URL construction
-            var spacesConfig = _configuration.GetSection("DigitalOceanSpaces");
-            var bucketName = spacesConfig["BucketName"];
-            var endpoint = spacesConfig["Endpoint"];
+            // Content is now stored directly in database (FullTextContent column)
+            // ContentStoragePath is kept for backwards compatibility but no longer used
             
-            string? contentUrl = null;
-            if (!string.IsNullOrEmpty(article.ContentStoragePath) && 
-                !string.IsNullOrEmpty(bucketName) && 
-                !string.IsNullOrEmpty(endpoint))
-            {
-                contentUrl = article.GetContentUrl(bucketName, endpoint);
-            }
-
             return await Task.FromResult(new ArticleResponseDto
             {
                 Id = article.Id,
@@ -51,8 +41,8 @@ namespace ProjectLoopbreaker.Application.Services
                 Topics = article.Topics.Select(t => t.Name).ToArray(),
                 Genres = article.Genres.Select(g => g.Name).ToArray(),
                 InstapaperBookmarkId = article.InstapaperBookmarkId,
-                ContentStoragePath = article.ContentStoragePath,
-                ContentUrl = contentUrl,
+                ContentStoragePath = article.ContentStoragePath, // Legacy field, kept for backwards compatibility
+                ContentUrl = null, // No longer using S3
                 IsArchived = article.IsArchived,
                 IsStarred = article.IsStarred,
                 LastSyncDate = article.LastSyncDate,

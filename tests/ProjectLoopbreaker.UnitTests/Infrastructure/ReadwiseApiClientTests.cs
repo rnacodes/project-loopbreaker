@@ -50,16 +50,15 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
         }
 
         [Fact]
-        public async Task ValidateTokenAsync_Unauthorized_ReturnsFalse()
+        public async Task ValidateTokenAsync_Unauthorized_ThrowsUnauthorizedAccessException()
         {
             // Arrange
             SetupHttpResponse(HttpStatusCode.Unauthorized, "Unauthorized");
 
-            // Act
-            var result = await _client.ValidateTokenAsync();
-
-            // Assert
-            result.Should().BeFalse();
+            // Act & Assert
+            await _client.Invoking(c => c.ValidateTokenAsync())
+                .Should().ThrowAsync<UnauthorizedAccessException>()
+                .WithMessage("Readwise API token is invalid or expired*");
         }
 
         [Fact]

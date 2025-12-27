@@ -304,6 +304,7 @@ builder.Services.AddScoped<IListenNotesService, ListenNotesService>();
 builder.Services.AddScoped<IInstapaperService, InstapaperService>();
 builder.Services.AddScoped<IArticleService, ArticleService>();
 builder.Services.AddScoped<IArticleMappingService, ArticleMappingService>();
+builder.Services.AddScoped<IArticleDeduplicationService, ArticleDeduplicationService>();
 builder.Services.AddScoped<IWebsiteService, WebsiteService>();
 builder.Services.AddScoped<IWebsiteMappingService, WebsiteMappingService>();
 
@@ -358,12 +359,13 @@ builder.Services.AddHttpClient<IReadwiseApiClient, ReadwiseApiClient>(client =>
     client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
     
     var apiKey = Environment.GetEnvironmentVariable("READWISE_API_KEY") ?? 
+                 Environment.GetEnvironmentVariable("READWISE_API_TOKEN") ??
                  builder.Configuration["ApiKeys:Readwise"];
     
     if (string.IsNullOrEmpty(apiKey) || apiKey == "READWISE_API_TOKEN")
     {
         Console.WriteLine("WARNING: No valid Readwise API key found. Readwise functionality will be limited.");
-        Console.WriteLine("Please set a valid API key in environment variable READWISE_API_KEY or configuration.");
+        Console.WriteLine("Please set a valid API key in environment variable READWISE_API_KEY, READWISE_API_TOKEN, or configuration.");
     }
     else
     {
@@ -379,6 +381,7 @@ builder.Services.AddHttpClient<IReaderApiClient, ReaderApiClient>(client =>
     
     // Reader uses the same API key as Readwise
     var apiKey = Environment.GetEnvironmentVariable("READWISE_API_KEY") ?? 
+                 Environment.GetEnvironmentVariable("READWISE_API_TOKEN") ??
                  builder.Configuration["ApiKeys:Readwise"];
     
     if (string.IsNullOrEmpty(apiKey) || apiKey == "READWISE_API_TOKEN")

@@ -14,8 +14,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
         private readonly Mock<ILogger<InstapaperApiClient>> _mockLogger;
         private readonly Mock<IConfiguration> _mockConfiguration;
         private readonly Mock<IConfigurationSection> _mockConfigSection;
+        private readonly Mock<IConfigurationSection> _mockApiKeysSection;
         private readonly HttpClient _httpClient;
-        private readonly InstapaperApiClient _instapaperApiClient;
 
         public InstapaperApiClientTests()
         {
@@ -23,14 +23,16 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
             _mockLogger = new Mock<ILogger<InstapaperApiClient>>();
             _mockConfiguration = new Mock<IConfiguration>();
             _mockConfigSection = new Mock<IConfigurationSection>();
+            _mockApiKeysSection = new Mock<IConfigurationSection>();
 
             _httpClient = new HttpClient(_mockHttpMessageHandler.Object)
             {
                 BaseAddress = new Uri("https://www.instapaper.com/api/1/")
             };
 
-            // Setup configuration
+            // Setup configuration - mock both config sections
             _mockConfiguration.Setup(x => x.GetSection("InstapaperApiSettings")).Returns(_mockConfigSection.Object);
+            _mockConfiguration.Setup(x => x.GetSection("ApiKeys:Instapaper")).Returns(_mockApiKeysSection.Object);
         }
 
         #region GetAccessTokenAsync Tests
@@ -39,6 +41,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
         public async Task GetAccessTokenAsync_ShouldThrowInvalidOperationException_WhenNotConfigured()
         {
             // Arrange
+            _mockApiKeysSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
+            _mockApiKeysSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["AccessToken"]).Returns((string?)null);
@@ -49,15 +53,17 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
             // Act & Assert
             await client.Invoking(c => c.GetAccessTokenAsync("user", "pass"))
                 .Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("Instapaper API credentials not configured");
+                .WithMessage("Instapaper API credentials not configured*");
         }
 
         [Fact]
         public async Task GetAccessTokenAsync_ShouldReturnPlaceholderTokens_WhenConfigured()
         {
             // Arrange
-            _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
-            _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockApiKeysSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
+            _mockApiKeysSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
+            _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["AccessToken"]).Returns("test-access-token");
             _mockConfigSection.Setup(x => x["AccessTokenSecret"]).Returns("test-access-secret");
 
@@ -79,6 +85,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
         public async Task VerifyCredentialsAsync_ShouldThrowInvalidOperationException_WhenNotConfigured()
         {
             // Arrange
+            _mockApiKeysSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
+            _mockApiKeysSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
 
@@ -87,15 +95,17 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
             // Act & Assert
             await client.Invoking(c => c.VerifyCredentialsAsync("token", "secret"))
                 .Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("Instapaper API credentials not configured");
+                .WithMessage("Instapaper API credentials not configured*");
         }
 
         [Fact]
         public async Task VerifyCredentialsAsync_ShouldReturnPlaceholderUser_WhenConfigured()
         {
             // Arrange
-            _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
-            _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockApiKeysSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
+            _mockApiKeysSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
+            _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["AccessToken"]).Returns("test-access-token");
             _mockConfigSection.Setup(x => x["AccessTokenSecret"]).Returns("test-access-secret");
 
@@ -118,6 +128,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
         public async Task GetBookmarksAsync_ShouldReturnEmptyResponse_WhenNotConfigured()
         {
             // Arrange
+            _mockApiKeysSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
+            _mockApiKeysSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
 
@@ -136,8 +148,10 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
         public async Task GetBookmarksAsync_ShouldReturnEmptyResponse_WhenConfigured()
         {
             // Arrange
-            _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
-            _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockApiKeysSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
+            _mockApiKeysSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
+            _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["AccessToken"]).Returns("test-access-token");
             _mockConfigSection.Setup(x => x["AccessTokenSecret"]).Returns("test-access-secret");
 
@@ -159,6 +173,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
         public async Task GetBookmarkTextAsync_ShouldThrowInvalidOperationException_WhenNotConfigured()
         {
             // Arrange
+            _mockApiKeysSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
+            _mockApiKeysSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
 
@@ -167,15 +183,17 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
             // Act & Assert
             await client.Invoking(c => c.GetBookmarkTextAsync("bookmark-id"))
                 .Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("Instapaper API credentials not configured");
+                .WithMessage("Instapaper API credentials not configured*");
         }
 
         [Fact]
         public async Task GetBookmarkTextAsync_ShouldReturnEmptyResponse_WhenConfigured()
         {
             // Arrange
-            _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
-            _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockApiKeysSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
+            _mockApiKeysSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
+            _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["AccessToken"]).Returns("test-access-token");
             _mockConfigSection.Setup(x => x["AccessTokenSecret"]).Returns("test-access-secret");
 
@@ -199,6 +217,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
         public async Task AddBookmarkAsync_ShouldThrowInvalidOperationException_WhenNotConfigured()
         {
             // Arrange
+            _mockApiKeysSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
+            _mockApiKeysSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
 
@@ -207,15 +227,17 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
             // Act & Assert
             await client.Invoking(c => c.AddBookmarkAsync("token", "secret", "https://example.com"))
                 .Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("Instapaper API credentials not configured");
+                .WithMessage("Instapaper API credentials not configured*");
         }
 
         [Fact]
         public async Task AddBookmarkAsync_ShouldReturnPlaceholderBookmark_WhenConfigured()
         {
             // Arrange
-            _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
-            _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockApiKeysSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
+            _mockApiKeysSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
+            _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["AccessToken"]).Returns("test-access-token");
             _mockConfigSection.Setup(x => x["AccessTokenSecret"]).Returns("test-access-secret");
 
@@ -237,8 +259,10 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
         public async Task AddBookmarkAsync_ShouldUseUrlAsTitle_WhenTitleIsNull()
         {
             // Arrange
-            _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
-            _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockApiKeysSection.Setup(x => x["ConsumerKey"]).Returns("test-key");
+            _mockApiKeysSection.Setup(x => x["ConsumerSecret"]).Returns("test-secret");
+            _mockConfigSection.Setup(x => x["ConsumerKey"]).Returns((string?)null);
+            _mockConfigSection.Setup(x => x["ConsumerSecret"]).Returns((string?)null);
             _mockConfigSection.Setup(x => x["AccessToken"]).Returns("test-access-token");
             _mockConfigSection.Setup(x => x["AccessTokenSecret"]).Returns("test-access-secret");
 

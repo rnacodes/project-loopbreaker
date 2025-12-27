@@ -40,8 +40,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                         .SqlQueryRaw<Guid>(@"
                             SELECT mi.""Id"" 
                             FROM ""MediaItems"" mi
-                            INNER JOIN ""GenreMediaItem"" gmi ON mi.""Id"" = gmi.""MediaItemsId""
-                            WHERE gmi.""GenresId"" = {0}
+                            INNER JOIN ""MediaItemGenres"" mig ON mi.""Id"" = mig.""MediaItemId""
+                            WHERE mig.""GenreId"" = {0}
                             AND mi.""Discriminator"" IS NOT NULL 
                             AND mi.""Discriminator"" != ''", genre.Id)
                         .ToListAsync();
@@ -91,8 +91,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                         .SqlQueryRaw<Guid>(@"
                             SELECT mi.""Id"" 
                             FROM ""MediaItems"" mi
-                            INNER JOIN ""GenreMediaItem"" gmi ON mi.""Id"" = gmi.""MediaItemsId""
-                            WHERE gmi.""GenresId"" = {0}
+                            INNER JOIN ""MediaItemGenres"" mig ON mi.""Id"" = mig.""MediaItemId""
+                            WHERE mig.""GenreId"" = {0}
                             AND mi.""Discriminator"" IS NOT NULL 
                             AND mi.""Discriminator"" != ''", genre.Id)
                         .ToListAsync();

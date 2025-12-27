@@ -7,12 +7,13 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ArticleController : ControllerBase
+    public partial class ArticleController : ControllerBase
     {
         private readonly IArticleService _articleService;
         private readonly IArticleMappingService _articleMappingService;
         private readonly IReaderService? _readerService;
         private readonly IInstapaperService? _instapaperService;
+        private readonly IArticleDeduplicationService? _deduplicationService;
         private readonly ILogger<ArticleController> _logger;
 
         public ArticleController(
@@ -20,13 +21,15 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             IArticleMappingService articleMappingService,
             ILogger<ArticleController> logger,
             IReaderService? readerService = null,
-            IInstapaperService? instapaperService = null)
+            IInstapaperService? instapaperService = null,
+            IArticleDeduplicationService? deduplicationService = null)
         {
             _articleService = articleService;
             _articleMappingService = articleMappingService;
             _logger = logger;
             _readerService = readerService;
             _instapaperService = instapaperService;
+            _deduplicationService = deduplicationService;
         }
 
         // GET: api/article
@@ -342,7 +345,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 }
 
                 var count = await _readerService.BulkFetchArticleContentsAsync(batchSize);
-                return Ok(new { fetchedCount = count, message = $"Successfully fetched content for {count} articles" });
+                
+                var message = count > 0 
+                    ? $"Successfully fetched content for {count} article{(count == 1 ? "" : "s")}"
+                    : "No articles found to fetch content for. Sync documents from Readwise Reader first.";
+                    
+                return Ok(new { fetchedCount = count, message = message });
             }
             catch (Exception ex)
             {
@@ -575,5 +583,76 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         public required string Url { get; set; }
         public string? Title { get; set; }
         public string? Selection { get; set; }
+    }
+    
+    // Deduplication endpoints added at the end of ArticleController
+    public partial class ArticleController
+    {
+        // POST: api/article/deduplicate
+        [HttpPost("deduplicate")]
+        public async Task<ActionResult<DeduplicationResultDto>> DeduplicateArticles()
+        {
+            try
+            {
+                if (_deduplicationService == null)
+                {
+                    return StatusCode(500, new { error = "Deduplication service not configured" });
+                }
+
+                _logger.LogInformation("Starting article deduplication");
+                var result = await _deduplicationService.FindAndMergeDuplicatesAsync();
+
+                if (result.Success)
+                {
+                    _logger.LogInformation("Deduplication completed successfully. Merged {Count} articles", 
+                        result.MergedCount);
+                    return Ok(result);
+                }
+                else
+                {
+                    _logger.LogError("Deduplication failed: {Error}", result.ErrorMessage);
+                    return StatusCode(500, result);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during article deduplication");
+                return StatusCode(500, new { 
+                    error = "Failed to deduplicate articles", 
+                    details = ex.Message 
+                });
+            }
+        }
+
+        // GET: api/article/duplicates
+        [HttpGet("duplicates")]
+        public async Task<ActionResult<List<DuplicateGroupDto>>> FindDuplicates()
+        {
+            try
+            {
+                if (_deduplicationService == null)
+                {
+                    return StatusCode(500, new { error = "Deduplication service not configured" });
+                }
+
+                _logger.LogInformation("Finding duplicate articles");
+                var duplicates = await _deduplicationService.FindDuplicatesAsync();
+
+                return Ok(new 
+                { 
+                    count = duplicates.Count,
+                    totalDuplicates = duplicates.Sum(g => g.Articles.Count - 1),
+                    groups = duplicates 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error finding duplicate articles");
+                return StatusCode(500, new { 
+                    error = "Failed to find duplicates", 
+                    details = ex.Message 
+                });
+            }
+        }
     }
 }
