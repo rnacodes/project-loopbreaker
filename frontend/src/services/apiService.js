@@ -330,6 +330,10 @@ export const createTopic = (topicData) => {
     return apiClient.post('/topics', topicData);
 };
 
+export const deleteTopic = (topicId) => {
+    return apiClient.delete(`/topics/${topicId}`);
+};
+
 // Genres API calls
 export const getAllGenres = () => {
     return apiClient.get('/genres');
@@ -341,6 +345,10 @@ export const searchGenres = (query) => {
 
 export const createGenre = (genreData) => {
     return apiClient.post('/genres', genreData);
+};
+
+export const deleteGenre = (genreId) => {
+    return apiClient.delete(`/genres/${genreId}`);
 };
 
 export const importGenresFromJson = (genres) => {
@@ -1723,6 +1731,16 @@ export const cleanupAllMedia = async () => {
         return response.data;
     } catch (error) {
         console.error('Error cleaning up all media:', error);
+        throw error;
+    }
+};
+
+export const cleanupRefreshTokens = async () => {
+    try {
+        const response = await apiClient.post('/auth/cleanup-tokens');
+        return response.data;
+    } catch (error) {
+        console.error('Error cleaning up refresh tokens:', error);
         throw error;
     }
 };

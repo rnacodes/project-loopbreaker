@@ -31,7 +31,8 @@ import {
     cleanupAllGenres,
     cleanupOrphanedTopics,
     cleanupOrphanedGenres,
-    cleanupAllMedia
+    cleanupAllMedia,
+    cleanupRefreshTokens
 } from '../services/apiService';
 
 const CleanupManagementPage = () => {
@@ -163,6 +164,13 @@ const CleanupManagementPage = () => {
             title: 'Orphaned Genres',
             description: 'Delete genres not linked to any media items',
             action: () => executeCleanup(cleanupOrphanedGenres, 'Orphaned genres deleted successfully'),
+            severity: 'low',
+            color: 'info'
+        },
+        {
+            title: 'Expired/Revoked Refresh Tokens',
+            description: 'Delete expired and revoked authentication refresh tokens',
+            action: () => executeCleanup(cleanupRefreshTokens, 'Refresh tokens cleaned up successfully'),
             severity: 'low',
             color: 'info'
         }

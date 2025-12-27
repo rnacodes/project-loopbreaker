@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.Shared.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using ProjectLoopbreaker.Infrastructure.Data;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -14,17 +16,20 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         private readonly ILogger<AuthController> _logger;
         private readonly IAuthService _authService;
         private readonly IWebHostEnvironment _environment;
+        private readonly MediaLibraryDbContext _context;
 
         public AuthController(
             IConfiguration configuration, 
             ILogger<AuthController> logger,
             IAuthService authService,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            MediaLibraryDbContext context)
         {
             _configuration = configuration;
             _logger = logger;
             _authService = authService;
             _environment = environment;
+            _context = context;
         }
 
         /// <summary>
@@ -236,6 +241,51 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
         
+        /// <summary>
+        /// Cleanup expired and revoked refresh tokens from the database
+        /// </summary>
+        /// <returns>Statistics about deleted tokens</returns>
+        [HttpPost("cleanup-tokens")]
+        [Authorize]
+        public async Task<IActionResult> CleanupTokens()
+        {
+            try
+            {
+                _logger.LogInformation("Starting refresh tokens cleanup...");
+
+                // Get expired and revoked tokens
+                var tokensToDelete = await _context.RefreshTokens
+                    .Where(rt => rt.ExpiresAt < DateTime.UtcNow || rt.IsRevoked)
+                    .ToListAsync();
+
+                var expiredCount = tokensToDelete.Count(rt => rt.ExpiresAt < DateTime.UtcNow && !rt.IsRevoked);
+                var revokedCount = tokensToDelete.Count(rt => rt.IsRevoked);
+                var totalCount = tokensToDelete.Count;
+
+                // Delete the tokens
+                _context.RefreshTokens.RemoveRange(tokensToDelete);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"Deleted {totalCount} expired/revoked refresh tokens (Expired: {expiredCount}, Revoked: {revokedCount})");
+
+                return Ok(new
+                {
+                    message = "Refresh tokens cleanup completed successfully",
+                    deleted = new
+                    {
+                        expiredTokens = expiredCount,
+                        revokedTokens = revokedCount,
+                        totalDeleted = totalCount
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during refresh tokens cleanup");
+                return StatusCode(500, new { message = "An error occurred during token cleanup" });
+            }
+        }
+
         /// <summary>
         /// Determines whether to require HTTPS for secure cookies
         /// Priority: 1. REQUIRE_HTTPS env var, 2. JwtSettings:RequireHttps config, 3. Environment-based default

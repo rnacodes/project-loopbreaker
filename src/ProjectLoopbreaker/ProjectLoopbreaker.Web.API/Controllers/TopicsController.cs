@@ -40,10 +40,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                         .SqlQueryRaw<Guid>(@"
                             SELECT mi.""Id"" 
                             FROM ""MediaItems"" mi
-                            INNER JOIN ""MediaItemTopic"" mit ON mi.""Id"" = mit.""MediaItemsId""
-                            WHERE mit.""TopicsId"" = {0}
-                            AND mi.""Discriminator"" IS NOT NULL 
-                            AND mi.""Discriminator"" != ''", topic.Id)
+                            INNER JOIN ""MediaItemTopics"" mit ON mi.""Id"" = mit.""MediaItemId""
+                            WHERE mit.""TopicId"" = {0}", topic.Id)
                         .ToListAsync();
                     
                     response.Add(new TopicResponseDto
@@ -91,10 +89,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                         .SqlQueryRaw<Guid>(@"
                             SELECT mi.""Id"" 
                             FROM ""MediaItems"" mi
-                            INNER JOIN ""MediaItemTopic"" mit ON mi.""Id"" = mit.""MediaItemsId""
-                            WHERE mit.""TopicsId"" = {0}
-                            AND mi.""Discriminator"" IS NOT NULL 
-                            AND mi.""Discriminator"" != ''", topic.Id)
+                            INNER JOIN ""MediaItemTopics"" mit ON mi.""Id"" = mit.""MediaItemId""
+                            WHERE mit.""TopicId"" = {0}", topic.Id)
                         .ToListAsync();
                     
                     response.Add(new TopicResponseDto
@@ -129,16 +125,14 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return NotFound($"Topic with ID {id} not found.");
                 }
 
-                // Get media item IDs directly without loading full entities
-                var mediaItemIds = await _context.Database
-                    .SqlQueryRaw<Guid>(@"
-                        SELECT mi.""Id"" 
-                        FROM ""MediaItems"" mi
-                        INNER JOIN ""MediaItemTopic"" mit ON mi.""Id"" = mit.""MediaItemsId""
-                        WHERE mit.""TopicsId"" = {0}
-                        AND mi.""Discriminator"" IS NOT NULL 
-                        AND mi.""Discriminator"" != ''", id)
-                    .ToListAsync();
+                    // Get media item IDs directly without loading full entities
+                    var mediaItemIds = await _context.Database
+                        .SqlQueryRaw<Guid>(@"
+                            SELECT mi.""Id"" 
+                            FROM ""MediaItems"" mi
+                            INNER JOIN ""MediaItemTopics"" mit ON mi.""Id"" = mit.""MediaItemId""
+                            WHERE mit.""TopicId"" = {0}", id)
+                        .ToListAsync();
 
                 var response = new TopicResponseDto
                 {
@@ -179,10 +173,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     .SqlQueryRaw<Guid>(@"
                         SELECT mi.""Id"" 
                         FROM ""MediaItems"" mi
-                        INNER JOIN ""MediaItemTopic"" mit ON mi.""Id"" = mit.""MediaItemsId""
-                        WHERE mit.""TopicsId"" = {0}
-                        AND mi.""Discriminator"" IS NOT NULL 
-                        AND mi.""Discriminator"" != ''", existingTopic.Id)
+                        INNER JOIN ""MediaItemTopics"" mit ON mi.""Id"" = mit.""MediaItemId""
+                        WHERE mit.""TopicId"" = {0}", existingTopic.Id)
                     .ToListAsync();
                 
                 var existingResponse = new TopicResponseDto
@@ -213,7 +205,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         public async Task<IActionResult> DeleteTopic(Guid id)
         {
             var topic = await _context.Topics
-                .Include(t => t.MediaItems)
                 .FirstOrDefaultAsync(t => t.Id == id);
 
             if (topic == null)
@@ -221,11 +212,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return NotFound($"Topic with ID {id} not found.");
             }
 
-            if (topic.MediaItems?.Any() == true)
-            {
-                return BadRequest($"Cannot delete topic '{topic.Name}' because it is associated with {topic.MediaItems.Count} media items.");
-            }
-
+            // The database is configured with cascade delete, so removing the topic
+            // will automatically remove all associations in the MediaItemTopics join table
             _context.Topics.Remove(topic);
             await _context.SaveChangesAsync();
 
