@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -9,9 +10,19 @@ namespace ProjectLoopbreaker.IntegrationTests
 {
     public class WebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
+        public WebApplicationFactory()
+        {
+            // Set environment variable BEFORE anything else runs
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
+            Console.WriteLine("🚀 WebApplicationFactory constructor called - Environment set to Testing");
+        }
+
         public async Task InitializeAsync()
         {
+            Console.WriteLine("🔧 InitializeAsync called - About to resolve services");
             using var scope = Services.CreateScope();
+            Console.WriteLine($"🔍 Service provider created. Service count: {Services.GetType().GetProperty("Count")?.GetValue(Services) ?? "Unknown"}");
+            
             var context = scope.ServiceProvider.GetRequiredService<MediaLibraryDbContext>();
             
             // CRITICAL SAFETY CHECK #1: Verify we're using in-memory database
@@ -78,36 +89,53 @@ namespace ProjectLoopbreaker.IntegrationTests
             // SET ENVIRONMENT FIRST - This is critical for Program.cs conditional registration
             builder.UseEnvironment("Testing");
             
-            builder.ConfigureServices(services =>
+            // Use ConfigureTestServices to run AFTER Program.cs
+            builder.ConfigureTestServices(services =>
             {
+                Console.WriteLine("=== WebApplicationFactory ConfigureServices START ===");
+                
                 // Remove ALL DbContext registrations (must remove all to prevent conflicts)
                 var descriptorsToRemove = services.Where(
                     d => d.ServiceType == typeof(DbContextOptions<MediaLibraryDbContext>) ||
                          d.ServiceType == typeof(MediaLibraryDbContext) ||
+                         d.ServiceType == typeof(DbContextOptions) ||
                          d.ImplementationType == typeof(MediaLibraryDbContext))
                     .ToList();
                 
+                Console.WriteLine($"Found {descriptorsToRemove.Count} DbContext registrations to remove");
                 foreach (var descriptor in descriptorsToRemove)
                 {
                     services.Remove(descriptor);
-                    Console.WriteLine($"REMOVED DbContext service: {descriptor.ServiceType.Name} (Lifetime: {descriptor.Lifetime})");
+                    Console.WriteLine($"REMOVED: {descriptor.ServiceType.Name} (Lifetime: {descriptor.Lifetime})");
+                }
+
+                // Also remove IApplicationDbContext if it exists
+                var appDbContextDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(ProjectLoopbreaker.Domain.Interfaces.IApplicationDbContext));
+                if (appDbContextDescriptor != null)
+                {
+                    services.Remove(appDbContextDescriptor);
+                    Console.WriteLine("REMOVED: IApplicationDbContext");
                 }
 
                 // Add in-memory database for testing (FORCED - no PostgreSQL allowed)
+                var dbName = "TestDatabase_" + Guid.NewGuid().ToString();
+                Console.WriteLine($"Registering InMemory database: {dbName}");
+                
                 services.AddDbContext<MediaLibraryDbContext>(options =>
                 {
-                    options.UseInMemoryDatabase("TestDatabase_" + Guid.NewGuid().ToString());
+                    options.UseInMemoryDatabase(dbName);
                     options.EnableSensitiveDataLogging();
-                    Console.WriteLine("✅ CONFIGURED: In-Memory database for integration tests");
-                }, ServiceLifetime.Scoped);
+                });
 
                 // Register IApplicationDbContext (Testing environment needs this)
                 services.AddScoped<ProjectLoopbreaker.Domain.Interfaces.IApplicationDbContext>(provider =>
                 {
                     var context = provider.GetRequiredService<MediaLibraryDbContext>();
-                    Console.WriteLine($"IApplicationDbContext resolved. Is InMemory: {context.Database.IsInMemory()}");
                     return context;
                 });
+                
+                Console.WriteLine("✅ DbContext and IApplicationDbContext registered");
+                Console.WriteLine("=== WebApplicationFactory ConfigureServices END ===");
 
                 // Configure ListenNotes API to use MOCK server for testing
                 // See: https://www.listennotes.com/api/docs/?test=1

@@ -41,9 +41,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                             SELECT mi.""Id"" 
                             FROM ""MediaItems"" mi
                             INNER JOIN ""MediaItemGenres"" mig ON mi.""Id"" = mig.""MediaItemId""
-                            WHERE mig.""GenreId"" = {0}
-                            AND mi.""Discriminator"" IS NOT NULL 
-                            AND mi.""Discriminator"" != ''", genre.Id)
+                            WHERE mig.""GenreId"" = {0}", genre.Id)
                         .ToListAsync();
                     
                     response.Add(new GenreResponseDto
@@ -92,9 +90,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                             SELECT mi.""Id"" 
                             FROM ""MediaItems"" mi
                             INNER JOIN ""MediaItemGenres"" mig ON mi.""Id"" = mig.""MediaItemId""
-                            WHERE mig.""GenreId"" = {0}
-                            AND mi.""Discriminator"" IS NOT NULL 
-                            AND mi.""Discriminator"" != ''", genre.Id)
+                            WHERE mig.""GenreId"" = {0}", genre.Id)
                         .ToListAsync();
                     
                     response.Add(new GenreResponseDto
@@ -129,16 +125,14 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return NotFound($"Genre with ID {id} not found.");
                 }
 
-                // Get media item IDs directly without loading full entities
-                var mediaItemIds = await _context.Database
-                    .SqlQueryRaw<Guid>(@"
-                        SELECT mi.""Id"" 
-                        FROM ""MediaItems"" mi
-                        INNER JOIN ""GenreMediaItem"" gmi ON mi.""Id"" = gmi.""MediaItemsId""
-                        WHERE gmi.""GenresId"" = {0}
-                        AND mi.""Discriminator"" IS NOT NULL 
-                        AND mi.""Discriminator"" != ''", id)
-                    .ToListAsync();
+                    // Get media item IDs directly without loading full entities
+                    var mediaItemIds = await _context.Database
+                        .SqlQueryRaw<Guid>(@"
+                            SELECT mi.""Id"" 
+                            FROM ""MediaItems"" mi
+                            INNER JOIN ""MediaItemGenres"" mig ON mi.""Id"" = mig.""MediaItemId""
+                            WHERE mig.""GenreId"" = {0}", id)
+                        .ToListAsync();
 
                 var response = new GenreResponseDto
                 {
@@ -202,7 +196,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         public async Task<IActionResult> DeleteGenre(Guid id)
         {
             var genre = await _context.Genres
-                .Include(g => g.MediaItems)
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             if (genre == null)
@@ -210,11 +203,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return NotFound($"Genre with ID {id} not found.");
             }
 
-            if (genre.MediaItems?.Any() == true)
-            {
-                return BadRequest($"Cannot delete genre '{genre.Name}' because it is associated with {genre.MediaItems.Count} media items.");
-            }
-
+            // The database is configured with cascade delete, so removing the genre
+            // will automatically remove all associations in the MediaItemGenres join table
             _context.Genres.Remove(genre);
             await _context.SaveChangesAsync();
 

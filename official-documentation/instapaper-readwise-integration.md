@@ -4,6 +4,8 @@
 
 ProjectLoopbreaker integrates with **Instapaper** and **Readwise** (including Readwise Reader) to sync articles and highlights. The system is designed with a **Readwise-first** approach, automatically deduplicating articles across sources and merging metadata intelligently.
 
+**Scope**: Currently focused on **articles only**. While Readwise Reader supports videos, PDFs, tweets, and other media types, this integration specifically syncs article-type documents and their associated highlights. Other media types in PLB (videos, podcasts, books) are managed through their respective integrations (YouTube API, ListenNotes, Open Library, etc.).
+
 ## Architecture
 
 ### Data Storage
@@ -65,6 +67,8 @@ Syncs status changes (starred, archived, progress) using the `have` parameter wi
 
 ### Readwise Reader API (v3)
 **Endpoint**: `/api/readwise/reader/sync-documents`
+
+**Category Filter**: Syncs only `category: "article"` documents. Videos, PDFs, tweets, and other document types are not imported.
 
 **Process**:
 1. Fetches Reader documents (articles from Reader inbox)
@@ -210,6 +214,14 @@ Metadata (jsonb): Raw Readwise API response
 4. **Rate Limiting**: Respect API limits (Reader: 20 req/min, built-in delays)
 5. **Incremental Syncs**: Use incremental highlight sync for regular updates
 
+## Limitations
+
+- **Article-only scope**: Only syncs documents with `category: "article"` from Readwise Reader
+- **Video transcripts not supported**: YouTube videos/captions from Reader are not imported (use PLB's YouTube integration instead)
+- **PDFs/EPUBs**: Treated as articles if imported to Reader, but may have formatting issues
+- **Tweets/threads**: Not currently supported
+- **Highlight orphaning**: Highlights from non-article sources in Readwise will be imported but won't link to media items
+
 ## Future Enhancements
 
 - PostgreSQL full-text search on article content
@@ -217,4 +229,5 @@ Metadata (jsonb): Raw Readwise API response
 - Webhook support for real-time updates
 - Export highlights back to Readwise
 - Bi-directional sync with Instapaper
+- Optional multi-media-type support (videos, podcasts) with configurable category filters
 

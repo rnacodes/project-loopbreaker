@@ -4,10 +4,10 @@ import {
     Container, Typography, Box, Accordion, AccordionSummary, AccordionDetails,
     List, ListItem, ListItemText, ListItemButton, Chip, CircularProgress,
     Alert, Grid, Card, CardContent, Button, TextField, Dialog, DialogTitle,
-    DialogContent, DialogActions, IconButton
+    DialogContent, DialogActions, IconButton, DialogContentText
 } from '@mui/material';
-import { ExpandMore, Topic as TopicIcon, Category as GenreIcon, Add as AddIcon } from '@mui/icons-material';
-import { getAllTopics, getAllGenres, createTopic, createGenre } from '../services/apiService';
+import { ExpandMore, Topic as TopicIcon, Category as GenreIcon, Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { getAllTopics, getAllGenres, createTopic, createGenre, deleteTopic, deleteGenre } from '../services/apiService';
 
 function SearchByTopicOrGenre() {
     const [expanded, setExpanded] = useState(false);
@@ -23,6 +23,11 @@ function SearchByTopicOrGenre() {
     const [newTopicName, setNewTopicName] = useState('');
     const [newGenreName, setNewGenreName] = useState('');
     const [creating, setCreating] = useState(false);
+    
+    // Delete dialog states
+    const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState(null); // { type: 'topic' | 'genre', id, name }
+    const [deleting, setDeleting] = useState(false);
     
     const navigate = useNavigate();
 
@@ -114,6 +119,56 @@ function SearchByTopicOrGenre() {
         } finally {
             setCreating(false);
         }
+    };
+
+    const handleDeleteClick = (type, item) => {
+        setDeleteTarget({
+            type,
+            id: item.id || item.Id,
+            name: item.name || item.Name,
+            mediaItemCount: (item.mediaItemIds || item.MediaItemIds || []).length
+        });
+        setOpenDeleteDialog(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) return;
+
+        setDeleting(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            if (deleteTarget.type === 'topic') {
+                await deleteTopic(deleteTarget.id);
+                setSuccess(`Topic "${deleteTarget.name}" deleted successfully!`);
+                
+                // Refresh the topics list
+                const topicsResponse = await getAllTopics();
+                setTopics(topicsResponse.data.sort((a, b) => (a.name || a.Name).localeCompare(b.name || b.Name)));
+            } else {
+                await deleteGenre(deleteTarget.id);
+                setSuccess(`Genre "${deleteTarget.name}" deleted successfully!`);
+                
+                // Refresh the genres list
+                const genresResponse = await getAllGenres();
+                setGenres(genresResponse.data.sort((a, b) => (a.name || a.Name).localeCompare(b.name || b.Name)));
+            }
+            
+            setOpenDeleteDialog(false);
+            setDeleteTarget(null);
+        } catch (err) {
+            console.error(`Error deleting ${deleteTarget.type}:`, err);
+            const errorMessage = err.response?.data?.message || err.response?.data || `Failed to delete ${deleteTarget.type}`;
+            setError(errorMessage);
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    const handleCancelDelete = () => {
+        setOpenDeleteDialog(false);
+        setDeleteTarget(null);
     };
 
     if (loading) {
@@ -218,10 +273,31 @@ function SearchByTopicOrGenre() {
                                                     transform: 'translateY(-2px)',
                                                     boxShadow: 2
                                                 },
-                                                transition: 'all 0.2s ease-in-out'
+                                                transition: 'all 0.2s ease-in-out',
+                                                position: 'relative'
                                             }}
                                             onClick={() => handleTopicClick(topic)}
                                         >
+                                            <IconButton
+                                                size="small"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteClick('topic', topic);
+                                                }}
+                                                sx={{
+                                                    position: 'absolute',
+                                                    top: 4,
+                                                    right: 4,
+                                                    zIndex: 1,
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                                    '&:hover': {
+                                                        backgroundColor: 'error.light',
+                                                        color: 'white'
+                                                    }
+                                                }}
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
                                             <CardContent sx={{ p: 2 }}>
                                                 <Chip
                                                     label={topic.name || topic.Name}
@@ -316,10 +392,31 @@ function SearchByTopicOrGenre() {
                                                     transform: 'translateY(-2px)',
                                                     boxShadow: 2
                                                 },
-                                                transition: 'all 0.2s ease-in-out'
+                                                transition: 'all 0.2s ease-in-out',
+                                                position: 'relative'
                                             }}
                                             onClick={() => handleGenreClick(genre)}
                                         >
+                                            <IconButton
+                                                size="small"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDeleteClick('genre', genre);
+                                                }}
+                                                sx={{
+                                                    position: 'absolute',
+                                                    top: 4,
+                                                    right: 4,
+                                                    zIndex: 1,
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                                    '&:hover': {
+                                                        backgroundColor: 'error.light',
+                                                        color: 'white'
+                                                    }
+                                                }}
+                                            >
+                                                <DeleteIcon fontSize="small" />
+                                            </IconButton>
                                             <CardContent sx={{ p: 2 }}>
                                                 <Chip
                                                     label={genre.name || genre.Name}
@@ -435,6 +532,50 @@ function SearchByTopicOrGenre() {
                             disabled={creating || !newGenreName.trim()}
                         >
                             {creating ? 'Creating...' : 'Create'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Delete Confirmation Dialog */}
+                <Dialog 
+                    open={openDeleteDialog} 
+                    onClose={() => !deleting && handleCancelDelete()}
+                    maxWidth="sm"
+                    fullWidth
+                >
+                    <DialogTitle>
+                        Delete {deleteTarget?.type === 'topic' ? 'Topic' : 'Genre'}?
+                    </DialogTitle>
+                    <DialogContent>
+                        <DialogContentText>
+                            Are you sure you want to delete <strong>"{deleteTarget?.name}"</strong>?
+                        </DialogContentText>
+                        {deleteTarget && deleteTarget.mediaItemCount > 0 && (
+                            <Alert severity="warning" sx={{ mt: 2 }}>
+                                This {deleteTarget.type} is currently attached to {deleteTarget.mediaItemCount} media item{deleteTarget.mediaItemCount !== 1 ? 's' : ''}. 
+                                You may not be able to delete it. Consider removing it from all media items first.
+                            </Alert>
+                        )}
+                        {deleteTarget && deleteTarget.mediaItemCount === 0 && (
+                            <Alert severity="info" sx={{ mt: 2 }}>
+                                This {deleteTarget.type} is not attached to any media items and can be safely deleted.
+                            </Alert>
+                        )}
+                    </DialogContent>
+                    <DialogActions>
+                        <Button 
+                            onClick={handleCancelDelete} 
+                            disabled={deleting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            onClick={handleConfirmDelete} 
+                            variant="contained"
+                            color="error"
+                            disabled={deleting}
+                        >
+                            {deleting ? 'Deleting...' : 'Delete'}
                         </Button>
                     </DialogActions>
                 </Dialog>

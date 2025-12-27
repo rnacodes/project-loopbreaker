@@ -272,8 +272,7 @@ var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
 dataSourceBuilder.EnableDynamicJson(); // Enable dynamic JSON serialization for arrays
 var dataSource = dataSourceBuilder.Build();
 
-// Only register Npgsql DbContext if not in Testing environment
-// (Testing environment will use InMemory database configured in WebApplicationFactory)
+// Register DbContext (skip for Testing environment - WebApplicationFactory will register InMemory)
 if (builder.Environment.EnvironmentName != "Testing")
 {
     builder.Services.AddDbContext<MediaLibraryDbContext>(options =>
@@ -283,6 +282,7 @@ if (builder.Environment.EnvironmentName != "Testing")
     builder.Services.AddScoped<IApplicationDbContext>(provider =>
         provider.GetRequiredService<MediaLibraryDbContext>());
 }
+// Note: In Testing environment, WebApplicationFactory will register InMemory DbContext
 
 // Register Application Services
 builder.Services.AddScoped<IAuthService, AuthService>();
