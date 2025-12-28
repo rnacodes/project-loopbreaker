@@ -342,7 +342,6 @@ function PodcastSeriesProfile() {
                                     component="img"
                                     src={series.thumbnail}
                                     alt={series.title}
-                                    crossOrigin="anonymous"
                                     onError={(e) => {
                                         console.error('Image failed to load:', series.thumbnail);
                                         e.target.style.display = 'none';
@@ -666,6 +665,7 @@ function PodcastSeriesProfile() {
                                             <TableCell>Title</TableCell>
                                             <TableCell width="120px">Released</TableCell>
                                             <TableCell width="100px">Duration</TableCell>
+                                                    <TableCell width="80px">ListenNotes</TableCell>
                                             <TableCell width="80px">Actions</TableCell>
                                         </TableRow>
                                     </TableHead>

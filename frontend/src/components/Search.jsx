@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-    Container, Box, Typography, TextField, InputAdornment, Grid, Card, CardContent,
-    Chip, Button, ButtonGroup, Divider, Accordion, AccordionSummary, AccordionDetails,
-    FormGroup, FormControlLabel, Checkbox, Select, MenuItem, FormControl, InputLabel,
-    Paper, IconButton, ToggleButton, ToggleButtonGroup, Slider, Stack, Badge,
-    CircularProgress, Alert
+    Container, Box, Typography, Grid,
+    Chip, Button, ButtonGroup, Divider,
+    ToggleButton, ToggleButtonGroup,
+    CircularProgress, Paper, Alert
 } from '@mui/material';
+import { SearchBarSection } from './search/SearchBarSection';
+import { SearchFilterSidebar } from './search/SearchFilterSidebar';
 import {
-    Search as SearchIcon, ViewModule, ViewList, FilterList, Clear, TuneRounded,
-    ExpandMore, Star, StarBorder, OpenInNew, AccessTime, Update,
-    ThumbUp, ThumbDown, Remove, Favorite
+    Search as SearchIcon, ViewModule, ViewList, FilterList, Clear
 } from '@mui/icons-material';
+import { ResultHeader } from './search/ResultHeader';
+import { MediaCard } from './search/MediaCard';
+import { MediaListItem } from './search/MediaListItem';
 import { typesenseAdvancedSearch, typesenseAdvancedSearchMixlists } from '../services/apiService';
 import { getAllTopics, getAllGenres } from '../services/apiService';
-import { formatMediaType, formatStatus } from '../utils/formatters';
+
+
+const sortOptions = [
+    { value: 'relevance', label: 'Most Relevant' },
+    { value: 'dateAdded', label: 'Recently Added' },
+    { value: 'rating', label: 'Highest Rated' },
+    { value: 'title', label: 'Title (A-Z)' }
+];
 
 const mediaTypeOptions = [
     { value: 'all', label: 'All Media Types' },
@@ -33,499 +42,8 @@ const mediaTypeOptions = [
     { value: 'Website', label: 'Websites' }
 ];
 
-const statusOptions = [
-    { value: 'all', label: 'All Statuses' },
-    { value: 'Uncharted', label: 'Uncharted' },
-    { value: 'ActivelyExploring', label: 'Actively Exploring' },
-    { value: 'Completed', label: 'Completed' },
-    { value: 'Abandoned', label: 'Abandoned' }
-];
-
-const ratingOptions = [
-    { value: 'SuperLike', label: 'Super Like', icon: 'superlike' },
-    { value: 'Like', label: 'Like', icon: 'like' },
-    { value: 'Neutral', label: 'Neutral', icon: 'neutral' },
-    { value: 'Dislike', label: 'Dislike', icon: 'dislike' }
-];
-
-const sortOptions = [
-    { value: 'relevance', label: 'Most Relevant' },
-    { value: 'dateAdded', label: 'Recently Added' },
-    { value: 'rating', label: 'Highest Rated' },
-    { value: 'title', label: 'Title (A-Z)' }
-];
-
 // HELPER FUNCTIONS
-const getRatingIcon = (ratingType) => {
-    switch (ratingType) {
-        case 'superlike':
-            return <Favorite sx={{ fontSize: 18, color: '#e91e63' }} />;
-        case 'like':
-            return <ThumbUp sx={{ fontSize: 18, color: '#4caf50' }} />;
-        case 'neutral':
-            return <Remove sx={{ fontSize: 18, color: '#9e9e9e' }} />;
-        case 'dislike':
-            return <ThumbDown sx={{ fontSize: 18, color: '#f44336' }} />;
-        default:
-            return null;
-    }
-};
 
-// COMPONENTS
-const MediaCard = ({ item }) => {
-    const navigate = useNavigate();
-    
-    // Determine navigation path based on item type
-    const handleClick = () => {
-        if (item.isMixlist) {
-            navigate(`/mixlist/${item.id}`);
-        } else {
-            navigate(`/media/${item.id}`);
-        }
-    };
-    
-    // Helper function to get the primary creator/author/maker
-    const getPrimaryCredit = () => {
-        switch (item.mediaType) {
-            case 'Book':
-            case 'Article':
-                return item.author;
-            case 'Movie':
-                return item.director ? `Dir: ${item.director}` : null;
-            case 'TVShow':
-                return item.creator ? `Created by ${item.creator}` : null;
-            case 'Video':
-                return item.channel || item.platform;
-            case 'Podcast':
-                return item.publisher;
-            case 'Mixlist':
-                return null; // Mixlists don't have a primary credit
-            default:
-                return item.creator || item.author || null;
-        }
-    };
-
-    // Helper function to get meaningful metadata line
-    const getMetadataLine = () => {
-        const parts = [];
-        
-        switch (item.mediaType) {
-            case 'Book':
-                if (item.goodreadsRating) parts.push(`${item.goodreadsRating}★`);
-                break;
-            case 'Movie':
-                if (item.releaseYear) parts.push(item.releaseYear);
-                if (item.runtimeMinutes) parts.push(`${item.runtimeMinutes} min`);
-                if (item.tmdbRating) parts.push(`${item.tmdbRating}★`);
-                break;
-            case 'TVShow':
-                if (item.tmdbRating) parts.push(`${item.tmdbRating}★`);
-                break;
-            case 'Video':
-                if (item.lengthInSeconds) {
-                    const hours = Math.floor(item.lengthInSeconds / 3600);
-                    const minutes = Math.floor((item.lengthInSeconds % 3600) / 60);
-                    parts.push(hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`);
-                }
-                if (item.platform) parts.push(item.platform);
-                break;
-            case 'Podcast':
-                if (item.podcastType) parts.push(item.podcastType === 'Series' ? 'Series' : 'Episode');
-                if (item.durationInSeconds) {
-                    const minutes = Math.floor(item.durationInSeconds / 60);
-                    parts.push(`${minutes} min`);
-                }
-                break;
-            case 'Article':
-                if (item.publication) parts.push(item.publication);
-                if (item.estimatedReadingTimeMinutes) parts.push(`${item.estimatedReadingTimeMinutes} min read`);
-                if (item.wordCount) parts.push(`${(item.wordCount / 1000).toFixed(1)}k words`);
-                break;
-            case 'Mixlist':
-                return null; // Handled separately with item count
-            default:
-                break;
-        }
-        
-        return parts.length > 0 ? parts.join(' • ') : null;
-    };
-    
-    return (
-        <Card 
-            onClick={handleClick}
-            sx={{ 
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                cursor: 'pointer',
-                '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: 8,
-                    '& .card-title': {
-                        color: 'primary.main'
-                    }
-                },
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
-        >
-        <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
-            {/* HEADER ROW: Title + Rating Icon */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                <Typography 
-                    variant="h6" 
-                    className="card-title"
-                    sx={{ 
-                        fontWeight: 'bold',
-                        fontSize: '1.1rem',
-                        transition: 'color 0.2s'
-                    }}
-                >
-                    {item.title}
-                </Typography>
-                {item.ratingType && (
-                    <Box sx={{ display: 'flex', alignItems: 'center', ml: 1, flexShrink: 0 }}>
-                        {getRatingIcon(item.ratingType)}
-                    </Box>
-                )}
-            </Box>
-
-            {/* CHIPS ROW: Media Type + Status + Optional Extras */}
-            <Box sx={{ mb: 1.5, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-                <Chip 
-                    label={formatMediaType(item.mediaType)} 
-                    size="small" 
-                    sx={{ 
-                        backgroundColor: 'rgba(105, 90, 140, 0.2)',
-                        color: '#b39ddb',
-                        fontWeight: 'bold'
-                    }}
-                />
-                {item.status && (
-                    <Chip 
-                        label={formatStatus(item.status)} 
-                        size="small" 
-                        color={
-                            item.status === 'ActivelyExploring' ? 'success' :
-                            item.status === 'Uncharted' ? 'info' :
-                            item.status === 'Completed' ? 'default' :
-                            'warning'
-                        }
-                        variant="outlined"
-                        sx={{ fontSize: '0.7rem' }}
-                    />
-                )}
-                
-                {/* Conditional extra chips */}
-                {item.mediaType === 'Podcast' && item.podcastType && (
-                    <Chip 
-                        label={item.podcastType === 'Series' ? 'Series' : 'Episode'} 
-                        size="small"
-                        sx={{ fontSize: '0.7rem' }}
-                    />
-                )}
-                {item.mediaType === 'Video' && item.videoType && (
-                    <Chip 
-                        label={item.videoType} 
-                        size="small"
-                        sx={{ fontSize: '0.7rem' }}
-                    />
-                )}
-                {item.mediaType === 'Article' && item.isStarred && (
-                    <Chip 
-                        icon={<Star sx={{ fontSize: 14 }} />} 
-                        label="Starred" 
-                        size="small"
-                        sx={{ fontSize: '0.7rem' }}
-                    />
-                )}
-            </Box>
-
-            {/* PRIMARY CREDIT (Author/Director/Creator/Channel) */}
-            {getPrimaryCredit() && (
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                    {getPrimaryCredit()}
-                </Typography>
-            )}
-
-            {/* METADATA LINE (Year, duration, rating, etc) */}
-            {getMetadataLine() && (
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, fontSize: '0.85rem' }}>
-                    {getMetadataLine()}
-                </Typography>
-            )}
-
-            {/* DESCRIPTION/NOTES - Truncated */}
-            {item.notes && (
-                <Typography 
-                    variant="body2" 
-                    sx={{ 
-                        mb: 1.5,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        color: 'text.secondary'
-                    }}
-                >
-                    {item.notes}
-                </Typography>
-            )}
-
-            {/* TOPICS - First 3 with overflow indicator */}
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-                {item.topics.slice(0, 3).map((topic, index) => (
-                    <Chip
-                        key={`topic-${index}`}
-                        label={topic}
-                        size="small"
-                        sx={{ 
-                            fontSize: '0.75rem', 
-                            height: '24px',
-                            backgroundColor: 'rgba(54, 39, 89, 0.3)',
-                            color: '#ce93d8'
-                        }}
-                    />
-                ))}
-                {item.topics.length > 3 && (
-                    <Chip
-                        label={`+${item.topics.length - 3}`}
-                        size="small"
-                        sx={{ fontSize: '0.75rem', height: '24px' }}
-                    />
-                )}
-            </Box>
-
-            {/* FOOTER: Date Added */}
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.7rem' }}>
-                <AccessTime sx={{ fontSize: 12 }} />
-                Added {new Date(item.dateAdded).toLocaleDateString()}
-            </Typography>
-        </CardContent>
-    </Card>
-    );
-};
-
-const MediaListItem = ({ item }) => {
-    const navigate = useNavigate();
-    
-    // Determine navigation path based on item type
-    const handleClick = () => {
-        if (item.isMixlist) {
-            navigate(`/mixlist/${item.id}`);
-        } else {
-            navigate(`/media/${item.id}`);
-        }
-    };
-    
-    // Helper function to get the primary creator/author/maker
-    const getPrimaryCredit = () => {
-        switch (item.mediaType) {
-            case 'Book':
-            case 'Article':
-                return item.author;
-            case 'Movie':
-                return item.director ? `Dir: ${item.director}` : null;
-            case 'TVShow':
-                return item.creator ? `Created by ${item.creator}` : null;
-            case 'Video':
-                return item.channel || item.platform;
-            case 'Podcast':
-                return item.publisher;
-            case 'Mixlist':
-                return null;
-            default:
-                return item.creator || item.author || null;
-        }
-    };
-
-    // Helper function to get meaningful metadata line
-    const getMetadataLine = () => {
-        const parts = [];
-        
-        switch (item.mediaType) {
-            case 'Book':
-                if (item.goodreadsRating) parts.push(`${item.goodreadsRating}★`);
-                break;
-            case 'Movie':
-                if (item.releaseYear) parts.push(item.releaseYear);
-                if (item.runtimeMinutes) parts.push(`${item.runtimeMinutes} min`);
-                if (item.tmdbRating) parts.push(`${item.tmdbRating}★`);
-                break;
-            case 'TVShow':
-                if (item.tmdbRating) parts.push(`${item.tmdbRating}★`);
-                break;
-            case 'Video':
-                if (item.lengthInSeconds) {
-                    const hours = Math.floor(item.lengthInSeconds / 3600);
-                    const minutes = Math.floor((item.lengthInSeconds % 3600) / 60);
-                    parts.push(hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`);
-                }
-                if (item.platform) parts.push(item.platform);
-                break;
-            case 'Podcast':
-                if (item.podcastType) parts.push(item.podcastType === 'Series' ? 'Series' : 'Episode');
-                if (item.durationInSeconds) {
-                    const minutes = Math.floor(item.durationInSeconds / 60);
-                    parts.push(`${minutes} min`);
-                }
-                break;
-            case 'Article':
-                if (item.publication) parts.push(item.publication);
-                if (item.estimatedReadingTimeMinutes) parts.push(`${item.estimatedReadingTimeMinutes} min read`);
-                if (item.wordCount) parts.push(`${(item.wordCount / 1000).toFixed(1)}k words`);
-                break;
-            case 'Mixlist':
-                return null;
-            default:
-                break;
-        }
-        
-        return parts.length > 0 ? parts.join(' • ') : null;
-    };
-    
-    return (
-    <Paper
-        onClick={handleClick}
-            sx={{ 
-                p: 2.5,
-                mb: 2,
-                cursor: 'pointer',
-                '&:hover': {
-                    boxShadow: 6,
-                    backgroundColor: 'rgba(255, 255, 255, 0.02)'
-                },
-                transition: 'all 0.2s'
-            }}
-        >
-        <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={6}>
-                {/* Title and Rating */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                    <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
-                        {item.title}
-                    </Typography>
-                    {item.ratingType && (
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {getRatingIcon(item.ratingType)}
-                        </Box>
-                    )}
-                </Box>
-                
-                {/* Primary Credit */}
-                {getPrimaryCredit() && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontWeight: 500 }}>
-                        {getPrimaryCredit()}
-                    </Typography>
-                )}
-                
-                {/* Metadata Line */}
-                {getMetadataLine() && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: '0.85rem' }}>
-                        {getMetadataLine()}
-                    </Typography>
-                )}
-                
-                {/* Description/Notes */}
-                {item.notes && (
-                    <Typography 
-                        variant="body2" 
-                        sx={{ 
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitLineClamp: 1,
-                            WebkitBoxOrient: 'vertical',
-                            color: 'text.secondary',
-                            fontSize: '0.85rem'
-                        }}
-                    >
-                        {item.notes}
-                    </Typography>
-                )}
-            </Grid>
-            
-            {/* Topics Column */}
-            <Grid item xs={12} md={3}>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {item.topics.slice(0, 4).map((topic, index) => (
-                        <Chip
-                            key={`topic-${index}`}
-                            label={topic}
-                            size="small"
-                            sx={{ 
-                                fontSize: '0.75rem', 
-                                height: '24px',
-                                backgroundColor: 'rgba(54, 39, 89, 0.3)',
-                                color: '#ce93d8'
-                            }}
-                        />
-                    ))}
-                    {item.topics.length > 4 && (
-                        <Chip
-                            label={`+${item.topics.length - 4}`}
-                            size="small"
-                            sx={{ fontSize: '0.75rem', height: '24px' }}
-                        />
-                    )}
-                </Box>
-            </Grid>
-            
-            {/* Chips Column */}
-            <Grid item xs={12} md={3}>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
-                    <Chip 
-                        label={formatMediaType(item.mediaType)} 
-                        size="small" 
-                        sx={{ 
-                            backgroundColor: 'rgba(105, 90, 140, 0.2)',
-                            color: '#b39ddb',
-                            fontWeight: 'bold'
-                        }}
-                    />
-                    {item.status && (
-                        <Chip 
-                            label={formatStatus(item.status)} 
-                            size="small" 
-                            color={
-                                item.status === 'ActivelyExploring' ? 'success' :
-                                item.status === 'Uncharted' ? 'info' :
-                                item.status === 'Completed' ? 'default' :
-                                'warning'
-                            }
-                            variant="outlined"
-                        />
-                    )}
-                    
-                    {/* Conditional extra chips */}
-                    {item.mediaType === 'Podcast' && item.podcastType && (
-                        <Chip 
-                            label={item.podcastType === 'Series' ? 'Series' : 'Episode'} 
-                            size="small"
-                            sx={{ fontSize: '0.7rem' }}
-                        />
-                    )}
-                    {item.mediaType === 'Video' && item.videoType && (
-                        <Chip 
-                            label={item.videoType} 
-                            size="small"
-                            sx={{ fontSize: '0.7rem' }}
-                        />
-                    )}
-                    {item.mediaType === 'Article' && item.isStarred && (
-                        <Chip 
-                            icon={<Star sx={{ fontSize: 14 }} />} 
-                            label="Starred" 
-                            size="small"
-                            sx={{ fontSize: '0.7rem' }}
-                        />
-                    )}
-                </Box>
-            </Grid>
-        </Grid>
-    </Paper>
-    );
-};
 
 // MAIN COMPONENT
 export default function Search() {
@@ -535,6 +53,7 @@ export default function Search() {
     const [viewMode, setViewMode] = useState('card');
     const [sortBy, setSortBy] = useState('relevance');
     const [searchMode, setSearchMode] = useState('media'); // 'media' or 'mixlists'
+    const [selectedMixlists, setSelectedMixlists] = useState([]);
     const [selectedMediaTypes, setSelectedMediaTypes] = useState(['all']);
     const [selectedTopics, setSelectedTopics] = useState([]);
     const [selectedGenres, setSelectedGenres] = useState([]);
@@ -546,6 +65,21 @@ export default function Search() {
     const [showAllTopics, setShowAllTopics] = useState(false);
     const [showAllGenres, setShowAllGenres] = useState(false);
     const [urlParamsLoaded, setUrlParamsLoaded] = useState(false);
+
+    // Bulk actions
+    const handleToggleMixlistSelect = (mixlistId) => {
+        setSelectedMixlists(prev =>
+            prev.includes(mixlistId) ? prev.filter(id => id !== mixlistId) : [...prev, mixlistId]
+        );
+    };
+
+    const handleSelectAllMixlists = () => {
+        if (selectedMixlists.length === searchResults.filter(item => item.isMixlist).length && searchResults.every(item => item.isMixlist === false || selectedMixlists.includes(item.id))) {
+            setSelectedMixlists([]);
+        } else {
+            setSelectedMixlists(searchResults.filter(item => item.isMixlist).map(item => item.id));
+        }
+    };
 
     // Data state
     const [searchResults, setSearchResults] = useState([]);
@@ -823,442 +357,66 @@ export default function Search() {
                 </Box>
 
                 {/* Search Bar */}
-                <Paper 
-                    elevation={3}
-                    sx={{ 
-                        p: { xs: 2, sm: 3 }, 
-                        mb: 4,
-                        backgroundColor: 'background.paper',
-                        borderRadius: 3
-                    }}
-                >
-                    <TextField
-                        fullWidth
-                        variant="outlined"
-                        placeholder="Search by title, author, topic, or any keyword..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <SearchIcon sx={{ fontSize: 28, color: 'text.secondary' }} />
-                                </InputAdornment>
-                            ),
-                            endAdornment: searchQuery && (
-                                <InputAdornment position="end">
-                                    <IconButton onClick={() => setSearchQuery('')} size="small">
-                                        <Clear />
-                                    </IconButton>
-                                </InputAdornment>
-                            ),
-                            sx: { 
-                                fontSize: '1.1rem',
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: 'rgba(255, 255, 255, 0.23)'
-                                }
-                            }
-                        }}
-                    />
-                    
-                    {/* Quick Filters */}
-                    {allTopics.length > 0 && (
-                        <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ mr: 1, alignSelf: 'center' }}>
-                                Quick filters:
-                            </Typography>
-                            {allTopics.slice(0, 4).map((topic) => (
-                                <Chip
-                                    key={topic}
-                                    label={topic}
-                                    onClick={() => handleTopicToggle(topic)}
-                                    color={selectedTopics.includes(topic) ? 'primary' : 'default'}
-                                    sx={{ cursor: 'pointer' }}
-                                />
-                            ))}
-                        </Box>
-                    )}
-                </Paper>
+                <SearchBarSection
+                    searchQuery={searchQuery}
+                    setSearchQuery={setSearchQuery}
+                    allTopics={allTopics}
+                    selectedTopics={selectedTopics}
+                    handleTopicToggle={handleTopicToggle}
+                    searchMode={searchMode}
+                    setSearchMode={setSearchMode}
+                    setCurrentPage={setCurrentPage}
+                />
 
                 <Grid container spacing={3}>
-                    {/* Filters Sidebar */}
                     {showFilters && (
-                        <Grid item xs={12} md={3}>
-                            <Paper 
-                                elevation={2}
-                                sx={{ 
-                                    p: 2.5, 
-                                    position: 'sticky',
-                                    top: 16,
-                                    backgroundColor: 'background.paper',
-                                    borderRadius: 2
-                                }}
-                            >
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <Typography variant="h6" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <TuneRounded /> Filters
-                                    </Typography>
-                                    <Button 
-                                        size="small" 
-                                        onClick={handleClearFilters}
-                                        startIcon={<Clear />}
-                                        sx={{ color: 'white' }}
-                                    >
-                                        Clear All
-                                    </Button>
-                                </Box>
-
-                                <Divider sx={{ mb: 2 }} />
-
-                                {/* Media Type Filter - Only show for media search */}
-                                {searchMode === 'media' && (
-                                    <>
-                                        <Accordion defaultExpanded disableGutters elevation={0}>
-                                            <AccordionSummary expandIcon={<ExpandMore />}>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                                    Media Type
-                                                </Typography>
-                                            </AccordionSummary>
-                                            <AccordionDetails sx={{ pt: 0 }}>
-                                                <FormGroup>
-                                                    {mediaTypeOptions.map((option) => (
-                                                <FormControlLabel
-                                                        key={option.value}
-                                                        control={
-                                                            <Checkbox
-                                                                checked={selectedMediaTypes.includes(option.value)}
-                                                                onChange={() => handleMediaTypeToggle(option.value)}
-                                                                size="small"
-                                                                sx={{ color: 'white', '&.Mui-checked': { color: 'white' } }}
-                                                            />
-                                                        }
-                                                        label={<Typography variant="body2">{option.label}</Typography>}
-                                                        sx={{ mb: 0.5 }}
-                                                    />
-                                                    ))}
-                                                </FormGroup>
-                                            </AccordionDetails>
-                                        </Accordion>
-
-                                        <Divider sx={{ my: 1 }} />
-                                    </>
-                                )}
-
-                                {/* Topics Filter */}
-                                <Accordion disableGutters elevation={0}>
-                                    <AccordionSummary expandIcon={<ExpandMore />}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                            Topics {selectedTopics.length > 0 && `(${selectedTopics.length})`}
-                                        </Typography>
-                                    </AccordionSummary>
-                                    <AccordionDetails sx={{ pt: 0 }}>
-                                        <TextField
-                                            fullWidth
-                                            size="small"
-                                            placeholder="Search topics..."
-                                            value={topicSearchQuery}
-                                            onChange={(e) => setTopicSearchQuery(e.target.value)}
-                                            sx={{ mb: 1.5 }}
-                                            InputProps={{
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <SearchIcon sx={{ fontSize: 18 }} />
-                                                    </InputAdornment>
-                                                )
-                                            }}
-                                        />
-                                        <FormGroup>
-                                            {allTopics
-                                                .filter(topic => topic.toLowerCase().includes(topicSearchQuery.toLowerCase()))
-                                                .slice(0, showAllTopics ? undefined : 10)
-                                                .map((topic) => (
-                                                    <FormControlLabel
-                                                        key={topic}
-                                                        control={
-                                                            <Checkbox
-                                                                checked={selectedTopics.includes(topic)}
-                                                                onChange={() => handleTopicToggle(topic)}
-                                                                size="small"
-                                                            />
-                                                        }
-                                                        label={<Typography variant="body2">{topic}</Typography>}
-                                                        sx={{ mb: 0.5 }}
-                                                    />
-                                                ))}
-                                        </FormGroup>
-                                        {allTopics.filter(topic => topic.toLowerCase().includes(topicSearchQuery.toLowerCase())).length > 10 && !showAllTopics && (
-                                            <Button
-                                                size="small"
-                                                onClick={() => setShowAllTopics(true)}
-                                                sx={{ mt: 1, textTransform: 'none' }}
-                                            >
-                                                Show More
-                                            </Button>
-                                        )}
-                                        {showAllTopics && (
-                                            <Button
-                                                size="small"
-                                                onClick={() => setShowAllTopics(false)}
-                                                sx={{ mt: 1, textTransform: 'none' }}
-                                            >
-                                                Show Less
-                                            </Button>
-                                        )}
-                                        <Divider sx={{ my: 1.5 }} />
-                                        <Button
-                                            size="small"
-                                            fullWidth
-                                            variant="text"
-                                            onClick={() => navigate('/search-by-topic-genre')}
-                                            sx={{ textTransform: 'none', justifyContent: 'flex-start', color: 'white' }}
-                                        >
-                                            Browse all topics →
-                                        </Button>
-                                    </AccordionDetails>
-                                </Accordion>
-
-                                <Divider sx={{ my: 1 }} />
-
-                                {/* Genres Filter */}
-                                <Accordion disableGutters elevation={0}>
-                                    <AccordionSummary expandIcon={<ExpandMore />}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                            Genres {selectedGenres.length > 0 && `(${selectedGenres.length})`}
-                                        </Typography>
-                                    </AccordionSummary>
-                                    <AccordionDetails sx={{ pt: 0 }}>
-                                        <TextField
-                                            fullWidth
-                                            size="small"
-                                            placeholder="Search genres..."
-                                            value={genreSearchQuery}
-                                            onChange={(e) => setGenreSearchQuery(e.target.value)}
-                                            sx={{ mb: 1.5 }}
-                                            InputProps={{
-                                                startAdornment: (
-                                                    <InputAdornment position="start">
-                                                        <SearchIcon sx={{ fontSize: 18 }} />
-                                                    </InputAdornment>
-                                                )
-                                            }}
-                                        />
-                                        <FormGroup>
-                                            {allGenres
-                                                .filter(genre => genre.toLowerCase().includes(genreSearchQuery.toLowerCase()))
-                                                .slice(0, showAllGenres ? undefined : 10)
-                                                .map((genre) => (
-                                                    <FormControlLabel
-                                                        key={genre}
-                                                        control={
-                                                            <Checkbox
-                                                                checked={selectedGenres.includes(genre)}
-                                                                onChange={() => handleGenreToggle(genre)}
-                                                                size="small"
-                                                            />
-                                                        }
-                                                        label={<Typography variant="body2">{genre}</Typography>}
-                                                        sx={{ mb: 0.5 }}
-                                                    />
-                                                ))}
-                                        </FormGroup>
-                                        {allGenres.filter(genre => genre.toLowerCase().includes(genreSearchQuery.toLowerCase())).length > 10 && !showAllGenres && (
-                                            <Button
-                                                size="small"
-                                                onClick={() => setShowAllGenres(true)}
-                                                sx={{ mt: 1, textTransform: 'none' }}
-                                            >
-                                                Show More
-                                            </Button>
-                                        )}
-                                        {showAllGenres && (
-                                            <Button
-                                                size="small"
-                                                onClick={() => setShowAllGenres(false)}
-                                                sx={{ mt: 1, textTransform: 'none' }}
-                                            >
-                                                Show Less
-                                            </Button>
-                                        )}
-                                        <Divider sx={{ my: 1.5 }} />
-                                        <Button
-                                            size="small"
-                                            fullWidth
-                                            variant="text"
-                                            onClick={() => navigate('/search-by-topic-genre')}
-                                            sx={{ textTransform: 'none', justifyContent: 'flex-start', color: 'white' }}
-                                        >
-                                            Browse all genres →
-                                        </Button>
-                                    </AccordionDetails>
-                                </Accordion>
-
-                                {/* Status and Rating Filters - Only show for media search */}
-                                {searchMode === 'media' && (
-                                    <>
-                                        <Divider sx={{ my: 1 }} />
-
-                                        {/* Status Filter */}
-                                        <Accordion disableGutters elevation={0}>
-                                            <AccordionSummary expandIcon={<ExpandMore />}>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                                    Status
-                                                </Typography>
-                                            </AccordionSummary>
-                                            <AccordionDetails sx={{ pt: 0 }}>
-                                                <FormControl fullWidth size="small">
-                                                    <Select
-                                                        value={selectedStatus}
-                                                        onChange={(e) => setSelectedStatus(e.target.value)}
-                                                    >
-                                                        {statusOptions.map((option) => (
-                                                            <MenuItem key={option.value} value={option.value}>
-                                                                {option.label}
-                                                            </MenuItem>
-                                                        ))}
-                                                    </Select>
-                                                </FormControl>
-                                            </AccordionDetails>
-                                        </Accordion>
-
-                                        <Divider sx={{ my: 1 }} />
-
-                                        {/* Rating Filter */}
-                                        <Accordion disableGutters elevation={0}>
-                                            <AccordionSummary expandIcon={<ExpandMore />}>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                                    Rating {selectedRatings.length > 0 && `(${selectedRatings.length})`}
-                                                </Typography>
-                                            </AccordionSummary>
-                                            <AccordionDetails sx={{ pt: 0 }}>
-                                                <FormGroup>
-                                                    {ratingOptions.map((rating) => (
-                                                        <FormControlLabel
-                                                            key={rating.value}
-                                                            control={
-                                                                <Checkbox
-                                                                    checked={selectedRatings.includes(rating.value)}
-                                                                    onChange={() => handleRatingToggle(rating.value)}
-                                                                    size="small"
-                                                                />
-                                                            }
-                                                            label={
-                                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                                    {getRatingIcon(rating.icon)}
-                                                                    <Typography variant="body2">{rating.label}</Typography>
-                                                                </Box>
-                                                            }
-                                                            sx={{ mb: 0.5 }}
-                                                        />
-                                                    ))}
-                                                </FormGroup>
-                                            </AccordionDetails>
-                                        </Accordion>
-                                    </>
-                                )}
-                            </Paper>
-                        </Grid>
+                        <SearchFilterSidebar
+                            searchMode={searchMode}
+                            selectedMediaTypes={selectedMediaTypes}
+                            setSelectedMediaTypes={setSelectedMediaTypes}
+                            selectedTopics={selectedTopics}
+                            setSelectedTopics={setSelectedTopics}
+                            selectedGenres={selectedGenres}
+                            setSelectedGenres={setSelectedGenres}
+                            selectedStatus={selectedStatus}
+                            setSelectedStatus={setSelectedStatus}
+                            selectedRatings={selectedRatings}
+                            setSelectedRatings={setSelectedRatings}
+                            handleClearFilters={handleClearFilters}
+                            topicSearchQuery={topicSearchQuery}
+                            setTopicSearchQuery={setTopicSearchQuery}
+                            genreSearchQuery={genreSearchQuery}
+                            setGenreSearchQuery={setGenreSearchQuery}
+                            showAllTopics={showAllTopics}
+                            setShowAllTopics={setShowAllTopics}
+                            showAllGenres={showAllGenres}
+                            setShowAllGenres={setShowAllGenres}
+                            allTopics={allTopics}
+                            allGenres={allGenres}
+                            mediaTypeOptions={mediaTypeOptions}
+                        />
                     )}
 
-                    {/* Results Section */}
                     <Grid item xs={12} md={showFilters ? 9 : 12}>
                         {/* Results Header */}
-                        <Box sx={{ 
-                            mb: 3, 
-                            display: 'flex', 
-                            flexDirection: { xs: 'column', sm: 'row' },
-                            justifyContent: 'space-between', 
-                            alignItems: { xs: 'flex-start', sm: 'center' },
-                            gap: 2
-                        }}>
-                            <Box>
-                                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                                    {totalResults} Results
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    {searchQuery && `Showing results for "${searchQuery}"`}
-                                    {!searchQuery && searchMode === 'media' && 'Showing all media items'}
-                                    {!searchQuery && searchMode === 'mixlists' && 'Showing all mixlists'}
-                                </Typography>
-                            </Box>
-
-                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                                {/* Sort */}
-                                <FormControl size="small" sx={{ minWidth: 180 }}>
-                                    <InputLabel>Sort by</InputLabel>
-                                    <Select
-                                        value={sortBy}
-                                        label="Sort by"
-                                        onChange={(e) => setSortBy(e.target.value)}
-                                    >
-                                        {sortOptions.map((option) => (
-                                            <MenuItem key={option.value} value={option.value}>
-                                                {option.label}
-                                            </MenuItem>
-                                        ))}
-                                    </Select>
-                                </FormControl>
-
-                                {/* View Mode Toggle */}
-                                <ToggleButtonGroup
-                                    value={viewMode}
-                                    exclusive
-                                    onChange={(e, newMode) => newMode && setViewMode(newMode)}
-                                    size="small"
-                                >
-                                    <ToggleButton value="card">
-                                        <ViewModule />
-                                    </ToggleButton>
-                                    <ToggleButton value="list">
-                                        <ViewList />
-                                    </ToggleButton>
-                                </ToggleButtonGroup>
-
-                                {/* Toggle Filters Button (mobile) */}
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    onClick={() => setShowFilters(!showFilters)}
-                                    startIcon={<FilterList />}
-                                    sx={{ display: { xs: 'flex', md: 'none' } }}
-                                >
-                                    {showFilters ? 'Hide' : 'Show'} Filters
-                                </Button>
-                            </Box>
-                        </Box>
-
-                        {/* Active Filters Display */}
-                        {(selectedTopics.length > 0 || selectedGenres.length > 0 || !selectedMediaTypes.includes('all')) && (
-                            <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
-                                <Typography variant="body2" color="text.secondary">
-                                    Active filters:
-                                </Typography>
-                                {selectedTopics.map((topic) => (
-                                    <Chip
-                                        key={`filter-topic-${topic}`}
-                                        label={topic}
-                                        size="small"
-                                        onDelete={() => handleTopicToggle(topic)}
-                                        color="primary"
-                                    />
-                                ))}
-                                {selectedGenres.map((genre) => (
-                                    <Chip
-                                        key={`filter-genre-${genre}`}
-                                        label={genre}
-                                        size="small"
-                                        onDelete={() => handleGenreToggle(genre)}
-                                        color="secondary"
-                                    />
-                                ))}
-                                {!selectedMediaTypes.includes('all') && selectedMediaTypes.map((type) => (
-                                    <Chip
-                                        key={`filter-type-${type}`}
-                                        label={mediaTypeOptions.find(o => o.value === type)?.label || type}
-                                        size="small"
-                                        onDelete={() => handleMediaTypeToggle(type)}
-                                    />
-                                ))}
-                            </Box>
-                        )}
+                        <ResultHeader
+                            totalResults={totalResults}
+                            searchQuery={searchQuery}
+                            searchMode={searchMode}
+                            viewMode={viewMode}
+                            setViewMode={setViewMode}
+                            sortBy={sortBy}
+                            setSortBy={setSortBy}
+                            showFilters={showFilters}
+                            setShowFilters={setShowFilters}
+                            selectedTopics={selectedTopics}
+                            selectedGenres={selectedGenres}
+                            selectedMediaTypes={selectedMediaTypes}
+                            handleTopicToggle={handleTopicToggle}
+                            handleGenreToggle={handleGenreToggle}
+                            handleMediaTypeToggle={handleMediaTypeToggle}
+                            mediaTypeOptions={mediaTypeOptions}
+                        />
 
                         {/* Results Display */}
                         {loading ? (
@@ -1289,7 +447,12 @@ export default function Search() {
                         ) : (
                             <Box>
                                 {searchResults.map((item) => (
-                                    <MediaListItem key={item.id} item={item} />
+                                    <MediaListItem 
+                                        key={item.id} 
+                                        item={item} 
+                                        isSelected={selectedMixlists.includes(item.id)}
+                                        onToggleSelect={handleToggleMixlistSelect}
+                                    />
                                 ))}
                             </Box>
                         )}
