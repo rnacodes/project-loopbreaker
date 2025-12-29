@@ -26,13 +26,19 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
             };
         }
 
-        public async Task<PodcastSeriesDto> GetPodcastByIdAsync(string id)
+        public async Task<PodcastSeriesDto> GetPodcastByIdAsync(string id, string? nextEpisodePubDate = null)
         {
             try
             {
                 _logger.LogInformation("Getting podcast details for ID: {PodcastId}", id);
                 
-                var response = await _httpClient.GetAsync($"podcasts/{id}");
+                var url = $"podcasts/{id}";
+                if (!string.IsNullOrEmpty(nextEpisodePubDate))
+                {
+                    url += $"?next_episode_pub_date={Uri.EscapeDataString(nextEpisodePubDate)}";
+                }
+                
+                var response = await _httpClient.GetAsync(url);
                 response.EnsureSuccessStatusCode();
                 
                 var jsonContent = await response.Content.ReadAsStringAsync();

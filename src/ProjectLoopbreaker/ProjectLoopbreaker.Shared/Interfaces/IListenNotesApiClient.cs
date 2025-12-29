@@ -12,7 +12,7 @@ namespace ProjectLoopbreaker.Shared.Interfaces
             string? sortByDate = null, string? safeMode = null, string? uniquePodcasts = null);
 
         // Podcast operations
-        Task<PodcastSeriesDto> GetPodcastByIdAsync(string id);
+        Task<PodcastSeriesDto> GetPodcastByIdAsync(string id, string? nextEpisodePubDate = null);
         Task<ListenNotesBestPodcastsDto> GetBestPodcastsAsync(int? genreId = null, int? page = null, 
             string? region = null, string? sortByDate = null, bool? safeMode = null);
         Task<ListenNotesRecommendationsDto> GetPodcastRecommendationsAsync(string id, bool? safeMode = null);

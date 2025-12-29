@@ -35,8 +35,9 @@ import {
   AutoAwesome,
   Search
 } from '@mui/icons-material';
-import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TRANSITIONS, SimpleMediaCarousel } from './shared';
+import { COLORS, SPACING, BORDER_RADIUS, SHADOWS, TRANSITIONS } from './shared';
 import SearchBar from './shared/SearchBar';
+import SimpleMediaCarousel from './shared/SimpleMediaCarousel';
 
 // Mock data for demonstration
 const mockMediaItems = [

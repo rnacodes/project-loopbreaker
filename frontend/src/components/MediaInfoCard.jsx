@@ -46,7 +46,7 @@ function MediaInfoCard({
               boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
               mb: 2
             }}
-            image={mediaItem.thumbnail}
+            image={mediaItem.thumbnail ? `/api/ListenNotes/image-proxy?imageUrl=${encodeURIComponent(mediaItem.thumbnail)}` : ''}
             alt={mediaItem.title}
             crossOrigin="anonymous"
             onError={(e) => {

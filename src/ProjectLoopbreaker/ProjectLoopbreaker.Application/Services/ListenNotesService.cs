@@ -39,10 +39,10 @@ namespace ProjectLoopbreaker.Application.Services
         }
 
         // Podcast operations (return DTOs for API consumption)
-        public async Task<PodcastSeriesDto> GetPodcastByIdAsync(string id)
+        public async Task<PodcastSeriesDto> GetPodcastByIdAsync(string id, string? nextEpisodePubDate = null)
         {
             _logger.LogInformation("Getting podcast details for ID: {PodcastId}", id);
-            return await _listenNotesApiClient.GetPodcastByIdAsync(id);
+            return await _listenNotesApiClient.GetPodcastByIdAsync(id, nextEpisodePubDate);
         }
 
         public async Task<ListenNotesBestPodcastsDto> GetBestPodcastsAsync(int? genreId = null, int? page = null, 
@@ -154,12 +154,18 @@ namespace ProjectLoopbreaker.Application.Services
                 // Get episode details from ListenNotes API
                 var episodeDto = await _listenNotesApiClient.GetEpisodeByIdAsync(episodeId);
 
+                if (episodeDto == null)
+                {
+                    _logger.LogWarning("ListenNotes API returned null for episode ID: {EpisodeId}", episodeId);
+                    throw new InvalidOperationException($"Episode with external ID {episodeId} not found on ListenNotes.");
+                }
+
                 // Check if episode already exists by external ID
                 var existingEpisodes = await _podcastService.GetEpisodesBySeriesIdAsync(seriesId);
                 var existingEpisode = existingEpisodes.FirstOrDefault(e => e.ExternalId == episodeId);
                 if (existingEpisode != null)
                 {
-                    _logger.LogInformation("Episode {Title} already exists", episodeDto.Title);
+                    _logger.LogInformation("Episode {Title} already exists (ID: {ExistingEpisodeId})", episodeDto.Title, existingEpisode.Id);
                     return existingEpisode;
                 }
 
@@ -167,11 +173,16 @@ namespace ProjectLoopbreaker.Application.Services
                 var createEpisodeDto = _podcastMappingService.MapFromListenNotesEpisodeDto(episodeDto);
                 createEpisodeDto.SeriesId = seriesId;
 
+                // Set publisher if available from episodeDto
+                // ListenNotes episode DTOs often don't include publisher directly.
+                // We could fetch the series to get it, but for now, we'll leave it to be filled by the series.
+                // createEpisodeDto.Publisher = episodeDto.Podcast?.Publisher; 
+
                 // Save to database through domain service
                 var savedEpisode = await _podcastService.CreatePodcastEpisodeAsync(createEpisodeDto);
                 
-                _logger.LogInformation("Successfully imported episode: {Title} (ListenNotes ID: {EpisodeId})", 
-                    episodeDto.Title, episodeId);
+                _logger.LogInformation("Successfully imported episode: {Title} (ListenNotes ID: {EpisodeId}, Internal ID: {InternalId})", 
+                    episodeDto.Title, episodeId, savedEpisode.Id);
                 
                 return savedEpisode;
             }
