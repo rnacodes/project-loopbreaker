@@ -23,7 +23,7 @@ import HighlightsSection from './HighlightsSection';
 import { formatMediaType, formatStatus, getMediaTypeColor, getStatusColor, getRatingIcon, getRatingText } from '../utils/formatters';
 import {
     getMediaById, getAllMixlists,
-    getBookById, getPodcastSeriesById, getPodcastEpisodeById,
+    getBookById, getPodcastSeriesById, getPodcastEpisodeById, getEpisodesBySeriesId,
     getMovieById, getTvShowById, getVideoById, getArticleById,
     getHighlightsByArticle, getHighlightsByBook,
 } from '../services/apiService';
@@ -72,16 +72,32 @@ function MediaProfilePage() {
             // Try to fetch as podcast series first
             try {
               const seriesResponse = await getPodcastSeriesById(id);
-              // Redirect to dedicated podcast series profile
-              navigate(`/podcast-series/${id}`, { replace: true });
-              return;
+              detailedMedia = { ...basicMedia, ...seriesResponse.data };
+              console.log('Detailed podcast series data:', detailedMedia);
+              
+              // Fetch episodes for the series
+              try {
+                const episodesResponse = await getEpisodesBySeriesId(id);
+                detailedMedia.episodes = episodesResponse.data || [];
+              } catch (episodesError) {
+                console.warn('Could not fetch episodes for series:', episodesError);
+              }
             } catch (seriesError) {
               // If series fetch fails, try as episode
               try {
                 const episodeResponse = await getPodcastEpisodeById(id);
-                // Redirect to dedicated podcast episode profile
-                navigate(`/podcast-episode/${id}`, { replace: true });
-                return;
+                detailedMedia = { ...basicMedia, ...episodeResponse.data };
+                console.log('Detailed podcast episode data:', detailedMedia);
+                
+                // If it's an episode, try to fetch the parent series info
+                if (detailedMedia.seriesId) {
+                  try {
+                    const parentSeriesResponse = await getPodcastSeriesById(detailedMedia.seriesId);
+                    detailedMedia.series = parentSeriesResponse.data;
+                  } catch (parentSeriesError) {
+                    console.warn('Could not fetch parent series data:', parentSeriesError);
+                  }
+                }
               } catch (episodeError) {
                 console.warn('Could not fetch detailed podcast data, using basic data:', episodeError);
               }

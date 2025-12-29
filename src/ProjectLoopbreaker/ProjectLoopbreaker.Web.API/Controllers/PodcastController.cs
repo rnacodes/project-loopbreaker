@@ -30,6 +30,34 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             _logger = logger;
         }
 
+        // Helper method to map PodcastSeries to PodcastSeriesResponseDto
+        private PodcastSeriesResponseDto MapToResponseDto(PodcastSeries series)
+        {
+            return new PodcastSeriesResponseDto
+            {
+                Id = series.Id,
+                Title = series.Title,
+                Description = series.Description,
+                MediaType = series.MediaType,
+                Status = series.Status,
+                DateAdded = series.DateAdded,
+                DateCompleted = series.DateCompleted,
+                Rating = series.Rating,
+                Link = series.Link,
+                Thumbnail = series.Thumbnail,
+                Publisher = series.Publisher,
+                ExternalId = series.ExternalId,
+                IsSubscribed = series.IsSubscribed,
+                LastSyncDate = series.LastSyncDate,
+                TotalEpisodes = series.TotalEpisodes,
+                EpisodeCount = series.EpisodeCount,
+                Topics = series.Topics?.Select(t => t.Name).ToList() ?? new List<string>(),
+                Genres = series.Genres?.Select(g => g.Name).ToList() ?? new List<string>(),
+                MixlistIds = series.Mixlists?.Select(m => m.Id).ToList() ?? new List<Guid>(),
+                PodcastType = "Series"
+            };
+        }
+
         // ============ PODCAST SERIES ENDPOINTS ============
 
         // GET: api/podcast/series
@@ -39,27 +67,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             try
             {
                 var series = await _podcastService.GetAllPodcastSeriesAsync();
-                
-                var response = series.Select(s => new PodcastSeriesResponseDto
-                {
-                    Id = s.Id,
-                    Title = s.Title,
-                    Description = s.Description,
-                    MediaType = s.MediaType,
-                    Status = s.Status,
-                    DateAdded = s.DateAdded,
-                    DateCompleted = s.DateCompleted,
-                    Rating = s.Rating,
-                    Link = s.Link,
-                    Thumbnail = s.Thumbnail,
-                    Publisher = s.Publisher,
-                    ExternalId = s.ExternalId,
-                    IsSubscribed = s.IsSubscribed,
-                    LastSyncDate = s.LastSyncDate,
-                    TotalEpisodes = s.TotalEpisodes,
-                    EpisodeCount = s.EpisodeCount
-                }).ToList();
-
+                var response = series.Select(s => MapToResponseDto(s)).ToList();
                 return Ok(response);
             }
             catch (Exception ex)
@@ -81,27 +89,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 }
 
                 var series = await _podcastService.SearchPodcastSeriesAsync(query);
-                
-                var response = series.Select(s => new PodcastSeriesResponseDto
-                {
-                    Id = s.Id,
-                    Title = s.Title,
-                    Description = s.Description,
-                    MediaType = s.MediaType,
-                    Status = s.Status,
-                    DateAdded = s.DateAdded,
-                    DateCompleted = s.DateCompleted,
-                    Rating = s.Rating,
-                    Link = s.Link,
-                    Thumbnail = s.Thumbnail,
-                    Publisher = s.Publisher,
-                    ExternalId = s.ExternalId,
-                    IsSubscribed = s.IsSubscribed,
-                    LastSyncDate = s.LastSyncDate,
-                    TotalEpisodes = s.TotalEpisodes,
-                    EpisodeCount = s.EpisodeCount
-                }).ToList();
-
+                var response = series.Select(s => MapToResponseDto(s)).ToList();
                 return Ok(response);
             }
             catch (Exception ex)
@@ -124,26 +112,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return NotFound($"Podcast series with ID {id} not found.");
                 }
 
-                var response = new PodcastSeriesResponseDto
-                {
-                    Id = series.Id,
-                    Title = series.Title,
-                    Description = series.Description,
-                    MediaType = series.MediaType,
-                    Status = series.Status,
-                    DateAdded = series.DateAdded,
-                    DateCompleted = series.DateCompleted,
-                    Rating = series.Rating,
-                    Link = series.Link,
-                    Thumbnail = series.Thumbnail,
-                    Publisher = series.Publisher,
-                    ExternalId = series.ExternalId,
-                    IsSubscribed = series.IsSubscribed,
-                    LastSyncDate = series.LastSyncDate,
-                    TotalEpisodes = series.TotalEpisodes,
-                    EpisodeCount = series.EpisodeCount
-                };
-
+                var response = MapToResponseDto(series);
                 return Ok(response);
             }
             catch (Exception ex)
@@ -165,27 +134,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 }
 
                 var series = await _podcastService.CreatePodcastSeriesAsync(dto);
-
-                var response = new PodcastSeriesResponseDto
-                {
-                    Id = series.Id,
-                    Title = series.Title,
-                    Description = series.Description,
-                    MediaType = series.MediaType,
-                    Status = series.Status,
-                    DateAdded = series.DateAdded,
-                    DateCompleted = series.DateCompleted,
-                    Rating = series.Rating,
-                    Link = series.Link,
-                    Thumbnail = series.Thumbnail,
-                    Publisher = series.Publisher,
-                    ExternalId = series.ExternalId,
-                    IsSubscribed = series.IsSubscribed,
-                    LastSyncDate = series.LastSyncDate,
-                    TotalEpisodes = series.TotalEpisodes,
-                    EpisodeCount = series.EpisodeCount
-                };
-
+                var response = MapToResponseDto(series);
                 return CreatedAtAction(nameof(GetPodcastSeries), new { id = series.Id }, response);
             }
             catch (ArgumentException ex)
@@ -277,27 +226,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             try
             {
                 var subscribedSeries = await _podcastService.GetSubscribedPodcastSeriesAsync();
-                
-                var response = subscribedSeries.Select(s => new PodcastSeriesResponseDto
-                {
-                    Id = s.Id,
-                    Title = s.Title,
-                    Description = s.Description,
-                    MediaType = s.MediaType,
-                    Status = s.Status,
-                    DateAdded = s.DateAdded,
-                    DateCompleted = s.DateCompleted,
-                    Rating = s.Rating,
-                    Link = s.Link,
-                    Thumbnail = s.Thumbnail,
-                    Publisher = s.Publisher,
-                    ExternalId = s.ExternalId,
-                    IsSubscribed = s.IsSubscribed,
-                    LastSyncDate = s.LastSyncDate,
-                    TotalEpisodes = s.TotalEpisodes,
-                    EpisodeCount = s.EpisodeCount
-                }).ToList();
-
+                var response = subscribedSeries.Select(s => MapToResponseDto(s)).ToList();
                 return Ok(response);
             }
             catch (Exception ex)
@@ -350,27 +279,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 var series = await _listenNotesService.ImportPodcastSeriesAsync(podcastId);
                 
                 _logger.LogInformation("Successfully imported podcast series: {Title} with ID: {Id}", series.Title, series.Id);
-
-                var response = new PodcastSeriesResponseDto
-                {
-                    Id = series.Id,
-                    Title = series.Title,
-                    Description = series.Description,
-                    MediaType = series.MediaType,
-                    Status = series.Status,
-                    DateAdded = series.DateAdded,
-                    DateCompleted = series.DateCompleted,
-                    Rating = series.Rating,
-                    Link = series.Link,
-                    Thumbnail = series.Thumbnail,
-                    Publisher = series.Publisher,
-                    ExternalId = series.ExternalId,
-                    IsSubscribed = series.IsSubscribed,
-                    LastSyncDate = series.LastSyncDate,
-                    TotalEpisodes = series.TotalEpisodes,
-                    EpisodeCount = series.EpisodeCount
-                };
-
+                var response = MapToResponseDto(series);
                 return CreatedAtAction(nameof(GetPodcastSeries), new { id = series.Id }, response);
             }
             catch (Exception ex)
@@ -400,27 +309,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 }
 
                 _logger.LogInformation("Successfully imported podcast series: {Title} with ID: {Id}", series.Title, series.Id);
-
-                var response = new PodcastSeriesResponseDto
-                {
-                    Id = series.Id,
-                    Title = series.Title,
-                    Description = series.Description,
-                    MediaType = series.MediaType,
-                    Status = series.Status,
-                    DateAdded = series.DateAdded,
-                    DateCompleted = series.DateCompleted,
-                    Rating = series.Rating,
-                    Link = series.Link,
-                    Thumbnail = series.Thumbnail,
-                    Publisher = series.Publisher,
-                    ExternalId = series.ExternalId,
-                    IsSubscribed = series.IsSubscribed,
-                    LastSyncDate = series.LastSyncDate,
-                    TotalEpisodes = series.TotalEpisodes,
-                    EpisodeCount = series.EpisodeCount
-                };
-
+                var response = MapToResponseDto(series);
                 return CreatedAtAction(nameof(GetPodcastSeries), new { id = series.Id }, response);
             }
             catch (Exception ex)

@@ -658,7 +658,15 @@ export default function HomePage() {
               mediaItems={activelyExploringMedia}
               title=""
               subtitle="Continue exploring these items"
-              onMediaClick={(media) => navigate(`/media/${media.id || media.Id}`)}
+              onMediaClick={(media) => {
+                // Navigate to appropriate profile page based on media type
+                // Podcast episodes have seriesId, series don't
+                if (media.mediaType === 'Podcast' && !media.seriesId) {
+                  navigate(`/podcast-series/${media.id || media.Id}`);
+                } else {
+                  navigate(`/media/${media.id || media.Id}`);
+                }
+              }}
               cardWidth={250}
               cardHeight={350}
               showCardContent={true}
