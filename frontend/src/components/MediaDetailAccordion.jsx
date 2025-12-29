@@ -1,8 +1,8 @@
 import React from 'react';
 import {
-    Box, Typography, Accordion, AccordionSummary, AccordionDetails, Link
+    Card, Box, Typography, Accordion, AccordionSummary, AccordionDetails, Link
 } from '@mui/material';
-import { ExpandMore, OpenInNew } from '@mui/icons-material';
+import { ExpandMore, OpenInNew, Star } from '@mui/icons-material';
 
 function getJustWatchUrl(title) {
   // Simple heuristic for generating a JustWatch search URL.

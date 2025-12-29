@@ -398,7 +398,7 @@ namespace ProjectLoopbreaker.Application.Services
                     AudioLink = episodeDto.AudioUrl,
                     ExternalId = episodeDto.Id,
                     Thumbnail = episodeDto.Image ?? episodeDto.Thumbnail,
-                    ReleaseDate = DateTimeOffset.FromUnixTimeMilliseconds(episodeDto.PublishDateMs).DateTime,
+                    ReleaseDate = DateTimeOffset.FromUnixTimeMilliseconds(episodeDto.PublishDateMs).UtcDateTime,
                     DurationInSeconds = episodeDto.DurationInSeconds
                 };
 

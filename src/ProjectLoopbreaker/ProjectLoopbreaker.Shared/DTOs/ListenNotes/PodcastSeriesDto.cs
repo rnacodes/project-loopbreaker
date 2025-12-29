@@ -29,5 +29,8 @@ namespace ProjectLoopbreaker.Shared.DTOs.ListenNotes
 
         [JsonPropertyName("website")]
         public string? Website { get; set; }
+
+        [JsonPropertyName("next_episode_pub_date")]
+        public long? NextEpisodePubDate { get; set; }
     }
 }
