@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-    Card, Box, Typography, Accordion, AccordionSummary, AccordionDetails, Link
+    Button, Card, Box, Typography, Accordion, AccordionSummary, AccordionDetails, Link
 } from '@mui/material';
 import { ExpandMore, OpenInNew, Star } from '@mui/icons-material';
 
@@ -41,7 +41,7 @@ function MediaDetailAccordion({ mediaItem, navigate }) {
         {/* Podcast-specific properties */}
         {mediaItem.mediaType === 'Podcast' && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {mediaItem.podcastType && (
+            {mediaItem.podcastType !== undefined && (
               <Box sx={{
                 display: 'flex',
                 flexDirection: { xs: 'column', sm: 'row' },
@@ -54,6 +54,44 @@ function MediaDetailAccordion({ mediaItem, navigate }) {
                 <Typography variant="body1" sx={{ fontSize: '0.875rem' }}>
                   {mediaItem.podcastType === 'Series' || mediaItem.podcastType === 0 ? 'Podcast Series' : 'Podcast Episode'}
                 </Typography>
+              </Box>
+            )}
+
+            {mediaItem.series && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.5, sm: 0 }
+              }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: '0.875rem' }}>
+                  <strong>Parent Series:</strong>
+                </Typography>
+                <Link
+                  component="button"
+                  variant="body1"
+                  onClick={() => {
+                    // Navigate to podcast series profile if it's a podcast series
+                    if (mediaItem.mediaType === 'Podcast') {
+                      navigate(`/podcast-series/${mediaItem.series.id}`);
+                    } else {
+                      navigate(`/media/${mediaItem.series.id}`);
+                    }
+                  }}
+                  sx={{
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontSize: '0.875rem',
+                    color: '#ffffff',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                      color: '#e3f2fd'
+                    }
+                  }}
+                >
+                  {mediaItem.series.title}
+                </Link>
               </Box>
             )}
             
@@ -92,28 +130,26 @@ function MediaDetailAccordion({ mediaItem, navigate }) {
                 display: 'flex',
                 flexDirection: { xs: 'column', sm: 'row' },
                 alignItems: { xs: 'flex-start', sm: 'center' },
-                gap: { xs: 0.5, sm: 0 }
+                gap: { xs: 0.5, sm: 2 }
               }}>
                 <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: '0.875rem' }}>
                   <strong>Audio Link:</strong>
                 </Typography>
-                <Link
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
                   href={mediaItem.audioLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  sx={{
-                    color: '#ffffff',
-                    textDecoration: 'none',
-                    fontSize: '0.875rem',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                      color: '#e3f2fd'
-                    }
+                  startIcon={<OpenInNew />}
+                  sx={{ 
+                    textTransform: 'none',
+                    fontSize: '0.875rem'
                   }}
                 >
-                  <OpenInNew sx={{ fontSize: 16, mr: 0.5 }} />
-                  Listen
-                </Link>
+                  Play Audio
+                </Button>
               </Box>
             )}
             

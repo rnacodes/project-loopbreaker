@@ -280,7 +280,11 @@ function UploadMediaPage() {
                                                 }}
                                                 onClick={() => {
                                                     // Navigate to the item's profile page
-                                                    const route = `/media/${item.id}`;
+                                                    let route = `/media/${item.id}`;
+                                                    // Check if it's a podcast series (episodes have seriesId, series don't)
+                                                    if (item.mediaType === 'Podcast' && !item.seriesId) {
+                                                        route = `/podcast-series/${item.id}`;
+                                                    }
                                                     window.location.href = route;
                                                 }}
                                             >

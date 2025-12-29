@@ -52,6 +52,18 @@ namespace ProjectLoopbreaker.DTOs
         
         [JsonPropertyName("episodeCount")]
         public int EpisodeCount { get; set; }
+        
+        [JsonPropertyName("topics")]
+        public List<string> Topics { get; set; } = new List<string>();
+        
+        [JsonPropertyName("genres")]
+        public List<string> Genres { get; set; } = new List<string>();
+        
+        [JsonPropertyName("mixlistIds")]
+        public List<Guid> MixlistIds { get; set; } = new List<Guid>();
+        
+        [JsonPropertyName("podcastType")]
+        public string PodcastType { get; set; } = "Series";
     }
 }
 

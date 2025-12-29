@@ -43,6 +43,7 @@ namespace ProjectLoopbreaker.Application.Services
                 .AsSplitQuery()
                 .Include(p => p.Topics)
                 .Include(p => p.Genres)
+                .Include(p => p.Mixlists)
                 .ToListAsync();
         }
 
@@ -54,6 +55,7 @@ namespace ProjectLoopbreaker.Application.Services
                 .Include(p => p.Topics)
                 .Include(p => p.Genres)
                 .Include(p => p.Episodes)
+                .Include(p => p.Mixlists)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
@@ -66,6 +68,7 @@ namespace ProjectLoopbreaker.Application.Services
                            (p.Publisher != null && EF.Functions.ILike(p.Publisher, $"%{query}%")))
                 .Include(p => p.Topics)
                 .Include(p => p.Genres)
+                .Include(p => p.Mixlists)
                 .ToListAsync();
         }
 

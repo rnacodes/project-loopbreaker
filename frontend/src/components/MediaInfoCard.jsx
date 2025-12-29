@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box, CardMedia, Chip, Typography } from '@mui/material';
 import { Star } from '@mui/icons-material';
 
@@ -11,6 +11,11 @@ function MediaInfoCard({
   getRatingIcon,
   getRatingText
 }) {
+  const imageUrl = useMemo(() => {
+    if (!mediaItem?.thumbnail) return '';
+    return `/api/ListenNotes/image-proxy?imageUrl=${encodeURIComponent(mediaItem.thumbnail)}`;
+  }, [mediaItem?.thumbnail]);
+
   return (
     <Box sx={{
       display: 'flex',
@@ -25,9 +30,10 @@ function MediaInfoCard({
         flexDirection: 'column',
         alignItems: 'center',
         order: { xs: 1, md: 2 },
-        width: { xs: '100%', md: 'auto' }
+        width: { xs: '100%', md: 'auto' },
+        minHeight: { xs: 200, sm: 300, md: 270 } // Add min-height to prevent layout jumps
       }}>
-        {mediaItem.thumbnail && (
+        {imageUrl && (
           <CardMedia
             component="img"
             sx={{
@@ -44,13 +50,20 @@ function MediaInfoCard({
               backgroundColor: 'rgba(0, 0, 0, 0.2)',
               borderRadius: 1,
               boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-              mb: 2
+              mb: 2,
+              // Add stability properties
+              transform: 'translateZ(0)', // Force GPU acceleration
+              backfaceVisibility: 'hidden'
             }}
-            image={mediaItem.thumbnail ? `/api/ListenNotes/image-proxy?imageUrl=${encodeURIComponent(mediaItem.thumbnail)}` : ''}
+            image={imageUrl}
             alt={mediaItem.title}
-            crossOrigin="anonymous"
+            // Removing crossOrigin="anonymous" as it can sometimes cause flickering with cached images 
+            // if the proxy headers are not perfectly consistent
+            loading="lazy"
+            decoding="async"
             onError={(e) => {
-              e.target.style.display = 'none';
+              // Instead of hiding, maybe show a placeholder or just leave it
+              // e.target.style.display = 'none';
             }}
           />
         )}

@@ -63,8 +63,10 @@ function PodcastSeriesProfile() {
 
     // --- Effects ---
     useEffect(() => {
+        console.log('PodcastSeriesProfile: Loading series with ID:', id);
         fetchSeriesData();
         fetchMixlists();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
     useEffect(() => {
@@ -88,11 +90,17 @@ function PodcastSeriesProfile() {
     // --- Data Fetching ---
     const fetchSeriesData = async () => {
         try {
+            console.log('Fetching series data for ID:', id);
             setLoading(true);
+            
+            console.log('Making API calls...');
             const [seriesResponse, episodesResponse] = await Promise.all([
                 getPodcastSeriesById(id),
                 getEpisodesBySeriesId(id)
             ]);
+
+            console.log('Series response:', seriesResponse);
+            console.log('Episodes response:', episodesResponse);
 
             setSeries(seriesResponse.data);
             const sortedEpisodes = (episodesResponse.data || []).sort((a, b) => {
@@ -101,10 +109,12 @@ function PodcastSeriesProfile() {
                 return new Date(b.dateAdded) - new Date(a.dateAdded);
             });
             setEpisodes(sortedEpisodes);
+            console.log('Series data loaded successfully');
             setLoading(false);
         } catch (error) {
             console.error('Error fetching podcast series:', error);
-            setSnackbar({ open: true, message: 'Failed to load podcast series', severity: 'error' });
+            console.error('Error details:', error.response || error.message);
+            setSnackbar({ open: true, message: `Failed to load podcast series: ${error.response?.data?.message || error.message}`, severity: 'error' });
             setLoading(false);
         }
     };
@@ -282,7 +292,15 @@ function PodcastSeriesProfile() {
 
                         <Divider sx={{ my: 3 }} />
                         <MediaDetailAccordion mediaItem={series} navigate={navigate} />
-                        <MixlistCarousel mediaItem={series} currentMixlists={currentMixlists} availableMixlists={availableMixlists} setSnackbar={setSnackbar} isMobile={isMobile} />
+                        <MixlistCarousel 
+                            mediaItem={series} 
+                            currentMixlists={currentMixlists} 
+                            availableMixlists={availableMixlists} 
+                            setCurrentMixlists={setCurrentMixlists}
+                            setAvailableMixlists={setAvailableMixlists}
+                            setSnackbar={setSnackbar} 
+                            isMobile={isMobile} 
+                        />
                     </CardContent>
                 </Card>
 

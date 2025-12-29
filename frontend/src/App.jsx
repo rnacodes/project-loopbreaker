@@ -38,7 +38,6 @@ import YouTubeChannelList from './components/YouTubeChannelList';
 import YouTubeChannelProfile from './components/YouTubeChannelProfile';
 import YouTubePlaylistProfile from './components/YouTubePlaylistProfile';
 import PodcastSeriesProfile from './components/PodcastSeriesProfile';
-import PodcastEpisodeProfile from './components/PodcastEpisodeProfile';
 import CleanupManagementPage from './components/CleanupManagementPage';
 import WebsiteImportPage from './components/WebsiteImportPage';
 import WebsitesPage from './components/WebsitesPage';
@@ -153,7 +152,7 @@ function App() {
               <ConditionalProtectedRoute><PodcastSeriesProfile /></ConditionalProtectedRoute>
             } />
             <Route path="/podcast-episode/:id" element={
-              <ConditionalProtectedRoute><PodcastEpisodeProfile /></ConditionalProtectedRoute>
+              <ConditionalProtectedRoute><MediaProfilePage /></ConditionalProtectedRoute>
             } />
             <Route path="/cleanup" element={
               <ConditionalProtectedRoute><CleanupManagementPage /></ConditionalProtectedRoute>
