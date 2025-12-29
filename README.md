@@ -33,7 +33,7 @@ Project Loopbreaker is an in-progress .NET 8 web API comprehensive media library
 - **ASP.NET Core**: Web API framework with CORS support
 - **Swagger/OpenAPI**: API documentation and testing interface
 - **Digital Ocean Spaces**: Cloud storage for thumbnails and eventually personal documents. 
-- **Render.com**: platform to deploy app frontend and backend and also hosts Postgre database.
+- **Render.com**: platform to deploy app frontend and backend and also hosts Postgres database.
 - **AWS SDK for .NET**: S3-compatible storage integration
 
 ## Roadmap
