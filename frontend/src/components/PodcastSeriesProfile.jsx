@@ -267,7 +267,7 @@ function PodcastSeriesProfile() {
                 {/* Header */}
                 <Box display="flex" alignItems="center" mb={3}>
                     <IconButton onClick={() => navigate('/all-media?mediaType=Podcast')} sx={{ mr: 2 }}><ArrowBack /></IconButton>
-                    <Typography variant="h4" sx={{ flexGrow: 1 }}>Podcast Series</Typography>
+                    <Typography variant="h4" sx={{ flexGrow: 1 }}>{series.title}</Typography>
                     <IconButton onClick={() => navigate(`/edit-media/${id}`)}><Edit /></IconButton>
                 </Box>
 
@@ -283,12 +283,6 @@ function PodcastSeriesProfile() {
                             getRatingIcon={getRatingIcon}
                             getRatingText={getRatingText}
                         />
-
-                        <Box sx={{ mt: 3, mb: 3 }}>
-                            <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1 }}>{series.title}</Typography>
-                            <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>{series.description}</Typography>
-                            {series.publisher && <Typography variant="body2"><strong>Publisher:</strong> {series.publisher}</Typography>}
-                        </Box>
 
                         <Divider sx={{ my: 3 }} />
                         <MediaDetailAccordion mediaItem={series} navigate={navigate} />

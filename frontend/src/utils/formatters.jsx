@@ -1,3 +1,6 @@
+import React from 'react';
+import { Favorite, ThumbUp, Remove, ThumbDown } from '@mui/icons-material';
+
 /**
  * Formats enum values by adding spaces between words
  * Examples:
@@ -56,13 +59,49 @@ export const getStatusColor = (status) => {
 };
 
 export const getRatingIcon = (rating) => {
-  // Assuming a rating out of 5, you can map it to a star icon or similar
-  // For simplicity, let's return a string representation
-  if (rating === undefined || rating === null) return 'No Rating';
-  return '⭐'.repeat(rating);
+  if (rating === undefined || rating === null) return null;
+  
+  // Normalize rating value for consistent comparison
+  const r = typeof rating === 'string' ? rating.toLowerCase() : rating;
+
+  switch (r) {
+    case 'superlike':
+    case 0:
+      return <Favorite sx={{ fontSize: 18, color: '#e91e63' }} />;
+    case 'like':
+    case 1:
+      return <ThumbUp sx={{ fontSize: 18, color: '#4caf50' }} />;
+    case 'neutral':
+    case 2:
+      return <Remove sx={{ fontSize: 18, color: '#9e9e9e' }} />;
+    case 'dislike':
+    case 3:
+      return <ThumbDown sx={{ fontSize: 18, color: '#f44336' }} />;
+    default:
+      return null;
+  }
 };
 
 export const getRatingText = (rating) => {
   if (rating === undefined || rating === null) return 'Not Rated';
-  return `${rating}/5 Stars`;
+  
+  const r = typeof rating === 'string' ? rating.toLowerCase() : rating;
+
+  switch (r) {
+    case 'superlike':
+    case 0:
+      return 'Super Like';
+    case 'like':
+    case 1:
+      return 'Like';
+    case 'neutral':
+    case 2:
+      return 'Neutral';
+    case 'dislike':
+    case 3:
+      return 'Dislike';
+    default:
+      if (typeof rating === 'number') return `${rating}/5 Stars`;
+      return 'Not Rated';
+  }
 };
