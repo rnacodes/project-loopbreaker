@@ -1,23 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Card, CardContent, Chip, Typography } from '@mui/material';
-import { Favorite, ThumbUp, Remove, ThumbDown, Star, AccessTime } from '@mui/icons-material';
-import { formatMediaType, formatStatus } from '../../utils/formatters';
-
-export const getRatingIcon = (ratingType) => {
-    switch (ratingType) {
-        case 'superlike':
-            return <Favorite sx={{ fontSize: 18, color: '#e91e63' }} />;
-        case 'like':
-            return <ThumbUp sx={{ fontSize: 18, color: '#4caf50' }} />;
-        case 'neutral':
-            return <Remove sx={{ fontSize: 18, color: '#9e9e9e' }} />;
-        case 'dislike':
-            return <ThumbDown sx={{ fontSize: 18, color: '#f44336' }} />;
-        default:
-            return null;
-    }
-};
+import { Star, AccessTime } from '@mui/icons-material';
+import { formatMediaType, formatStatus, getRatingIcon } from '../../utils/formatters';
 
 export const MediaCard = React.memo(({ item }) => {
     const navigate = useNavigate();
@@ -133,9 +118,9 @@ export const MediaCard = React.memo(({ item }) => {
                 >
                     {item.title}
                 </Typography>
-                {item.ratingType && (
+                {(item.ratingType || item.rating !== undefined) && (
                     <Box sx={{ display: 'flex', alignItems: 'center', ml: 1, flexShrink: 0 }}>
-                        {getRatingIcon(item.ratingType)}
+                        {getRatingIcon(item.ratingType || item.rating)}
                     </Box>
                 )}
             </Box>

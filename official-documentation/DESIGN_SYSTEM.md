@@ -1,4 +1,7 @@
 # TODO: Update design system based on latest page updates
+
+# TODO: Include rating icon system
+
 # Design System & Shared Components
 
 This document outlines the design system and shared components for Project Loopbreaker's frontend.

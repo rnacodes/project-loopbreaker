@@ -11,8 +11,7 @@ import {
     Search as SearchIcon, FilterList, Clear, TuneRounded,
     ExpandMore, Star
 } from '@mui/icons-material';
-import { formatMediaType, formatStatus } from '../../utils/formatters';
-import { getRatingIcon } from './MediaCard';
+import { formatMediaType, formatStatus, getRatingIcon } from '../../utils/formatters';
 
 
 const statusOptions = [

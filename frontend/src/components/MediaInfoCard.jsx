@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Box, CardMedia, Chip, Typography } from '@mui/material';
+import React, { useMemo, useState } from 'react';
+import { Box, CardMedia, Chip, Typography, Divider, Button } from '@mui/material';
 import { Star } from '@mui/icons-material';
 
 function MediaInfoCard({
@@ -11,10 +11,55 @@ function MediaInfoCard({
   getRatingIcon,
   getRatingText
 }) {
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+
   const imageUrl = useMemo(() => {
     if (!mediaItem?.thumbnail) return '';
     return `/api/ListenNotes/image-proxy?imageUrl=${encodeURIComponent(mediaItem.thumbnail)}`;
   }, [mediaItem?.thumbnail]);
+
+  const description = mediaItem?.description || mediaItem?.notes;
+
+  // Function to count words in HTML content
+  const countWords = (htmlString) => {
+    if (!htmlString) return 0;
+    // Remove HTML tags and count words
+    const text = htmlString.replace(/<[^>]*>/g, ' ');
+    const words = text.trim().split(/\s+/);
+    return words.filter(word => word.length > 0).length;
+  };
+
+  // Function to truncate HTML content by word count
+  const truncateDescription = (htmlString, maxWords) => {
+    if (!htmlString) return '';
+    // Remove HTML tags for word counting
+    const text = htmlString.replace(/<[^>]*>/g, ' ');
+    const words = text.trim().split(/\s+/);
+    
+    if (words.length <= maxWords) return htmlString;
+    
+    // Truncate the plain text version
+    const truncatedText = words.slice(0, maxWords).join(' ');
+    return truncatedText + '...';
+  };
+
+  const wordCount = countWords(description);
+  const shouldTruncate = wordCount > 500;
+  const displayDescription = shouldTruncate && !isDescriptionExpanded 
+    ? truncateDescription(description, 500) 
+    : description;
+
+  const formatDuration = (seconds) => {
+    if (!seconds) return '';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    return new Date(dateString).toLocaleDateString('en-US');
+  };
 
   return (
     <Box sx={{
@@ -31,45 +76,35 @@ function MediaInfoCard({
         alignItems: 'center',
         order: { xs: 1, md: 2 },
         width: { xs: '100%', md: 'auto' },
-        minHeight: { xs: 200, sm: 300, md: 270 } // Add min-height to prevent layout jumps
+        minHeight: { xs: 200, sm: 300, md: 270 }
       }}>
         {imageUrl && (
           <CardMedia
             component="img"
             sx={{
-              width: { xs: '100%', sm: 250, md: 180 },
-              maxWidth: { xs: 300, sm: 250, md: 180 },
-              height: { xs: 'auto', sm: 375, md: 270 },
-              aspectRatio: {
-                xs: (mediaItem.mediaType === 'Video' || mediaItem.mediaType === 'Movie' || mediaItem.mediaType === 'TVShow' || mediaItem.mediaType === 'Playlist')
-                  ? '16/9'
-                  : '2/3',
-                sm: 'auto'
-              },
-              objectFit: 'contain',
+              width: { xs: '100%', sm: 250, md: 220 },
+              maxWidth: { xs: 300, sm: 250, md: 220 },
+              height: 'auto',
+              aspectRatio: (mediaItem.mediaType === 'Video' || mediaItem.mediaType === 'Movie' || mediaItem.mediaType === 'TVShow' || mediaItem.mediaType === 'Playlist')
+                ? '16/9'
+                : '1/1',
+              objectFit: 'cover',
               backgroundColor: 'rgba(0, 0, 0, 0.2)',
-              borderRadius: 1,
-              boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+              borderRadius: 2,
+              boxShadow: '0 8px 16px rgba(0,0,0,0.4)',
               mb: 2,
-              // Add stability properties
-              transform: 'translateZ(0)', // Force GPU acceleration
+              transform: 'translateZ(0)',
               backfaceVisibility: 'hidden'
             }}
             image={imageUrl}
             alt={mediaItem.title}
-            // Removing crossOrigin="anonymous" as it can sometimes cause flickering with cached images 
-            // if the proxy headers are not perfectly consistent
             loading="lazy"
             decoding="async"
-            onError={(e) => {
-              // Instead of hiding, maybe show a placeholder or just leave it
-              // e.target.style.display = 'none';
-            }}
           />
         )}
       </Box>
 
-      {/* Media information (chips and rating) */}
+      {/* Media information (chips, description, and rating) */}
       <Box sx={{ flex: 1, width: '100%', order: { xs: 2, md: 1 } }}>
         <Box sx={{
           display: 'flex',
@@ -87,7 +122,7 @@ function MediaInfoCard({
               fontSize: { xs: '0.875rem', sm: '1rem' }
             }}
           />
-          {mediaItem.mediaType === 'Podcast' && mediaItem.podcastType && (
+          {mediaItem.mediaType === 'Podcast' && mediaItem.podcastType !== undefined && (
             <Chip
               label={mediaItem.podcastType === 'Series' || mediaItem.podcastType === 0 ? 'Series' : 'Episode'}
               sx={{
@@ -98,29 +133,67 @@ function MediaInfoCard({
               }}
             />
           )}
-          {mediaItem.status && (
-            <Chip
-              label={formatStatus(mediaItem.status)}
-              sx={{
-                backgroundColor: getStatusColor(mediaItem.status),
-                color: 'white',
-                fontWeight: 'bold',
-                fontSize: { xs: '0.875rem', sm: '1rem' }
-              }}
-            />
-          )}
+          <Chip
+            label={formatStatus(mediaItem.status) || 'Unknown'}
+            sx={{
+              backgroundColor: getStatusColor(mediaItem.status),
+              color: 'white',
+              fontWeight: 'bold',
+              fontSize: { xs: '0.875rem', sm: '1rem' }
+            }}
+          />
         </Box>
 
-        {/* Rating Display */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, justifyContent: { xs: 'center', md: 'flex-start' } }}>
-          <Typography variant="body1" sx={{ mr: 1, fontSize: '0.875rem' }}>
+        {/* Rating Display - moved right below pills */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          mb: 3,
+          justifyContent: { xs: 'center', md: 'flex-start' } 
+        }}>
+          <Typography variant="body1" sx={{ mr: 1, fontSize: '0.875rem', color: 'text.secondary' }}>
             <strong>Rating:</strong>
           </Typography>
           {getRatingIcon(mediaItem.rating)}
-          <Typography variant="body1" sx={{ ml: 1, fontSize: '0.875rem' }}>
+          <Typography variant="body1" sx={{ ml: 1, fontSize: '0.875rem', fontWeight: 'bold' }}>
             {getRatingText(mediaItem.rating)}
           </Typography>
         </Box>
+
+        {/* Description with truncation */}
+        {description && (
+          <Box sx={{ mb: 3 }}>
+            <Typography 
+              variant="body1" 
+              color="text.primary" 
+              sx={{ 
+                lineHeight: 1.6,
+                fontSize: { xs: '0.95rem', md: '1rem' },
+                whiteSpace: 'pre-wrap',
+                '& i': { fontStyle: 'italic' },
+                '& b': { fontWeight: 'bold' }
+              }}
+              dangerouslySetInnerHTML={{ __html: displayDescription }}
+            />
+            {shouldTruncate && (
+              <Button
+                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                sx={{
+                  mt: 1,
+                  textTransform: 'none',
+                  fontWeight: 'bold',
+                  fontSize: '0.875rem',
+                  color: 'primary.main',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                  }
+                }}
+              >
+                {isDescriptionExpanded ? 'Show Less' : 'Read More'}
+              </Button>
+            )}
+          </Box>
+        )}
       </Box>
     </Box>
   );
