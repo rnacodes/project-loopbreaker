@@ -15,6 +15,9 @@ export const MediaCard = React.memo(({ item }) => {
             // Navigate podcast series to their dedicated profile page
             // Podcast episodes have seriesId, series don't
             navigate(`/podcast-series/${item.id}`);
+        } else if (item.mediaType === 'Channel') {
+            // Navigate YouTube channels to their dedicated profile page
+            navigate(`/youtube-channel/${item.id}`);
         } else {
             navigate(`/media/${item.id}`);
         }

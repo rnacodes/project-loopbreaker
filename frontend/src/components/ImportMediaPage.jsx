@@ -4,14 +4,49 @@ import {
     TextField, Button, Box, Typography, Container,
     Select, MenuItem, InputLabel, FormControl,
     Card, CardContent, CircularProgress, Alert,
-    Divider, Chip, Accordion, AccordionSummary, AccordionDetails
+    Divider, Chip, Accordion, AccordionSummary, AccordionDetails, Snackbar
 } from '@mui/material';
 import { Search, Download, Podcasts, MenuBook, ExpandMore, OpenInNew, MovieFilter, VideoLibrary, Article, AutoStories, Language } from '@mui/icons-material';
 import { searchPodcasts, getPodcastSeriesById, importPodcastSeriesFromApi, importPodcastSeriesByName, searchBooksFromOpenLibrary, importBookFromOpenLibrary, searchMovies, searchTvShows, searchMulti, getMovieDetails, getTvShowDetails, importMovieFromTmdb, importTvShowFromTmdb, searchYouTube, getYouTubeVideoDetails, getYouTubePlaylistDetails, getYouTubeChannelDetails, importYouTubeVideo, importYouTubePlaylist, importYouTubeChannel, importFromYouTubeUrl, importYouTubeChannelEntity, importYouTubePlaylistEntity, checkYouTubeChannelExists } from '../services/apiService';
 import WhiteOutlineButton from './shared/WhiteOutlineButton';
 
+const SafeImage = ({ src, alt, style, className, onError }) => {
+    const [error, setError] = useState(false);
+
+    React.useEffect(() => {
+        setError(false);
+    }, [src]);
+
+    if (error || !src) {
+        return (
+            <img 
+                src="/placeholder-video.png" 
+                alt={alt} 
+                style={style} 
+                className={className}
+            />
+        );
+    }
+
+    return (
+        <img
+            src={src}
+            alt={alt}
+            style={style}
+            className={className}
+            onError={(e) => {
+                setError(true);
+                if (onError) onError(e);
+            }}
+            referrerPolicy="no-referrer"
+            loading="lazy"
+        />
+    );
+};
+
 function ImportMediaPage() {
     const [expanded, setExpanded] = useState(false);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
     
     // Podcast states
     const [podcastImportMethod, setPodcastImportMethod] = useState('search');
@@ -528,6 +563,7 @@ function ImportMediaPage() {
         
         setYoutubeIsLoading(true);
         setYoutubeError('');
+        setYoutubeSuccess('');
         setYoutubeSearchResults([]);
         
         try {
@@ -575,17 +611,18 @@ function ImportMediaPage() {
 
     const handleYoutubeImportFromUrl = async () => {
         if (!youtubeUrl.trim()) {
-            setYoutubeError('Please enter a YouTube URL');
+            setSnackbar({ open: true, message: 'Please enter a YouTube URL', severity: 'error' });
             return;
         }
         
         setYoutubeIsLoading(true);
         setYoutubeError('');
+        setYoutubeSuccess('');
         
         try {
             const result = await importFromYouTubeUrl(youtubeUrl);
             
-            setYoutubeSuccess(`YouTube content imported successfully!`);
+            setSnackbar({ open: true, message: 'YouTube content imported successfully!', severity: 'success' });
             setYoutubeIsLoading(false);
             setYoutubeUrl('');
             
@@ -600,7 +637,7 @@ function ImportMediaPage() {
             
         } catch (err) {
             console.error('YouTube URL import error:', err);
-            setYoutubeError('Failed to import from URL. Please check the URL and try again.');
+            setSnackbar({ open: true, message: 'Failed to import from URL. Please check the URL and try again.', severity: 'error' });
             setYoutubeIsLoading(false);
         }
     };
@@ -608,6 +645,7 @@ function ImportMediaPage() {
     const handleImportYoutubeItem = async (item) => {
         setYoutubeIsLoading(true);
         setYoutubeError('');
+        setYoutubeSuccess('');
         
         try {
             let result;
@@ -615,7 +653,7 @@ function ImportMediaPage() {
             if (item.kind === 'youtube#video') {
                 result = await importYouTubeVideo(item.id);
                 
-                setYoutubeSuccess(`"${item.title}" imported successfully!`);
+                setSnackbar({ open: true, message: `"${item.title}" imported successfully!`, severity: 'success' });
                 setYoutubeIsLoading(false);
                 
                 const mediaId = result.id || result.Id;
@@ -628,7 +666,7 @@ function ImportMediaPage() {
                 // Import as YouTubePlaylist entity (first-class media type)
                 result = await importYouTubePlaylistEntity(item.id);
                 
-                setYoutubeSuccess(`Playlist "${item.title}" imported successfully!`);
+                setSnackbar({ open: true, message: `Playlist "${item.title}" imported successfully!`, severity: 'success' });
                 setYoutubeIsLoading(false);
                 
                 // Navigate to the playlist profile page
@@ -641,15 +679,18 @@ function ImportMediaPage() {
                 // Check if channel already exists
                 const exists = await checkYouTubeChannelExists(item.id);
                 if (exists) {
-                    setYoutubeError('This channel has already been imported. Redirecting to channel page...');
+                    setSnackbar({ open: true, message: 'This channel has already been imported. Redirecting to channel page...', severity: 'info' });
                     setYoutubeIsLoading(false);
+                    setTimeout(() => {
+                        navigate(`/youtube-channel/${item.id}`);
+                    }, 1500);
                     return;
                 }
                 
                 // Import as YouTubeChannel entity (first-class media type)
                 result = await importYouTubeChannelEntity(item.id);
                 
-                setYoutubeSuccess(`Channel "${item.title}" imported successfully!`);
+                setSnackbar({ open: true, message: `Channel "${item.title}" imported successfully!`, severity: 'success' });
                 setYoutubeIsLoading(false);
                 
                 // Navigate to the channel profile page
@@ -664,7 +705,7 @@ function ImportMediaPage() {
             
         } catch (err) {
             console.error('YouTube import error:', err);
-            setYoutubeError(`Failed to import: ${err.message}`);
+            setSnackbar({ open: true, message: `Failed to import: ${err.message}`, severity: 'error' });
             setYoutubeIsLoading(false);
         }
     };
@@ -1701,6 +1742,18 @@ function ImportMediaPage() {
                                     </Button>
                                 </Box>
 
+                                {youtubeError && (
+                                    <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+                                        {youtubeError}
+                                    </Alert>
+                                )}
+
+                                {youtubeSuccess && (
+                                    <Alert severity="success" sx={{ mt: 2, mb: 2 }}>
+                                        {youtubeSuccess}
+                                    </Alert>
+                                )}
+
                                 {youtubeSearchResults.length > 0 && (
                                     <Box sx={{ mt: 2 }}>
                                         <Typography variant="h6" gutterBottom>
@@ -1720,18 +1773,14 @@ function ImportMediaPage() {
                                                                 backgroundColor: 'rgba(255, 255, 255, 0.1)'
                                                             }}
                                                         >
-                                                            <img
+                                                            <SafeImage
                                                                 src={item.thumbnail}
-                                                                alt=""
-                                                                crossOrigin="anonymous"
+                                                                alt={item.title}
                                                                 style={{
                                                                     width: '100%',
                                                                     height: '100%',
                                                                     objectFit: 'cover',
                                                                     display: 'block'
-                                                                }}
-                                                                onError={(e) => {
-                                                                    e.target.src = '/placeholder-video.png';
                                                                 }}
                                                             />
                                                         </Box>
@@ -1830,6 +1879,18 @@ function ImportMediaPage() {
                                         Import
                                     </Button>
                                 </Box>
+
+                                {youtubeError && (
+                                    <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+                                        {youtubeError}
+                                    </Alert>
+                                )}
+
+                                {youtubeSuccess && (
+                                    <Alert severity="success" sx={{ mt: 2, mb: 2 }}>
+                                        {youtubeSuccess}
+                                    </Alert>
+                                )}
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                                     Supports YouTube video URLs, playlist URLs, and channel URLs. The system will automatically detect the type and import accordingly.
                                 </Typography>
@@ -1842,17 +1903,6 @@ function ImportMediaPage() {
                             </Box>
                         )}
 
-                        {youtubeError && (
-                            <Alert severity="error" sx={{ mt: 2 }}>
-                                {youtubeError}
-                            </Alert>
-                        )}
-
-                        {youtubeSuccess && (
-                            <Alert severity="success" sx={{ mt: 2 }}>
-                                {youtubeSuccess}
-                            </Alert>
-                        )}
                     </Box>
                 </AccordionDetails>
             </Accordion>
@@ -2012,6 +2062,17 @@ function ImportMediaPage() {
                     </Box>
                 </Box>
             )}
+
+            <Snackbar 
+                open={snackbar.open} 
+                autoHideDuration={6000} 
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Container>
     );
 }

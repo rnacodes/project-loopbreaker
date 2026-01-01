@@ -284,6 +284,8 @@ function UploadMediaPage() {
                                                     // Check if it's a podcast series (episodes have seriesId, series don't)
                                                     if (item.mediaType === 'Podcast' && !item.seriesId) {
                                                         route = `/podcast-series/${item.id}`;
+                                                    } else if (item.mediaType === 'Channel') {
+                                                        route = `/youtube-channel/${item.id}`;
                                                     }
                                                     window.location.href = route;
                                                 }}

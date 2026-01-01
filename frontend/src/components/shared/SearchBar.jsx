@@ -155,6 +155,9 @@ const SearchBar = ({
       } else if (item.mediaType === 'Podcast' && !item.seriesId && !item.SeriesId) {
         // It's a podcast series (no seriesId means it's not an episode)
         window.location.href = `/podcast-series/${item.id || item.Id}`;
+      } else if (item.mediaType === 'Channel') {
+        // It's a YouTube channel
+        window.location.href = `/youtube-channel/${item.id || item.Id}`;
       } else {
         // It's a media item
         window.location.href = `/media/${item.id || item.Id}`;

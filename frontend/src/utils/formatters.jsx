@@ -49,12 +49,11 @@ export const getMediaTypeColor = (mediaType) => {
 
 export const getStatusColor = (status) => {
   switch (status) {
-    case 'Completed': return 'green.500';
-    case 'InProgress': return 'blue.500';
-    case 'Planned': return 'yellow.500';
-    case 'Dropped': return 'red.500';
-    case 'OnHold': return 'orange.500';
-    default: return 'gray.500';
+    case 'Completed': return '#4caf50';
+    case 'ActivelyExploring': return '#2196f3';
+    case 'Uncharted': return '#9c27b0';
+    case 'Abandoned': return '#f44336';
+    default: return '#9e9e9e';
   }
 };
 
