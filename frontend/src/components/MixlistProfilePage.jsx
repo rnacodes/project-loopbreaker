@@ -372,7 +372,17 @@ function MixlistProfilePage() {
                                                         <Link
                                                             component="button"
                                                             variant="body1"
-                                                            onClick={() => navigate(`/media/${mediaItem.id || mediaItem.Id}`)}
+                                                            onClick={() => {
+                                                                const itemType = mediaItem.mediaType || mediaItem.MediaType;
+                                                                const itemId = mediaItem.id || mediaItem.Id;
+                                                                if (itemType === 'Podcast' && !mediaItem.seriesId && !mediaItem.SeriesId) {
+                                                                    navigate(`/podcast-series/${itemId}`);
+                                                                } else if (itemType === 'Channel') {
+                                                                    navigate(`/youtube-channel/${itemId}`);
+                                                                } else {
+                                                                    navigate(`/media/${itemId}`);
+                                                                }
+                                                            }}
                                                             sx={{ 
                                                                 textDecoration: 'none',
                                                                 fontWeight: 'medium',
@@ -459,7 +469,17 @@ function MixlistProfilePage() {
                                                     color="primary"
                                                     size="small"
                                                     startIcon={<OpenInNew />}
-                                                    onClick={() => navigate(`/media/${selectedMedia.id || selectedMedia.Id}`)}
+                                                    onClick={() => {
+                                                        const itemType = selectedMedia.mediaType || selectedMedia.MediaType;
+                                                        const itemId = selectedMedia.id || selectedMedia.Id;
+                                                        if (itemType === 'Podcast' && !selectedMedia.seriesId && !selectedMedia.SeriesId) {
+                                                            navigate(`/podcast-series/${itemId}`);
+                                                        } else if (itemType === 'Channel') {
+                                                            navigate(`/youtube-channel/${itemId}`);
+                                                        } else {
+                                                            navigate(`/media/${itemId}`);
+                                                        }
+                                                    }}
                                                     sx={{ alignSelf: 'flex-start' }}
                                                 >
                                                     View Full Profile

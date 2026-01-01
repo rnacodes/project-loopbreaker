@@ -663,6 +663,8 @@ export default function HomePage() {
                 // Podcast episodes have seriesId, series don't
                 if (media.mediaType === 'Podcast' && !media.seriesId) {
                   navigate(`/podcast-series/${media.id || media.Id}`);
+                } else if (media.mediaType === 'Channel') {
+                  navigate(`/youtube-channel/${media.id || media.Id}`);
                 } else {
                   navigate(`/media/${media.id || media.Id}`);
                 }
