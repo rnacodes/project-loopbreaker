@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import {
     ArrowBack, Edit, Sync, Delete,
-    PlaylistAdd, YouTube, ExpandMore, Visibility, Add, CheckCircle
+    YouTube, ExpandMore, Visibility, Add, CheckCircle
 } from '@mui/icons-material';
 import axios from 'axios';
 import { useTheme } from '@mui/material/styles';
@@ -22,7 +22,7 @@ import {
     deleteYouTubePlaylist,
     syncYouTubePlaylist,
     getAllMixlists,
-    addMediaToMixlist
+    addVideoToYouTubePlaylist
 } from '../services/apiService';
 import {
     formatMediaType,
@@ -41,7 +41,6 @@ function YouTubePlaylistProfile() {
     const [syncing, setSyncing] = useState(false);
     const [availableMixlists, setAvailableMixlists] = useState([]);
     const [currentMixlists, setCurrentMixlists] = useState([]);
-    const [addToMixlistDialog, setAddToMixlistDialog] = useState(false);
     const [deleteConfirmDialog, setDeleteConfirmDialog] = useState(false);
     const [viewAllVideosDialog, setViewAllVideosDialog] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -147,19 +146,30 @@ function YouTubePlaylistProfile() {
         setDeleteConfirmDialog(false);
     };
 
-    const handleAddToMixlist = async (mixlistId) => {
-        try {
-            await addMediaToMixlist(mixlistId, id);
-            await fetchPlaylistData();
-            setSnackbar({ open: true, message: 'Added to mixlist', severity: 'success' });
-            setAddToMixlistDialog(false);
-        } catch (error) {
-            console.error('Error adding to mixlist:', error);
-            setSnackbar({ open: true, message: 'Failed to add to mixlist', severity: 'error' });
+    // --- Video Browser Functions ---
+
+    // Helper function to check if a video is deleted or private
+    const isDeletedOrPrivateVideo = (video) => {
+        const title = video.snippet?.title || video.title || '';
+        const titleLower = title.toLowerCase();
+
+        // Check for common deleted/private video indicators
+        if (titleLower === 'deleted video' ||
+            titleLower === 'private video' ||
+            titleLower === '[deleted video]' ||
+            titleLower === '[private video]') {
+            return true;
         }
+
+        // Check if the video has no channel info (often indicates deleted)
+        const channelTitle = video.snippet?.videoOwnerChannelTitle || video.snippet?.channelTitle || '';
+        if (!channelTitle && !video.snippet?.resourceId?.videoId) {
+            return true;
+        }
+
+        return false;
     };
 
-    // --- Video Browser Functions ---
     const handleViewAllVideos = async () => {
         if (!playlist?.playlistExternalId) {
             setSnackbar({ open: true, message: 'No external ID available for this playlist', severity: 'error' });
@@ -189,8 +199,16 @@ function YouTubePlaylistProfile() {
                 hasMore = pageToken !== null && pageToken !== undefined && allVideos.length < 200;
             }
 
-            setAllVideosFromApi(allVideos);
-            setDisplayedVideos(allVideos.slice(0, 10));
+            // Filter out deleted and private videos
+            const availableVideos = allVideos.filter(video => !isDeletedOrPrivateVideo(video));
+            const filteredCount = allVideos.length - availableVideos.length;
+
+            if (filteredCount > 0) {
+                console.log(`Filtered out ${filteredCount} deleted/private videos from playlist`);
+            }
+
+            setAllVideosFromApi(availableVideos);
+            setDisplayedVideos(availableVideos.slice(0, 10));
             await checkImportedVideos();
         } catch (error) {
             console.error('Error fetching all videos:', error);
@@ -227,8 +245,13 @@ function YouTubePlaylistProfile() {
             setImportingVideo(videoId);
             const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5033/api';
             const response = await axios.post(`${API_URL}/YouTube/import/video/${videoId}`);
+            const importedVideoId = response.data.id;
+
+            // Add the imported video to this playlist
+            await addVideoToYouTubePlaylist(id, importedVideoId);
+
             const newImportedMap = new Map(importedVideos);
-            newImportedMap.set(videoId, response.data.id);
+            newImportedMap.set(videoId, importedVideoId);
             setImportedVideos(newImportedMap);
             setSnackbar({ open: true, message: `Successfully imported "${video.snippet?.title || video.title}"!`, severity: 'success' });
             await fetchPlaylistData();
@@ -301,7 +324,6 @@ function YouTubePlaylistProfile() {
                     {getYouTubeUrl() && <Button variant="contained" size="small" startIcon={<YouTube />} href={getYouTubeUrl()} target="_blank">YouTube</Button>}
                     <Button variant="contained" size="small" startIcon={<Sync />} onClick={handleSync} disabled={syncing}>{syncing ? <CircularProgress size={20} /> : 'Sync'}</Button>
                     <Button variant="contained" size="small" startIcon={<Visibility />} onClick={handleViewAllVideos}>All Videos</Button>
-                    <Button variant="contained" size="small" startIcon={<PlaylistAdd />} onClick={() => setAddToMixlistDialog(true)}>Mixlist</Button>
                     <Button variant="contained" size="small" startIcon={<Delete />} onClick={() => setDeleteConfirmDialog(true)} color="error">Delete</Button>
                 </Box>
 
@@ -340,18 +362,6 @@ function YouTubePlaylistProfile() {
             </Box>
 
             {/* --- Dialogs --- */}
-
-            {/* Add to Mixlist Dialog */}
-            <Dialog open={addToMixlistDialog} onClose={() => setAddToMixlistDialog(false)}>
-                <DialogTitle>Add to Mixlist</DialogTitle>
-                <DialogContent>
-                    <List sx={{ pt: 0 }}>
-                        {availableMixlists.map(m => (
-                            <ListItemButton key={m.id} onClick={() => handleAddToMixlist(m.id)}><ListItemText primary={m.name} /></ListItemButton>
-                        ))}
-                    </List>
-                </DialogContent>
-            </Dialog>
 
             {/* Delete Dialog */}
             <Dialog open={deleteConfirmDialog} onClose={() => setDeleteConfirmDialog(false)}>

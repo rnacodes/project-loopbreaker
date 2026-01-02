@@ -25,7 +25,7 @@ import {
     getMediaById, getAllMixlists,
     getBookById, getPodcastSeriesById, getPodcastEpisodeById, getEpisodesBySeriesId,
     getMovieById, getTvShowById, getVideoById, getArticleById,
-    getHighlightsByArticle, getHighlightsByBook,
+    getHighlightsByArticle, getHighlightsByBook, getPlaylistsForVideo,
 } from '../services/apiService';
 
 function MediaProfilePage() {
@@ -39,6 +39,7 @@ function MediaProfilePage() {
   const [mixlistSearchQuery, setMixlistSearchQuery] = useState('');
   const [highlights, setHighlights] = useState([]);
   const [highlightsLoading, setHighlightsLoading] = useState(false);
+  const [videoPlaylists, setVideoPlaylists] = useState([]);
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -247,7 +248,7 @@ function MediaProfilePage() {
   useEffect(() => {
     const fetchHighlights = async () => {
       if (!mediaItem) return;
-      
+
       if (mediaItem.mediaType === 'Article' || mediaItem.mediaType === 'Book') {
         setHighlightsLoading(true);
         try {
@@ -269,6 +270,25 @@ function MediaProfilePage() {
     };
 
     fetchHighlights();
+  }, [mediaItem]);
+
+  // Fetch playlists for videos
+  useEffect(() => {
+    const fetchVideoPlaylists = async () => {
+      if (!mediaItem) return;
+
+      if (mediaItem.mediaType === 'Video') {
+        try {
+          const playlists = await getPlaylistsForVideo(mediaItem.id);
+          setVideoPlaylists(playlists || []);
+        } catch (error) {
+          console.error('Failed to fetch playlists for video:', error);
+          setVideoPlaylists([]);
+        }
+      }
+    };
+
+    fetchVideoPlaylists();
   }, [mediaItem]);
 
 
@@ -426,7 +446,7 @@ function MediaProfilePage() {
             />
 
 
-        <MediaDetailAccordion mediaItem={mediaItem} navigate={navigate} />
+        <MediaDetailAccordion mediaItem={mediaItem} navigate={navigate} videoPlaylists={videoPlaylists} />
 
         <HighlightsSection mediaItem={mediaItem} highlights={highlights} highlightsLoading={highlightsLoading} />
 

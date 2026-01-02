@@ -20,7 +20,7 @@ import MixlistProfilePage from './components/MixlistProfilePage';
 import MediaProfilePage from './components/MediaProfilePage';
 import EditMediaForm from './components/EditMediaForm';
 import EditMixlistForm from './components/EditMixlistForm';
-import ImportMediaPage from './components/ImportMediaPage';
+import ImportMediaPage from './components/ImportMedia';
 import ImportMixlistPage from './components/ImportMixlistPage';
 import ImportGenresTopicsPage from './components/ImportGenresTopicsPage';
 import SearchByTopicOrGenre from './components/SearchByTopicOrGenre';

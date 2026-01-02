@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import {
     ArrowBack, Edit, Sync, Delete,
-    PlaylistAdd, ExpandMore, Visibility, Add, CheckCircle, YouTube
+    ExpandMore, Visibility, Add, CheckCircle, YouTube
 } from '@mui/icons-material';
 import axios from 'axios';
 import MediaInfoCard from './MediaInfoCard';
@@ -22,8 +22,7 @@ import {
     getYouTubeChannelVideos,
     deleteYouTubeChannel,
     syncYouTubeChannelMetadata,
-    getAllMixlists,
-    addMediaToMixlist
+    getAllMixlists
 } from '../services/apiService';
 import {
     formatMediaType,
@@ -53,7 +52,6 @@ function YouTubeChannelProfile() {
 
     const [importedVideos, setImportedVideos] = useState(new Map());
     const [importingVideo, setImportingVideo] = useState(null);
-    const [addToMixlistDialog, setAddToMixlistDialog] = useState(false);
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -231,17 +229,6 @@ function YouTubeChannelProfile() {
         setDeleteConfirmDialog(false);
     };
 
-    const handleAddToMixlist = async (mixlistId) => {
-        try {
-            await addMediaToMixlist(mixlistId, id);
-            setSnackbar({ open: true, message: 'Added to mixlist!', severity: 'success' });
-            setAddToMixlistDialog(false);
-            await fetchChannelData();
-        } catch (error) {
-            setSnackbar({ open: true, message: 'Failed to add to mixlist', severity: 'error' });
-        }
-    };
-
     const formatDuration = (duration) => {
         if (!duration) return 'N/A';
         // Handle ISO 8601 duration format (PT1H2M3S) or seconds
@@ -318,7 +305,6 @@ function YouTubeChannelProfile() {
                     {getYouTubeUrl() && <Button variant="contained" size="small" startIcon={<YouTube />} href={getYouTubeUrl()} target="_blank">YouTube</Button>}
                     <Button variant="contained" size="small" startIcon={<Sync />} onClick={handleSync} disabled={syncing}>{syncing ? <CircularProgress size={20} /> : 'Sync'}</Button>
                     <Button variant="contained" size="small" startIcon={<Visibility />} onClick={handleViewAllVideos}>All Videos</Button>
-                    <Button variant="contained" size="small" startIcon={<PlaylistAdd />} onClick={() => setAddToMixlistDialog(true)}>Mixlist</Button>
                     <Button variant="contained" size="small" startIcon={<Delete />} onClick={() => setDeleteConfirmDialog(true)} color="error">Delete</Button>
                 </Box>
 
@@ -406,18 +392,6 @@ function YouTubeChannelProfile() {
                     )}
                 </DialogContent>
                 <DialogActions><Button onClick={() => setViewAllVideosDialog(false)}>Close</Button></DialogActions>
-            </Dialog>
-
-            {/* Add to Mixlist Dialog */}
-            <Dialog open={addToMixlistDialog} onClose={() => setAddToMixlistDialog(false)}>
-                <DialogTitle>Add to Mixlist</DialogTitle>
-                <DialogContent>
-                    <List sx={{ pt: 0 }}>
-                        {availableMixlists.map(m => (
-                            <ListItemButton key={m.id} onClick={() => handleAddToMixlist(m.id)}><ListItemText primary={m.name} /></ListItemButton>
-                        ))}
-                    </List>
-                </DialogContent>
             </Dialog>
 
             {/* Delete Dialog */}

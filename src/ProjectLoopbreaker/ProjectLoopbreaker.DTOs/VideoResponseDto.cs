@@ -77,4 +77,25 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("genres")]
         public string[] Genres { get; set; } = Array.Empty<string>();
     }
+
+    /// <summary>
+    /// Basic playlist information for video playlist lists
+    /// </summary>
+    public class VideoPlaylistInfoDto
+    {
+        [JsonPropertyName("id")]
+        public Guid Id { get; set; }
+
+        [JsonPropertyName("title")]
+        public string Title { get; set; } = string.Empty;
+
+        [JsonPropertyName("thumbnail")]
+        public string? Thumbnail { get; set; }
+
+        [JsonPropertyName("playlistExternalId")]
+        public string? PlaylistExternalId { get; set; }
+
+        [JsonPropertyName("videoCount")]
+        public int? VideoCount { get; set; }
+    }
 }

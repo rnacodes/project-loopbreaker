@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import {
     ArrowBack, Edit, OpenInNew, Sync, Delete,
-    PlaylistAdd, ExpandMore, Visibility, Add, CheckCircle
+    ExpandMore, Visibility, Add, CheckCircle
 } from '@mui/icons-material';
 import axios from 'axios';
 import MediaInfoCard from './MediaInfoCard';
@@ -23,7 +23,6 @@ import {
     syncPodcastSeriesEpisodes,
     deletePodcastSeries,
     getAllMixlists,
-    addMediaToMixlist,
     importPodcastEpisodeFromApi
 } from '../services/apiService';
 import { 
@@ -52,9 +51,8 @@ function PodcastSeriesProfile() {
     const [displayedEpisodes, setDisplayedEpisodes] = useState([]);
     const [loadingAllEpisodes, setLoadingAllEpisodes] = useState(false);
     
-    const [importedEpisodes, setImportedEpisodes] = useState(new Map()); 
+    const [importedEpisodes, setImportedEpisodes] = useState(new Map());
     const [importingEpisode, setImportingEpisode] = useState(null);
-    const [addToMixlistDialog, setAddToMixlistDialog] = useState(false);
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -236,16 +234,6 @@ function PodcastSeriesProfile() {
         setDeleteConfirmDialog(false);
     };
 
-    const handleAddToMixlist = async (mixlistId) => {
-        try {
-            await addMediaToMixlist(mixlistId, id);
-            setSnackbar({ open: true, message: 'Added to mixlist!', severity: 'success' });
-            setAddToMixlistDialog(false);
-        } catch (error) {
-            setSnackbar({ open: true, message: 'Failed to add to mixlist', severity: 'error' });
-        }
-    };
-
     const formatDuration = (seconds) => {
         if (!seconds) return 'N/A';
         const h = Math.floor(seconds / 3600);
@@ -303,7 +291,6 @@ function PodcastSeriesProfile() {
                     {getListenNotesUrl() && <Button variant="outlined" size="small" startIcon={<OpenInNew />} href={getListenNotesUrl()} target="_blank">ListenNotes</Button>}
                     <Button variant="outlined" size="small" startIcon={<Sync />} onClick={handleSync} disabled={syncing}>{syncing ? <CircularProgress size={20} /> : 'Sync'}</Button>
                     <Button variant="outlined" size="small" startIcon={<Visibility />} onClick={handleViewAllEpisodes}>All Episodes</Button>
-                    <Button variant="contained" size="small" startIcon={<PlaylistAdd />} onClick={() => setAddToMixlistDialog(true)}>Mixlist</Button>
                     <Button variant="outlined" size="small" startIcon={<Delete />} onClick={() => setDeleteConfirmDialog(true)} color="error">Delete</Button>
                 </Box>
 
@@ -378,18 +365,6 @@ function PodcastSeriesProfile() {
                     )}
                 </DialogContent>
                 <DialogActions><Button onClick={() => setViewAllEpisodesDialog(false)}>Close</Button></DialogActions>
-            </Dialog>
-
-            {/* Add to Mixlist Dialog */}
-            <Dialog open={addToMixlistDialog} onClose={() => setAddToMixlistDialog(false)}>
-                <DialogTitle>Add to Mixlist</DialogTitle>
-                <DialogContent>
-                    <List sx={{ pt: 0 }}>
-                        {availableMixlists.map(m => (
-                            <ListItemButton key={m.id} onClick={() => handleAddToMixlist(m.id)}><ListItemText primary={m.name} /></ListItemButton>
-                        ))}
-                    </List>
-                </DialogContent>
             </Dialog>
 
             {/* Delete Dialog */}
