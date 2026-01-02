@@ -89,11 +89,11 @@ namespace ProjectLoopbreaker.Application.Services
                 _logger.LogInformation($"Importing YouTube playlist: {playlistExternalId}");
 
                 // Check if playlist already exists
-                var existingPlaylist = await GetPlaylistByExternalIdAsync(playlistExternalId, includeVideos: true);
+                var existingPlaylist = await GetPlaylistByExternalIdAsync(playlistExternalId, includeVideos: false);
                 if (existingPlaylist != null)
                 {
-                    _logger.LogInformation($"Playlist {playlistExternalId} already exists, syncing videos...");
-                    return await SyncPlaylistVideosAsync(existingPlaylist.Id);
+                    _logger.LogInformation($"Playlist {playlistExternalId} already exists, returning existing playlist");
+                    return existingPlaylist;
                 }
 
                 // Get playlist details from YouTube API
@@ -111,7 +111,7 @@ namespace ProjectLoopbreaker.Application.Services
                 {
                     var linkedChannel = await _context.YouTubeChannels
                         .FirstOrDefaultAsync(c => c.ChannelExternalId == playlist.ChannelExternalId);
-                    
+
                     if (linkedChannel != null)
                     {
                         playlist.LinkedYouTubeChannelId = linkedChannel.Id;
@@ -119,75 +119,12 @@ namespace ProjectLoopbreaker.Application.Services
                     }
                 }
 
-                // Save playlist
+                // Save playlist (without importing videos - similar to podcast series)
                 var savedPlaylist = await SavePlaylistAsync(playlist, updateIfExists: false);
 
-                // Get all playlist items (videos)
-                var playlistItems = await _youTubeApiClient.GetAllPlaylistItemsAsync(playlistExternalId);
-                var videoIds = playlistItems
-                    .Select(item => item.Snippet?.ResourceId?.VideoId ?? item.ContentDetails?.VideoId)
-                    .Where(id => !string.IsNullOrEmpty(id))
-                    .Cast<string>()
-                    .ToList();
+                _logger.LogInformation($"Successfully imported playlist {savedPlaylist.Title} (videos not auto-imported - use selective import)");
 
-                _logger.LogInformation($"Found {videoIds.Count} videos in playlist");
-
-                // Get detailed video information
-                var videoDetails = new List<YouTubeVideoDto>();
-                if (videoIds.Any())
-                {
-                    for (int i = 0; i < videoIds.Count; i += 50)
-                    {
-                        var batch = videoIds.Skip(i).Take(50).ToList();
-                        var batchDetails = await _youTubeApiClient.GetVideosAsync(batch);
-                        videoDetails.AddRange(batchDetails);
-                    }
-                }
-
-                // Import videos and link to playlist
-                for (int i = 0; i < playlistItems.Count; i++)
-                {
-                    var item = playlistItems[i];
-                    var videoId = item.Snippet?.ResourceId?.VideoId ?? item.ContentDetails?.VideoId;
-                    
-                    if (string.IsNullOrEmpty(videoId))
-                        continue;
-
-                    try
-                    {
-                        var videoDto = videoDetails.FirstOrDefault(v => v.Id == videoId);
-                        var video = _mappingService.MapPlaylistItemToVideoEntity(item, videoDto);
-
-                        // Try to link video to channel if available
-                        await AutoLinkChannelToVideo(video, videoDetails);
-
-                        var savedVideo = await _videoService.SaveVideoAsync(video, updateIfExists: true);
-
-                        // Create playlist-video association
-                        var playlistVideo = new YouTubePlaylistVideo
-                        {
-                            YouTubePlaylistId = savedPlaylist.Id,
-                            VideoId = savedVideo.Id,
-                            Position = item.Snippet?.Position,
-                            VideoPublishedAt = item.ContentDetails?.VideoPublishedAt
-                        };
-
-                        _context.Add(playlistVideo);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, $"Failed to import video {videoId} for playlist {playlistExternalId}");
-                        continue;
-                    }
-                }
-
-                await _context.SaveChangesAsync();
-
-                _logger.LogInformation($"Successfully imported playlist {savedPlaylist.Title} with {playlistItems.Count} videos");
-
-                // Return playlist with videos
-                return await GetPlaylistByIdAsync(savedPlaylist.Id, includeVideos: true) 
-                    ?? savedPlaylist;
+                return savedPlaylist;
             }
             catch (Exception ex)
             {
@@ -206,87 +143,77 @@ namespace ProjectLoopbreaker.Application.Services
 
             // Get current videos from YouTube
             var playlistItems = await _youTubeApiClient.GetAllPlaylistItemsAsync(playlist.PlaylistExternalId);
-            var currentVideoExternalIds = playlistItems
+
+            // Filter out deleted and private videos
+            var availablePlaylistItems = playlistItems
+                .Where(item => !IsDeletedOrPrivateVideo(item))
+                .ToList();
+
+            var filteredCount = playlistItems.Count - availablePlaylistItems.Count;
+            if (filteredCount > 0)
+            {
+                _logger.LogInformation($"Filtered out {filteredCount} deleted/private videos from playlist");
+            }
+
+            var currentVideoExternalIds = availablePlaylistItems
                 .Select(item => item.Snippet?.ResourceId?.VideoId ?? item.ContentDetails?.VideoId)
                 .Where(id => !string.IsNullOrEmpty(id))
                 .ToHashSet();
 
             // Get existing videos in our database
-            var existingPlaylistVideos = playlist.PlaylistVideos.ToList();
+            var existingPlaylistVideos = playlist.PlaylistVideos?.ToList() ?? new List<YouTubePlaylistVideo>();
 
-            // Remove videos no longer in the playlist
+            // Remove playlist-video associations for videos no longer in the YouTube playlist
+            // (but keep the video entities themselves in case they're used elsewhere)
             var videosToRemove = existingPlaylistVideos
-                .Where(pv => !currentVideoExternalIds.Contains(pv.Video.ExternalId))
+                .Where(pv => pv.Video != null && !currentVideoExternalIds.Contains(pv.Video.ExternalId))
                 .ToList();
 
             foreach (var pv in videosToRemove)
             {
                 _context.Remove(pv);
+                _logger.LogInformation($"Removed video '{pv.Video?.Title}' from playlist (no longer in YouTube playlist)");
             }
 
-            // Add new videos
-            var existingVideoExternalIds = existingPlaylistVideos
-                .Select(pv => pv.Video.ExternalId)
-                .ToHashSet();
-
-            var newVideoExternalIds = currentVideoExternalIds
-                .Where(id => !existingVideoExternalIds.Contains(id))
-                .ToList();
-
-            if (newVideoExternalIds.Any())
-            {
-                // Get detailed video information
-                var videoDetails = new List<YouTubeVideoDto>();
-                for (int i = 0; i < newVideoExternalIds.Count; i += 50)
-                {
-                    var batch = newVideoExternalIds.Skip(i).Take(50).ToList();
-                    var batchDetails = await _youTubeApiClient.GetVideosAsync(batch);
-                    videoDetails.AddRange(batchDetails);
-                }
-
-                foreach (var item in playlistItems.Where(item => newVideoExternalIds.Contains(item.Snippet?.ResourceId?.VideoId)))
-                {
-                    var videoId = item.Snippet?.ResourceId?.VideoId ?? item.ContentDetails?.VideoId;
-                    if (string.IsNullOrEmpty(videoId))
-                        continue;
-
-                    try
-                    {
-                        var videoDto = videoDetails.FirstOrDefault(v => v.Id == videoId);
-                        var video = _mappingService.MapPlaylistItemToVideoEntity(item, videoDto);
-
-                        await AutoLinkChannelToVideo(video, videoDetails);
-
-                        var savedVideo = await _videoService.SaveVideoAsync(video, updateIfExists: true);
-
-                        var playlistVideo = new YouTubePlaylistVideo
-                        {
-                            YouTubePlaylistId = playlist.Id,
-                            VideoId = savedVideo.Id,
-                            Position = item.Snippet?.Position,
-                            VideoPublishedAt = item.ContentDetails?.VideoPublishedAt
-                        };
-
-                        _context.Add(playlistVideo);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogWarning(ex, $"Failed to import video {videoId} during sync");
-                        continue;
-                    }
-                }
-            }
-
-            // Update playlist metadata
+            // Update playlist metadata (video count from available videos only)
             playlist.LastSyncedAt = DateTime.UtcNow;
-            playlist.VideoCount = playlistItems.Count;
+            playlist.VideoCount = availablePlaylistItems.Count;
             _context.Update(playlist);
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"Synced playlist {playlist.Title}: Added {newVideoExternalIds.Count}, Removed {videosToRemove.Count}");
+            _logger.LogInformation($"Synced playlist {playlist.Title}: Removed {videosToRemove.Count} associations, {availablePlaylistItems.Count} available videos on YouTube");
 
             return await GetPlaylistByIdAsync(playlistId, includeVideos: true) ?? playlist;
+        }
+
+        /// <summary>
+        /// Helper method to check if a playlist item represents a deleted or private video
+        /// </summary>
+        private static bool IsDeletedOrPrivateVideo(YouTubePlaylistItemDto item)
+        {
+            var title = item.Snippet?.Title ?? string.Empty;
+            var titleLower = title.ToLowerInvariant();
+
+            // Check for common deleted/private video indicators
+            if (titleLower == "deleted video" ||
+                titleLower == "private video" ||
+                titleLower == "[deleted video]" ||
+                titleLower == "[private video]")
+            {
+                return true;
+            }
+
+            // Check if the video has no channel info (often indicates deleted)
+            var channelTitle = item.Snippet?.ChannelTitle ?? string.Empty;
+            var videoId = item.Snippet?.ResourceId?.VideoId ?? item.ContentDetails?.VideoId;
+
+            if (string.IsNullOrEmpty(channelTitle) && string.IsNullOrEmpty(videoId))
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public async Task<bool> AddVideoToPlaylistAsync(Guid playlistId, Guid videoId, int? position = null)

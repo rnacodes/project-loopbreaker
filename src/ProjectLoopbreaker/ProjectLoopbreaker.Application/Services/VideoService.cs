@@ -287,6 +287,24 @@ namespace ProjectLoopbreaker.Application.Services
             }
         }
 
+        public async Task<IEnumerable<YouTubePlaylist>> GetPlaylistsForVideoAsync(Guid videoId)
+        {
+            try
+            {
+                return await _context.YouTubePlaylists
+                    .AsNoTracking()
+                    .Where(p => p.PlaylistVideos.Any(pv => pv.VideoId == videoId))
+                    .Include(p => p.Topics)
+                    .Include(p => p.Genres)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving playlists for video {VideoId}", videoId);
+                throw;
+            }
+        }
+
         public async Task<Video> SaveVideoAsync(Video video, bool updateIfExists = true)
         {
             // Check if a video with the same title already exists

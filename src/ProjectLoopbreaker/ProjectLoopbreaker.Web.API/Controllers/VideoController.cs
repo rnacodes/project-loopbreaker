@@ -74,6 +74,30 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
+        // GET: api/video/{id}/playlists
+        [HttpGet("{id}/playlists")]
+        public async Task<ActionResult<IEnumerable<VideoPlaylistInfoDto>>> GetPlaylistsForVideo(Guid id)
+        {
+            try
+            {
+                var playlists = await _videoService.GetPlaylistsForVideoAsync(id);
+                var response = playlists.Select(p => new VideoPlaylistInfoDto
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Thumbnail = p.Thumbnail,
+                    PlaylistExternalId = p.PlaylistExternalId,
+                    VideoCount = p.VideoCount
+                }).ToList();
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving playlists for video {Id}", id);
+                return StatusCode(500, new { error = "Failed to retrieve playlists for video", details = ex.Message });
+            }
+        }
+
         // GET: api/video/channel/{channelId}
         [HttpGet("channel/{channelId}")]
         public async Task<ActionResult<IEnumerable<VideoResponseDto>>> GetVideosByChannel(Guid channelId)

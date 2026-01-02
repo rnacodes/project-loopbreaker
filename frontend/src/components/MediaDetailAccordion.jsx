@@ -10,7 +10,7 @@ function getJustWatchUrl(title) {
   return `https://www.justwatch.com/us/search?q=${encodeURIComponent(title)}`;
 }
 
-function MediaDetailAccordion({ mediaItem, navigate }) {
+function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
   return (
     <Card sx={{ mt: 3, overflow: 'hidden', borderRadius: 2 }}>
       <Accordion sx={{ boxShadow: 'none', '&:before': { display: 'none' } }}>
@@ -815,9 +815,54 @@ function MediaDetailAccordion({ mediaItem, navigate }) {
                 <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>{mediaItem.parentVideoId}</Typography>
               </Box>
             )}
+
+            {videoPlaylists && videoPlaylists.length > 0 && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: { xs: 0.5, sm: 1 }
+              }}>
+                <Typography variant="body1" sx={{ fontSize: '0.875rem' }}>
+                  <strong>Playlists:</strong>
+                </Typography>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, pl: { sm: 2 } }}>
+                  {videoPlaylists.map((playlist) => (
+                    <Link
+                      key={playlist.id}
+                      component="button"
+                      variant="body2"
+                      onClick={() => navigate(`/youtube-playlist/${playlist.id}`)}
+                      sx={{
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        fontSize: '0.875rem',
+                        color: '#ffffff',
+                        textDecoration: 'none',
+                        '&:hover': {
+                          textDecoration: 'underline',
+                          color: '#e3f2fd'
+                        }
+                      }}
+                    >
+                      {playlist.title}
+                      {playlist.videoCount && (
+                        <Typography
+                          component="span"
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ ml: 1, fontSize: '0.75rem' }}
+                        >
+                          ({playlist.videoCount} videos)
+                        </Typography>
+                      )}
+                    </Link>
+                  ))}
+                </Box>
+              </Box>
+            )}
           </Box>
         )}
-        
+
         {/* Article-specific properties */}
         {mediaItem.mediaType === 'Article' && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

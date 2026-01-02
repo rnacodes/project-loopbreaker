@@ -742,6 +742,16 @@ export const deleteVideo = (id) => {
     return apiClient.delete(`/video/${id}`);
 };
 
+export const getPlaylistsForVideo = async (videoId) => {
+    try {
+        const response = await apiClient.get(`/video/${videoId}/playlists`);
+        return response.data;
+    } catch (error) {
+        console.error('Error getting playlists for video:', error);
+        throw error;
+    }
+};
+
 export const getTvShowsByCreator = (creator) => {
     return apiClient.get(`/tvshow/by-creator/${encodeURIComponent(creator)}`);
 };

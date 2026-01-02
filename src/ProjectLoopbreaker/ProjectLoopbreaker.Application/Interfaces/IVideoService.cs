@@ -17,6 +17,9 @@ namespace ProjectLoopbreaker.Application.Interfaces
         Task<Video> UpdateVideoAsync(Guid id, CreateVideoDto dto);
         Task<bool> DeleteVideoAsync(Guid id);
         
+        // Get playlists containing a video
+        Task<IEnumerable<YouTubePlaylist>> GetPlaylistsForVideoAsync(Guid videoId);
+
         // Existing methods
         Task<Video> SaveVideoAsync(Video video, bool updateIfExists = true);
         Task<Video> SaveVideoWithEpisodesAsync(Video videoSeries, bool updateIfExists = true);
