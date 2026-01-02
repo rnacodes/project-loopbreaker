@@ -1,27 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    Box, Typography, Button, Card, CardContent, CardMedia,
-    Chip, Divider, Paper, Link, IconButton, Grid,
-    CircularProgress, Alert, Accordion, AccordionSummary, AccordionDetails,
-    Dialog, DialogTitle, DialogContent, DialogActions, List, ListItem, ListItemText, Snackbar
+    Box, Typography, Button, Card, CardContent,
+    Chip, Divider, IconButton, CircularProgress, Alert,
+    Accordion, AccordionSummary, AccordionDetails, List, ListItemText,
+    Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, ListItemButton,
+    Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 } from '@mui/material';
 import {
-    ArrowBack, Edit, OpenInNew, Sync, Delete,
-    PlaylistAdd, YouTube, ExpandMore, PlayArrow
+    ArrowBack, Edit, Sync, Delete,
+    PlaylistAdd, YouTube, ExpandMore, Visibility, Add, CheckCircle
 } from '@mui/icons-material';
+import axios from 'axios';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import MediaInfoCard from './MediaInfoCard';
+import MixlistCarousel from './MixlistCarousel';
 import {
     getYouTubePlaylistById,
     getYouTubePlaylistVideos,
     deleteYouTubePlaylist,
     syncYouTubePlaylist,
     getAllMixlists,
-    addMediaToMixlist,
-    removeMediaFromMixlist
+    addMediaToMixlist
 } from '../services/apiService';
-import { formatStatus } from '../utils/formatters';
+import {
+    formatMediaType,
+    formatStatus,
+    getMediaTypeColor,
+    getStatusColor,
+    getRatingIcon,
+    getRatingText
+} from '../utils/formatters';
 
 function YouTubePlaylistProfile() {
+    // --- State Management ---
     const [playlist, setPlaylist] = useState(null);
     const [videos, setVideos] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -29,33 +42,70 @@ function YouTubePlaylistProfile() {
     const [availableMixlists, setAvailableMixlists] = useState([]);
     const [currentMixlists, setCurrentMixlists] = useState([]);
     const [addToMixlistDialog, setAddToMixlistDialog] = useState(false);
+    const [deleteConfirmDialog, setDeleteConfirmDialog] = useState(false);
+    const [viewAllVideosDialog, setViewAllVideosDialog] = useState(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-    const [videosExpanded, setVideosExpanded] = useState(true);
-    
+
+    // Pagination State for Video Browser
+    const [allVideosFromApi, setAllVideosFromApi] = useState([]);
+    const [displayedVideos, setDisplayedVideos] = useState([]);
+    const [loadingAllVideos, setLoadingAllVideos] = useState(false);
+    const [importedVideos, setImportedVideos] = useState(new Map());
+    const [importingVideo, setImportingVideo] = useState(null);
+
     const { id } = useParams();
     const navigate = useNavigate();
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+    // --- Effects ---
     useEffect(() => {
+        console.log('YouTubePlaylistProfile: Loading playlist with ID:', id);
         fetchPlaylistData();
         fetchMixlists();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
+    useEffect(() => {
+        const fetchCurrentMixlists = async () => {
+            if (!playlist) return;
+            const mixlistIds = playlist.mixlistIds || [];
+            if (mixlistIds.length > 0) {
+                const allMixlistsResponse = await getAllMixlists();
+                const allMixlists = allMixlistsResponse.data || [];
+                const playlistMixlists = mixlistIds.map(mixlistId =>
+                    allMixlists.find(m => m.id === mixlistId)
+                ).filter(m => m !== undefined);
+                setCurrentMixlists(playlistMixlists);
+            } else {
+                setCurrentMixlists([]);
+            }
+        };
+        fetchCurrentMixlists();
+    }, [playlist]);
+
+    // --- Data Fetching ---
     const fetchPlaylistData = async () => {
         try {
+            console.log('Fetching playlist data for ID:', id);
             setLoading(true);
             const playlistData = await getYouTubePlaylistById(id, true);
+            console.log('Playlist response:', playlistData);
             setPlaylist(playlistData);
-            
+
             // Extract videos from the playlist response or fetch separately
             if (playlistData.videos && playlistData.videos.length > 0) {
                 setVideos(playlistData.videos);
             } else {
                 const playlistVideos = await getYouTubePlaylistVideos(id);
+                console.log('Videos response:', playlistVideos);
                 setVideos(playlistVideos);
             }
+            console.log('Playlist data loaded successfully');
         } catch (error) {
             console.error('Error fetching playlist data:', error);
-            setSnackbar({ open: true, message: 'Failed to load playlist', severity: 'error' });
+            console.error('Error details:', error.response || error.message);
+            setSnackbar({ open: true, message: `Failed to load playlist: ${error.response?.data?.message || error.message}`, severity: 'error' });
         } finally {
             setLoading(false);
         }
@@ -86,16 +136,15 @@ function YouTubePlaylistProfile() {
     };
 
     const handleDelete = async () => {
-        if (window.confirm('Are you sure you want to delete this playlist? Videos will remain in the database.')) {
-            try {
-                await deleteYouTubePlaylist(id);
-                setSnackbar({ open: true, message: 'Playlist deleted successfully', severity: 'success' });
-                setTimeout(() => navigate('/all-media?mediaType=Playlist'), 1500);
-            } catch (error) {
-                console.error('Error deleting playlist:', error);
-                setSnackbar({ open: true, message: 'Failed to delete playlist', severity: 'error' });
-            }
+        try {
+            await deleteYouTubePlaylist(id);
+            setSnackbar({ open: true, message: 'YouTube playlist deleted', severity: 'success' });
+            setTimeout(() => navigate('/all-media?mediaType=Playlist'), 1500);
+        } catch (error) {
+            console.error('Error deleting playlist:', error);
+            setSnackbar({ open: true, message: 'Failed to delete playlist', severity: 'error' });
         }
+        setDeleteConfirmDialog(false);
     };
 
     const handleAddToMixlist = async (mixlistId) => {
@@ -110,317 +159,267 @@ function YouTubePlaylistProfile() {
         }
     };
 
+    // --- Video Browser Functions ---
+    const handleViewAllVideos = async () => {
+        if (!playlist?.playlistExternalId) {
+            setSnackbar({ open: true, message: 'No external ID available for this playlist', severity: 'error' });
+            return;
+        }
+
+        try {
+            setLoadingAllVideos(true);
+            setViewAllVideosDialog(true);
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5033/api';
+
+            let allVideos = [];
+            let pageToken = null;
+            let hasMore = true;
+
+            // Fetch playlist items from YouTube API via backend
+            while (hasMore) {
+                const url = pageToken
+                    ? `${API_URL}/YouTube/playlists/${playlist.playlistExternalId}/items?maxResults=50&pageToken=${pageToken}`
+                    : `${API_URL}/YouTube/playlists/${playlist.playlistExternalId}/items?maxResults=50`;
+
+                const response = await axios.get(url);
+                const fetched = response.data.items || response.data || [];
+                allVideos = [...allVideos, ...fetched];
+
+                pageToken = response.data.nextPageToken;
+                hasMore = pageToken !== null && pageToken !== undefined && allVideos.length < 200;
+            }
+
+            setAllVideosFromApi(allVideos);
+            setDisplayedVideos(allVideos.slice(0, 10));
+            await checkImportedVideos();
+        } catch (error) {
+            console.error('Error fetching all videos:', error);
+            setSnackbar({ open: true, message: 'Failed to fetch videos from YouTube API', severity: 'error' });
+            setViewAllVideosDialog(false);
+        } finally {
+            setLoadingAllVideos(false);
+        }
+    };
+
+    const loadMoreLocal = () => {
+        const currentCount = displayedVideos.length;
+        const nextBatch = allVideosFromApi.slice(0, currentCount + 10);
+        setDisplayedVideos(nextBatch);
+    };
+
+    const checkImportedVideos = async () => {
+        try {
+            const dbVideos = await getYouTubePlaylistVideos(id);
+            const importedMap = new Map();
+            (dbVideos || []).forEach(video => {
+                if (video.externalId) importedMap.set(video.externalId, video.id);
+            });
+            setImportedVideos(importedMap);
+        } catch (error) {
+            console.error('Error checking imported videos:', error);
+        }
+    };
+
+    const handleImportVideo = async (video) => {
+        const videoId = video.snippet?.resourceId?.videoId || video.id?.videoId || video.id;
+        if (!videoId) return;
+        try {
+            setImportingVideo(videoId);
+            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5033/api';
+            const response = await axios.post(`${API_URL}/YouTube/import/video/${videoId}`);
+            const newImportedMap = new Map(importedVideos);
+            newImportedMap.set(videoId, response.data.id);
+            setImportedVideos(newImportedMap);
+            setSnackbar({ open: true, message: `Successfully imported "${video.snippet?.title || video.title}"!`, severity: 'success' });
+            await fetchPlaylistData();
+        } catch (error) {
+            setSnackbar({ open: true, message: 'Failed to import video', severity: 'error' });
+        } finally {
+            setImportingVideo(null);
+        }
+    };
+
     const formatDuration = (seconds) => {
         if (!seconds) return 'N/A';
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const secs = seconds % 60;
-        
+
         if (hours > 0) {
             return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
         return `${minutes}:${secs.toString().padStart(2, '0')}`;
     };
 
-    if (loading) {
-        return (
-            <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
-                <CircularProgress />
-            </Box>
-        );
-    }
+    const getYouTubeUrl = () => {
+        return playlist?.playlistExternalId
+            ? `https://www.youtube.com/playlist?list=${playlist.playlistExternalId}`
+            : playlist?.link || null;
+    };
 
-    if (!playlist) {
-        return (
-            <Box p={3}>
-                <Alert severity="error">Playlist not found</Alert>
-                <Button onClick={() => navigate('/all-media')} sx={{ mt: 2 }}>
-                    Back to Media
-                </Button>
-            </Box>
-        );
-    }
+    if (loading) return <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh"><CircularProgress /></Box>;
+    if (!playlist) return <Box p={3}><Alert severity="error">YouTube playlist not found</Alert></Box>;
 
     return (
-        <Box p={3}>
-            {/* Header */}
-            <Box display="flex" alignItems="center" mb={3}>
-                <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
-                    <ArrowBack />
-                </IconButton>
-                <Typography variant="h4">YouTube Playlist</Typography>
-            </Box>
+        <Box sx={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', py: { xs: 2, sm: 4 }, px: { xs: 1, sm: 2 } }}>
+            <Box sx={{ width: '100%', maxWidth: '900px', backgroundColor: 'background.paper', borderRadius: { xs: '8px', sm: '16px' }, p: { xs: 2, sm: 3, md: 4 }, boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+                {/* Header */}
+                <Box display="flex" alignItems="center" mb={3}>
+                    <IconButton onClick={() => navigate('/all-media?mediaType=Playlist')} sx={{ mr: 2 }}><ArrowBack /></IconButton>
+                    <Typography variant="h4" sx={{ flexGrow: 1 }}>{playlist.title}</Typography>
+                    <IconButton onClick={() => navigate(`/edit-media/${id}`)}><Edit /></IconButton>
+                </Box>
 
-            {/* Playlist Card */}
-            <Card sx={{ mb: 3 }}>
-                <Grid container>
-                    <Grid item xs={12} md={3}>
-                        {playlist.thumbnail && (
-                            <CardMedia
-                                component="img"
-                                image={playlist.thumbnail}
-                                alt={playlist.title}
-                                crossOrigin="anonymous"
-                                sx={{ 
-                                    height: { xs: 200, md: '100%' }, 
-                                    objectFit: 'contain',
-                                    backgroundColor: 'rgba(0, 0, 0, 0.1)'
-                                }}
-                            />
-                        )}
-                    </Grid>
-                    <Grid item xs={12} md={9}>
-                        <CardContent>
-                            <Typography variant="h5" gutterBottom>
-                                {playlist.title}
-                            </Typography>
-                            
-                            {/* Metadata Chips */}
-                            <Box sx={{ mb: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                                <Chip 
-                                    icon={<YouTube />} 
-                                    label="YouTube Playlist" 
-                                    color="error" 
-                                    size="small"
-                                />
-                                {playlist.videoCount !== null && playlist.videoCount !== undefined && (
-                                    <Chip 
-                                        icon={<PlayArrow />}
-                                        label={`${playlist.videoCount} video${playlist.videoCount !== 1 ? 's' : ''}`} 
-                                        size="small"
-                                    />
-                                )}
-                                {playlist.privacyStatus && (
-                                    <Chip 
-                                        label={playlist.privacyStatus.charAt(0).toUpperCase() + playlist.privacyStatus.slice(1)} 
-                                        size="small"
-                                        color={playlist.privacyStatus === 'public' ? 'success' : 'default'}
-                                    />
-                                )}
-                                {playlist.status && (
-                                    <Chip 
-                                        label={formatStatus(playlist.status)} 
-                                        size="small"
-                                        color="primary"
-                                    />
-                                )}
-                                {playlist.rating && (
-                                    <Chip 
-                                        label={playlist.rating} 
-                                        size="small"
-                                        color="secondary"
-                                    />
-                                )}
-                            </Box>
+                {/* Profile Card */}
+                <Card sx={{ borderRadius: 2, mb: 3 }}>
+                    <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+                        <MediaInfoCard
+                            mediaItem={playlist}
+                            formatMediaType={formatMediaType}
+                            formatStatus={formatStatus}
+                            getMediaTypeColor={getMediaTypeColor}
+                            getStatusColor={getStatusColor}
+                            getRatingIcon={getRatingIcon}
+                            getRatingText={getRatingText}
+                        />
 
-                            {/* Description */}
-                            {playlist.description && (
-                                <Typography variant="body2" paragraph sx={{ whiteSpace: 'pre-wrap' }}>
-                                    {playlist.description}
+                        <Divider sx={{ my: 3 }} />
+                        <MixlistCarousel
+                            mediaItem={playlist}
+                            currentMixlists={currentMixlists}
+                            availableMixlists={availableMixlists}
+                            setCurrentMixlists={setCurrentMixlists}
+                            setAvailableMixlists={setAvailableMixlists}
+                            setSnackbar={setSnackbar}
+                            isMobile={isMobile}
+                        />
+                    </CardContent>
+                </Card>
+
+                {/* Main Action Bar */}
+                <Box display="flex" gap={1} flexWrap="wrap" my={3}>
+                    {getYouTubeUrl() && <Button variant="contained" size="small" startIcon={<YouTube />} href={getYouTubeUrl()} target="_blank">YouTube</Button>}
+                    <Button variant="contained" size="small" startIcon={<Sync />} onClick={handleSync} disabled={syncing}>{syncing ? <CircularProgress size={20} /> : 'Sync'}</Button>
+                    <Button variant="contained" size="small" startIcon={<Visibility />} onClick={handleViewAllVideos}>All Videos</Button>
+                    <Button variant="contained" size="small" startIcon={<PlaylistAdd />} onClick={() => setAddToMixlistDialog(true)}>Mixlist</Button>
+                    <Button variant="contained" size="small" startIcon={<Delete />} onClick={() => setDeleteConfirmDialog(true)} color="error">Delete</Button>
+                </Box>
+
+                {/* Local Videos (Already Imported) */}
+                <Accordion defaultExpanded sx={{ borderRadius: 2 }}>
+                    <AccordionSummary expandIcon={<ExpandMore />}><Typography variant="h6">My Videos ({videos.length})</Typography></AccordionSummary>
+                    <AccordionDetails>
+                        <List>
+                            {videos.map((video) => (
+                                <ListItemButton key={video.id} onClick={() => navigate(`/media/${video.id}`)} sx={{ mb: 1, border: '1px solid #eee', borderRadius: 2 }}>
+                                    <Box sx={{ width: '100%' }}>
+                                        <Box display="flex" justifyContent="space-between">
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                                                {video.position !== undefined && video.position !== null && (
+                                                    <span style={{ color: '#888', marginRight: '8px' }}>#{video.position + 1}</span>
+                                                )}
+                                                {video.title}
+                                            </Typography>
+                                            <Chip label={formatStatus(video.status)} size="small" sx={{ bgcolor: getStatusColor(video.status), color: 'white' }} />
+                                        </Box>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {video.lengthInSeconds > 0 ? `Duration: ${formatDuration(video.lengthInSeconds)}` : ''}
+                                            {video.releaseDate ? ` • Published: ${new Date(video.releaseDate).toLocaleDateString()}` : ''}
+                                        </Typography>
+                                    </Box>
+                                </ListItemButton>
+                            ))}
+                            {videos.length === 0 && (
+                                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                                    No videos imported yet. Click "All Videos" to browse and import videos from this playlist.
                                 </Typography>
                             )}
+                        </List>
+                    </AccordionDetails>
+                </Accordion>
+            </Box>
 
-                            {/* Topics & Genres */}
-                            {playlist.topics && playlist.topics.length > 0 && (
-                                <Box sx={{ mb: 1 }}>
-                                    <Typography variant="caption" color="text.secondary">Topics: </Typography>
-                                    {playlist.topics.map((topic, idx) => (
-                                        <Chip key={idx} label={topic} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
-                                    ))}
-                                </Box>
-                            )}
-
-                            {playlist.genres && playlist.genres.length > 0 && (
-                                <Box sx={{ mb: 2 }}>
-                                    <Typography variant="caption" color="text.secondary">Genres: </Typography>
-                                    {playlist.genres.map((genre, idx) => (
-                                        <Chip key={idx} label={genre} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
-                                    ))}
-                                </Box>
-                            )}
-
-                            {/* Dates */}
-                            <Box sx={{ mt: 2 }}>
-                                {playlist.publishedAt && (
-                                    <Typography variant="body2" color="text.secondary">
-                                        Published: {new Date(playlist.publishedAt).toLocaleDateString()}
-                                    </Typography>
-                                )}
-                                {playlist.dateAdded && (
-                                    <Typography variant="body2" color="text.secondary">
-                                        Added to Library: {new Date(playlist.dateAdded).toLocaleDateString()}
-                                    </Typography>
-                                )}
-                                {playlist.lastSyncedAt && (
-                                    <Typography variant="body2" color="text.secondary">
-                                        Last Synced: {new Date(playlist.lastSyncedAt).toLocaleDateString()}
-                                    </Typography>
-                                )}
-                            </Box>
-
-                            {/* Action Buttons */}
-                            <Box sx={{ mt: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                                {playlist.link && (
-                                    <Button
-                                        variant="contained"
-                                        startIcon={<YouTube />}
-                                        href={playlist.link}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        View on YouTube
-                                    </Button>
-                                )}
-                                <Button
-                                    variant="outlined"
-                                    startIcon={syncing ? <CircularProgress size={20} /> : <Sync />}
-                                    onClick={handleSync}
-                                    disabled={syncing}
-                                >
-                                    Sync
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    startIcon={<PlaylistAdd />}
-                                    onClick={() => setAddToMixlistDialog(true)}
-                                >
-                                    Add to Mixlist
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    color="error"
-                                    startIcon={<Delete />}
-                                    onClick={handleDelete}
-                                >
-                                    Delete
-                                </Button>
-                            </Box>
-                        </CardContent>
-                    </Grid>
-                </Grid>
-            </Card>
-
-            {/* Videos Section */}
-            <Accordion expanded={videosExpanded} onChange={() => setVideosExpanded(!videosExpanded)}>
-                <AccordionSummary expandIcon={<ExpandMore />}>
-                    <Typography variant="h6">
-                        Videos in Playlist ({videos.length})
-                    </Typography>
-                </AccordionSummary>
-                <AccordionDetails>
-                    {videos.length === 0 ? (
-                        <Alert severity="info">No videos in this playlist yet</Alert>
-                    ) : (
-                        <Grid container spacing={2}>
-                            {videos.map((video, index) => (
-                                <Grid item xs={12} key={video.id}>
-                                    <Card 
-                                        sx={{ 
-                                            display: 'flex',
-                                            cursor: 'pointer',
-                                            '&:hover': {
-                                                boxShadow: 4
-                                            }
-                                        }}
-                                        onClick={() => navigate(`/media/${video.id}`)}
-                                    >
-                                        {video.thumbnail && (
-                                            <CardMedia
-                                                component="img"
-                                                sx={{ 
-                                                    width: 160, 
-                                                    height: 90,
-                                                    objectFit: 'cover',
-                                                    flexShrink: 0
-                                                }}
-                                                image={video.thumbnail}
-                                                alt={video.title}
-                                                crossOrigin="anonymous"
-                                            />
-                                        )}
-                                        <CardContent sx={{ flex: 1 }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                                                <Box sx={{ flex: 1 }}>
-                                                    <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                                                        {video.position !== undefined && video.position !== null && (
-                                                            <span style={{ color: '#888', marginRight: '8px' }}>
-                                                                #{video.position + 1}
-                                                            </span>
-                                                        )}
-                                                        {video.title}
-                                                    </Typography>
-                                                    {video.lengthInSeconds > 0 && (
-                                                        <Typography variant="caption" color="text.secondary">
-                                                            Duration: {formatDuration(video.lengthInSeconds)}
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        navigate(`/media/${video.id}`);
-                                                    }}
-                                                >
-                                                    <OpenInNew fontSize="small" />
-                                                </IconButton>
-                                            </Box>
-                                        </CardContent>
-                                    </Card>
-                                </Grid>
-                            ))}
-                        </Grid>
-                    )}
-                </AccordionDetails>
-            </Accordion>
-
-            {/* Notes Section */}
-            {playlist.notes && (
-                <Paper sx={{ p: 2, mt: 3 }}>
-                    <Typography variant="h6" gutterBottom>Notes</Typography>
-                    <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                        {playlist.notes}
-                    </Typography>
-                </Paper>
-            )}
+            {/* --- Dialogs --- */}
 
             {/* Add to Mixlist Dialog */}
             <Dialog open={addToMixlistDialog} onClose={() => setAddToMixlistDialog(false)}>
                 <DialogTitle>Add to Mixlist</DialogTitle>
                 <DialogContent>
-                    <List>
-                        {availableMixlists.map((mixlist) => (
-                            <ListItem 
-                                button 
-                                key={mixlist.id} 
-                                onClick={() => handleAddToMixlist(mixlist.id)}
-                            >
-                                <ListItemText primary={mixlist.name} secondary={mixlist.description} />
-                            </ListItem>
+                    <List sx={{ pt: 0 }}>
+                        {availableMixlists.map(m => (
+                            <ListItemButton key={m.id} onClick={() => handleAddToMixlist(m.id)}><ListItemText primary={m.name} /></ListItemButton>
                         ))}
                     </List>
-                    {availableMixlists.length === 0 && (
-                        <Alert severity="info">No mixlists available. Create one first!</Alert>
-                    )}
                 </DialogContent>
+            </Dialog>
+
+            {/* Delete Dialog */}
+            <Dialog open={deleteConfirmDialog} onClose={() => setDeleteConfirmDialog(false)}>
+                <DialogTitle>Delete Playlist?</DialogTitle>
+                <DialogContent><Typography>This will remove "{playlist?.title}" from your library. Associated videos will remain in the database.</Typography></DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setAddToMixlistDialog(false)}>Cancel</Button>
+                    <Button onClick={() => setDeleteConfirmDialog(false)}>Cancel</Button>
+                    <Button onClick={handleDelete} color="error" variant="contained">Delete Forever</Button>
                 </DialogActions>
             </Dialog>
 
-            {/* Snackbar for notifications */}
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={6000}
-                onClose={() => setSnackbar({ ...snackbar, open: false })}
-            >
-                <Alert 
-                    onClose={() => setSnackbar({ ...snackbar, open: false })} 
-                    severity={snackbar.severity}
-                    sx={{ width: '100%' }}
-                >
-                    {snackbar.message}
-                </Alert>
+            {/* View All Videos (API Browser) */}
+            <Dialog open={viewAllVideosDialog} onClose={() => setViewAllVideosDialog(false)} maxWidth="md" fullWidth>
+                <DialogTitle>YouTube Video Browser</DialogTitle>
+                <DialogContent dividers>
+                    {loadingAllVideos ? (
+                        <Box textAlign="center" py={4}><CircularProgress /><Typography sx={{ mt: 2 }}>Fetching videos from YouTube...</Typography></Box>
+                    ) : (
+                        <>
+                            <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+                                <Table stickyHeader size="small">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Status</TableCell>
+                                            <TableCell>Video Title</TableCell>
+                                            <TableCell>Published</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {displayedVideos.map((video) => {
+                                            const videoId = video.snippet?.resourceId?.videoId || video.id?.videoId || video.id;
+                                            const title = video.snippet?.title || video.title;
+                                            const publishedAt = video.snippet?.publishedAt || video.contentDetails?.videoPublishedAt || video.publishedAt;
+                                            return (
+                                                <TableRow key={videoId} hover>
+                                                    <TableCell>
+                                                        {importedVideos.has(videoId) ? (
+                                                            <CheckCircle color="success" />
+                                                        ) : (
+                                                            <IconButton onClick={() => handleImportVideo(video)} disabled={importingVideo === videoId}>
+                                                                {importingVideo === videoId ? <CircularProgress size={20} /> : <Add />}
+                                                            </IconButton>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell sx={{ fontWeight: 500 }}>{title}</TableCell>
+                                                    <TableCell>{publishedAt ? new Date(publishedAt).toLocaleDateString() : 'N/A'}</TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                            <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="caption" color="text.secondary">
+                                    Showing {displayedVideos.length} of {allVideosFromApi.length} available videos
+                                </Typography>
+                                {displayedVideos.length < allVideosFromApi.length && (
+                                    <Button size="small" variant="contained" onClick={loadMoreLocal}>Load 10 More</Button>
+                                )}
+                            </Box>
+                        </>
+                    )}
+                </DialogContent>
+                <DialogActions><Button onClick={() => setViewAllVideosDialog(false)}>Close</Button></DialogActions>
+            </Dialog>
+
+            <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+                <Alert severity={snackbar.severity}>{snackbar.message}</Alert>
             </Snackbar>
         </Box>
     );

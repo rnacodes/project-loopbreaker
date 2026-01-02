@@ -55,7 +55,23 @@ function MediaProfilePage() {
         console.log('Media response:', mediaResponse);
         const basicMedia = mediaResponse.data;
         console.log('Basic media data:', basicMedia);
-        
+
+        // Redirect to specialized profile pages for certain media types
+        // MediaType enum: Article=0, Book=1, Channel=2, Document=3, Movie=4, Music=5, Other=6, Playlist=7, Podcast=8, TVShow=9, Video=10, VideoGame=11, Website=12
+        const mediaType = basicMedia.mediaType;
+        console.log('MediaType value:', mediaType, 'Type:', typeof mediaType);
+
+        if (mediaType === 'Playlist' || mediaType === 7) {
+          console.log('Redirecting to YouTube playlist profile');
+          navigate(`/youtube-playlist/${id}`, { replace: true });
+          return;
+        }
+        if (mediaType === 'Channel' || mediaType === 2) {
+          console.log('Redirecting to YouTube channel profile');
+          navigate(`/youtube-channel/${id}`, { replace: true });
+          return;
+        }
+
         let detailedMedia = basicMedia;
         
         // If it's a book, podcast, movie, TV show, or video, fetch the detailed information

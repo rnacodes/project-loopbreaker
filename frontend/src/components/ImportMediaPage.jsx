@@ -614,30 +614,94 @@ function ImportMediaPage() {
             setSnackbar({ open: true, message: 'Please enter a YouTube URL', severity: 'error' });
             return;
         }
-        
+
         setYoutubeIsLoading(true);
         setYoutubeError('');
         setYoutubeSuccess('');
-        
+
         try {
-            const result = await importFromYouTubeUrl(youtubeUrl);
-            
-            setSnackbar({ open: true, message: 'YouTube content imported successfully!', severity: 'success' });
+            let result;
+            let navigateTo;
+
+            // Extract ID from URL based on content type
+            if (youtubeSearchType === 'video') {
+                // Extract video ID from URL (supports various YouTube URL formats)
+                const videoIdMatch = youtubeUrl.match(/(?:v=|\/v\/|youtu\.be\/|\/embed\/|\/watch\?v=)([^&\n?#]+)/);
+                if (!videoIdMatch) {
+                    throw new Error('Could not extract video ID from URL. Please check the URL format.');
+                }
+                const videoId = videoIdMatch[1];
+                result = await importYouTubeVideo(videoId);
+                navigateTo = `/media/${result.id || result.Id}`;
+
+            } else if (youtubeSearchType === 'playlist') {
+                // Extract playlist ID from URL
+                const playlistIdMatch = youtubeUrl.match(/[?&]list=([^&\n?#]+)/);
+                if (!playlistIdMatch) {
+                    throw new Error('Could not extract playlist ID from URL. Please check the URL format.');
+                }
+                const playlistId = playlistIdMatch[1];
+                result = await importYouTubePlaylistEntity(playlistId);
+                navigateTo = `/youtube-playlist/${result.id || result.Id}`;
+
+            } else if (youtubeSearchType === 'channel') {
+                // Extract channel ID from URL (supports /channel/ID, /@handle, /c/customname)
+                let channelId = null;
+
+                // Check for /channel/ID format
+                const channelIdMatch = youtubeUrl.match(/\/channel\/([^\/\n?#]+)/);
+                if (channelIdMatch) {
+                    channelId = channelIdMatch[1];
+                } else {
+                    // For /@handle or /c/customname formats, we need to pass the URL to let the API resolve it
+                    // Extract the handle or custom name
+                    const handleMatch = youtubeUrl.match(/\/@([^\/\n?#]+)/);
+                    const customMatch = youtubeUrl.match(/\/c\/([^\/\n?#]+)/);
+                    const userMatch = youtubeUrl.match(/\/user\/([^\/\n?#]+)/);
+
+                    if (handleMatch || customMatch || userMatch) {
+                        // Use the full URL and let the backend resolve it
+                        result = await importFromYouTubeUrl(youtubeUrl);
+                        navigateTo = `/youtube-channel/${result.id || result.Id}`;
+                    } else {
+                        throw new Error('Could not extract channel ID from URL. Please check the URL format.');
+                    }
+                }
+
+                if (channelId && !result) {
+                    // Check if channel already exists
+                    const exists = await checkYouTubeChannelExists(channelId);
+                    if (exists) {
+                        setSnackbar({ open: true, message: 'This channel has already been imported. Redirecting to channel page...', severity: 'info' });
+                        setYoutubeIsLoading(false);
+                        setTimeout(() => {
+                            navigate(`/youtube-channel/${channelId}`);
+                        }, 1500);
+                        return;
+                    }
+                    result = await importYouTubeChannelEntity(channelId);
+                    navigateTo = `/youtube-channel/${result.id || result.Id}`;
+                }
+            } else {
+                throw new Error('Please select a content type');
+            }
+
+            const contentTypeLabel = youtubeSearchType.charAt(0).toUpperCase() + youtubeSearchType.slice(1);
+            setSnackbar({ open: true, message: `YouTube ${contentTypeLabel} imported successfully!`, severity: 'success' });
             setYoutubeIsLoading(false);
             setYoutubeUrl('');
-            
+
             console.log('YouTube import successful:', result);
-            
-            const mediaId = result.id || result.Id;
-            if (mediaId) {
+
+            if (navigateTo) {
                 setTimeout(() => {
-                    navigate(`/media/${mediaId}`);
+                    navigate(navigateTo);
                 }, 1500);
             }
-            
+
         } catch (err) {
             console.error('YouTube URL import error:', err);
-            setSnackbar({ open: true, message: 'Failed to import from URL. Please check the URL and try again.', severity: 'error' });
+            setSnackbar({ open: true, message: `Failed to import: ${err.message || 'Please check the URL and try again.'}`, severity: 'error' });
             setYoutubeIsLoading(false);
         }
     };
@@ -1860,6 +1924,19 @@ function ImportMediaPage() {
 
                         {youtubeImportMethod === 'url' && (
                             <Box>
+                                <FormControl fullWidth margin="normal">
+                                    <InputLabel>Content Type</InputLabel>
+                                    <Select
+                                        value={youtubeSearchType}
+                                        label="Content Type"
+                                        onChange={(e) => setYoutubeSearchType(e.target.value)}
+                                    >
+                                        <MenuItem value="video">Video</MenuItem>
+                                        <MenuItem value="playlist">Playlist</MenuItem>
+                                        <MenuItem value="channel">Channel</MenuItem>
+                                    </Select>
+                                </FormControl>
+
                                 <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
                                     <TextField
                                         label="YouTube URL"
@@ -1867,7 +1944,13 @@ function ImportMediaPage() {
                                         onChange={(e) => setYoutubeUrl(e.target.value)}
                                         variant="outlined"
                                         fullWidth
-                                        placeholder="https://www.youtube.com/watch?v=... or https://www.youtube.com/playlist?list=..."
+                                        placeholder={
+                                            youtubeSearchType === 'video'
+                                                ? "https://www.youtube.com/watch?v=..."
+                                                : youtubeSearchType === 'playlist'
+                                                    ? "https://www.youtube.com/playlist?list=..."
+                                                    : "https://www.youtube.com/channel/... or https://www.youtube.com/@..."
+                                        }
                                         onKeyPress={(e) => e.key === 'Enter' && handleYoutubeImportFromUrl()}
                                     />
                                     <Button
@@ -1892,7 +1975,7 @@ function ImportMediaPage() {
                                     </Alert>
                                 )}
                                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Supports YouTube video URLs, playlist URLs, and channel URLs. The system will automatically detect the type and import accordingly.
+                                    Select the content type and paste the corresponding YouTube URL. The import will use the selected type.
                                 </Typography>
                             </Box>
                         )}
