@@ -4,7 +4,7 @@ import { Box, Paper, Typography, Grid, Checkbox, Chip } from '@mui/material';
 import { AccessTime, Star } from '@mui/icons-material';
 import { formatMediaType, formatStatus, getRatingIcon } from '../../utils/formatters';
 
-export const MediaListItem = React.memo(({ item, isSelected, onToggleSelect }) => {
+export const MediaListItem = React.memo(({ item, isSelected = false, onToggleSelect, showCheckbox = false }) => {
     const navigate = useNavigate();
     
     // Determine navigation path based on item type
@@ -24,7 +24,10 @@ export const MediaListItem = React.memo(({ item, isSelected, onToggleSelect }) =
     };
 
     const handleCheckboxChange = (event) => {
-        onToggleSelect(item.id);
+        event.stopPropagation();
+        if (onToggleSelect) {
+            onToggleSelect(item.id);
+        }
     };
     
     // Helper function to get the primary creator/author/maker
@@ -70,7 +73,7 @@ export const MediaListItem = React.memo(({ item, isSelected, onToggleSelect }) =
                     const minutes = Math.floor((item.lengthInSeconds % 3600) / 60);
                     parts.push(hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`);
                 }
-                if (item.platform) parts.push(item.platform);
+                // Platform is already shown in getPrimaryCredit(), so don't duplicate it here
                 break;
             case 'Podcast':
                 if (item.podcastType) parts.push(item.podcastType === 'Series' ? 'Series' : 'Episode');
@@ -109,7 +112,7 @@ export const MediaListItem = React.memo(({ item, isSelected, onToggleSelect }) =
             transition: 'all 0.2s'
         }}>
         <Grid container spacing={2} alignItems="center">
-            {item.isMixlist && (
+            {showCheckbox && (
                 <Grid item>
                     <Checkbox
                         checked={isSelected}

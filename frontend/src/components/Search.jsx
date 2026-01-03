@@ -3,19 +3,21 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Container, Box, Typography, Grid,
     Chip, Button, ButtonGroup, Divider,
-    ToggleButton, ToggleButtonGroup,
-    CircularProgress, Paper, Alert
+    CircularProgress, Paper, Alert, Checkbox, Toolbar,
+    Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
+    Snackbar, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import { SearchBarSection } from './search/SearchBarSection';
 import { SearchFilterSidebar } from './search/SearchFilterSidebar';
 import {
-    Search as SearchIcon, ViewModule, ViewList, FilterList, Clear
+    Search as SearchIcon, ViewModule, ViewList, FilterList, Clear,
+    Delete, CheckBox, CheckBoxOutlineBlank, PlaylistAdd
 } from '@mui/icons-material';
 import { ResultHeader } from './search/ResultHeader';
 import { MediaCard } from './search/MediaCard';
 import { MediaListItem } from './search/MediaListItem';
 import { typesenseAdvancedSearch, typesenseAdvancedSearchMixlists } from '../api';
-import { getAllTopics, getAllGenres } from '../api';
+import { getAllTopics, getAllGenres, getAllMixlists, addMediaToMixlist, bulkDeleteMedia } from '../api';
 
 
 const sortOptions = [
@@ -53,8 +55,8 @@ export default function Search() {
     const [viewMode, setViewMode] = useState('card');
     const [sortBy, setSortBy] = useState('relevance');
     const [searchMode, setSearchMode] = useState('media'); // 'media' or 'mixlists'
-    const [selectedMixlists, setSelectedMixlists] = useState([]);
-    const [selectedMediaTypes, setSelectedMediaTypes] = useState(['all']);
+    const [selectedItems, setSelectedItems] = useState(new Set());
+    const [selectedMediaTypes, setSelectedMediaTypes] = useState([]); // Empty = show "please select" message
     const [selectedTopics, setSelectedTopics] = useState([]);
     const [selectedGenres, setSelectedGenres] = useState([]);
     const [selectedStatus, setSelectedStatus] = useState('all');
@@ -66,18 +68,104 @@ export default function Search() {
     const [showAllGenres, setShowAllGenres] = useState(false);
     const [urlParamsLoaded, setUrlParamsLoaded] = useState(false);
 
-    // Bulk actions
-    const handleToggleMixlistSelect = (mixlistId) => {
-        setSelectedMixlists(prev =>
-            prev.includes(mixlistId) ? prev.filter(id => id !== mixlistId) : [...prev, mixlistId]
-        );
+    // Bulk selection handlers
+    const handleToggleSelect = (itemId) => {
+        setSelectedItems(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(itemId)) {
+                newSet.delete(itemId);
+            } else {
+                newSet.add(itemId);
+            }
+            return newSet;
+        });
     };
 
-    const handleSelectAllMixlists = () => {
-        if (selectedMixlists.length === searchResults.filter(item => item.isMixlist).length && searchResults.every(item => item.isMixlist === false || selectedMixlists.includes(item.id))) {
-            setSelectedMixlists([]);
-        } else {
-            setSelectedMixlists(searchResults.filter(item => item.isMixlist).map(item => item.id));
+    const handleSelectAll = () => {
+        const allIds = new Set(searchResults.map(item => item.id));
+        setSelectedItems(allIds);
+    };
+
+    const handleDeselectAll = () => {
+        setSelectedItems(new Set());
+    };
+
+    // Bulk delete handler
+    const handleBulkDelete = async () => {
+        try {
+            setDeleting(true);
+            const idsArray = Array.from(selectedItems);
+            await bulkDeleteMedia(idsArray);
+
+            setSnackbar({
+                open: true,
+                message: `Successfully deleted ${idsArray.length} item${idsArray.length !== 1 ? 's' : ''}!`,
+                severity: 'success'
+            });
+
+            // Refresh the search results
+            performSearch();
+            setSelectedItems(new Set());
+        } catch (error) {
+            console.error('Failed to delete items:', error);
+            setSnackbar({
+                open: true,
+                message: error.response?.data?.error || 'Failed to delete items',
+                severity: 'error'
+            });
+        } finally {
+            setDeleting(false);
+            setDeleteDialogOpen(false);
+        }
+    };
+
+    // Add to mixlist handler
+    const handleAddToMixlist = async () => {
+        if (!selectedMixlistForAdd) return;
+
+        try {
+            setAddingToMixlist(true);
+            const idsArray = Array.from(selectedItems);
+
+            // Add each selected item to the mixlist
+            for (const mediaId of idsArray) {
+                await addMediaToMixlist(selectedMixlistForAdd, mediaId);
+            }
+
+            setSnackbar({
+                open: true,
+                message: `Successfully added ${idsArray.length} item${idsArray.length !== 1 ? 's' : ''} to mixlist!`,
+                severity: 'success'
+            });
+
+            setSelectedItems(new Set());
+            setSelectedMixlistForAdd('');
+        } catch (error) {
+            console.error('Failed to add items to mixlist:', error);
+            setSnackbar({
+                open: true,
+                message: error.response?.data?.error || 'Failed to add items to mixlist',
+                severity: 'error'
+            });
+        } finally {
+            setAddingToMixlist(false);
+            setAddToMixlistDialogOpen(false);
+        }
+    };
+
+    // Open add to mixlist dialog and fetch mixlists
+    const openAddToMixlistDialog = async () => {
+        try {
+            const response = await getAllMixlists();
+            setAvailableMixlists(response.data || []);
+            setAddToMixlistDialogOpen(true);
+        } catch (error) {
+            console.error('Failed to fetch mixlists:', error);
+            setSnackbar({
+                open: true,
+                message: 'Failed to load mixlists',
+                severity: 'error'
+            });
         }
     };
 
@@ -91,6 +179,15 @@ export default function Search() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const perPage = 20;
+
+    // Bulk actions state
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [addToMixlistDialogOpen, setAddToMixlistDialogOpen] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const [addingToMixlist, setAddingToMixlist] = useState(false);
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+    const [availableMixlists, setAvailableMixlists] = useState([]);
+    const [selectedMixlistForAdd, setSelectedMixlistForAdd] = useState('');
 
     // Load URL parameters on mount
     useEffect(() => {
@@ -137,13 +234,32 @@ export default function Search() {
         }
     }, [searchQuery, searchMode, selectedMediaTypes, selectedTopics, selectedGenres, selectedStatus, selectedRatings, currentPage, urlParamsLoaded]);
 
+    // Check if we have any selection criteria for media search
+    const hasMediaFilters = searchMode === 'media' && (
+        searchQuery.trim() !== '' ||
+        (selectedMediaTypes.length > 0 && !selectedMediaTypes.includes('all')) ||
+        selectedTopics.length > 0 ||
+        selectedGenres.length > 0 ||
+        selectedStatus !== 'all' ||
+        selectedRatings.length > 0
+    );
+
     const performSearch = async () => {
+        // For media mode, require at least some filter to be selected
+        if (searchMode === 'media' && !hasMediaFilters) {
+            setSearchResults([]);
+            setTotalResults(0);
+            setTotalPages(1);
+            setLoading(false);
+            return;
+        }
+
         setLoading(true);
         setError(null);
-        
+
         try {
             let response;
-            
+
             if (searchMode === 'mixlists') {
                 // Search mixlists
                 const searchOptions = {
@@ -261,13 +377,14 @@ export default function Search() {
         if (value === 'all') {
             setSelectedMediaTypes(['all']);
         } else {
-            const newSelection = selectedMediaTypes.includes('all') 
+            const newSelection = selectedMediaTypes.includes('all')
                 ? [value]
                 : selectedMediaTypes.includes(value)
                     ? selectedMediaTypes.filter(t => t !== value)
                     : [...selectedMediaTypes.filter(t => t !== 'all'), value];
-            
-            setSelectedMediaTypes(newSelection.length === 0 ? ['all'] : newSelection);
+
+            // Allow empty selection - this will show the "please select" message
+            setSelectedMediaTypes(newSelection);
         }
     };
 
@@ -290,7 +407,7 @@ export default function Search() {
     };
 
     const handleClearFilters = () => {
-        setSelectedMediaTypes(['all']);
+        setSelectedMediaTypes([]);
         setSelectedTopics([]);
         setSelectedGenres([]);
         setSelectedStatus('all');
@@ -301,6 +418,7 @@ export default function Search() {
         setShowAllTopics(false);
         setShowAllGenres(false);
         setCurrentPage(1);
+        setSelectedItems(new Set());
     };
 
     return (
@@ -319,41 +437,10 @@ export default function Search() {
                         Search MediaVerse
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
-                        {searchMode === 'media' 
+                        {searchMode === 'media'
                             ? 'Search across all your media with powerful filters and instant results'
                             : 'Search and discover curated mixlists by name, topics, or genres'}
                     </Typography>
-                    
-                    {/* Search Mode Toggle */}
-                    <Box sx={{ mt: 2 }}>
-                        <ToggleButtonGroup
-                            value={searchMode}
-                            exclusive
-                            onChange={(e, newMode) => {
-                                if (newMode !== null) {
-                                    setSearchMode(newMode);
-                                    setCurrentPage(1); // Reset to first page when switching modes
-                                }
-                            }}
-                            size="small"
-                            sx={{
-                                backgroundColor: 'background.paper',
-                                '& .MuiToggleButton-root': {
-                                    px: 3,
-                                    py: 1,
-                                    textTransform: 'none',
-                                    fontWeight: 'bold'
-                                }
-                            }}
-                        >
-                            <ToggleButton value="media">
-                                Media Items
-                            </ToggleButton>
-                            <ToggleButton value="mixlists">
-                                Mixlists
-                            </ToggleButton>
-                        </ToggleButtonGroup>
-                    </Box>
                 </Box>
 
                 {/* Search Bar */}
@@ -418,6 +505,115 @@ export default function Search() {
                             mediaTypeOptions={mediaTypeOptions}
                         />
 
+                        {/* Bulk Actions Toolbar */}
+                        {searchResults.length > 0 && searchMode === 'media' && (
+                            <Toolbar
+                                sx={{
+                                    mb: 2,
+                                    bgcolor: 'background.paper',
+                                    borderRadius: 1,
+                                    px: { xs: 1, sm: 2 },
+                                    py: { xs: 1, sm: 1 },
+                                    display: 'flex',
+                                    flexDirection: { xs: 'column', sm: 'row' },
+                                    gap: { xs: 1, sm: 2 },
+                                    justifyContent: 'space-between',
+                                    alignItems: { xs: 'stretch', sm: 'center' }
+                                }}
+                            >
+                                <Box sx={{
+                                    display: 'flex',
+                                    flexDirection: { xs: 'column', sm: 'row' },
+                                    gap: 1,
+                                    width: { xs: '100%', sm: 'auto' }
+                                }}>
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={handleSelectAll}
+                                        startIcon={<CheckBox />}
+                                        sx={{
+                                            color: 'white',
+                                            borderColor: 'white',
+                                            minHeight: '44px',
+                                            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                                            '&:hover': {
+                                                borderColor: 'white',
+                                                backgroundColor: 'rgba(255, 255, 255, 0.08)'
+                                            }
+                                        }}
+                                    >
+                                        Select All
+                                    </Button>
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={handleDeselectAll}
+                                        startIcon={<CheckBoxOutlineBlank />}
+                                        disabled={selectedItems.size === 0}
+                                        sx={{
+                                            color: 'white',
+                                            borderColor: 'white',
+                                            minHeight: '44px',
+                                            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                                            '&:hover': {
+                                                borderColor: 'white',
+                                                backgroundColor: 'rgba(255, 255, 255, 0.08)'
+                                            },
+                                            '&.Mui-disabled': {
+                                                borderColor: 'rgba(255, 255, 255, 0.3)',
+                                                color: 'rgba(255, 255, 255, 0.3)'
+                                            }
+                                        }}
+                                    >
+                                        Deselect All
+                                    </Button>
+                                    {selectedItems.size > 0 && (
+                                        <Typography variant="body2" sx={{ alignSelf: 'center', color: 'text.secondary' }}>
+                                            {selectedItems.size} selected
+                                        </Typography>
+                                    )}
+                                </Box>
+                                <Box sx={{
+                                    display: 'flex',
+                                    flexDirection: { xs: 'column', sm: 'row' },
+                                    gap: 1,
+                                    width: { xs: '100%', sm: 'auto' }
+                                }}>
+                                    <Button
+                                        variant="outlined"
+                                        color="primary"
+                                        size="small"
+                                        onClick={openAddToMixlistDialog}
+                                        startIcon={<PlaylistAdd />}
+                                        disabled={selectedItems.size === 0}
+                                        sx={{
+                                            minHeight: '44px',
+                                            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                                            width: { xs: '100%', sm: 'auto' }
+                                        }}
+                                    >
+                                        Add to Mixlist
+                                    </Button>
+                                    <Button
+                                        variant="contained"
+                                        color="error"
+                                        size="small"
+                                        onClick={() => setDeleteDialogOpen(true)}
+                                        startIcon={<Delete />}
+                                        disabled={selectedItems.size === 0}
+                                        sx={{
+                                            minHeight: '44px',
+                                            fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                                            width: { xs: '100%', sm: 'auto' }
+                                        }}
+                                    >
+                                        Delete ({selectedItems.size})
+                                    </Button>
+                                </Box>
+                            </Toolbar>
+                        )}
+
                         {/* Results Display */}
                         {loading ? (
                             <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -427,6 +623,16 @@ export default function Search() {
                             <Alert severity="error" sx={{ mb: 3 }}>
                                 {error}
                             </Alert>
+                        ) : searchMode === 'media' && !hasMediaFilters ? (
+                            <Paper sx={{ p: 8, textAlign: 'center' }}>
+                                <SearchIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                                <Typography variant="h6" color="text.secondary">
+                                    Select filters to search
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                    Use the search bar or select media types, topics, genres, or other filters to find your media
+                                </Typography>
+                            </Paper>
                         ) : searchResults.length === 0 ? (
                             <Paper sx={{ p: 8, textAlign: 'center' }}>
                                 <Typography variant="h6" color="text.secondary">
@@ -440,18 +646,24 @@ export default function Search() {
                             <Grid container spacing={3}>
                                 {searchResults.map((item) => (
                                     <Grid item xs={12} sm={6} lg={4} key={item.id}>
-                                        <MediaCard item={item} />
+                                        <MediaCard
+                                            item={item}
+                                            isSelected={selectedItems.has(item.id)}
+                                            onToggleSelect={handleToggleSelect}
+                                            showCheckbox={searchMode === 'media'}
+                                        />
                                     </Grid>
                                 ))}
                             </Grid>
                         ) : (
                             <Box>
                                 {searchResults.map((item) => (
-                                    <MediaListItem 
-                                        key={item.id} 
-                                        item={item} 
-                                        isSelected={selectedMixlists.includes(item.id)}
-                                        onToggleSelect={handleToggleMixlistSelect}
+                                    <MediaListItem
+                                        key={item.id}
+                                        item={item}
+                                        isSelected={selectedItems.has(item.id)}
+                                        onToggleSelect={handleToggleSelect}
+                                        showCheckbox={searchMode === 'media' || item.isMixlist}
                                     />
                                 ))}
                             </Box>
@@ -492,6 +704,89 @@ export default function Search() {
                     </Grid>
                 </Grid>
             </Container>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={() => !deleting && setDeleteDialogOpen(false)}
+            >
+                <DialogTitle>Confirm Bulk Delete</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''}?
+                        This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleBulkDelete}
+                        color="error"
+                        variant="contained"
+                        disabled={deleting}
+                    >
+                        {deleting ? 'Deleting...' : 'Delete'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Add to Mixlist Dialog */}
+            <Dialog
+                open={addToMixlistDialogOpen}
+                onClose={() => !addingToMixlist && setAddToMixlistDialogOpen(false)}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>Add to Mixlist</DialogTitle>
+                <DialogContent>
+                    <DialogContentText sx={{ mb: 2 }}>
+                        Select a mixlist to add {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} to:
+                    </DialogContentText>
+                    <FormControl fullWidth>
+                        <InputLabel>Select Mixlist</InputLabel>
+                        <Select
+                            value={selectedMixlistForAdd}
+                            label="Select Mixlist"
+                            onChange={(e) => setSelectedMixlistForAdd(e.target.value)}
+                        >
+                            {availableMixlists.map((mixlist) => (
+                                <MenuItem key={mixlist.id} value={mixlist.id}>
+                                    {mixlist.name}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setAddToMixlistDialogOpen(false)} disabled={addingToMixlist}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleAddToMixlist}
+                        color="primary"
+                        variant="contained"
+                        disabled={addingToMixlist || !selectedMixlistForAdd}
+                    >
+                        {addingToMixlist ? 'Adding...' : 'Add to Mixlist'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Snackbar for feedback */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+            >
+                <Alert
+                    onClose={() => setSnackbar({ ...snackbar, open: false })}
+                    severity={snackbar.severity}
+                >
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }

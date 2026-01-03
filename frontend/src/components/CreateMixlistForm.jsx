@@ -2,7 +2,7 @@
 //TODO: Add a description field to the mixlist creation form.
 //TODO: Use Pixabay API so that user can easily search for and select a thumbnail for their mixlist. That will automatically be downloaded to DigitalOcean Spaces and the URL will be set as the thumbnail for the mixlist.
 //TODO: Pixabay documentation can be found here: https://pixabay.com/api/docs/
-//TODO: Update outline button to be white instead of purple
+//TODO: Update Choose File and Cancel buttons to match formatting of “Create Mixlist”
 //TODO: Add line about ideal image size
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';

@@ -1,12 +1,20 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Card, CardContent, Chip, Typography } from '@mui/material';
+import { Box, Card, CardContent, Chip, Typography, Checkbox } from '@mui/material';
 import { Star, AccessTime } from '@mui/icons-material';
 import { formatMediaType, formatStatus, getRatingIcon } from '../../utils/formatters';
 
-export const MediaCard = React.memo(({ item }) => {
+export const MediaCard = React.memo(({ item, isSelected = false, onToggleSelect, showCheckbox = false }) => {
     const navigate = useNavigate();
     
+    // Handle checkbox click
+    const handleCheckboxChange = (event) => {
+        event.stopPropagation();
+        if (onToggleSelect) {
+            onToggleSelect(item.id);
+        }
+    };
+
     // Determine navigation path based on item type
     const handleClick = () => {
         if (item.isMixlist) {
@@ -66,7 +74,7 @@ export const MediaCard = React.memo(({ item }) => {
                     const minutes = Math.floor((item.lengthInSeconds % 3600) / 60);
                     parts.push(hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`);
                 }
-                if (item.platform) parts.push(item.platform);
+                // Platform is already shown in getPrimaryCredit(), so don't duplicate it here
                 break;
             case 'Podcast':
                 if (item.podcastType) parts.push(item.podcastType === 'Series' ? 'Series' : 'Episode');
@@ -108,19 +116,30 @@ export const MediaCard = React.memo(({ item }) => {
             }}
         >
         <CardContent sx={{ flexGrow: 1, p: 2.5 }}>
-            {/* HEADER ROW: Title + Rating Icon */}
+            {/* HEADER ROW: Checkbox + Title + Rating Icon */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                <Typography 
-                    variant="h6" 
-                    className="card-title"
-                    sx={{ 
-                        fontWeight: 'bold',
-                        fontSize: '1.1rem',
-                        transition: 'color 0.2s'
-                    }}
-                >
-                    {item.title}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1, flex: 1 }}>
+                    {showCheckbox && (
+                        <Checkbox
+                            checked={isSelected}
+                            onChange={handleCheckboxChange}
+                            onClick={(e) => e.stopPropagation()}
+                            sx={{ p: 0, mt: 0.5 }}
+                            size="small"
+                        />
+                    )}
+                    <Typography
+                        variant="h6"
+                        className="card-title"
+                        sx={{
+                            fontWeight: 'bold',
+                            fontSize: '1.1rem',
+                            transition: 'color 0.2s'
+                        }}
+                    >
+                        {item.title}
+                    </Typography>
+                </Box>
                 {(item.ratingType || item.rating !== undefined) && (
                     <Box sx={{ display: 'flex', alignItems: 'center', ml: 1, flexShrink: 0 }}>
                         {getRatingIcon(item.ratingType || item.rating)}
@@ -236,8 +255,8 @@ export const MediaCard = React.memo(({ item }) => {
             </Box>
 
             {/* FOOTER: Date Added */}
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.7rem' }}>
-                <AccessTime sx={{ fontSize: 12 }} />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.8rem' }}>
+                <AccessTime sx={{ fontSize: 14 }} />
                 Added {new Date(item.dateAdded).toLocaleDateString()}
             </Typography>
         </CardContent>

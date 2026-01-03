@@ -44,9 +44,10 @@ function MediaInfoCard({
   };
 
   const wordCount = countWords(description);
-  const shouldTruncate = wordCount > 500;
-  const displayDescription = shouldTruncate && !isDescriptionExpanded 
-    ? truncateDescription(description, 500) 
+  const DESCRIPTION_WORD_LIMIT = 100; // Lowered from 500 for testing
+  const shouldTruncate = wordCount > DESCRIPTION_WORD_LIMIT;
+  const displayDescription = shouldTruncate && !isDescriptionExpanded
+    ? truncateDescription(description, DESCRIPTION_WORD_LIMIT)
     : description;
 
   const formatDuration = (seconds) => {

@@ -3,7 +3,8 @@
     "allow": [
       "Bash(cat:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\frontend\\\\src\\\\api'' | Select-Object Name\")"
+      "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\frontend\\\\src\\\\api'' | Select-Object Name\")",
+      "Bash(npm run lint:*)"
     ]
   }
 }
