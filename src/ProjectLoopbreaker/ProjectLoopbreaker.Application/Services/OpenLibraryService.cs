@@ -87,8 +87,23 @@ namespace ProjectLoopbreaker.Application.Services
                 var cleanKey = openLibraryKey.Replace("/works/", "");
                 var workData = await _openLibraryApiClient.GetBookByOpenLibraryIdAsync(cleanKey);
 
+                // Fetch the actual author name from the author ID
+                var authorName = "Unknown Author";
+                var authorKey = workData.Authors?.FirstOrDefault()?.Author?.Key?.Replace("/authors/", "");
+                if (!string.IsNullOrWhiteSpace(authorKey))
+                {
+                    try
+                    {
+                        var authorData = await _openLibraryApiClient.GetAuthorAsync(authorKey);
+                        authorName = authorData.Name ?? authorData.PersonalName ?? authorKey;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Could not fetch author details for key: {AuthorKey}", authorKey);
+                    }
+                }
+
                 // Check if book already exists by title and author
-                var authorName = workData.Authors?.FirstOrDefault()?.Author?.Key?.Replace("/authors/", "") ?? "Unknown Author";
                 var existingBook = await _bookService.GetBookByTitleAndAuthorAsync(workData.Title ?? "Unknown Title", authorName);
                 if (existingBook != null)
                 {
@@ -96,20 +111,32 @@ namespace ProjectLoopbreaker.Application.Services
                     return existingBook;
                 }
 
+                // Try to get ISBN by searching for the book
+                string? isbn = null;
+                try
+                {
+                    var searchResult = await _openLibraryApiClient.SearchBooksAsync($"title:{workData.Title}", limit: 1);
+                    isbn = searchResult.Docs?.FirstOrDefault()?.Isbn?.FirstOrDefault();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not fetch ISBN for book: {Title}", workData.Title);
+                }
+
                 // Convert work data to book format for consistency
                 var bookData = new OpenLibraryBookDto
                 {
                     Key = workData.Key,
                     Title = workData.Title,
-                    AuthorName = workData.Authors?.Select(a => a.Author?.Key?.Replace("/authors/", "")).ToArray() ?? new[] { authorName },
-                    Subject = workData.Subjects,
+                    AuthorName = new[] { authorName },
+                    Isbn = isbn != null ? new[] { isbn } : null,
                     CoverId = workData.Covers?.FirstOrDefault()
                 };
 
                 // Create book entity from OpenLibrary data using mapping service
                 var book = await _bookMappingService.MapFromOpenLibraryAsync(bookData);
 
-                // Create DTO for the service
+                // Create DTO for the service (no genres/topics auto-imported)
                 var createBookDto = new CreateBookDto
                 {
                     Title = book.Title,
@@ -124,16 +151,15 @@ namespace ProjectLoopbreaker.Application.Services
                     Rating = book.Rating,
                     OwnershipStatus = book.OwnershipStatus,
                     Notes = book.Notes,
-                    RelatedNotes = book.RelatedNotes,
-                    Genres = book.Genres?.Select(g => g.Name).ToArray() ?? Array.Empty<string>()
+                    RelatedNotes = book.RelatedNotes
                 };
 
                 // Save to database through domain service
                 var savedBook = await _bookService.CreateBookAsync(createBookDto);
-                
-                _logger.LogInformation("Successfully imported book from OpenLibrary: {Title} (Key: {OpenLibraryKey})", 
+
+                _logger.LogInformation("Successfully imported book from OpenLibrary: {Title} (Key: {OpenLibraryKey})",
                     workData.Title, openLibraryKey);
-                
+
                 return savedBook;
             }
             catch (Exception ex)
@@ -170,7 +196,7 @@ namespace ProjectLoopbreaker.Application.Services
                 // Create book entity from OpenLibrary data using mapping service
                 var book = await _bookMappingService.MapFromOpenLibraryAsync(bookData);
 
-                // Create DTO for the service
+                // Create DTO for the service (no genres/topics auto-imported)
                 var createBookDto = new CreateBookDto
                 {
                     Title = book.Title,
@@ -185,16 +211,15 @@ namespace ProjectLoopbreaker.Application.Services
                     Rating = book.Rating,
                     OwnershipStatus = book.OwnershipStatus,
                     Notes = book.Notes,
-                    RelatedNotes = book.RelatedNotes,
-                    Genres = book.Genres?.Select(g => g.Name).ToArray() ?? Array.Empty<string>()
+                    RelatedNotes = book.RelatedNotes
                 };
 
                 // Save to database through domain service
                 var savedBook = await _bookService.CreateBookAsync(createBookDto);
-                
-                _logger.LogInformation("Successfully imported book from ISBN: {Title} (ISBN: {ISBN})", 
+
+                _logger.LogInformation("Successfully imported book from ISBN: {Title} (ISBN: {ISBN})",
                     bookData.Title, isbn);
-                
+
                 return savedBook;
             }
             catch (Exception ex)
@@ -211,7 +236,7 @@ namespace ProjectLoopbreaker.Application.Services
                 _logger.LogInformation("Importing book from title: {Title}, author: {Author}", title, author);
 
                 OpenLibrarySearchResultDto searchResult;
-                
+
                 if (!string.IsNullOrWhiteSpace(author))
                 {
                     // Search by title and author
@@ -242,7 +267,7 @@ namespace ProjectLoopbreaker.Application.Services
                 // Create book entity from OpenLibrary data using mapping service
                 var book = await _bookMappingService.MapFromOpenLibraryAsync(bookData);
 
-                // Create DTO for the service
+                // Create DTO for the service (no genres/topics auto-imported)
                 var createBookDto = new CreateBookDto
                 {
                     Title = book.Title,
@@ -257,16 +282,15 @@ namespace ProjectLoopbreaker.Application.Services
                     Rating = book.Rating,
                     OwnershipStatus = book.OwnershipStatus,
                     Notes = book.Notes,
-                    RelatedNotes = book.RelatedNotes,
-                    Genres = book.Genres?.Select(g => g.Name).ToArray() ?? Array.Empty<string>()
+                    RelatedNotes = book.RelatedNotes
                 };
 
                 // Save to database through domain service
                 var savedBook = await _bookService.CreateBookAsync(createBookDto);
-                
-                _logger.LogInformation("Successfully imported book from title and author: {Title} by {Author}", 
+
+                _logger.LogInformation("Successfully imported book from title and author: {Title} by {Author}",
                     bookData.Title, bookData.AuthorName?.FirstOrDefault());
-                
+
                 return savedBook;
             }
             catch (Exception ex)

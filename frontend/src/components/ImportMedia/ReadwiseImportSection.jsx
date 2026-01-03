@@ -57,7 +57,7 @@ function ReadwiseImportSection({ expanded, onAccordionChange }) {
                     <Box component="ul" sx={{ mb: 2, pl: 3 }}>
                         <li>
                             <Typography variant="body2">
-                                Import highlights from Kindle, Instapaper, Reader, and more
+                                Import highlights from Kindle, Reader, and more
                             </Typography>
                         </li>
                         <li>

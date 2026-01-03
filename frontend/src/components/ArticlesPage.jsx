@@ -79,7 +79,7 @@ function ArticlesPage() {
             });
         }
 
-        // Apply folder filter (Instapaper-specific)
+        // Apply folder filter (archived/starred)
         if (filterFolder !== 'all') {
             filtered = filtered.filter(article => {
                 switch (filterFolder) {
@@ -188,9 +188,9 @@ function ArticlesPage() {
                         <Button
                             variant="contained"
                             startIcon={<CloudDownload />}
-                            onClick={() => navigate('/instapaper/auth')}
+                            onClick={() => navigate('/readwise-sync')}
                         >
-                            Import from Instapaper
+                            Sync from Readwise
                         </Button>
                     </Box>
                 </Box>
@@ -323,17 +323,17 @@ function ArticlesPage() {
                             </Typography>
                             <Typography variant="body2" color="text.secondary" paragraph>
                                 {articles.length === 0
-                                    ? "Import articles from Instapaper to get started"
+                                    ? "Sync articles from Readwise to get started"
                                     : "Try adjusting your filters or search query"}
                             </Typography>
                             {articles.length === 0 && (
                                 <Button
                                     variant="contained"
                                     startIcon={<CloudDownload />}
-                                    onClick={() => navigate('/instapaper/auth')}
+                                    onClick={() => navigate('/readwise-sync')}
                                     sx={{ mt: 2 }}
                                 >
-                                    Import from Instapaper
+                                    Sync from Readwise
                                 </Button>
                             )}
                         </Box>

@@ -29,8 +29,6 @@ import Search from './components/Search';
 import DemoPage from './components/DemoPage';
 import UploadMediaPage from './components/UploadMediaPage';
 import YouTubeCallback from './pages/YouTubeCallback';
-import InstapaperAuthPage from './components/InstapaperAuthPage';
-import InstapaperImportPage from './components/InstapaperImportPage';
 import ReadwiseSyncPage from './components/ReadwiseSyncPage';
 import ArticlesPage from './components/ArticlesPage';
 import SourceDirectoryPage from './components/SourceDirectoryPage';
@@ -123,12 +121,6 @@ function App() {
             } />
             <Route path="/youtube/callback" element={
               <ConditionalProtectedRoute><YouTubeCallback /></ConditionalProtectedRoute>
-            } />
-            <Route path="/instapaper/auth" element={
-              <ConditionalProtectedRoute><InstapaperAuthPage /></ConditionalProtectedRoute>
-            } />
-            <Route path="/instapaper/import" element={
-              <ConditionalProtectedRoute><InstapaperImportPage /></ConditionalProtectedRoute>
             } />
             <Route path="/readwise-sync" element={
               <ConditionalProtectedRoute><ReadwiseSyncPage /></ConditionalProtectedRoute>

@@ -32,9 +32,7 @@ namespace ProjectLoopbreaker.DTOs
         public string Title { get; set; } = string.Empty;
         public string? Link { get; set; }
         public DateTime DateAdded { get; set; }
-        public bool HasInstapaperData { get; set; }
         public bool HasReaderData { get; set; }
         public bool HasContent { get; set; }
     }
 }
-

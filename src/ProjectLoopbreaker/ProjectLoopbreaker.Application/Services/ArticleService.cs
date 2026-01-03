@@ -24,7 +24,7 @@ namespace ProjectLoopbreaker.Application.Services
         private readonly ITypeSenseService? _typeSenseService;
 
         public ArticleService(
-            IApplicationDbContext context, 
+            IApplicationDbContext context,
             ILogger<ArticleService> logger,
             IAmazonS3? s3Client,
             IConfiguration configuration,
@@ -132,31 +132,13 @@ namespace ProjectLoopbreaker.Application.Services
             }
         }
 
-        public async Task<Article?> GetArticleByInstapaperIdAsync(string instapaperBookmarkId)
-        {
-            try
-            {
-                return await _context.Articles
-                    .AsNoTracking()
-                    .AsSplitQuery()
-                    .Include(a => a.Topics)
-                    .Include(a => a.Genres)
-                    .FirstOrDefaultAsync(a => a.InstapaperBookmarkId == instapaperBookmarkId);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while retrieving article with Instapaper ID {InstapaperBookmarkId}", instapaperBookmarkId);
-                throw;
-            }
-        }
-
         public async Task<Article> CreateArticleAsync(CreateArticleDto dto)
         {
             try
             {
                 // Normalize URL before saving to prevent duplicates
-                var normalizedUrl = !string.IsNullOrWhiteSpace(dto.Link) 
-                    ? UrlNormalizer.Normalize(dto.Link) 
+                var normalizedUrl = !string.IsNullOrWhiteSpace(dto.Link)
+                    ? UrlNormalizer.Normalize(dto.Link)
                     : null;
 
                 // Check for existing article with same normalized URL
@@ -164,10 +146,10 @@ namespace ProjectLoopbreaker.Application.Services
                 {
                     var existingArticle = await _context.Articles
                         .FirstOrDefaultAsync(a => a.Link != null && EF.Functions.ILike(a.Link, normalizedUrl));
-                        
+
                     if (existingArticle != null)
                     {
-                        _logger.LogWarning("Article with URL already exists: {Url} (ID: {Id})", 
+                        _logger.LogWarning("Article with URL already exists: {Url} (ID: {Id})",
                             normalizedUrl, existingArticle.Id);
                         throw new InvalidOperationException(
                             $"An article with this URL already exists (ID: {existingArticle.Id}). " +
@@ -175,11 +157,6 @@ namespace ProjectLoopbreaker.Application.Services
                     }
                 }
 
-                // Determine initial sync status based on external IDs
-                var syncStatus = SyncStatus.LocalOnly;
-                if (!string.IsNullOrEmpty(dto.InstapaperBookmarkId))
-                    syncStatus |= SyncStatus.InstapaperSynced;
-                    
                 var article = new Article
                 {
                     Title = dto.Title,
@@ -194,17 +171,15 @@ namespace ProjectLoopbreaker.Application.Services
                     Description = dto.Description,
                     RelatedNotes = dto.RelatedNotes,
                     Thumbnail = dto.Thumbnail,
-                    InstapaperBookmarkId = dto.InstapaperBookmarkId,
                     ContentStoragePath = dto.ContentStoragePath,
                     IsArchived = dto.IsArchived,
                     IsStarred = dto.IsStarred,
-                    InstapaperHash = dto.InstapaperHash,
                     Author = dto.Author,
                     Publication = dto.Publication,
                     PublicationDate = dto.PublicationDate,
                     ReadingProgress = dto.ReadingProgress,
                     WordCount = dto.WordCount,
-                    SyncStatus = syncStatus
+                    SyncStatus = SyncStatus.LocalOnly
                 };
 
                 // Handle Topics array conversion
@@ -257,11 +232,9 @@ namespace ProjectLoopbreaker.Application.Services
                 article.Description = dto.Description;
                 article.RelatedNotes = dto.RelatedNotes;
                 article.Thumbnail = dto.Thumbnail;
-                article.InstapaperBookmarkId = dto.InstapaperBookmarkId;
                 article.ContentStoragePath = dto.ContentStoragePath;
                 article.IsArchived = dto.IsArchived;
                 article.IsStarred = dto.IsStarred;
-                article.InstapaperHash = dto.InstapaperHash;
                 article.Author = dto.Author;
                 article.Publication = dto.Publication;
                 article.PublicationDate = dto.PublicationDate;
@@ -327,26 +300,7 @@ namespace ProjectLoopbreaker.Application.Services
             }
         }
 
-        public async Task<ArticleSyncResultDto> SyncArticlesFromInstapaperAsync()
-        {
-            // TODO: This method will be implemented when the Instapaper API client is ready
-            // For now, return a placeholder result
-            _logger.LogWarning("SyncArticlesFromInstapaperAsync called but not yet fully implemented - awaiting Instapaper API client");
-            
-            var result = new ArticleSyncResultDto
-            {
-                Message = "Sync functionality will be available when Instapaper API client and cron job are implemented",
-                NewArticlesCount = 0,
-                UpdatedArticlesCount = 0,
-                TotalArticlesCount = await _context.Articles.CountAsync(),
-                LastSyncDate = DateTime.UtcNow,
-                Errors = new List<string> { "Instapaper API integration not yet complete" }
-            };
-            
-            return result;
-        }
-
-        public async Task<Article> UpdateArticleSyncStatusAsync(Guid id, bool isArchived, bool isStarred, string? hash)
+        public async Task<Article> UpdateArticleSyncStatusAsync(Guid id, bool isArchived, bool isStarred)
         {
             try
             {
@@ -358,7 +312,6 @@ namespace ProjectLoopbreaker.Application.Services
 
                 article.IsArchived = isArchived;
                 article.IsStarred = isStarred;
-                article.InstapaperHash = hash;
                 article.LastSyncDate = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
@@ -464,4 +417,3 @@ namespace ProjectLoopbreaker.Application.Services
         }
     }
 }
-

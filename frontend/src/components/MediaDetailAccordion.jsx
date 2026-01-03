@@ -178,6 +178,20 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
         {/* Book-specific properties */}
         {mediaItem.mediaType === 'Book' && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {mediaItem.author && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.5, sm: 0 }
+              }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '1rem' }}>
+                  <strong>Author:</strong>
+                </Typography>
+                <Typography variant="body1" sx={{ fontSize: '1rem' }}>{mediaItem.author}</Typography>
+              </Box>
+            )}
+
             {mediaItem.isbn && (
               <Box sx={{
                 display: 'flex',
@@ -185,13 +199,13 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 alignItems: { xs: 'flex-start', sm: 'center' },
                 gap: { xs: 0.5, sm: 0 }
               }}>
-                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: '0.875rem' }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '1rem' }}>
                   <strong>ISBN:</strong>
                 </Typography>
-                <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>{mediaItem.isbn}</Typography>
+                <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: '1rem' }}>{mediaItem.isbn}</Typography>
               </Box>
             )}
-            
+
             {mediaItem.asin && (
               <Box sx={{
                 display: 'flex',
@@ -199,13 +213,13 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 alignItems: { xs: 'flex-start', sm: 'center' },
                 gap: { xs: 0.5, sm: 0 }
               }}>
-                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: '0.875rem' }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '1rem' }}>
                   <strong>ASIN:</strong>
                 </Typography>
-                <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>{mediaItem.asin}</Typography>
+                <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: '1rem' }}>{mediaItem.asin}</Typography>
               </Box>
             )}
-            
+
             {mediaItem.format && (
               <Box sx={{
                 display: 'flex',
@@ -213,13 +227,13 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 alignItems: { xs: 'flex-start', sm: 'center' },
                 gap: { xs: 0.5, sm: 0 }
               }}>
-                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: '0.875rem' }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '1rem' }}>
                   <strong>Format:</strong>
                 </Typography>
-                <Typography variant="body1" sx={{ fontSize: '0.875rem' }}>{mediaItem.format}</Typography>
+                <Typography variant="body1" sx={{ fontSize: '1rem' }}>{mediaItem.format}</Typography>
               </Box>
             )}
-            
+
             {mediaItem.partOfSeries !== undefined && (
               <Box sx={{
                 display: 'flex',
@@ -227,13 +241,13 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 alignItems: { xs: 'flex-start', sm: 'center' },
                 gap: { xs: 0.5, sm: 0 }
               }}>
-                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: '0.875rem' }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '1rem' }}>
                   <strong>Part of Series:</strong>
                 </Typography>
-                <Typography variant="body1" sx={{ fontSize: '0.875rem' }}>{mediaItem.partOfSeries ? 'Yes' : 'No'}</Typography>
+                <Typography variant="body1" sx={{ fontSize: '1rem' }}>{mediaItem.partOfSeries ? 'Yes' : 'No'}</Typography>
               </Box>
             )}
-            
+
             {mediaItem.goodreadsRating && (
               <Box sx={{
                 display: 'flex',
@@ -241,10 +255,10 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 alignItems: { xs: 'flex-start', sm: 'center' },
                 gap: { xs: 0.5, sm: 0 }
               }}>
-                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '120px' }, fontSize: '0.875rem' }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '1rem' }}>
                   <strong>Goodreads Rating:</strong>
                 </Typography>
-                <Typography variant="body1" sx={{ fontSize: '0.875rem' }}>{mediaItem.goodreadsRating} / 5</Typography>
+                <Typography variant="body1" sx={{ fontSize: '1rem' }}>{mediaItem.goodreadsRating} / 5</Typography>
               </Box>
             )}
           </Box>
@@ -958,31 +972,12 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
               </Box>
             )}
             
-            {mediaItem.savedToInstapaperDate && (
-              <Box sx={{
-                display: 'flex',
-                flexDirection: { xs: 'column', sm: 'row' },
-                alignItems: { xs: 'flex-start', sm: 'center' },
-                gap: { xs: 0.5, sm: 0 }
-              }}>
-                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '180px' }, fontSize: '0.875rem' }}>
-                  <strong>Saved to Instapaper:</strong>
-                </Typography>
-                <Typography variant="body1" sx={{ fontSize: '0.875rem' }}>
-                  {new Date(mediaItem.savedToInstapaperDate).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </Typography>
-              </Box>
-            )}
           </Box>
         )}
         
         {/* Show message if no specific properties are available */}
         {((mediaItem.mediaType === 'Podcast' && !mediaItem.podcastType && !mediaItem.durationInSeconds && !mediaItem.publisher && !mediaItem.audioLink && !mediaItem.releaseDate) ||
-          (mediaItem.mediaType === 'Book' && !mediaItem.isbn && !mediaItem.asin && !mediaItem.format && mediaItem.partOfSeries === undefined) ||
+          (mediaItem.mediaType === 'Book' && !mediaItem.author && !mediaItem.isbn && !mediaItem.asin && !mediaItem.format && mediaItem.partOfSeries === undefined) ||
           (mediaItem.mediaType === 'Movie' && !mediaItem.director && !mediaItem.cast && !mediaItem.releaseYear && !mediaItem.runtimeMinutes && !mediaItem.mpaaRating && !mediaItem.tmdbRating) ||
           (mediaItem.mediaType === 'TVShow' && !mediaItem.creator && !mediaItem.cast && !mediaItem.firstAirYear && !mediaItem.numberOfSeasons && !mediaItem.contentRating) ||
           (mediaItem.mediaType === 'Video' && !mediaItem.platform && !mediaItem.channel && !mediaItem.lengthInSeconds && mediaItem.videoType === undefined && !mediaItem.externalId) ||

@@ -218,6 +218,44 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
             }
         }
 
+        public async Task<ReadwiseExportResponse> GetExportAsync(string? updatedAfter = null, string? pageCursor = null)
+        {
+            try
+            {
+                var queryParams = new List<string>();
+
+                if (!string.IsNullOrEmpty(updatedAfter))
+                {
+                    queryParams.Add($"updatedAfter={Uri.EscapeDataString(updatedAfter)}");
+                }
+
+                if (!string.IsNullOrEmpty(pageCursor))
+                {
+                    queryParams.Add($"pageCursor={Uri.EscapeDataString(pageCursor)}");
+                }
+
+                var query = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
+                var response = await _httpClient.GetAsync($"export/{query}");
+
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<ReadwiseExportResponse>(content,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                var totalHighlights = result?.results.Sum(b => b.highlights.Count) ?? 0;
+                _logger.LogInformation("Retrieved {BookCount} books with {HighlightCount} highlights from Readwise export",
+                    result?.results.Count ?? 0, totalHighlights);
+
+                return result ?? new ReadwiseExportResponse();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching export from Readwise");
+                return new ReadwiseExportResponse();
+            }
+        }
+
         private bool IsConfigured()
         {
             return !string.IsNullOrEmpty(_apiToken);

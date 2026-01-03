@@ -10,7 +10,7 @@ ProjectLoopbreaker is a personal media library management application with a Rea
 
 **Frontend:** React 18 + Vite, Material-UI, React Router v7, Vitest for testing
 **Backend:** .NET 8, Entity Framework Core with PostgreSQL, JWT authentication
-**External APIs:** ListenNotes (podcasts), TMDB (movies/TV), YouTube Data API, Readwise, Open Library, Instapaper
+**External APIs:** ListenNotes (podcasts), TMDB (movies/TV), YouTube Data API, Readwise, Open Library
 **Infrastructure:** DigitalOcean Spaces for file storage, Typesense for search
 
 ## Build & Run Commands

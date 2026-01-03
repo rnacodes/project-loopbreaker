@@ -457,7 +457,7 @@ function UploadMediaPage() {
                         <Typography variant="body2" paragraph>
                             <strong>Article-Specific Columns:</strong> Author, Link (required for articles), 
                             PublicationDate, Domain, IsArchived (true/false), IsStarred (true/false), 
-                            ReadingProgress (0-100), WordCount, ExternalId (Instapaper/Readwise ID)
+                            ReadingProgress (0-100), WordCount, ExternalId (Readwise ID)
                         </Typography>
                     </AccordionDetails>
                 </Accordion>

@@ -831,8 +831,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             article.Thumbnail = GetCsvValue(csv, "Thumbnail");
             article.Author = GetCsvValue(csv, "Author");
             article.Publication = GetCsvValue(csv, "Publication");
-            article.InstapaperBookmarkId = GetCsvValue(csv, "InstapaperBookmarkId") ?? GetCsvValue(csv, "BookmarkId");
-            article.InstapaperHash = GetCsvValue(csv, "InstapaperHash") ?? GetCsvValue(csv, "Hash");
+            // InstapaperBookmarkId and InstapaperHash fields removed - Readwise is now the only sync source
 
             // Parse boolean fields
             var isArchivedStr = GetCsvValue(csv, "IsArchived") ?? GetCsvValue(csv, "Archived");

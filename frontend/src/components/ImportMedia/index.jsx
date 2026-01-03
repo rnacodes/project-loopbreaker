@@ -7,7 +7,6 @@ import WhiteOutlineButton from '../shared/WhiteOutlineButton';
 
 // Import section components
 import BookImportSection from './BookImportSection';
-import InstapaperImportSection from './InstapaperImportSection';
 import TmdbImportSection from './TmdbImportSection';
 import PodcastImportSection from './PodcastImportSection';
 import ReadwiseImportSection from './ReadwiseImportSection';
@@ -39,12 +38,6 @@ function ImportMediaPage() {
 
             {/* Book Import Section */}
             <BookImportSection
-                expanded={expanded}
-                onAccordionChange={handleAccordionChange}
-            />
-
-            {/* Instapaper Import Section */}
-            <InstapaperImportSection
                 expanded={expanded}
                 onAccordionChange={handleAccordionChange}
             />

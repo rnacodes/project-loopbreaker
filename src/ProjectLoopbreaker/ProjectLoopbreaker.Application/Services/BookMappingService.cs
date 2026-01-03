@@ -129,32 +129,17 @@ namespace ProjectLoopbreaker.Application.Services
                 ISBN = openLibraryBook.Isbn?.FirstOrDefault(),
                 Format = BookFormat.Digital, // Default to digital since it's from Open Library
                 PartOfSeries = false,
-                Thumbnail = openLibraryBook.CoverId.HasValue 
-                    ? $"https://covers.openlibrary.org/b/id/{openLibraryBook.CoverId}-L.jpg" 
+                Thumbnail = openLibraryBook.CoverId.HasValue
+                    ? $"https://covers.openlibrary.org/b/id/{openLibraryBook.CoverId}-L.jpg"
                     : null,
                 Description = ExtractDescription(openLibraryBook),
-                Link = !string.IsNullOrWhiteSpace(openLibraryBook.Key) 
-                    ? $"https://openlibrary.org{openLibraryBook.Key}" 
+                Link = !string.IsNullOrWhiteSpace(openLibraryBook.Key)
+                    ? $"https://openlibrary.org{openLibraryBook.Key}"
                     : null
             };
 
-            // Handle subjects as genres
-            if (openLibraryBook.Subject?.Length > 0)
-            {
-                foreach (var subjectName in openLibraryBook.Subject.Take(5).Where(s => !string.IsNullOrWhiteSpace(s)))
-                {
-                    var normalizedSubjectName = subjectName.Trim().ToLowerInvariant();
-                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedSubjectName);
-                    if (existingGenre != null)
-                    {
-                        book.Genres.Add(existingGenre);
-                    }
-                    else
-                    {
-                        book.Genres.Add(new Genre { Name = normalizedSubjectName });
-                    }
-                }
-            }
+            // Note: Topics and genres are NOT auto-imported from Open Library subjects
+            // Users can add them manually after import if desired
 
             return book;
         }
@@ -162,12 +147,12 @@ namespace ProjectLoopbreaker.Application.Services
         public async Task<Book> MapFromOpenLibraryWorkAsync(OpenLibraryWorkDto openLibraryWork)
         {
             // Convert work data to book format for consistency
+            // Note: Author key is passed here, the caller should resolve it to actual name
             var bookData = new OpenLibraryBookDto
             {
                 Key = openLibraryWork.Key,
                 Title = openLibraryWork.Title,
                 AuthorName = openLibraryWork.Authors?.Select(a => a.Author?.Key?.Replace("/authors/", "")).ToArray(),
-                Subject = openLibraryWork.Subjects,
                 CoverId = openLibraryWork.Covers?.FirstOrDefault()
             };
 
