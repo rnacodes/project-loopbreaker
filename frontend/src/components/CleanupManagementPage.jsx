@@ -33,7 +33,7 @@ import {
     cleanupOrphanedGenres,
     cleanupAllMedia,
     cleanupRefreshTokens
-} from '../services/apiService';
+} from '../api';
 
 const CleanupManagementPage = () => {
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });

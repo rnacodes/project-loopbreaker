@@ -1,0 +1,41 @@
+import { apiClient } from './apiClient';
+
+// ============================================
+// Mixlist API calls
+// ============================================
+
+export const getAllMixlists = () => {
+    return apiClient.get('/mixlist');
+};
+
+export const searchMixlists = (query) => {
+    return apiClient.get(`/mixlist/search?query=${encodeURIComponent(query)}`);
+};
+
+export const createMixlist = (mixlistData) => {
+    return apiClient.post('/mixlist', mixlistData);
+};
+
+export const addMediaToMixlist = (mixlistId, mediaItemId) => {
+    return apiClient.post(`/mixlist/${mixlistId}/items/${mediaItemId}`);
+};
+
+export const getMixlistById = (id) => {
+    return apiClient.get(`/mixlist/${id}`);
+};
+
+export const updateMixlist = (id, mixlistData) => {
+    return apiClient.put(`/mixlist/${id}`, mixlistData);
+};
+
+export const deleteMixlist = (id) => {
+    return apiClient.delete(`/mixlist/${id}`);
+};
+
+export const removeMediaFromMixlist = (mixlistId, mediaItemId) => {
+    return apiClient.delete(`/mixlist/${mixlistId}/items/${mediaItemId}`);
+};
+
+export const seedMixlists = () => {
+    return apiClient.post('/dev/seed-mixlists');
+};

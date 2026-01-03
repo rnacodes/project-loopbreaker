@@ -7,7 +7,7 @@ import {
     DialogContent, DialogActions, IconButton, DialogContentText
 } from '@mui/material';
 import { ExpandMore, Topic as TopicIcon, Category as GenreIcon, Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { getAllTopics, getAllGenres, createTopic, createGenre, deleteTopic, deleteGenre } from '../services/apiService';
+import { getAllTopics, getAllGenres, createTopic, createGenre, deleteTopic, deleteGenre } from '../api';
 
 function SearchByTopicOrGenre() {
     const [expanded, setExpanded] = useState(false);

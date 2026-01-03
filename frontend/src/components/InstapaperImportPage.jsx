@@ -11,7 +11,7 @@ import {
     Article as ArticleIcon, BookmarkAdd, Star,
     Archive, Inbox
 } from '@mui/icons-material';
-import { importFromInstapaper, syncWithInstapaper } from '../services/apiService';
+import { importFromInstapaper, syncWithInstapaper } from '../api';
 
 function InstapaperImportPage() {
     const navigate = useNavigate();

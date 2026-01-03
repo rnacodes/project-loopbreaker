@@ -7,7 +7,7 @@ import {
     IconButton
 } from '@mui/material';
 import { ArrowBack, Visibility, VisibilityOff, Article as ArticleIcon } from '@mui/icons-material';
-import { authenticateInstapaper } from '../services/apiService';
+import { authenticateInstapaper } from '../api';
 
 function InstapaperAuthPage() {
     const navigate = useNavigate();

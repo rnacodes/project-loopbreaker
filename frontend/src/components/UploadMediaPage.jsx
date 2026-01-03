@@ -5,7 +5,7 @@ import {
     Card, CardContent, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import { CloudUpload, FileUpload, CheckCircle, Error, ExpandMore } from '@mui/icons-material';
-import { uploadCsv } from '../services/apiService';
+import { uploadCsv } from '../api';
 
 function UploadMediaPage() {
     const [file, setFile] = useState(null);

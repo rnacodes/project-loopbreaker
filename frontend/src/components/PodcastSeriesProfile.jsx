@@ -24,7 +24,7 @@ import {
     deletePodcastSeries,
     getAllMixlists,
     importPodcastEpisodeFromApi
-} from '../services/apiService';
+} from '../api';
 import { 
     formatMediaType, 
     formatStatus, 

@@ -6,7 +6,7 @@ import {
     Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
 import { Save, Cancel, ArrowBack, Delete } from '@mui/icons-material';
-import { getMediaById, updateMedia, uploadThumbnail, deleteMedia } from '../services/apiService';
+import { getMediaById, updateMedia, uploadThumbnail, deleteMedia } from '../api';
 import { formatStatus, formatMediaType } from '../utils/formatters';
 
 function EditMediaForm() {

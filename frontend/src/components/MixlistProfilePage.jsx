@@ -12,9 +12,9 @@ import {
     ArrowBack, ExpandMore, ExpandLess, OpenInNew, Edit,
     Search, Upload, FileDownload, AddCircle, Add, Delete
 } from '@mui/icons-material';
-import { 
+import {
     getMixlistById, removeMediaFromMixlist, searchMedia, addMediaToMixlist
-} from '../services/apiService';
+} from '../api';
 import SimpleMediaCarousel from './shared/SimpleMediaCarousel';
 import { formatMediaType, formatStatus } from '../utils/formatters';
 

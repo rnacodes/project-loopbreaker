@@ -10,7 +10,7 @@ import {
     ArrowBack, Add, Search, OpenInNew, RssFeed,
     Language, Sort, Refresh, Delete
 } from '@mui/icons-material';
-import { getAllWebsites, getWebsitesWithRss, deleteWebsite } from '../services/apiService';
+import { getAllWebsites, getWebsitesWithRss, deleteWebsite } from '../api';
 
 function WebsitesPage() {
     const navigate = useNavigate();

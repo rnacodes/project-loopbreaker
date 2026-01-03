@@ -23,7 +23,7 @@ import {
     syncYouTubePlaylist,
     getAllMixlists,
     addVideoToYouTubePlaylist
-} from '../services/apiService';
+} from '../api';
 import {
     formatMediaType,
     formatStatus,

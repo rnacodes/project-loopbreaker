@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import HomePage from '../HomePage';
-import * as apiService from '../../services/apiService';
+import * as apiService from '../../api';
 
 // Mock API service
-vi.mock('../../services/apiService');
+vi.mock('../../api');
 
 // Mock child components
 vi.mock('../shared/SearchBar', () => ({

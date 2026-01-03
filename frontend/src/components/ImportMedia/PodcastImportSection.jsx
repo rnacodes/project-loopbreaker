@@ -7,7 +7,7 @@ import {
     Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import { Search, Download, Podcasts, ExpandMore, OpenInNew } from '@mui/icons-material';
-import { searchPodcasts, importPodcastSeriesFromApi, importPodcastSeriesByName } from '../../services/apiService';
+import { searchPodcasts, importPodcastSeriesFromApi, importPodcastSeriesByName } from '../../api';
 
 function PodcastImportSection({ expanded, onAccordionChange, onSnackbar }) {
     const navigate = useNavigate();
