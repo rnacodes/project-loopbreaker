@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     TextField, Button, Box, Typography, Container
 } from '@mui/material';
-import { createMixlist, uploadThumbnail } from '../services/apiService';
+import { createMixlist, uploadThumbnail } from '../api';
 
 function CreateMixlistForm() {
     const [name, setName] = useState('');

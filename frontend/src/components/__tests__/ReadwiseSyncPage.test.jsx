@@ -3,10 +3,10 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import ReadwiseSyncPage from '../ReadwiseSyncPage';
-import * as apiService from '../../services/apiService';
+import * as apiService from '../../api';
 
 // Mock the API service
-vi.mock('../../services/apiService', () => ({
+vi.mock('../../api', () => ({
   validateReadwiseConnection: vi.fn(),
   syncHighlightsFromReadwise: vi.fn(),
   syncDocumentsFromReader: vi.fn(),

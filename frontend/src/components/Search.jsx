@@ -14,8 +14,8 @@ import {
 import { ResultHeader } from './search/ResultHeader';
 import { MediaCard } from './search/MediaCard';
 import { MediaListItem } from './search/MediaListItem';
-import { typesenseAdvancedSearch, typesenseAdvancedSearchMixlists } from '../services/apiService';
-import { getAllTopics, getAllGenres } from '../services/apiService';
+import { typesenseAdvancedSearch, typesenseAdvancedSearchMixlists } from '../api';
+import { getAllTopics, getAllGenres } from '../api';
 
 
 const sortOptions = [

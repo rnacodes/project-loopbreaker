@@ -6,7 +6,7 @@ import {
     Chip, Grid
 } from '@mui/material';
 import { Language, Download, Preview, OpenInNew, RssFeed } from '@mui/icons-material';
-import { scrapeWebsitePreview, importWebsite } from '../services/apiService';
+import { scrapeWebsitePreview, importWebsite } from '../api';
 import WhiteOutlineButton from './shared/WhiteOutlineButton';
 
 function WebsiteImportPage() {

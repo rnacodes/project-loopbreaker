@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  syncHighlightsFromReadwise, 
+import {
+  syncHighlightsFromReadwise,
   syncDocumentsFromReader,
   bulkFetchArticleContents,
   validateReadwiseConnection,
   linkHighlightsToMedia
-} from '../services/apiService';
+} from '../api';
 import './ReadwiseSyncPage.css';
 
 const ReadwiseSyncPage = () => {

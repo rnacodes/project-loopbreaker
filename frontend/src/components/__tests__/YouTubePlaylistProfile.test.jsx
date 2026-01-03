@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import YouTubePlaylistProfile from '../YouTubePlaylistProfile';
-import * as apiService from '../../services/apiService';
+import * as apiService from '../../api';
 
 // Mock API service
-vi.mock('../../services/apiService');
+vi.mock('../../api');
 
 // Mock useParams and useNavigate
 vi.mock('react-router-dom', async () => {

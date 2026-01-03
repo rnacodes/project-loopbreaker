@@ -3,13 +3,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import CreateMixlistForm from '../CreateMixlistForm';
-import * as apiService from '../../services/apiService';
+import * as apiService from '../../api';
 
 // Create mock navigate function
 const mockNavigate = vi.fn();
 
 // Mock the API service
-vi.mock('../../services/apiService', () => ({
+vi.mock('../../api', () => ({
   createMixlist: vi.fn(),
 }));
 

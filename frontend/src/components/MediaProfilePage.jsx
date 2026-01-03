@@ -26,7 +26,7 @@ import {
     getBookById, getPodcastSeriesById, getPodcastEpisodeById, getEpisodesBySeriesId,
     getMovieById, getTvShowById, getVideoById, getArticleById,
     getHighlightsByArticle, getHighlightsByBook, getPlaylistsForVideo,
-} from '../services/apiService';
+} from '../api';
 
 function MediaProfilePage() {
   const [mediaItem, setMediaItem] = useState(null);

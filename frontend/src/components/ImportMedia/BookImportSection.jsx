@@ -7,7 +7,7 @@ import {
     Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import { Search, Download, MenuBook, ExpandMore, OpenInNew } from '@mui/icons-material';
-import { searchBooksFromOpenLibrary, importBookFromOpenLibrary } from '../../services/apiService';
+import { searchBooksFromOpenLibrary, importBookFromOpenLibrary } from '../../api';
 
 function BookImportSection({ expanded, onAccordionChange }) {
     const navigate = useNavigate();

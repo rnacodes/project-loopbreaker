@@ -35,7 +35,7 @@ import {
   Error as ErrorIcon,
   Info as InfoIcon,
 } from '@mui/icons-material';
-import { typesenseReindex, reindexMixlists, typesenseHealth, typesenseSearch, typesenseResetMediaItems, typesenseResetMixlists, findDuplicateArticles, deduplicateArticles } from '../services/apiService';
+import { typesenseReindex, reindexMixlists, typesenseHealth, typesenseSearch, typesenseResetMediaItems, typesenseResetMixlists, findDuplicateArticles, deduplicateArticles } from '../api';
 import { formatStatus } from '../utils/formatters';
 
 const TypesenseAdminPage = () => {

@@ -23,7 +23,7 @@ import {
     deleteYouTubeChannel,
     syncYouTubeChannelMetadata,
     getAllMixlists
-} from '../services/apiService';
+} from '../api';
 import {
     formatMediaType,
     formatStatus,

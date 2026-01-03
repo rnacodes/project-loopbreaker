@@ -3,10 +3,10 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { vi } from 'vitest';
 import MediaProfilePage from '../MediaProfilePage';
-import * as apiService from '../../services/apiService';
+import * as apiService from '../../api';
 
 // Mock the API service
-vi.mock('../../services/apiService');
+vi.mock('../../api');
 
 const mockArticleWithReadwise = {
   id: '123e4567-e89b-12d3-a456-426614174000',

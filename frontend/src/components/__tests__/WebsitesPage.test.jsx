@@ -3,13 +3,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import WebsitesPage from '../WebsitesPage';
-import * as apiService from '../../services/apiService';
+import * as apiService from '../../api';
 
 // Create mock navigate function
 const mockNavigate = vi.fn();
 
 // Mock the API service
-vi.mock('../../services/apiService', () => ({
+vi.mock('../../api', () => ({
   getAllWebsites: vi.fn(),
   getWebsitesWithRss: vi.fn(),
   deleteWebsite: vi.fn(),
