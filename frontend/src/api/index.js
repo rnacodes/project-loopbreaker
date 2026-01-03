@@ -189,10 +189,6 @@ export {
     createArticle,
     updateArticle,
     deleteArticle,
-    authenticateInstapaper,
-    importFromInstapaper,
-    syncWithInstapaper,
-    saveToInstapaper,
     findDuplicateArticles,
     deduplicateArticles,
     fetchArticleContent,
@@ -202,7 +198,6 @@ export {
 
 // Highlights
 export {
-    validateReadwiseConnection,
     syncHighlightsFromReadwise,
     getAllHighlights,
     getHighlightsByArticle,
@@ -214,6 +209,13 @@ export {
     linkHighlightsToMedia,
     exportHighlightToReadwise
 } from './highlightService';
+
+// Readwise (unified sync)
+export {
+    validateReadwiseConnection,
+    syncAll as syncReadwiseAll,
+    fetchArticleContent as fetchReadwiseContent
+} from './readwiseService';
 
 // Websites
 export {

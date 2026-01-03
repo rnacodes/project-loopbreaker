@@ -55,67 +55,6 @@ export const deleteArticle = async (id) => {
 };
 
 // ============================================
-// Instapaper API calls
-// ============================================
-
-export const authenticateInstapaper = async (username, password = '') => {
-    try {
-        const response = await apiClient.post('/article/instapaper/authenticate', {
-            username,
-            password
-        });
-        return response.data;
-    } catch (error) {
-        console.error('Error authenticating with Instapaper:', error);
-        throw error;
-    }
-};
-
-export const importFromInstapaper = async (accessToken, accessTokenSecret, limit = 50, folderId = 'unread') => {
-    try {
-        const response = await apiClient.post('/article/instapaper/import', {
-            accessToken,
-            accessTokenSecret,
-            limit,
-            folderId
-        });
-        return response.data;
-    } catch (error) {
-        console.error('Error importing from Instapaper:', error);
-        throw error;
-    }
-};
-
-export const syncWithInstapaper = async (accessToken, accessTokenSecret) => {
-    try {
-        const response = await apiClient.post('/article/instapaper/sync', {
-            accessToken,
-            accessTokenSecret
-        });
-        return response.data;
-    } catch (error) {
-        console.error('Error syncing with Instapaper:', error);
-        throw error;
-    }
-};
-
-export const saveToInstapaper = async (accessToken, accessTokenSecret, url, title = null, selection = null) => {
-    try {
-        const response = await apiClient.post('/article/instapaper/save', {
-            accessToken,
-            accessTokenSecret,
-            url,
-            title,
-            selection
-        });
-        return response.data;
-    } catch (error) {
-        console.error('Error saving to Instapaper:', error);
-        throw error;
-    }
-};
-
-// ============================================
 // Article Deduplication API Methods
 // ============================================
 

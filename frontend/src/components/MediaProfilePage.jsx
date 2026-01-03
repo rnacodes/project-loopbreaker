@@ -202,9 +202,7 @@ function MediaProfilePage() {
           estimatedReadingTimeMinutes: detailedMedia.estimatedReadingTimeMinutes,
           wordCount: detailedMedia.wordCount,
           isStarred: detailedMedia.isStarred,
-          savedToInstapaperDate: detailedMedia.savedToInstapaperDate,
-          progressTimestamp: detailedMedia.progressTimestamp,
-          instapaperBookmarkId: detailedMedia.instapaperBookmarkId
+          progressTimestamp: detailedMedia.progressTimestamp
         });
 
         const mixlistIds = detailedMedia.mixlistIds || [];

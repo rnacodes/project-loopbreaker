@@ -301,7 +301,6 @@ builder.Services.AddScoped<IYouTubeChannelService, YouTubeChannelService>();
 builder.Services.AddScoped<IYouTubePlaylistService, YouTubePlaylistService>();
 builder.Services.AddScoped<ITmdbService, TmdbService>();
 builder.Services.AddScoped<IListenNotesService, ListenNotesService>();
-builder.Services.AddScoped<IInstapaperService, InstapaperService>();
 builder.Services.AddScoped<IArticleService, ArticleService>();
 builder.Services.AddScoped<IArticleMappingService, ArticleMappingService>();
 builder.Services.AddScoped<IArticleDeduplicationService, ArticleDeduplicationService>();
@@ -346,13 +345,6 @@ builder.Services.AddHttpClient<IListenNotesApiClient, ListenNotesApiClient>(clie
     {
         client.DefaultRequestHeaders.Add("X-ListenAPI-Key", apiKey);
     }
-});
-
-// Configure Instapaper API client
-builder.Services.AddHttpClient<IInstapaperApiClient, InstapaperApiClient>(client =>
-{
-    client.BaseAddress = new Uri("https://www.instapaper.com/api/1/");
-    client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
 });
 
 // Configure Readwise API client
@@ -435,9 +427,6 @@ builder.Services.AddHttpClient<TmdbApiClient>(client =>
     }
 });
 builder.Services.AddScoped<ITmdbApiClient>(provider => provider.GetRequiredService<TmdbApiClient>());
-
-// Instapaper API client already configured above (line 268)
-
 
 // Configure DigitalOcean Spaces S3 Client (optional - won't break app if not configured)
 builder.Services.AddSingleton<IAmazonS3>(sp =>

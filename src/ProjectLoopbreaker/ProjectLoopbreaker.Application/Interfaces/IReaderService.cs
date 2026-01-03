@@ -15,9 +15,12 @@ namespace ProjectLoopbreaker.Application.Interfaces
         Task<bool> FetchAndStoreArticleContentAsync(Guid articleId);
         
         /// <summary>
-        /// Bulk fetch content for articles missing ContentStoragePath
+        /// Bulk fetch content for archived articles missing FullTextContent.
+        /// Only fetches Completed (archived) articles for archival purposes.
         /// </summary>
-        Task<int> BulkFetchArticleContentsAsync(int batchSize = 50);
+        /// <param name="batchSize">Number of articles to fetch</param>
+        /// <param name="updatedAfter">Only fetch articles synced after this date (for 7-day incremental)</param>
+        Task<int> BulkFetchArticleContentsAsync(int batchSize = 50, DateTime? updatedAfter = null);
     }
 }
 

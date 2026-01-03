@@ -12,7 +12,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         private readonly IArticleService _articleService;
         private readonly IArticleMappingService _articleMappingService;
         private readonly IReaderService? _readerService;
-        private readonly IInstapaperService? _instapaperService;
         private readonly IArticleDeduplicationService? _deduplicationService;
         private readonly ILogger<ArticleController> _logger;
 
@@ -21,14 +20,12 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             IArticleMappingService articleMappingService,
             ILogger<ArticleController> logger,
             IReaderService? readerService = null,
-            IInstapaperService? instapaperService = null,
             IArticleDeduplicationService? deduplicationService = null)
         {
             _articleService = articleService;
             _articleMappingService = articleMappingService;
             _logger = logger;
             _readerService = readerService;
-            _instapaperService = instapaperService;
             _deduplicationService = deduplicationService;
         }
 
@@ -241,23 +238,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        // POST: api/article/sync
-        [HttpPost("sync")]
-        public async Task<ActionResult<ArticleSyncResultDto>> SyncArticlesFromInstapaper()
-        {
-            try
-            {
-                _logger.LogInformation("Starting article sync from Instapaper");
-                var result = await _articleService.SyncArticlesFromInstapaperAsync();
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while syncing articles from Instapaper");
-                return StatusCode(500, new { error = "Failed to sync articles from Instapaper", details = ex.Message });
-            }
-        }
-
         // PUT: api/article/{id}/sync-status
         [HttpPut("{id}/sync-status")]
         public async Task<IActionResult> UpdateArticleSyncStatus(Guid id, [FromBody] ArticleSyncStatusUpdateDto dto)
@@ -269,7 +249,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return BadRequest("Sync status data is required");
                 }
 
-                var article = await _articleService.UpdateArticleSyncStatusAsync(id, dto.IsArchived, dto.IsStarred, dto.Hash);
+                var article = await _articleService.UpdateArticleSyncStatusAsync(id, dto.IsArchived, dto.IsStarred);
                 var response = await _articleMappingService.MapToResponseDtoAsync(article);
 
                 return Ok(response);
@@ -359,188 +339,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        // POST: api/article/instapaper/authenticate
-        [HttpPost("instapaper/authenticate")]
-        public async Task<IActionResult> AuthenticateInstapaper([FromBody] InstapaperAuthRequestDto request)
-        {
-            try
-            {
-                if (_instapaperService == null)
-                {
-                    return StatusCode(500, new { error = "Instapaper service not configured. Please configure Instapaper API credentials in appsettings." });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.Username))
-                {
-                    return BadRequest(new { error = "Username is required" });
-                }
-
-                _logger.LogInformation("Attempting to authenticate Instapaper user: {Username}", request.Username);
-                
-                var (user, accessToken, accessTokenSecret) = await _instapaperService.AuthenticateAsync(
-                    request.Username, 
-                    request.Password ?? string.Empty);
-
-                return Ok(new
-                {
-                    success = true,
-                    message = "Authentication successful",
-                    accessToken,
-                    accessTokenSecret,
-                    user = new
-                    {
-                        userId = user.UserId,
-                        username = user.Username,
-                        hasActiveSubscription = user.HasActiveSubscription
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error authenticating with Instapaper for user: {Username}", request.Username);
-                return StatusCode(500, new { 
-                    success = false,
-                    message = "Failed to authenticate with Instapaper. Please check your credentials and ensure the backend has valid Instapaper API keys configured.",
-                    error = ex.Message 
-                });
-            }
-        }
-
-        // POST: api/article/instapaper/import
-        [HttpPost("instapaper/import")]
-        public async Task<IActionResult> ImportFromInstapaper([FromBody] InstapaperImportRequestDto request)
-        {
-            try
-            {
-                if (_instapaperService == null)
-                {
-                    return StatusCode(500, new { error = "Instapaper service not configured" });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.AccessToken) || string.IsNullOrWhiteSpace(request.AccessTokenSecret))
-                {
-                    return BadRequest(new { error = "Access token and secret are required" });
-                }
-
-                _logger.LogInformation("Importing {Limit} bookmarks from Instapaper folder: {FolderId}", 
-                    request.Limit, request.FolderId);
-
-                var articles = await _instapaperService.ImportBookmarksAsync(
-                    request.AccessToken,
-                    request.AccessTokenSecret,
-                    request.Limit,
-                    request.FolderId ?? "unread");
-
-                var responseDtos = await _articleMappingService.MapToResponseDtoAsync(articles);
-
-                return Ok(new
-                {
-                    success = true,
-                    message = $"Successfully imported {articles.Count()} articles from Instapaper",
-                    count = articles.Count(),
-                    articles = responseDtos
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error importing from Instapaper");
-                return StatusCode(500, new { 
-                    success = false,
-                    error = "Failed to import from Instapaper", 
-                    details = ex.Message 
-                });
-            }
-        }
-
-        // POST: api/article/instapaper/sync
-        [HttpPost("instapaper/sync")]
-        public async Task<IActionResult> SyncWithInstapaper([FromBody] InstapaperSyncRequestDto request)
-        {
-            try
-            {
-                if (_instapaperService == null)
-                {
-                    return StatusCode(500, new { error = "Instapaper service not configured" });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.AccessToken) || string.IsNullOrWhiteSpace(request.AccessTokenSecret))
-                {
-                    return BadRequest(new { error = "Access token and secret are required" });
-                }
-
-                _logger.LogInformation("Syncing existing articles with Instapaper");
-
-                var updatedCount = await _instapaperService.SyncExistingArticlesAsync(
-                    request.AccessToken,
-                    request.AccessTokenSecret);
-
-                return Ok(new
-                {
-                    success = true,
-                    message = $"Successfully synced {updatedCount} articles with Instapaper",
-                    updatedCount
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error syncing with Instapaper");
-                return StatusCode(500, new { 
-                    success = false,
-                    error = "Failed to sync with Instapaper", 
-                    details = ex.Message 
-                });
-            }
-        }
-
-        // POST: api/article/instapaper/save
-        [HttpPost("instapaper/save")]
-        public async Task<IActionResult> SaveToInstapaper([FromBody] InstapaperSaveRequestDto request)
-        {
-            try
-            {
-                if (_instapaperService == null)
-                {
-                    return StatusCode(500, new { error = "Instapaper service not configured" });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.AccessToken) || string.IsNullOrWhiteSpace(request.AccessTokenSecret))
-                {
-                    return BadRequest(new { error = "Access token and secret are required" });
-                }
-
-                if (string.IsNullOrWhiteSpace(request.Url))
-                {
-                    return BadRequest(new { error = "URL is required" });
-                }
-
-                _logger.LogInformation("Saving URL to Instapaper: {Url}", request.Url);
-
-                var article = await _instapaperService.SaveToInstapaperAsync(
-                    request.AccessToken,
-                    request.AccessTokenSecret,
-                    request.Url,
-                    request.Title,
-                    request.Selection);
-
-                var responseDto = await _articleMappingService.MapToResponseDtoAsync(article);
-
-                return CreatedAtAction(nameof(GetArticle), new { id = article.Id }, new
-                {
-                    success = true,
-                    message = "Article saved to Instapaper successfully",
-                    article = responseDto
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error saving to Instapaper");
-                return StatusCode(500, new { 
-                    success = false,
-                    error = "Failed to save to Instapaper", 
-                    details = ex.Message 
-                });
-            }
-        }
     }
 
     // Helper DTOs for specific endpoints
@@ -553,36 +351,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     {
         public bool IsArchived { get; set; }
         public bool IsStarred { get; set; }
-        public string? Hash { get; set; }
-    }
-
-    public class InstapaperAuthRequestDto
-    {
-        public required string Username { get; set; }
-        public string? Password { get; set; }
-    }
-
-    public class InstapaperImportRequestDto
-    {
-        public required string AccessToken { get; set; }
-        public required string AccessTokenSecret { get; set; }
-        public int Limit { get; set; } = 50;
-        public string? FolderId { get; set; } = "unread";
-    }
-
-    public class InstapaperSyncRequestDto
-    {
-        public required string AccessToken { get; set; }
-        public required string AccessTokenSecret { get; set; }
-    }
-
-    public class InstapaperSaveRequestDto
-    {
-        public required string AccessToken { get; set; }
-        public required string AccessTokenSecret { get; set; }
-        public required string Url { get; set; }
-        public string? Title { get; set; }
-        public string? Selection { get; set; }
     }
     
     // Deduplication endpoints added at the end of ArticleController

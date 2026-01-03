@@ -13,26 +13,20 @@ namespace ProjectLoopbreaker.Domain.Enums
         /// Article was created locally, not synced from any external service
         /// </summary>
         LocalOnly = 0,
-        
-        /// <summary>
-        /// Article has been synced with Instapaper
-        /// </summary>
-        InstapaperSynced = 1,
-        
+
         /// <summary>
         /// Article has been synced with Readwise (highlights only)
         /// </summary>
         ReadwiseSynced = 2,
-        
+
         /// <summary>
         /// Article has been synced with Readwise Reader (document metadata and content)
         /// </summary>
         ReaderSynced = 4,
-        
+
         /// <summary>
         /// Article is fully synced across all available services
         /// </summary>
-        FullySynced = InstapaperSynced | ReadwiseSynced | ReaderSynced
+        FullySynced = ReadwiseSynced | ReaderSynced
     }
 }
-

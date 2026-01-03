@@ -120,7 +120,6 @@ const ResponsiveNavigation = () => {
 
   const adminMenuItems = [
     { text: 'Cleanup', path: '/cleanup', icon: <CleaningServices />, requiresAuth: true },
-    { text: 'Instapaper Import', path: '/instapaper/import', icon: <ImportExport />, requiresAuth: true },
     { text: 'Readwise Sync', path: '/readwise-sync', icon: <Sync />, requiresAuth: true },
     { text: 'Sources', path: '/sources', icon: <Apps />, requiresAuth: true },
     { text: 'Typesense Admin', path: '/typesense-admin', icon: <StorageIcon />, requiresAuth: true }

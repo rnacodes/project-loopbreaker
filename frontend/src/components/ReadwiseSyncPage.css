@@ -235,6 +235,70 @@
   font-weight: 600;
 }
 
+/* Status Mapping Info */
+.status-mapping-info {
+  background: rgba(54, 39, 89, 0.3);
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  color: #fcfafa;
+}
+
+.status-mapping-info strong {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.status-mapping-info ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.status-mapping-info li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.status-badge.uncharted {
+  background-color: rgba(255, 193, 7, 0.3);
+  color: #ffc107;
+  border: 1px solid #ffc107;
+}
+
+.status-badge.completed {
+  background-color: rgba(76, 175, 80, 0.3);
+  color: #4caf50;
+  border: 1px solid #4caf50;
+}
+
+/* Info Notes */
+.info-note {
+  background: rgba(54, 39, 89, 0.2);
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #fcfafa;
+  opacity: 0.9;
+}
+
+.info-note.warning {
+  background: rgba(255, 152, 0, 0.15);
+  border-left: 3px solid #ff9800;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .readwise-sync-page {

@@ -494,35 +494,28 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             // Configure Article specific properties
             modelBuilder.Entity<Article>(entity =>
             {
-                entity.Property(e => e.InstapaperBookmarkId)
-                    .HasMaxLength(100);
-                    
                 entity.Property(e => e.ContentStoragePath)
                     .HasMaxLength(500);
-                    
-                entity.Property(e => e.InstapaperHash)
-                    .HasMaxLength(100);
-                    
+
                 entity.Property(e => e.Author)
                     .HasMaxLength(200);
-                    
+
                 entity.Property(e => e.Publication)
                     .HasMaxLength(200);
-                    
+
                 entity.Property(e => e.IsStarred)
                     .HasDefaultValue(false);
-                    
+
                 entity.Property(e => e.IsArchived)
                     .HasDefaultValue(false);
-                    
+
                 entity.Property(e => e.ReadwiseDocumentId)
                     .HasMaxLength(100);
-                    
+
                 entity.Property(e => e.ReaderLocation)
                     .HasMaxLength(50);
-                    
+
                 // Create indexes for better query performance
-                entity.HasIndex(e => e.InstapaperBookmarkId);
                 entity.HasIndex(e => e.ReadwiseDocumentId);
                 entity.HasIndex(e => e.Author);
                 entity.HasIndex(e => e.Publication);

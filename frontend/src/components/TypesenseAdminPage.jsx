@@ -203,7 +203,7 @@ const TypesenseAdminPage = () => {
   };
 
   const handleDeduplicate = async () => {
-    if (!window.confirm('⚠️ This will merge duplicate articles based on normalized URLs. Articles from Instapaper and Readwise Reader with the same URL will be combined. Continue?')) {
+    if (!window.confirm('⚠️ This will merge duplicate articles based on normalized URLs. Articles with the same URL will be combined into a single entry. Continue?')) {
       return;
     }
 
@@ -492,7 +492,7 @@ const TypesenseAdminPage = () => {
         </Typography>
         
         <Alert severity="info" icon={<InfoIcon />} sx={{ mb: 2 }}>
-          Find and merge duplicate articles from Instapaper and Readwise Reader. Articles with the same normalized URL will be combined into a single article, preserving all metadata from both sources.
+          Find and merge duplicate articles. Articles with the same normalized URL will be combined into a single article, preserving all metadata.
         </Alert>
 
         <Grid container spacing={2}>

@@ -129,17 +129,28 @@ namespace ProjectLoopbreaker.Application.Services
             }
         }
 
-        public async Task<int> BulkFetchArticleContentsAsync(int batchSize = 50)
+        public async Task<int> BulkFetchArticleContentsAsync(int batchSize = 50, DateTime? updatedAfter = null)
         {
             try
             {
-                // Get articles with Reader document ID but no content
-                var articles = await _context.Articles
-                    .Where(a => a.ReadwiseDocumentId != null && a.FullTextContent == null)
+                // Get archived articles with Reader document ID but no content
+                // Only fetch content for Completed (archived) articles - for archival purposes
+                var baseQuery = _context.Articles
+                    .Where(a => a.ReadwiseDocumentId != null
+                             && a.FullTextContent == null
+                             && a.Status == Status.Completed);  // Only archived articles
+
+                if (updatedAfter.HasValue)
+                {
+                    baseQuery = baseQuery.Where(a => a.LastReaderSync >= updatedAfter.Value);
+                }
+
+                var articles = await baseQuery
+                    .OrderBy(a => a.DateAdded)  // Consistent ordering for pagination
                     .Take(batchSize)
                     .ToListAsync();
 
-                _logger.LogInformation("Starting bulk content fetch for {Count} articles", articles.Count);
+                _logger.LogInformation("Starting bulk content fetch for {Count} archived articles", articles.Count);
 
                 var successCount = 0;
 
@@ -180,6 +191,13 @@ namespace ProjectLoopbreaker.Application.Services
                     a.ReadwiseDocumentId == dto.id ||
                     (a.Link != null && EF.Functions.ILike(a.Link, normalizedUrl)));
 
+            // Map ReaderLocation to Status - Readwise is source of truth
+            var newStatus = dto.location.ToLowerInvariant() switch
+            {
+                "archive" => Status.Completed,
+                _ => Status.Uncharted  // new, later, feed all map to Uncharted
+            };
+
             if (existing != null)
             {
                 // Update existing article with Reader data
@@ -187,11 +205,14 @@ namespace ProjectLoopbreaker.Application.Services
                 existing.ReaderLocation = dto.location.ToLowerInvariant();
                 existing.IsArchived = dto.location.Equals("archive", StringComparison.OrdinalIgnoreCase);
                 existing.IsStarred = dto.favorite ?? false;
-                existing.ReadingProgress = dto.reading_progress.HasValue 
-                    ? (int)(dto.reading_progress.Value * 100) 
+                existing.ReadingProgress = dto.reading_progress.HasValue
+                    ? (int)(dto.reading_progress.Value * 100)
                     : null;
                 existing.LastReaderSync = DateTime.UtcNow;
-                
+
+                // Readwise is source of truth for status
+                existing.Status = newStatus;
+
                 // Mark as synced with Reader
                 existing.SyncStatus |= SyncStatus.ReaderSynced;
 
@@ -240,13 +261,13 @@ namespace ProjectLoopbreaker.Application.Services
                     ReadingProgress = dto.reading_progress.HasValue 
                         ? (int)(dto.reading_progress.Value * 100) 
                         : null,
-                    PublicationDate = !string.IsNullOrEmpty(dto.published_date) 
-                        ? DateTime.Parse(dto.published_date) 
+                    PublicationDate = !string.IsNullOrEmpty(dto.published_date)
+                        ? DateTime.Parse(dto.published_date)
                         : null,
                     LastReaderSync = DateTime.UtcNow,
                     DateAdded = DateTime.UtcNow,
                     MediaType = Domain.Entities.MediaType.Article,
-                    Status = Domain.Entities.Status.Uncharted,
+                    Status = newStatus,  // Map ReaderLocation to Status
                     SyncStatus = SyncStatus.ReaderSynced  // Mark as synced from Reader
                 };
 

@@ -39,7 +39,6 @@ namespace ProjectLoopbreaker.Application.Services
                     a.Title,
                     a.Link,
                     a.DateAdded,
-                    a.InstapaperBookmarkId,
                     a.ReadwiseDocumentId,
                     a.FullTextContent
                 })
@@ -57,7 +56,6 @@ namespace ProjectLoopbreaker.Application.Services
                         Title = a.Title,
                         Link = a.Link,
                         DateAdded = a.DateAdded,
-                        HasInstapaperData = !string.IsNullOrEmpty(a.InstapaperBookmarkId),
                         HasReaderData = !string.IsNullOrEmpty(a.ReadwiseDocumentId),
                         HasContent = !string.IsNullOrEmpty(a.FullTextContent)
                     }).ToList()
@@ -205,19 +203,6 @@ namespace ProjectLoopbreaker.Application.Services
                 _logger.LogInformation("Merging article {DuplicateId} into {PrimaryId}",
                     duplicate.Id, primary.Id);
 
-                // Merge Instapaper data if primary doesn't have it
-                if (string.IsNullOrEmpty(primary.InstapaperBookmarkId) &&
-                    !string.IsNullOrEmpty(duplicate.InstapaperBookmarkId))
-                {
-                    primary.InstapaperBookmarkId = duplicate.InstapaperBookmarkId;
-                    primary.InstapaperHash = duplicate.InstapaperHash;
-                    primary.SavedToInstapaperDate = duplicate.SavedToInstapaperDate;
-                    primary.IsArchived = duplicate.IsArchived;
-                    primary.IsStarred = duplicate.IsStarred;
-                    primary.LastSyncDate = duplicate.LastSyncDate;
-                    primary.SyncStatus |= SyncStatus.InstapaperSynced;
-                }
-
                 // Merge Readwise Reader data if primary doesn't have it
                 if (string.IsNullOrEmpty(primary.ReadwiseDocumentId) &&
                     !string.IsNullOrEmpty(duplicate.ReadwiseDocumentId))
@@ -225,6 +210,9 @@ namespace ProjectLoopbreaker.Application.Services
                     primary.ReadwiseDocumentId = duplicate.ReadwiseDocumentId;
                     primary.ReaderLocation = duplicate.ReaderLocation;
                     primary.LastReaderSync = duplicate.LastReaderSync;
+                    primary.IsArchived = duplicate.IsArchived;
+                    primary.IsStarred = duplicate.IsStarred;
+                    primary.LastSyncDate = duplicate.LastSyncDate;
                     primary.SyncStatus |= SyncStatus.ReaderSynced;
                 }
 
@@ -283,6 +271,8 @@ namespace ProjectLoopbreaker.Application.Services
                 _logger.LogInformation("Successfully merged article {DuplicateId} into {PrimaryId}",
                     duplicate.Id, primary.Id);
             }
+
+            await Task.CompletedTask;
         }
 
         /// <summary>
@@ -300,9 +290,8 @@ namespace ProjectLoopbreaker.Application.Services
             {
                 return duplicate;
             }
-            
+
             return primary;
         }
     }
 }
-

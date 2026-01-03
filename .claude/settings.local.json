@@ -4,7 +4,15 @@
       "Bash(cat:*)",
       "mcp__ide__getDiagnostics",
       "Bash(powershell -Command \"Get-ChildItem ''C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\frontend\\\\src\\\\api'' | Select-Object Name\")",
-      "Bash(npm run lint:*)"
+      "Bash(npm run lint:*)",
+      "Bash(findstr:*)",
+      "Bash(dotnet build:*)",
+      "WebFetch(domain:readwise.io)",
+      "Bash(powershell -Command:*)",
+      "Bash(Select-Object -First 50)",
+      "Bash(del \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\frontend\\\\src\\\\components\\\\InstapaperAuthPage.jsx\")",
+      "Bash(del \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\frontend\\\\src\\\\components\\\\ImportMedia\\\\InstapaperImportSection.jsx\")",
+      "Bash(git -C \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\" status)"
     ]
   }
 }

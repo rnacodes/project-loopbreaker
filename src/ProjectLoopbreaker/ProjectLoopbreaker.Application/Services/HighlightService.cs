@@ -141,6 +141,22 @@ namespace ProjectLoopbreaker.Application.Services
 
         public async Task<HighlightSyncResultDto> SyncHighlightsFromReadwiseAsync()
         {
+            return await SyncHighlightsUsingExportAsync(null);
+        }
+
+        public async Task<HighlightSyncResultDto> SyncHighlightsIncrementalAsync(DateTime lastSyncDate)
+        {
+            var updatedAfter = lastSyncDate.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            return await SyncHighlightsUsingExportAsync(updatedAfter);
+        }
+
+        /// <summary>
+        /// Uses the /export/ endpoint which returns books with nested highlights.
+        /// This is more efficient than fetching highlights and books separately.
+        /// Also auto-links highlights to articles during import.
+        /// </summary>
+        private async Task<HighlightSyncResultDto> SyncHighlightsUsingExportAsync(string? updatedAfter)
+        {
             var result = new HighlightSyncResultDto
             {
                 StartedAt = DateTime.UtcNow
@@ -148,49 +164,45 @@ namespace ProjectLoopbreaker.Application.Services
 
             try
             {
-                _logger.LogInformation("Starting full highlight sync from Readwise");
+                _logger.LogInformation("Starting highlight sync from Readwise using export endpoint (updatedAfter: {UpdatedAfter})",
+                    updatedAfter ?? "full sync");
 
-                var page = 1;
+                string? pageCursor = null;
                 var hasMore = true;
-                var processedHighlights = new List<int>();
+                var iteration = 0;
 
-                while (hasMore)
+                while (hasMore && iteration < 100) // Safety limit
                 {
-                    _logger.LogInformation("Fetching highlights page {Page}", page);
+                    _logger.LogInformation("Fetching export page {Iteration}", iteration + 1);
 
-                    var response = await _readwiseClient.GetHighlightsAsync(page: page);
-                    
+                    var response = await _readwiseClient.GetExportAsync(
+                        updatedAfter: updatedAfter,
+                        pageCursor: pageCursor);
+
                     if (response.results.Count == 0)
                     {
-                        hasMore = false;
                         break;
                     }
 
-                    foreach (var highlightDto in response.results)
+                    // Process each book with its nested highlights
+                    foreach (var bookDto in response.results)
                     {
-                        await ProcessHighlightDto(highlightDto, result);
-                        processedHighlights.Add(highlightDto.id);
+                        await ProcessExportBookWithHighlightsAsync(bookDto, result);
                     }
 
-                    hasMore = !string.IsNullOrEmpty(response.next);
-                    page++;
+                    hasMore = !string.IsNullOrEmpty(response.nextPageCursor);
+                    pageCursor = response.nextPageCursor;
+                    iteration++;
 
-                    // Safety check to prevent infinite loops
-                    if (page > 1000)
-                    {
-                        _logger.LogWarning("Stopped sync after 1000 pages");
-                        break;
-                    }
-
-                    // Small delay to respect rate limits
-                    await Task.Delay(250);
+                    // Small delay to respect rate limits (20 req/min for list endpoints)
+                    await Task.Delay(3000);
                 }
 
                 result.CompletedAt = DateTime.UtcNow;
                 result.Success = true;
 
-                _logger.LogInformation("Completed highlight sync. Created: {Created}, Updated: {Updated}, Total: {Total}",
-                    result.CreatedCount, result.UpdatedCount, result.TotalProcessed);
+                _logger.LogInformation("Completed highlight sync. Created: {Created}, Updated: {Updated}, Linked: {Linked}",
+                    result.CreatedCount, result.UpdatedCount, result.LinkedCount);
             }
             catch (Exception ex)
             {
@@ -203,116 +215,102 @@ namespace ProjectLoopbreaker.Application.Services
             return result;
         }
 
-        public async Task<HighlightSyncResultDto> SyncHighlightsIncrementalAsync(DateTime lastSyncDate)
-        {
-            var result = new HighlightSyncResultDto
-            {
-                StartedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var updatedAfter = lastSyncDate.ToString("yyyy-MM-ddTHH:mm:ssZ");
-                _logger.LogInformation("Starting incremental highlight sync from Readwise (after {Date})", updatedAfter);
-
-                var page = 1;
-                var hasMore = true;
-
-                while (hasMore)
-                {
-                    var response = await _readwiseClient.GetHighlightsAsync(
-                        updatedAfter: updatedAfter,
-                        page: page);
-                    
-                    if (response.results.Count == 0)
-                    {
-                        hasMore = false;
-                        break;
-                    }
-
-                    foreach (var highlightDto in response.results)
-                    {
-                        await ProcessHighlightDto(highlightDto, result);
-                    }
-
-                    hasMore = !string.IsNullOrEmpty(response.next);
-                    page++;
-
-                    // Small delay to respect rate limits
-                    await Task.Delay(250);
-                }
-
-                result.CompletedAt = DateTime.UtcNow;
-                result.Success = true;
-
-                _logger.LogInformation("Completed incremental sync. Created: {Created}, Updated: {Updated}",
-                    result.CreatedCount, result.UpdatedCount);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in incremental highlight sync");
-                result.Success = false;
-                result.ErrorMessage = ex.Message;
-                result.CompletedAt = DateTime.UtcNow;
-            }
-
-            return result;
-        }
-
-        private async Task ProcessHighlightDto(
-            ProjectLoopbreaker.Shared.DTOs.Readwise.ReadwiseHighlightDto dto,
+        /// <summary>
+        /// Process a book with nested highlights from the export endpoint.
+        /// Book data is already included, no separate API call needed.
+        /// </summary>
+        private async Task ProcessExportBookWithHighlightsAsync(
+            Shared.DTOs.Readwise.ReadwiseExportBookDto bookDto,
             HighlightSyncResultDto result)
         {
-            // Check if highlight already exists by ReadwiseId
-            var existing = await _context.Highlights
-                .FirstOrDefaultAsync(h => h.ReadwiseId == dto.id);
+            foreach (var highlightDto in bookDto.highlights)
+            {
+                // Check if highlight already exists by ReadwiseId
+                var existing = await _context.Highlights
+                    .FirstOrDefaultAsync(h => h.ReadwiseId == highlightDto.id);
 
-            if (existing != null)
-            {
-                // Update existing highlight
-                existing.Text = dto.text;
-                existing.Note = dto.note;
-                existing.Location = dto.location;
-                existing.LocationType = dto.location_type;
-                existing.Color = dto.color;
-                existing.IsFavorite = dto.is_favorite;
-                existing.Tags = dto.tags != null ? string.Join(",", dto.tags.Select(t => t.ToLowerInvariant())) : null;
-                existing.UpdatedAt = DateTime.UtcNow;
-                
-                result.UpdatedCount++;
-            }
-            else
-            {
-                // Fetch book details to get title, author, etc.
-                var book = await _readwiseClient.GetBookByIdAsync(dto.book_id);
-                
-                var highlight = new Highlight
+                if (existing != null)
                 {
-                    Id = Guid.NewGuid(),
-                    ReadwiseId = dto.id,
-                    Text = dto.text,
-                    Note = dto.note,
-                    Title = book?.title,
-                    Author = book?.author,
-                    Category = book?.category?.ToLowerInvariant(),
-                    SourceUrl = book?.source_url,
-                    ImageUrl = book?.cover_image_url,
-                    HighlightUrl = dto.url,
-                    Location = dto.location,
-                    LocationType = dto.location_type,
-                    HighlightedAt = !string.IsNullOrEmpty(dto.highlighted_at) 
-                        ? DateTime.Parse(dto.highlighted_at) 
-                        : null,
-                    ReadwiseBookId = dto.book_id,
-                    Tags = dto.tags != null ? string.Join(",", dto.tags.Select(t => t.ToLowerInvariant())) : null,
-                    Color = dto.color,
-                    IsFavorite = dto.is_favorite,
-                    SourceType = book?.source,
-                    CreatedAt = DateTime.UtcNow
-                };
+                    // Update existing highlight
+                    existing.Text = highlightDto.text;
+                    existing.Note = highlightDto.note;
+                    existing.Location = highlightDto.location;
+                    existing.LocationType = highlightDto.location_type;
+                    existing.Color = highlightDto.color;
+                    existing.IsFavorite = highlightDto.is_favorite;
+                    existing.Tags = highlightDto.tags != null
+                        ? string.Join(",", highlightDto.tags.Select(t => t.name.ToLowerInvariant()))
+                        : null;
+                    existing.UpdatedAt = DateTime.UtcNow;
 
-                _context.Add(highlight);
-                result.CreatedCount++;
+                    result.UpdatedCount++;
+                }
+                else
+                {
+                    // Create new highlight with book data already available (no extra API call)
+                    var highlight = new Highlight
+                    {
+                        Id = Guid.NewGuid(),
+                        ReadwiseId = highlightDto.id,
+                        Text = highlightDto.text,
+                        Note = highlightDto.note,
+                        Title = bookDto.title,
+                        Author = bookDto.author,
+                        Category = bookDto.category?.ToLowerInvariant(),
+                        SourceUrl = bookDto.source_url,
+                        ImageUrl = bookDto.cover_image_url,
+                        HighlightUrl = highlightDto.url,
+                        Location = highlightDto.location,
+                        LocationType = highlightDto.location_type,
+                        HighlightedAt = !string.IsNullOrEmpty(highlightDto.highlighted_at)
+                            ? DateTime.Parse(highlightDto.highlighted_at)
+                            : null,
+                        ReadwiseBookId = bookDto.user_book_id,
+                        Tags = highlightDto.tags != null
+                            ? string.Join(",", highlightDto.tags.Select(t => t.name.ToLowerInvariant()))
+                            : null,
+                        Color = highlightDto.color,
+                        IsFavorite = highlightDto.is_favorite,
+                        SourceType = bookDto.source,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    // Auto-link to article by source URL
+                    if (!string.IsNullOrEmpty(bookDto.source_url))
+                    {
+                        var article = await _context.Articles
+                            .FirstOrDefaultAsync(a => a.Link == bookDto.source_url);
+                        if (article != null)
+                        {
+                            highlight.ArticleId = article.Id;
+                            result.LinkedCount++;
+                            _logger.LogDebug("Auto-linked highlight {HighlightId} to article {ArticleId}",
+                                highlight.Id, article.Id);
+                        }
+                    }
+
+                    // Auto-link to book by title and author if category is "books"
+                    if (highlight.ArticleId == null &&
+                        bookDto.category?.ToLowerInvariant() == "books" &&
+                        !string.IsNullOrEmpty(bookDto.title) &&
+                        !string.IsNullOrEmpty(bookDto.author))
+                    {
+                        var book = await _context.Books
+                            .FirstOrDefaultAsync(b =>
+                                b.Title.ToLower() == bookDto.title.ToLower() &&
+                                b.Author != null && b.Author.ToLower() == bookDto.author.ToLower());
+                        if (book != null)
+                        {
+                            highlight.BookId = book.Id;
+                            result.LinkedCount++;
+                            _logger.LogDebug("Auto-linked highlight {HighlightId} to book {BookId}",
+                                highlight.Id, book.Id);
+                        }
+                    }
+
+                    _context.Add(highlight);
+                    result.CreatedCount++;
+                }
             }
 
             await _context.SaveChangesAsync();

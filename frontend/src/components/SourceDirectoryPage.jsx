@@ -95,21 +95,21 @@ function SourceDirectoryPage() {
             ]
         },
         {
-            id: 'instapaper',
-            name: 'Articles',
-            provider: 'Instapaper',
-            providerUrl: 'https://www.instapaper.com',
+            id: 'readwise',
+            name: 'Articles & Highlights',
+            provider: 'Readwise',
+            providerUrl: 'https://readwise.io',
             icon: <Article sx={{ fontSize: 48 }} />,
-            description: 'Connect your Instapaper account to import saved articles with reading progress and metadata.',
-            color: '#428BCA',
+            description: 'Sync articles from Readwise Reader and highlights from Readwise to your library.',
+            color: '#D6A84E',
             available: true,
             connected: false,
-            action: () => navigate('/instapaper/auth'),
+            action: () => navigate('/readwise-sync'),
             features: [
-                'Import from folders',
-                'Preserve reading progress',
-                'Article metadata',
-                'Automatic sync'
+                'Sync from Readwise Reader',
+                'Import highlights',
+                'Status mapping (New/Archive)',
+                'Full content archival'
             ]
         }
     ];
