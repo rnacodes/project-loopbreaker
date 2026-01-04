@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Infrastructure.Data;
+using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.DTOs;
 using System.Globalization;
 using CsvHelper;
 using CsvHelper.Configuration;
@@ -21,17 +23,20 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         private readonly ILogger<UploadController> _logger;
         private readonly IAmazonS3? _s3Client;
         private readonly IConfiguration _configuration;
+        private readonly IGoodreadsImportService _goodreadsImportService;
 
         public UploadController(
             MediaLibraryDbContext context,
             ILogger<UploadController> logger,
             IAmazonS3? s3Client,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IGoodreadsImportService goodreadsImportService)
         {
             _context = context;
             _logger = logger;
             _s3Client = s3Client;
             _configuration = configuration;
+            _goodreadsImportService = goodreadsImportService;
         }
 
         // POST: api/upload/thumbnail-from-url
@@ -549,7 +554,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
                 _logger.LogInformation("CSV upload completed: {SuccessCount} successful, {ErrorCount} errors", successCount, errorCount);
                 _logger.LogInformation("Response result: {@Result}", result);
-                
+
                 return Ok(result);
             }
             catch (Exception ex)
@@ -559,7 +564,58 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Import books from a Goodreads CSV export file
+        /// </summary>
+        /// <param name="file">The Goodreads CSV export file</param>
+        /// <param name="updateExisting">Whether to update existing books on match (default: true)</param>
+        /// <param name="chunkIndex">Optional chunk index for chunked uploads</param>
+        /// <param name="totalChunks">Optional total chunks for chunked uploads</param>
+        /// <returns>Import result with counts and any errors</returns>
+        [HttpPost("goodreads-csv")]
+        public async Task<IActionResult> UploadGoodreadsCsv(
+            IFormFile file,
+            [FromQuery] bool updateExisting = true,
+            [FromQuery] int? chunkIndex = null,
+            [FromQuery] int? totalChunks = null)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { error = "No file uploaded" });
+                }
 
+                if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+                {
+                    return BadRequest(new { error = "File must be a CSV" });
+                }
+
+                _logger.LogInformation("Processing Goodreads CSV upload: {FileName}, updateExisting={UpdateExisting}, chunk={ChunkIndex}/{TotalChunks}",
+                    file.FileName, updateExisting, chunkIndex, totalChunks);
+
+                using var stream = file.OpenReadStream();
+                var result = await _goodreadsImportService.ImportFromCsvAsync(stream, updateExisting);
+
+                // Include chunk info in response for frontend progress tracking
+                if (chunkIndex.HasValue && totalChunks.HasValue)
+                {
+                    return Ok(new
+                    {
+                        chunkIndex = chunkIndex.Value,
+                        totalChunks = totalChunks.Value,
+                        result
+                    });
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing Goodreads CSV upload");
+                return StatusCode(500, new { error = "Failed to process Goodreads CSV upload", details = ex.Message });
+            }
+        }
 
         private async Task<Book?> ProcessBookRow(CsvReader csv)
         {

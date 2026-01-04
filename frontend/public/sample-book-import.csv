@@ -1,4 +1,0 @@
-MediaType,Title,Author,Description,Format,PartOfSeries,Status,Rating,OwnershipStatus,ISBN,ASIN,Notes,Thumbnail
-Book,The Pragmatic Programmer,"Andrew Hunt, David Thomas",Your journey to mastery,Digital,FALSE,Completed,SuperLike,Own,978-0201616224,,Excellent resource for developers,https://project-loopbreaker.atl1.cdn.digitaloceanspaces.com/thumbnails/hol-cover.jpg
-Book,Clean Code,Robert Martin,A handbook of agile software craftsmanship,Physical,FALSE,ActivelyExploring,Like,Own,978-0132350884,,Classic programming book,https://m.media-amazon.com/images/I/41bOkXnNBjL._SY445_SX342_ControlCacheEqualizer_.jpg
-Book,The Name of the Wind,Patrick Rothfuss,The first book in the Kingkiller Chronicle series,Digital,TRUE,Completed,SuperLike,,,B0010SKUYM,Amazing fantasy novel,https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1704917687i/186074.jpg

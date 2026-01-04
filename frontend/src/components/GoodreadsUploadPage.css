@@ -1,0 +1,373 @@
+.goodreads-upload-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.page-header h1 {
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.page-header .subtitle {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.upload-section {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.upload-section h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.instructions-list {
+  margin: 0;
+  padding-left: 1.5rem;
+  line-height: 1.8;
+}
+
+.instructions-list a {
+  color: #1976d2;
+  text-decoration: none;
+}
+
+.instructions-list a:hover {
+  text-decoration: underline;
+}
+
+/* File Input */
+.file-input-container {
+  margin-bottom: 1rem;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-input-label {
+  display: block;
+  padding: 1rem;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+  color: #666;
+}
+
+.file-input-label:hover {
+  border-color: #1976d2;
+  background-color: #f5f9ff;
+}
+
+/* Checkbox */
+.checkbox-container {
+  margin-bottom: 1.5rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.checkbox-label input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.checkbox-help {
+  margin: 0.5rem 0 0 1.75rem;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+/* Buttons */
+.button-group {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: #1976d2;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #1565c0;
+}
+
+.btn-secondary {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #e0e0e0;
+}
+
+/* Progress */
+.progress-container {
+  margin-top: 1rem;
+}
+
+.progress-bar {
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #1976d2;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  margin: 0.5rem 0 0;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+/* Alerts */
+.alert {
+  padding: 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.alert-error {
+  background-color: #fdecea;
+  color: #c62828;
+  border: 1px solid #ef9a9a;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  padding: 1rem;
+  background: #f5f5f5;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.stat-card.success {
+  background: #e8f5e9;
+}
+
+.stat-card.created {
+  background: #e3f2fd;
+}
+
+.stat-card.updated {
+  background: #fff3e0;
+}
+
+.stat-card.skipped {
+  background: #f3e5f5;
+}
+
+.stat-card.error {
+  background: #ffebee;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.875rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+/* Errors List */
+.errors-list {
+  background: #ffebee;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.errors-list h3 {
+  margin: 0 0 0.75rem;
+  color: #c62828;
+  font-size: 1rem;
+}
+
+.errors-list ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #b71c1c;
+}
+
+.errors-list li {
+  margin-bottom: 0.25rem;
+}
+
+.more-errors {
+  font-style: italic;
+  color: #666;
+}
+
+/* Imported Books */
+.imported-books h3 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+}
+
+.books-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.book-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f9f9f9;
+  border-radius: 6px;
+  border-left: 4px solid #1976d2;
+}
+
+.book-item.updated {
+  border-left-color: #ff9800;
+}
+
+.book-item.created {
+  border-left-color: #4caf50;
+}
+
+.book-thumbnail {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.book-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.book-title {
+  font-weight: 500;
+  color: #333;
+}
+
+.book-author {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.book-status {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.book-status.updated {
+  background: #fff3e0;
+  color: #e65100;
+}
+
+.book-status.created {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.more-books {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+  margin: 0.5rem 0 0;
+}
+
+/* Info Section */
+.info-content h3 {
+  margin: 1rem 0 0.5rem;
+  font-size: 1rem;
+  color: #333;
+}
+
+.info-content h3:first-child {
+  margin-top: 0;
+}
+
+.info-content ul {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.info-content li {
+  margin-bottom: 0.25rem;
+  color: #555;
+}
+
+.info-content p {
+  color: #555;
+  line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .goodreads-upload-page {
+    padding: 1rem;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -12,7 +12,8 @@
       "Bash(Select-Object -First 50)",
       "Bash(del \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\frontend\\\\src\\\\components\\\\InstapaperAuthPage.jsx\")",
       "Bash(del \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\frontend\\\\src\\\\components\\\\ImportMedia\\\\InstapaperImportSection.jsx\")",
-      "Bash(git -C \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\" status)"
+      "Bash(git -C \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\" status)",
+      "Bash(Select-Object -Last 100)"
     ]
   }
 }
