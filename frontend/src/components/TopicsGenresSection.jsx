@@ -1,0 +1,591 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    Box, Typography, Chip, Button, Card, CardContent, Dialog,
+    DialogTitle, DialogContent, DialogActions, TextField, InputAdornment,
+    List, ListItem, ListItemText, IconButton, CircularProgress
+} from '@mui/material';
+import {
+    Topic as TopicIcon, Category as GenreIcon, Add as AddIcon,
+    Search, Close, Remove as RemoveIcon
+} from '@mui/icons-material';
+import { getAllTopics, getAllGenres, updateMediaTopicsGenres } from '../api';
+
+function TopicsGenresSection({ mediaItem, setSnackbar, onUpdate }) {
+    const navigate = useNavigate();
+
+    // State for dialogs
+    const [addTopicDialog, setAddTopicDialog] = useState(false);
+    const [addGenreDialog, setAddGenreDialog] = useState(false);
+    const [topicSearchQuery, setTopicSearchQuery] = useState('');
+    const [genreSearchQuery, setGenreSearchQuery] = useState('');
+    const [selectedTopicId, setSelectedTopicId] = useState(null);
+    const [selectedGenreId, setSelectedGenreId] = useState(null);
+
+    // State for available topics/genres
+    const [availableTopics, setAvailableTopics] = useState([]);
+    const [availableGenres, setAvailableGenres] = useState([]);
+    const [loadingTopics, setLoadingTopics] = useState(false);
+    const [loadingGenres, setLoadingGenres] = useState(false);
+    const [saving, setSaving] = useState(false);
+
+    // Extract current topics and genres from mediaItem
+    const currentTopics = (mediaItem?.topics || mediaItem?.topicNames || []).map(t =>
+        typeof t === 'string' ? t : (t?.name || t?.Name || '')
+    ).filter(Boolean);
+
+    const currentGenres = (mediaItem?.genres || mediaItem?.genreNames || []).map(g =>
+        typeof g === 'string' ? g : (g?.name || g?.Name || '')
+    ).filter(Boolean);
+
+    // Fetch available topics when dialog opens
+    const fetchTopics = useCallback(async () => {
+        setLoadingTopics(true);
+        try {
+            const response = await getAllTopics();
+            setAvailableTopics(response.data || []);
+        } catch (error) {
+            console.error('Error fetching topics:', error);
+        } finally {
+            setLoadingTopics(false);
+        }
+    }, []);
+
+    // Fetch available genres when dialog opens
+    const fetchGenres = useCallback(async () => {
+        setLoadingGenres(true);
+        try {
+            const response = await getAllGenres();
+            setAvailableGenres(response.data || []);
+        } catch (error) {
+            console.error('Error fetching genres:', error);
+        } finally {
+            setLoadingGenres(false);
+        }
+    }, []);
+
+    // Open dialogs
+    const handleOpenTopicDialog = () => {
+        setAddTopicDialog(true);
+        fetchTopics();
+    };
+
+    const handleOpenGenreDialog = () => {
+        setAddGenreDialog(true);
+        fetchGenres();
+    };
+
+    // Close dialogs
+    const handleCloseTopicDialog = () => {
+        setAddTopicDialog(false);
+        setSelectedTopicId(null);
+        setTopicSearchQuery('');
+    };
+
+    const handleCloseGenreDialog = () => {
+        setAddGenreDialog(false);
+        setSelectedGenreId(null);
+        setGenreSearchQuery('');
+    };
+
+    // Add topic to media item
+    const handleAddTopic = async () => {
+        if (!selectedTopicId) {
+            setSnackbar?.({ open: true, message: 'Please select a topic first', severity: 'warning' });
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const selectedTopic = availableTopics.find(t => (t.id || t.Id) === selectedTopicId);
+            const topicName = selectedTopic?.name || selectedTopic?.Name;
+            const newTopics = [...currentTopics, topicName];
+
+            await updateMediaTopicsGenres(mediaItem.id, newTopics, currentGenres);
+            setSnackbar?.({ open: true, message: `Added topic "${topicName}"`, severity: 'success' });
+            handleCloseTopicDialog();
+            onUpdate?.();
+        } catch (error) {
+            console.error('Error adding topic:', error);
+            setSnackbar?.({ open: true, message: 'Failed to add topic', severity: 'error' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // Add genre to media item
+    const handleAddGenre = async () => {
+        if (!selectedGenreId) {
+            setSnackbar?.({ open: true, message: 'Please select a genre first', severity: 'warning' });
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const selectedGenre = availableGenres.find(g => (g.id || g.Id) === selectedGenreId);
+            const genreName = selectedGenre?.name || selectedGenre?.Name;
+            const newGenres = [...currentGenres, genreName];
+
+            await updateMediaTopicsGenres(mediaItem.id, currentTopics, newGenres);
+            setSnackbar?.({ open: true, message: `Added genre "${genreName}"`, severity: 'success' });
+            handleCloseGenreDialog();
+            onUpdate?.();
+        } catch (error) {
+            console.error('Error adding genre:', error);
+            setSnackbar?.({ open: true, message: 'Failed to add genre', severity: 'error' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // Remove topic from media item
+    const handleRemoveTopic = async (topicToRemove) => {
+        setSaving(true);
+        try {
+            const newTopics = currentTopics.filter(t => t !== topicToRemove);
+            await updateMediaTopicsGenres(mediaItem.id, newTopics, currentGenres);
+            setSnackbar?.({ open: true, message: `Removed topic "${topicToRemove}"`, severity: 'success' });
+            onUpdate?.();
+        } catch (error) {
+            console.error('Error removing topic:', error);
+            setSnackbar?.({ open: true, message: 'Failed to remove topic', severity: 'error' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // Remove genre from media item
+    const handleRemoveGenre = async (genreToRemove) => {
+        setSaving(true);
+        try {
+            const newGenres = currentGenres.filter(g => g !== genreToRemove);
+            await updateMediaTopicsGenres(mediaItem.id, currentTopics, newGenres);
+            setSnackbar?.({ open: true, message: `Removed genre "${genreToRemove}"`, severity: 'success' });
+            onUpdate?.();
+        } catch (error) {
+            console.error('Error removing genre:', error);
+            setSnackbar?.({ open: true, message: 'Failed to remove genre', severity: 'error' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    // Navigate to search with filter
+    const handleTopicClick = (topic) => {
+        navigate(`/search?topics=${encodeURIComponent(topic)}`);
+    };
+
+    const handleGenreClick = (genre) => {
+        navigate(`/search?genres=${encodeURIComponent(genre)}`);
+    };
+
+    // Filter available topics/genres (exclude already assigned ones)
+    const filteredAvailableTopics = availableTopics
+        .filter(topic => {
+            const topicName = (topic.name || topic.Name || '').toLowerCase();
+            return !currentTopics.some(ct => ct.toLowerCase() === topicName);
+        })
+        .filter(topic =>
+            (topic.name || topic.Name || '').toLowerCase().includes(topicSearchQuery.toLowerCase())
+        );
+
+    const filteredAvailableGenres = availableGenres
+        .filter(genre => {
+            const genreName = (genre.name || genre.Name || '').toLowerCase();
+            return !currentGenres.some(cg => cg.toLowerCase() === genreName);
+        })
+        .filter(genre =>
+            (genre.name || genre.Name || '').toLowerCase().includes(genreSearchQuery.toLowerCase())
+        );
+
+    const isMobile = window.innerWidth < 600;
+
+    return (
+        <Card sx={{ mt: 3, overflow: 'hidden', borderRadius: 2 }}>
+            <CardContent sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+                {/* Header with buttons */}
+                <Box sx={{
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    justifyContent: 'space-between',
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    gap: { xs: 2, sm: 0 },
+                    mb: 3
+                }}>
+                    <Typography
+                        variant="h5"
+                        sx={{
+                            fontWeight: 'bold',
+                            fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                        }}
+                    >
+                        Topics & Genres
+                    </Typography>
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        gap: 1,
+                        width: { xs: '100%', sm: 'auto' }
+                    }}>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<TopicIcon sx={{ color: 'white' }} />}
+                            onClick={handleOpenTopicDialog}
+                            fullWidth={isMobile}
+                            disabled={saving}
+                            sx={{
+                                borderColor: 'white',
+                                color: 'white',
+                                '&:hover': {
+                                    borderColor: 'white',
+                                    backgroundColor: 'rgba(255,255,255,0.1)'
+                                }
+                            }}
+                        >
+                            Add Topic
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<GenreIcon sx={{ color: 'white' }} />}
+                            onClick={handleOpenGenreDialog}
+                            fullWidth={isMobile}
+                            disabled={saving}
+                            sx={{
+                                borderColor: 'white',
+                                color: 'white',
+                                '&:hover': {
+                                    borderColor: 'white',
+                                    backgroundColor: 'rgba(255,255,255,0.1)'
+                                }
+                            }}
+                        >
+                            Add Genre
+                        </Button>
+                    </Box>
+                </Box>
+
+                {/* Topics Section */}
+                <Box sx={{ mb: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                        <TopicIcon sx={{ fontSize: 24, color: 'white' }} />
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                            Topics
+                        </Typography>
+                    </Box>
+                    {currentTopics.length > 0 ? (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            {currentTopics.map((topic, index) => (
+                                <Chip
+                                    key={`topic-${index}`}
+                                    label={topic}
+                                    onClick={() => handleTopicClick(topic)}
+                                    onDelete={() => handleRemoveTopic(topic)}
+                                    deleteIcon={<Close sx={{ fontSize: 18, color: 'white !important' }} />}
+                                    disabled={saving}
+                                    sx={{
+                                        cursor: 'pointer',
+                                        backgroundColor: 'primary.main',
+                                        color: 'white',
+                                        fontWeight: 'bold',
+                                        fontSize: '0.95rem',
+                                        height: '36px',
+                                        '& .MuiChip-label': {
+                                            px: 1.5
+                                        },
+                                        '&:hover': {
+                                            backgroundColor: 'primary.dark'
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </Box>
+                    ) : (
+                        <Typography variant="body1" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                            No topics assigned. Click "Add Topic" to add one.
+                        </Typography>
+                    )}
+                </Box>
+
+                {/* Genres Section */}
+                <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                        <GenreIcon sx={{ fontSize: 24, color: 'white' }} />
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                            Genres
+                        </Typography>
+                    </Box>
+                    {currentGenres.length > 0 ? (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                            {currentGenres.map((genre, index) => (
+                                <Chip
+                                    key={`genre-${index}`}
+                                    label={genre}
+                                    onClick={() => handleGenreClick(genre)}
+                                    onDelete={() => handleRemoveGenre(genre)}
+                                    deleteIcon={<Close sx={{ fontSize: 18, color: 'white !important' }} />}
+                                    disabled={saving}
+                                    sx={{
+                                        cursor: 'pointer',
+                                        backgroundColor: '#4b6aa2',
+                                        color: 'white',
+                                        fontWeight: 'bold',
+                                        fontSize: '0.95rem',
+                                        height: '36px',
+                                        '& .MuiChip-label': {
+                                            px: 1.5
+                                        },
+                                        '&:hover': {
+                                            backgroundColor: '#3d5a8a'
+                                        }
+                                    }}
+                                />
+                            ))}
+                        </Box>
+                    ) : (
+                        <Typography variant="body1" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                            No genres assigned. Click "Add Genre" to add one.
+                        </Typography>
+                    )}
+                </Box>
+            </CardContent>
+
+            {/* Add Topic Dialog */}
+            <Dialog
+                open={addTopicDialog}
+                onClose={handleCloseTopicDialog}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="h6">Add Topic</Typography>
+                        <IconButton
+                            onClick={handleCloseTopicDialog}
+                            size="small"
+                            sx={{
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                '&:hover': {
+                                    color: 'white',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            }}
+                        >
+                            <Close fontSize="small" />
+                        </IconButton>
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Select a topic to add to "{mediaItem?.title}":
+                    </Typography>
+
+                    {/* Search Bar */}
+                    <Box sx={{ mb: 2 }}>
+                        <TextField
+                            fullWidth
+                            placeholder="Search topics..."
+                            value={topicSearchQuery}
+                            onChange={(e) => setTopicSearchQuery(e.target.value)}
+                            variant="outlined"
+                            size="small"
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Search sx={{ color: 'rgba(255, 255, 255, 0.5)' }} />
+                                    </InputAdornment>
+                                ),
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    color: 'white',
+                                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                                    '&.Mui-focused fieldset': { borderColor: 'rgba(255, 255, 255, 0.7)' },
+                                },
+                                '& .MuiInputBase-input::placeholder': {
+                                    color: 'rgba(255, 255, 255, 0.5)',
+                                    opacity: 1,
+                                },
+                            }}
+                        />
+                    </Box>
+
+                    {/* Topic List */}
+                    {loadingTopics ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                            <CircularProgress size={30} />
+                        </Box>
+                    ) : (
+                        <List sx={{ maxHeight: '300px', overflowY: 'auto' }}>
+                            {filteredAvailableTopics.length > 0 ? (
+                                filteredAvailableTopics.map((topic) => (
+                                    <ListItem
+                                        key={topic.id || topic.Id}
+                                        onClick={() => setSelectedTopicId(topic.id || topic.Id)}
+                                        sx={{
+                                            borderRadius: 1,
+                                            mb: 1,
+                                            cursor: 'pointer',
+                                            backgroundColor: selectedTopicId === (topic.id || topic.Id)
+                                                ? 'rgba(25, 118, 210, 0.3)'
+                                                : 'transparent',
+                                            border: selectedTopicId === (topic.id || topic.Id)
+                                                ? '2px solid rgba(25, 118, 210, 0.8)'
+                                                : '1px solid rgba(255, 255, 255, 0.1)',
+                                            '&:hover': {
+                                                backgroundColor: selectedTopicId === (topic.id || topic.Id)
+                                                    ? 'rgba(25, 118, 210, 0.4)'
+                                                    : 'rgba(255, 255, 255, 0.05)'
+                                            }
+                                        }}
+                                    >
+                                        <ListItemText primary={topic.name || topic.Name} />
+                                    </ListItem>
+                                ))
+                            ) : (
+                                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                                    {topicSearchQuery
+                                        ? 'No topics match your search.'
+                                        : 'No available topics to add. Create new topics from the Topics & Genres page.'}
+                                </Typography>
+                            )}
+                        </List>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseTopicDialog} sx={{ color: 'white' }}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleAddTopic}
+                        sx={{ color: 'white' }}
+                        disabled={!selectedTopicId || saving}
+                    >
+                        {saving ? 'Adding...' : 'Add'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Add Genre Dialog */}
+            <Dialog
+                open={addGenreDialog}
+                onClose={handleCloseGenreDialog}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="h6">Add Genre</Typography>
+                        <IconButton
+                            onClick={handleCloseGenreDialog}
+                            size="small"
+                            sx={{
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                '&:hover': {
+                                    color: 'white',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            }}
+                        >
+                            <Close fontSize="small" />
+                        </IconButton>
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Select a genre to add to "{mediaItem?.title}":
+                    </Typography>
+
+                    {/* Search Bar */}
+                    <Box sx={{ mb: 2 }}>
+                        <TextField
+                            fullWidth
+                            placeholder="Search genres..."
+                            value={genreSearchQuery}
+                            onChange={(e) => setGenreSearchQuery(e.target.value)}
+                            variant="outlined"
+                            size="small"
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Search sx={{ color: 'rgba(255, 255, 255, 0.5)' }} />
+                                    </InputAdornment>
+                                ),
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    color: 'white',
+                                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                                    '&.Mui-focused fieldset': { borderColor: 'rgba(255, 255, 255, 0.7)' },
+                                },
+                                '& .MuiInputBase-input::placeholder': {
+                                    color: 'rgba(255, 255, 255, 0.5)',
+                                    opacity: 1,
+                                },
+                            }}
+                        />
+                    </Box>
+
+                    {/* Genre List */}
+                    {loadingGenres ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                            <CircularProgress size={30} />
+                        </Box>
+                    ) : (
+                        <List sx={{ maxHeight: '300px', overflowY: 'auto' }}>
+                            {filteredAvailableGenres.length > 0 ? (
+                                filteredAvailableGenres.map((genre) => (
+                                    <ListItem
+                                        key={genre.id || genre.Id}
+                                        onClick={() => setSelectedGenreId(genre.id || genre.Id)}
+                                        sx={{
+                                            borderRadius: 1,
+                                            mb: 1,
+                                            cursor: 'pointer',
+                                            backgroundColor: selectedGenreId === (genre.id || genre.Id)
+                                                ? 'rgba(75, 106, 162, 0.3)'
+                                                : 'transparent',
+                                            border: selectedGenreId === (genre.id || genre.Id)
+                                                ? '2px solid rgba(75, 106, 162, 0.8)'
+                                                : '1px solid rgba(255, 255, 255, 0.1)',
+                                            '&:hover': {
+                                                backgroundColor: selectedGenreId === (genre.id || genre.Id)
+                                                    ? 'rgba(75, 106, 162, 0.4)'
+                                                    : 'rgba(255, 255, 255, 0.05)'
+                                            }
+                                        }}
+                                    >
+                                        <ListItemText primary={genre.name || genre.Name} />
+                                    </ListItem>
+                                ))
+                            ) : (
+                                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                                    {genreSearchQuery
+                                        ? 'No genres match your search.'
+                                        : 'No available genres to add. Create new genres from the Topics & Genres page.'}
+                                </Typography>
+                            )}
+                        </List>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseGenreDialog} sx={{ color: 'white' }}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleAddGenre}
+                        sx={{ color: 'white' }}
+                        disabled={!selectedGenreId || saving}
+                    >
+                        {saving ? 'Adding...' : 'Add'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </Card>
+    );
+}
+
+export default React.memo(TopicsGenresSection);

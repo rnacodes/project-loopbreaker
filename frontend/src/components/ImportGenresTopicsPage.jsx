@@ -94,7 +94,22 @@ function ImportGenresTopicsPage() {
 
             <Card sx={{ mb: 3 }}>
                 <CardContent>
-                    <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 3 }}>
+                    <Tabs
+                        value={activeTab}
+                        onChange={handleTabChange}
+                        sx={{
+                            mb: 3,
+                            '& .MuiTab-root': {
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                '&.Mui-selected': {
+                                    color: 'white'
+                                }
+                            },
+                            '& .MuiTabs-indicator': {
+                                backgroundColor: 'white'
+                            }
+                        }}
+                    >
                         <Tab label="Import Genres" />
                         <Tab label="Import Topics" />
                     </Tabs>
@@ -119,9 +134,16 @@ function ImportGenresTopicsPage() {
 
                     <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
                         <Button
-                            variant="outlined"
+                            variant="contained"
                             startIcon={<FileDownload />}
                             onClick={downloadSampleCsv}
+                            sx={{
+                                backgroundColor: 'white',
+                                color: 'black',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(255, 255, 255, 0.9)'
+                                }
+                            }}
                         >
                             Download Sample CSV
                         </Button>
@@ -130,6 +152,13 @@ function ImportGenresTopicsPage() {
                             variant="contained"
                             component="label"
                             startIcon={<CloudUpload />}
+                            sx={{
+                                backgroundColor: 'white',
+                                color: 'black',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(255, 255, 255, 0.9)'
+                                }
+                            }}
                         >
                             Choose CSV File
                             <input
@@ -154,10 +183,20 @@ function ImportGenresTopicsPage() {
                     <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                         <Button
                             variant="contained"
-                            color="primary"
                             onClick={handleImport}
                             disabled={!file || importing}
-                            startIcon={importing ? <CircularProgress size={20} /> : <CloudUpload />}
+                            startIcon={importing ? <CircularProgress size={20} color="inherit" /> : <CloudUpload />}
+                            sx={{
+                                backgroundColor: 'white',
+                                color: 'black',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(255, 255, 255, 0.9)'
+                                },
+                                '&.Mui-disabled': {
+                                    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                                    color: 'rgba(0, 0, 0, 0.5)'
+                                }
+                            }}
                         >
                             {importing ? `Importing ${getImportType()}...` : `Import ${getImportType()}`}
                         </Button>

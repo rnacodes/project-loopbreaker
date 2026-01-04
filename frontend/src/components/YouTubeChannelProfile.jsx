@@ -15,6 +15,7 @@ import axios from 'axios';
 import MediaInfoCard from './MediaInfoCard';
 import MediaDetailAccordion from './MediaDetailAccordion';
 import MixlistCarousel from './MixlistCarousel';
+import TopicsGenresSection from './TopicsGenresSection';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import {
@@ -52,6 +53,7 @@ function YouTubeChannelProfile() {
 
     const [importedVideos, setImportedVideos] = useState(new Map());
     const [importingVideo, setImportingVideo] = useState(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -64,7 +66,7 @@ function YouTubeChannelProfile() {
         fetchChannelData();
         fetchMixlists();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
+    }, [id, refreshKey]);
 
     useEffect(() => {
         const fetchCurrentMixlists = async () => {
@@ -288,6 +290,11 @@ function YouTubeChannelProfile() {
                           channel.mediaType === 'Video' || channel.mediaType === 'Article') && (
                             <MediaDetailAccordion mediaItem={channel} navigate={navigate} />
                         )}
+                        <TopicsGenresSection
+                            mediaItem={channel}
+                            setSnackbar={setSnackbar}
+                            onUpdate={() => setRefreshKey(k => k + 1)}
+                        />
                         <MixlistCarousel
                             mediaItem={channel}
                             currentMixlists={currentMixlists}

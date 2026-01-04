@@ -16,6 +16,7 @@ import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import MediaInfoCard from './MediaInfoCard';
 import MixlistCarousel from './MixlistCarousel';
+import TopicsGenresSection from './TopicsGenresSection';
 import {
     getYouTubePlaylistById,
     getYouTubePlaylistVideos,
@@ -51,6 +52,7 @@ function YouTubePlaylistProfile() {
     const [loadingAllVideos, setLoadingAllVideos] = useState(false);
     const [importedVideos, setImportedVideos] = useState(new Map());
     const [importingVideo, setImportingVideo] = useState(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -63,7 +65,7 @@ function YouTubePlaylistProfile() {
         fetchPlaylistData();
         fetchMixlists();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
+    }, [id, refreshKey]);
 
     useEffect(() => {
         const fetchCurrentMixlists = async () => {
@@ -307,6 +309,11 @@ function YouTubePlaylistProfile() {
                         />
 
                         <Divider sx={{ my: 3 }} />
+                        <TopicsGenresSection
+                            mediaItem={playlist}
+                            setSnackbar={setSnackbar}
+                            onUpdate={() => setRefreshKey(k => k + 1)}
+                        />
                         <MixlistCarousel
                             mediaItem={playlist}
                             currentMixlists={currentMixlists}

@@ -6,8 +6,8 @@ import {
     Alert, Grid, Card, CardContent, Button, TextField, Dialog, DialogTitle,
     DialogContent, DialogActions, IconButton, DialogContentText
 } from '@mui/material';
-import { ExpandMore, Topic as TopicIcon, Category as GenreIcon, Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { getAllTopics, getAllGenres, createTopic, createGenre, deleteTopic, deleteGenre } from '../api';
+import { ExpandMore, Topic as TopicIcon, Category as GenreIcon, Add as AddIcon, Delete as DeleteIcon, CloudUpload as UploadIcon, Edit as EditIcon } from '@mui/icons-material';
+import { getAllTopics, getAllGenres, createTopic, createGenre, deleteTopic, deleteGenre, updateTopic, updateGenre } from '../api';
 
 function SearchByTopicOrGenre() {
     const [expanded, setExpanded] = useState(false);
@@ -28,7 +28,13 @@ function SearchByTopicOrGenre() {
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState(null); // { type: 'topic' | 'genre', id, name }
     const [deleting, setDeleting] = useState(false);
-    
+
+    // Edit dialog states
+    const [openEditDialog, setOpenEditDialog] = useState(false);
+    const [editTarget, setEditTarget] = useState(null); // { type: 'topic' | 'genre', id, name }
+    const [editName, setEditName] = useState('');
+    const [editing, setEditing] = useState(false);
+
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -171,6 +177,58 @@ function SearchByTopicOrGenre() {
         setDeleteTarget(null);
     };
 
+    const handleEditClick = (type, item) => {
+        setEditTarget({
+            type,
+            id: item.id || item.Id,
+            name: item.name || item.Name
+        });
+        setEditName(item.name || item.Name);
+        setOpenEditDialog(true);
+    };
+
+    const handleConfirmEdit = async () => {
+        if (!editTarget || !editName.trim()) return;
+
+        setEditing(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            if (editTarget.type === 'topic') {
+                await updateTopic(editTarget.id, { name: editName.trim() });
+                setSuccess(`Topic renamed to "${editName.trim()}" successfully!`);
+
+                // Refresh the topics list
+                const topicsResponse = await getAllTopics();
+                setTopics(topicsResponse.data.sort((a, b) => (a.name || a.Name).localeCompare(b.name || b.Name)));
+            } else {
+                await updateGenre(editTarget.id, { name: editName.trim() });
+                setSuccess(`Genre renamed to "${editName.trim()}" successfully!`);
+
+                // Refresh the genres list
+                const genresResponse = await getAllGenres();
+                setGenres(genresResponse.data.sort((a, b) => (a.name || a.Name).localeCompare(b.name || b.Name)));
+            }
+
+            setOpenEditDialog(false);
+            setEditTarget(null);
+            setEditName('');
+        } catch (err) {
+            console.error(`Error updating ${editTarget.type}:`, err);
+            const errorMessage = err.response?.data?.message || err.response?.data || `Failed to update ${editTarget.type}`;
+            setError(errorMessage);
+        } finally {
+            setEditing(false);
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setOpenEditDialog(false);
+        setEditTarget(null);
+        setEditName('');
+    };
+
     if (loading) {
         return (
             <Container maxWidth="lg">
@@ -189,12 +247,43 @@ function SearchByTopicOrGenre() {
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                     Browse, create, and manage all your topics and genres. Click any to see related media, or{' '}
-                    <Button 
-                        variant="text" 
+                    <Button
+                        variant="text"
                         onClick={() => navigate('/search')}
-                        sx={{ p: 0, minWidth: 'auto', textTransform: 'none', verticalAlign: 'baseline' }}
+                        sx={{
+                            p: 0,
+                            minWidth: 'auto',
+                            textTransform: 'none',
+                            verticalAlign: 'baseline',
+                            color: 'white',
+                            '&:hover': {
+                                color: 'primary.light',
+                                backgroundColor: 'transparent'
+                            }
+                        }}
                     >
                         go to advanced search
+                    </Button>
+                    . Need to add many at once?{' '}
+                    <Button
+                        variant="text"
+                        onClick={() => navigate('/import-genres-topics')}
+                        sx={{
+                            p: 0,
+                            minWidth: 'auto',
+                            textTransform: 'none',
+                            verticalAlign: 'baseline',
+                            color: 'white',
+                            fontWeight: 'normal',
+                            fontSize: 'inherit',
+                            lineHeight: 'inherit',
+                            '&:hover': {
+                                color: 'primary.light',
+                                backgroundColor: 'transparent'
+                            }
+                        }}
+                    >
+                        Bulk upload via CSV
                     </Button>
                 </Typography>
                 
@@ -278,26 +367,40 @@ function SearchByTopicOrGenre() {
                                             }}
                                             onClick={() => handleTopicClick(topic)}
                                         >
-                                            <IconButton
-                                                size="small"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDeleteClick('topic', topic);
-                                                }}
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: 4,
-                                                    right: 4,
-                                                    zIndex: 1,
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                                    '&:hover': {
-                                                        backgroundColor: 'error.light',
-                                                        color: 'white'
-                                                    }
-                                                }}
-                                            >
-                                                <DeleteIcon fontSize="small" />
-                                            </IconButton>
+                                            <Box sx={{ position: 'absolute', top: 4, right: 4, zIndex: 1, display: 'flex', gap: 0.5 }}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleEditClick('topic', topic);
+                                                    }}
+                                                    sx={{
+                                                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                                        '&:hover': {
+                                                            backgroundColor: 'primary.light',
+                                                            color: 'white'
+                                                        }
+                                                    }}
+                                                >
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteClick('topic', topic);
+                                                    }}
+                                                    sx={{
+                                                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                                        '&:hover': {
+                                                            backgroundColor: 'error.light',
+                                                            color: 'white'
+                                                        }
+                                                    }}
+                                                >
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+                                            </Box>
                                             <CardContent sx={{ p: 2 }}>
                                                 <Chip
                                                     label={topic.name || topic.Name}
@@ -397,26 +500,40 @@ function SearchByTopicOrGenre() {
                                             }}
                                             onClick={() => handleGenreClick(genre)}
                                         >
-                                            <IconButton
-                                                size="small"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDeleteClick('genre', genre);
-                                                }}
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: 4,
-                                                    right: 4,
-                                                    zIndex: 1,
-                                                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                                    '&:hover': {
-                                                        backgroundColor: 'error.light',
-                                                        color: 'white'
-                                                    }
-                                                }}
-                                            >
-                                                <DeleteIcon fontSize="small" />
-                                            </IconButton>
+                                            <Box sx={{ position: 'absolute', top: 4, right: 4, zIndex: 1, display: 'flex', gap: 0.5 }}>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleEditClick('genre', genre);
+                                                    }}
+                                                    sx={{
+                                                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                                        '&:hover': {
+                                                            backgroundColor: '#4b6aa2',
+                                                            color: 'white'
+                                                        }
+                                                    }}
+                                                >
+                                                    <EditIcon fontSize="small" />
+                                                </IconButton>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteClick('genre', genre);
+                                                    }}
+                                                    sx={{
+                                                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                                        '&:hover': {
+                                                            backgroundColor: 'error.light',
+                                                            color: 'white'
+                                                        }
+                                                    }}
+                                                >
+                                                    <DeleteIcon fontSize="small" />
+                                                </IconButton>
+                                            </Box>
                                             <CardContent sx={{ p: 2 }}>
                                                 <Chip
                                                     label={genre.name || genre.Name}
@@ -576,6 +693,54 @@ function SearchByTopicOrGenre() {
                             disabled={deleting}
                         >
                             {deleting ? 'Deleting...' : 'Delete'}
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+
+                {/* Edit Dialog */}
+                <Dialog
+                    open={openEditDialog}
+                    onClose={() => !editing && handleCancelEdit()}
+                    maxWidth="sm"
+                    fullWidth
+                >
+                    <DialogTitle>
+                        Rename {editTarget?.type === 'topic' ? 'Topic' : 'Genre'}
+                    </DialogTitle>
+                    <DialogContent>
+                        <DialogContentText sx={{ mb: 2 }}>
+                            Enter a new name for <strong>"{editTarget?.name}"</strong>:
+                        </DialogContentText>
+                        <TextField
+                            autoFocus
+                            margin="dense"
+                            label={editTarget?.type === 'topic' ? 'Topic Name' : 'Genre Name'}
+                            type="text"
+                            fullWidth
+                            variant="outlined"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            disabled={editing}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter' && !editing) {
+                                    handleConfirmEdit();
+                                }
+                            }}
+                        />
+                    </DialogContent>
+                    <DialogActions>
+                        <Button
+                            onClick={handleCancelEdit}
+                            disabled={editing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleConfirmEdit}
+                            variant="contained"
+                            disabled={editing || !editName.trim() || editName.trim() === editTarget?.name}
+                        >
+                            {editing ? 'Saving...' : 'Save'}
                         </Button>
                     </DialogActions>
                 </Dialog>

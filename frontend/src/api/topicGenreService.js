@@ -20,6 +20,10 @@ export const deleteTopic = (topicId) => {
     return apiClient.delete(`/topics/${topicId}`);
 };
 
+export const updateTopic = (topicId, topicData) => {
+    return apiClient.put(`/topics/${topicId}`, topicData);
+};
+
 export const importTopicsFromJson = (topics) => {
     return apiClient.post('/topics/import/json', topics);
 };
@@ -52,6 +56,10 @@ export const createGenre = (genreData) => {
 
 export const deleteGenre = (genreId) => {
     return apiClient.delete(`/genres/${genreId}`);
+};
+
+export const updateGenre = (genreId, genreData) => {
+    return apiClient.put(`/genres/${genreId}`, genreData);
 };
 
 export const importGenresFromJson = (genres) => {
