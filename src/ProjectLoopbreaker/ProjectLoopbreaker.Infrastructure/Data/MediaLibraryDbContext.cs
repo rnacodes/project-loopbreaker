@@ -276,26 +276,41 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.Property(e => e.Author)
                     .HasMaxLength(300)
                     .IsRequired();
-                    
+
                 entity.Property(e => e.ISBN)
                     .HasMaxLength(17);
-                    
+
                 entity.Property(e => e.ASIN)
                     .HasMaxLength(20);
-                    
+
                 entity.Property(e => e.Format)
                     .HasConversion<string>()
                     .HasMaxLength(50)
                     .IsRequired();
-                    
+
+                entity.Property(e => e.Publisher)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.MyReview)
+                    .HasMaxLength(10000);
+
+                // Store GoodreadsTags as JSON array in PostgreSQL
+                entity.Property(e => e.GoodreadsTags)
+                    .HasColumnType("jsonb");
+
                 // Create index on ISBN for better query performance
                 entity.HasIndex(e => e.ISBN);
-                
+
                 // Create index on Author for better query performance
                 entity.HasIndex(e => e.Author);
-                
+
                 // Create index on ASIN for better query performance
                 entity.HasIndex(e => e.ASIN);
+
+                // Create indexes on new Goodreads fields
+                entity.HasIndex(e => e.YearPublished);
+                entity.HasIndex(e => e.OriginalPublicationYear);
+                entity.HasIndex(e => e.DateRead);
             });
 
             // Configure Movie specific properties

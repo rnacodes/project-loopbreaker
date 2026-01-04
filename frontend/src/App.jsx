@@ -40,6 +40,7 @@ import CleanupManagementPage from './components/CleanupManagementPage';
 import WebsiteImportPage from './components/WebsiteImportPage';
 import WebsitesPage from './components/WebsitesPage';
 import TypesenseAdminPage from './components/TypesenseAdminPage';
+import GoodreadsUploadPage from './components/GoodreadsUploadPage';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
@@ -103,6 +104,9 @@ function App() {
             } />
             <Route path="/upload-media" element={
               <ConditionalProtectedRoute><UploadMediaPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/upload-goodreads" element={
+              <ConditionalProtectedRoute><GoodreadsUploadPage /></ConditionalProtectedRoute>
             } />
             <Route path="/search-by-topic-genre" element={
               <ConditionalProtectedRoute><SearchByTopicOrGenre /></ConditionalProtectedRoute>

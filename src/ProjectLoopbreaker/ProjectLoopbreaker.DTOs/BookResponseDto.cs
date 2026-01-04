@@ -67,5 +67,26 @@ namespace ProjectLoopbreaker.DTOs
         
         [JsonPropertyName("goodreadsRating")]
         public decimal? GoodreadsRating { get; set; }
+
+        [JsonPropertyName("averageRating")]
+        public decimal? AverageRating { get; set; }
+
+        [JsonPropertyName("yearPublished")]
+        public int? YearPublished { get; set; }
+
+        [JsonPropertyName("originalPublicationYear")]
+        public int? OriginalPublicationYear { get; set; }
+
+        [JsonPropertyName("dateRead")]
+        public DateTime? DateRead { get; set; }
+
+        [JsonPropertyName("myReview")]
+        public string? MyReview { get; set; }
+
+        [JsonPropertyName("publisher")]
+        public string? Publisher { get; set; }
+
+        [JsonPropertyName("goodreadsTags")]
+        public List<string> GoodreadsTags { get; set; } = new();
     }
 }

@@ -91,7 +91,8 @@ export {
 export {
     uploadCsv,
     uploadThumbnail,
-    uploadThumbnailFromUrl
+    uploadThumbnailFromUrl,
+    uploadGoodreadsCsv
 } from './uploadService';
 
 // TMDB

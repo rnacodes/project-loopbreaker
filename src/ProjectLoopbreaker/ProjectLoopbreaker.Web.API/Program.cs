@@ -306,6 +306,7 @@ builder.Services.AddScoped<IArticleMappingService, ArticleMappingService>();
 builder.Services.AddScoped<IArticleDeduplicationService, ArticleDeduplicationService>();
 builder.Services.AddScoped<IWebsiteService, WebsiteService>();
 builder.Services.AddScoped<IWebsiteMappingService, WebsiteMappingService>();
+builder.Services.AddScoped<IGoodreadsImportService, GoodreadsImportService>();
 
 // Register a generic HttpClient for use in controllers
 builder.Services.AddHttpClient();

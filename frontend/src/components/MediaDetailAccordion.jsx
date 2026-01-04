@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-    Button, Card, Box, Typography, Accordion, AccordionSummary, AccordionDetails, Link
+    Button, Card, Box, Typography, Accordion, AccordionSummary, AccordionDetails, Link, Chip
 } from '@mui/material';
 import { ExpandMore, OpenInNew, Star } from '@mui/icons-material';
 
@@ -256,14 +256,131 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 gap: { xs: 0.5, sm: 0 }
               }}>
                 <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '1rem' }}>
-                  <strong>Goodreads Rating:</strong>
+                  <strong>Your Rating:</strong>
                 </Typography>
                 <Typography variant="body1" sx={{ fontSize: '1rem' }}>{mediaItem.goodreadsRating} / 5</Typography>
               </Box>
             )}
+
+            {mediaItem.averageRating && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.5, sm: 0 }
+              }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '1rem' }}>
+                  <strong>Avg Rating:</strong>
+                </Typography>
+                <Typography variant="body1" sx={{ fontSize: '1rem' }}>{mediaItem.averageRating} / 5</Typography>
+              </Box>
+            )}
+
+            {mediaItem.publisher && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.5, sm: 0 }
+              }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '1rem' }}>
+                  <strong>Publisher:</strong>
+                </Typography>
+                <Typography variant="body1" sx={{ fontSize: '1rem' }}>{mediaItem.publisher}</Typography>
+              </Box>
+            )}
+
+            {mediaItem.yearPublished && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.5, sm: 0 }
+              }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '1rem' }}>
+                  <strong>Year Published:</strong>
+                </Typography>
+                <Typography variant="body1" sx={{ fontSize: '1rem' }}>{mediaItem.yearPublished}</Typography>
+              </Box>
+            )}
+
+            {mediaItem.originalPublicationYear && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.5, sm: 0 }
+              }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '1rem' }}>
+                  <strong>First Published:</strong>
+                </Typography>
+                <Typography variant="body1" sx={{ fontSize: '1rem' }}>{mediaItem.originalPublicationYear}</Typography>
+              </Box>
+            )}
+
+            {mediaItem.dateRead && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.5, sm: 0 }
+              }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '1rem' }}>
+                  <strong>Date Read:</strong>
+                </Typography>
+                <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+                  {new Date(mediaItem.dateRead).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </Typography>
+              </Box>
+            )}
+
+            {mediaItem.myReview && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1
+              }}>
+                <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+                  <strong>My Review:</strong>
+                </Typography>
+                <Typography variant="body1" sx={{ fontSize: '0.9rem', pl: 2, fontStyle: 'italic' }}>
+                  "{mediaItem.myReview}"
+                </Typography>
+              </Box>
+            )}
+
+            {mediaItem.goodreadsTags && mediaItem.goodreadsTags.length > 0 && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1
+              }}>
+                <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+                  <strong>Goodreads Tags:</strong>
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', pl: 2 }}>
+                  {mediaItem.goodreadsTags.map((tag, index) => (
+                    <Chip
+                      key={index}
+                      label={tag}
+                      size="small"
+                      sx={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                        color: 'text.primary',
+                        fontSize: '0.75rem'
+                      }}
+                    />
+                  ))}
+                </Box>
+              </Box>
+            )}
           </Box>
         )}
-        
+
         {/* Movie-specific properties */}
         {mediaItem.mediaType === 'Movie' && (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

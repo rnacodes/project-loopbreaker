@@ -4,10 +4,12 @@ import {
     CircularProgress, List, ListItem, ListItemText, Divider,
     Card, CardContent, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
-import { CloudUpload, FileUpload, CheckCircle, Error, ExpandMore } from '@mui/icons-material';
+import { CloudUpload, FileUpload, CheckCircle, Error, ExpandMore, MenuBook } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { uploadCsv } from '../api';
 
 function UploadMediaPage() {
+    const navigate = useNavigate();
     const [file, setFile] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [uploadResult, setUploadResult] = useState(null);
@@ -177,6 +179,31 @@ function UploadMediaPage() {
                         Reset
                     </Button>
                 </Box>
+            </Paper>
+
+            {/* Goodreads Import Section */}
+            <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
+                <Box sx={{ textAlign: 'center', mb: 3 }}>
+                    <MenuBook sx={{ fontSize: 64, color: 'primary.main', mb: 2 }} />
+                    <Typography variant="h6" gutterBottom>
+                        Import from Goodreads
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" paragraph>
+                        Import your entire Goodreads library from a CSV export
+                    </Typography>
+                </Box>
+                <Button
+                    variant="contained"
+                    onClick={() => navigate('/upload-goodreads')}
+                    fullWidth
+                    startIcon={<MenuBook />}
+                    sx={{ mb: 2 }}
+                >
+                    Import Goodreads Library
+                </Button>
+                <Alert severity="info">
+                    eBook Management Coming Soon
+                </Alert>
             </Paper>
 
             {error && (

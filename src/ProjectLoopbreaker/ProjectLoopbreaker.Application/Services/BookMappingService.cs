@@ -41,7 +41,14 @@ namespace ProjectLoopbreaker.Application.Services
                 ASIN = dto.ASIN,
                 Format = dto.Format,
                 PartOfSeries = dto.PartOfSeries,
-                GoodreadsRating = dto.GoodreadsRating
+                GoodreadsRating = dto.GoodreadsRating,
+                AverageRating = dto.AverageRating,
+                YearPublished = dto.YearPublished,
+                OriginalPublicationYear = dto.OriginalPublicationYear,
+                DateRead = dto.DateRead,
+                MyReview = dto.MyReview,
+                Publisher = dto.Publisher,
+                GoodreadsTags = dto.GoodreadsTags ?? new List<string>()
             };
             
             // If GoodreadsRating is provided but Rating is not, auto-convert
@@ -113,7 +120,14 @@ namespace ProjectLoopbreaker.Application.Services
                 RelatedNotes = book.RelatedNotes,
                 Topics = book.Topics.Select(t => t.Name).ToArray(),
                 Genres = book.Genres.Select(g => g.Name).ToArray(),
-                GoodreadsRating = book.GoodreadsRating
+                GoodreadsRating = book.GoodreadsRating,
+                AverageRating = book.AverageRating,
+                YearPublished = book.YearPublished,
+                OriginalPublicationYear = book.OriginalPublicationYear,
+                DateRead = book.DateRead,
+                MyReview = book.MyReview,
+                Publisher = book.Publisher,
+                GoodreadsTags = book.GoodreadsTags ?? new List<string>()
             };
         }
 
