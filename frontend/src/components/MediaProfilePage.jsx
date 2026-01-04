@@ -20,6 +20,7 @@ import MixlistCarousel from './MixlistCarousel';
 import MediaInfoCard from './MediaInfoCard';
 import MediaDetailAccordion from './MediaDetailAccordion';
 import HighlightsSection from './HighlightsSection';
+import TopicsGenresSection from './TopicsGenresSection';
 import { formatMediaType, formatStatus, getMediaTypeColor, getStatusColor, getRatingIcon, getRatingText } from '../utils/formatters';
 import {
     getMediaById, getAllMixlists,
@@ -40,6 +41,7 @@ function MediaProfilePage() {
   const [highlights, setHighlights] = useState([]);
   const [highlightsLoading, setHighlightsLoading] = useState(false);
   const [videoPlaylists, setVideoPlaylists] = useState([]);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -240,7 +242,7 @@ function MediaProfilePage() {
     } else {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, refreshKey]);
 
   // Fetch highlights when media item is loaded
   useEffect(() => {
@@ -447,6 +449,12 @@ function MediaProfilePage() {
         <MediaDetailAccordion mediaItem={mediaItem} navigate={navigate} videoPlaylists={videoPlaylists} />
 
         <HighlightsSection mediaItem={mediaItem} highlights={highlights} highlightsLoading={highlightsLoading} />
+
+        <TopicsGenresSection
+          mediaItem={mediaItem}
+          setSnackbar={setSnackbar}
+          onUpdate={() => setRefreshKey(k => k + 1)}
+        />
 
         <MixlistCarousel 
           mediaItem={mediaItem}

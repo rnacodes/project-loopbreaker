@@ -191,6 +191,55 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             return CreatedAtAction(nameof(GetGenre), new { id = genre.Id }, response);
         }
 
+        // PUT: api/genres/{id}
+        [HttpPut("{id}")]
+        public async Task<ActionResult<GenreResponseDto>> UpdateGenre(Guid id, [FromBody] CreateGenreDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+            {
+                return BadRequest("Genre name is required.");
+            }
+
+            var genre = await _context.Genres.FirstOrDefaultAsync(g => g.Id == id);
+            if (genre == null)
+            {
+                return NotFound($"Genre with ID {id} not found.");
+            }
+
+            var normalizedGenreName = dto.Name.Trim().ToLowerInvariant();
+
+            // Check if another genre with the new name already exists
+            var existingGenre = await _context.Genres
+                .AsNoTracking()
+                .FirstOrDefaultAsync(g => g.Name == normalizedGenreName && g.Id != id);
+
+            if (existingGenre != null)
+            {
+                return BadRequest($"A genre with the name '{dto.Name}' already exists.");
+            }
+
+            genre.Name = normalizedGenreName;
+            await _context.SaveChangesAsync();
+
+            // Get media item IDs
+            var mediaItemIds = await _context.Database
+                .SqlQueryRaw<Guid>(@"
+                    SELECT mi.""Id""
+                    FROM ""MediaItems"" mi
+                    INNER JOIN ""MediaItemGenres"" mig ON mi.""Id"" = mig.""MediaItemId""
+                    WHERE mig.""GenreId"" = {0}", id)
+                .ToListAsync();
+
+            var response = new GenreResponseDto
+            {
+                Id = genre.Id,
+                Name = genre.Name,
+                MediaItemIds = mediaItemIds.ToArray()
+            };
+
+            return Ok(response);
+        }
+
         // DELETE: api/genres/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteGenre(Guid id)

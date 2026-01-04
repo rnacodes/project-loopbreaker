@@ -15,6 +15,7 @@ import axios from 'axios';
 import MediaInfoCard from './MediaInfoCard';
 import MediaDetailAccordion from './MediaDetailAccordion';
 import MixlistCarousel from './MixlistCarousel';
+import TopicsGenresSection from './TopicsGenresSection';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import {
@@ -53,6 +54,7 @@ function PodcastSeriesProfile() {
     
     const [importedEpisodes, setImportedEpisodes] = useState(new Map());
     const [importingEpisode, setImportingEpisode] = useState(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -65,7 +67,7 @@ function PodcastSeriesProfile() {
         fetchSeriesData();
         fetchMixlists();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
+    }, [id, refreshKey]);
 
     useEffect(() => {
         const fetchCurrentMixlists = async () => {
@@ -274,6 +276,11 @@ function PodcastSeriesProfile() {
 
                         <Divider sx={{ my: 3 }} />
                         <MediaDetailAccordion mediaItem={series} navigate={navigate} />
+                        <TopicsGenresSection
+                            mediaItem={series}
+                            setSnackbar={setSnackbar}
+                            onUpdate={() => setRefreshKey(k => k + 1)}
+                        />
                         <MixlistCarousel 
                             mediaItem={series} 
                             currentMixlists={currentMixlists} 

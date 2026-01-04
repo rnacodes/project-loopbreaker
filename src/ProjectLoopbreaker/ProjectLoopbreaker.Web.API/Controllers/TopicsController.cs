@@ -200,6 +200,55 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             return CreatedAtAction(nameof(GetTopic), new { id = topic.Id }, response);
         }
 
+        // PUT: api/topics/{id}
+        [HttpPut("{id}")]
+        public async Task<ActionResult<TopicResponseDto>> UpdateTopic(Guid id, [FromBody] CreateTopicDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+            {
+                return BadRequest("Topic name is required.");
+            }
+
+            var topic = await _context.Topics.FirstOrDefaultAsync(t => t.Id == id);
+            if (topic == null)
+            {
+                return NotFound($"Topic with ID {id} not found.");
+            }
+
+            var normalizedTopicName = dto.Name.Trim().ToLowerInvariant();
+
+            // Check if another topic with the new name already exists
+            var existingTopic = await _context.Topics
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.Name == normalizedTopicName && t.Id != id);
+
+            if (existingTopic != null)
+            {
+                return BadRequest($"A topic with the name '{dto.Name}' already exists.");
+            }
+
+            topic.Name = normalizedTopicName;
+            await _context.SaveChangesAsync();
+
+            // Get media item IDs
+            var mediaItemIds = await _context.Database
+                .SqlQueryRaw<Guid>(@"
+                    SELECT mi.""Id""
+                    FROM ""MediaItems"" mi
+                    INNER JOIN ""MediaItemTopics"" mit ON mi.""Id"" = mit.""MediaItemId""
+                    WHERE mit.""TopicId"" = {0}", id)
+                .ToListAsync();
+
+            var response = new TopicResponseDto
+            {
+                Id = topic.Id,
+                Name = topic.Name,
+                MediaItemIds = mediaItemIds.ToArray()
+            };
+
+            return Ok(response);
+        }
+
         // DELETE: api/topics/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTopic(Guid id)

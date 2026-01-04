@@ -407,6 +407,13 @@ builder.Services.AddHttpClient<IWebsiteScraperService, ProjectLoopbreaker.Infras
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 
+// Configure Website Screenshot service (uses thum.io for screenshots)
+builder.Services.AddHttpClient<IWebsiteScreenshotService, ProjectLoopbreaker.Infrastructure.Services.WebsiteScreenshotService>(client =>
+{
+    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 // Configure TMDB API client
 builder.Services.AddHttpClient<TmdbApiClient>(client =>
 {

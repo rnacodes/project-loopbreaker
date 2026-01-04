@@ -13,7 +13,14 @@
       "Bash(del \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\frontend\\\\src\\\\components\\\\InstapaperAuthPage.jsx\")",
       "Bash(del \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\frontend\\\\src\\\\components\\\\ImportMedia\\\\InstapaperImportSection.jsx\")",
       "Bash(git -C \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\" status)",
-      "Bash(Select-Object -Last 100)"
+      "Bash(Select-Object -Last 100)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.linkace.org)",
+      "WebFetch(domain:raindrop.io)",
+      "WebFetch(domain:archivebox.io)",
+      "Bash(dotnet ef migrations add:*)",
+      "Bash(Select-Object -Last 20)",
+      "Bash(npm run build:*)"
     ]
   }
 }

@@ -1,8 +1,8 @@
 import React from 'react';
 import {
-    Button, Card, Box, Typography, Accordion, AccordionSummary, AccordionDetails, Link, Chip
+    Button, Card, Box, Typography, Accordion, AccordionSummary, AccordionDetails, Link, Chip, IconButton, Tooltip, Alert
 } from '@mui/material';
-import { ExpandMore, OpenInNew, Star } from '@mui/icons-material';
+import { ExpandMore, OpenInNew, Star, RssFeed, ContentCopy, Language, Schedule } from '@mui/icons-material';
 
 function getJustWatchUrl(title) {
   // Simple heuristic for generating a JustWatch search URL.
@@ -1010,7 +1010,7 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 <Typography variant="body1" sx={{ fontSize: '0.875rem' }}>{mediaItem.author}</Typography>
               </Box>
             )}
-            
+
             {mediaItem.publication && (
               <Box sx={{
                 display: 'flex',
@@ -1024,7 +1024,7 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 <Typography variant="body1" sx={{ fontSize: '0.875rem' }}>{mediaItem.publication}</Typography>
               </Box>
             )}
-            
+
             {mediaItem.publicationDate && (
               <Box sx={{
                 display: 'flex',
@@ -1044,7 +1044,7 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 </Typography>
               </Box>
             )}
-            
+
             {mediaItem.estimatedReadingTimeMinutes > 0 && (
               <Box sx={{
                 display: 'flex',
@@ -1060,7 +1060,7 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 </Typography>
               </Box>
             )}
-            
+
             {mediaItem.wordCount > 0 && (
               <Box sx={{
                 display: 'flex',
@@ -1074,7 +1074,7 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 <Typography variant="body1" sx={{ fontSize: '0.875rem' }}>{mediaItem.wordCount.toLocaleString()}</Typography>
               </Box>
             )}
-            
+
             {mediaItem.isStarred && (
               <Box sx={{
                 display: 'flex',
@@ -1088,7 +1088,177 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 <Star sx={{ color: '#FFD700', fontSize: 20 }} />
               </Box>
             )}
-            
+
+          </Box>
+        )}
+
+        {/* Website-specific properties */}
+        {mediaItem.mediaType === 'Website' && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {mediaItem.domain && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.5, sm: 0 }
+              }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '0.875rem' }}>
+                  <strong>Domain:</strong>
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Language sx={{ fontSize: 18, color: 'text.secondary' }} />
+                  <Link
+                    href={mediaItem.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      fontSize: '0.875rem',
+                      color: '#ffffff',
+                      '&:hover': {
+                        color: '#e3f2fd'
+                      }
+                    }}
+                  >
+                    {mediaItem.domain}
+                  </Link>
+                </Box>
+              </Box>
+            )}
+
+            {mediaItem.author && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.5, sm: 0 }
+              }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '0.875rem' }}>
+                  <strong>Author:</strong>
+                </Typography>
+                <Typography variant="body1" sx={{ fontSize: '0.875rem' }}>{mediaItem.author}</Typography>
+              </Box>
+            )}
+
+            {mediaItem.publication && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.5, sm: 0 }
+              }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '0.875rem' }}>
+                  <strong>Site Name:</strong>
+                </Typography>
+                <Typography variant="body1" sx={{ fontSize: '0.875rem' }}>{mediaItem.publication}</Typography>
+              </Box>
+            )}
+
+            {mediaItem.rssFeedUrl && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.5, sm: 0 }
+              }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '0.875rem' }}>
+                  <strong>RSS Feed:</strong>
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <RssFeed sx={{ fontSize: 18, color: '#f5a623' }} />
+                  <Link
+                    href={mediaItem.rssFeedUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      fontSize: '0.875rem',
+                      color: '#ffffff',
+                      maxWidth: { xs: '200px', sm: '300px' },
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      '&:hover': {
+                        color: '#e3f2fd'
+                      }
+                    }}
+                  >
+                    Subscribe
+                  </Link>
+                  <Tooltip title="Copy RSS URL">
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        navigator.clipboard.writeText(mediaItem.rssFeedUrl);
+                      }}
+                      sx={{
+                        color: 'text.secondary',
+                        '&:hover': { color: '#ffffff' }
+                      }}
+                    >
+                      <ContentCopy sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Box>
+            )}
+
+            {mediaItem.lastCheckedDate && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.5, sm: 0 }
+              }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '140px' }, fontSize: '0.875rem' }}>
+                  <strong>Last Checked:</strong>
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Schedule sx={{ fontSize: 18, color: 'text.secondary' }} />
+                  <Typography variant="body1" sx={{ fontSize: '0.875rem' }}>
+                    {new Date(mediaItem.lastCheckedDate).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+
+            {/* Visit Website Button */}
+            {mediaItem.link && (
+              <Box sx={{ mt: 1 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="small"
+                  href={mediaItem.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  startIcon={<OpenInNew />}
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: '0.875rem'
+                  }}
+                >
+                  Visit Website
+                </Button>
+              </Box>
+            )}
+
+            {/* Coming Soon Message */}
+            <Alert
+              severity="info"
+              sx={{
+                mt: 2,
+                backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                color: 'text.secondary',
+                '& .MuiAlert-icon': {
+                  color: 'rgba(33, 150, 243, 0.7)'
+                }
+              }}
+            >
+              Website archival and save RSS to Readwise coming soon
+            </Alert>
           </Box>
         )}
         
@@ -1098,7 +1268,8 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
           (mediaItem.mediaType === 'Movie' && !mediaItem.director && !mediaItem.cast && !mediaItem.releaseYear && !mediaItem.runtimeMinutes && !mediaItem.mpaaRating && !mediaItem.tmdbRating) ||
           (mediaItem.mediaType === 'TVShow' && !mediaItem.creator && !mediaItem.cast && !mediaItem.firstAirYear && !mediaItem.numberOfSeasons && !mediaItem.contentRating) ||
           (mediaItem.mediaType === 'Video' && !mediaItem.platform && !mediaItem.channel && !mediaItem.lengthInSeconds && mediaItem.videoType === undefined && !mediaItem.externalId) ||
-          (mediaItem.mediaType === 'Article' && !mediaItem.author && !mediaItem.publication && !mediaItem.publicationDate && !mediaItem.originalUrl && !mediaItem.readingProgress && !mediaItem.estimatedReadingTimeMinutes && !mediaItem.wordCount)) && (
+          (mediaItem.mediaType === 'Article' && !mediaItem.author && !mediaItem.publication && !mediaItem.publicationDate && !mediaItem.originalUrl && !mediaItem.readingProgress && !mediaItem.estimatedReadingTimeMinutes && !mediaItem.wordCount) ||
+          (mediaItem.mediaType === 'Website' && !mediaItem.domain && !mediaItem.author && !mediaItem.publication && !mediaItem.rssFeedUrl && !mediaItem.lastCheckedDate)) && (
           <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
             No specific {mediaItem.mediaType.toLowerCase()} details available
           </Typography>
