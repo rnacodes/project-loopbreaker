@@ -19,6 +19,7 @@ namespace ProjectLoopbreaker.Domain.Interfaces
         IQueryable<YouTubePlaylist> YouTubePlaylists { get; }
         IQueryable<Article> Articles { get; }
         IQueryable<Website> Websites { get; }
+        IQueryable<Document> Documents { get; }
         IQueryable<Topic> Topics { get; }
         IQueryable<Genre> Genres { get; }
         IQueryable<Highlight> Highlights { get; }

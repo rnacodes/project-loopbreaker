@@ -5,13 +5,24 @@ This document describes how to use the book description enrichment feature, whic
 ## Overview
 
 Book descriptions are not included in Goodreads exports. This feature provides:
-- A **background service** that runs on a schedule to enrich books automatically
-- **API endpoints** for on-demand triggering when you need immediate enrichment
+- An **admin page** at `/background-jobs` for on-demand enrichment with visual controls
+- **API endpoints** for programmatic triggering
+- A **shell script** for scheduled execution via cron on your VM
 - **Configurable settings** for batch size, rate limiting, and scheduling
 
 The enrichment uses Open Library's API with a two-step lookup:
 1. Get edition by ISBN to find the Work ID
 2. Get the Work to retrieve the description
+
+## Admin Page
+
+Navigate to `/background-jobs` in your frontend to access the Background Jobs admin page. This provides:
+
+- **Current Status**: Shows how many books need description enrichment
+- **Configuration Controls**: Adjust batch size, API delay, max books, and pause duration via sliders
+- **Run Single Batch**: Process a quick batch and get immediate results
+- **Run All (Bulk)**: Process multiple batches for initial population after large imports
+- **Results Display**: See enriched counts, failures, and any errors
 
 ## API Endpoints (On-Demand Execution)
 
@@ -135,11 +146,33 @@ $trigger = New-ScheduledTaskTrigger -Daily -At 3:00AM
 Register-ScheduledTask -TaskName "BookEnrichment" -Action $action -Trigger $trigger
 ```
 
-**Linux Cron:**
+**Linux Cron (Using the provided script):**
+
+A ready-to-use shell script is provided at `scripts/book-enrichment-cron.sh`. To set it up:
 
 ```bash
-# Add to crontab -e (runs at 3 AM every 2 days)
-0 3 */2 * * curl -X POST https://your-api.com/api/bookenrichment/run-all \
+# 1. Copy the script to your DigitalOcean VM
+scp scripts/book-enrichment-cron.sh user@your-vm:/home/user/
+
+# 2. SSH into your VM and make it executable
+chmod +x /home/user/book-enrichment-cron.sh
+
+# 3. Edit the script to add your API token and URL
+nano /home/user/book-enrichment-cron.sh
+
+# 4. Test it manually
+/home/user/book-enrichment-cron.sh
+
+# 5. Add to crontab (runs at 3 AM every 2 days)
+crontab -e
+# Add this line:
+0 3 */2 * * /home/user/book-enrichment-cron.sh >> /var/log/book-enrichment.log 2>&1
+```
+
+**Manual curl command (alternative):**
+
+```bash
+curl -X POST https://your-api.com/api/bookenrichment/run-all \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"maxBooks":500}'
@@ -203,6 +236,11 @@ The default settings are conservative:
 **Frontend:**
 - `GoodreadsUploadPage.jsx` - Added info about background enrichment
 - `ImportMedia/BookImportSection.jsx` - Added info alert about enrichment
+- `BackgroundJobsPage.jsx` - Admin page for managing background jobs
+- `api/backgroundJobsService.js` - API service functions for enrichment endpoints
+
+**Scripts:**
+- `scripts/book-enrichment-cron.sh` - Shell script for scheduled execution via cron
 
 ### How It Works
 

@@ -127,9 +127,10 @@ namespace ProjectLoopbreaker.Infrastructure.Services
         public const string SectionName = "BookDescriptionEnrichment";
 
         /// <summary>
-        /// Whether the background enrichment service is enabled. Default: true
+        /// Whether the background enrichment service is enabled. Default: false
+        /// Set to true to enable the built-in scheduler, or use external cron instead.
         /// </summary>
-        public bool Enabled { get; set; } = true;
+        public bool Enabled { get; set; } = false;
 
         /// <summary>
         /// Hours between enrichment runs. Default: 48 (every 2 days)

@@ -200,6 +200,23 @@ export {
     syncDocumentsFromReader
 } from './articleService';
 
+// Documents
+export {
+    getAllDocuments,
+    getDocumentById,
+    createDocument,
+    updateDocument,
+    deleteDocument,
+    getDocumentsByType,
+    getDocumentsByCorrespondent,
+    getArchivedDocuments,
+    searchDocuments,
+    getDocumentsByDateRange,
+    syncDocumentsFromPaperless,
+    syncSingleDocumentFromPaperless,
+    getPaperlessStatus
+} from './documentService';
+
 // Highlights
 export {
     syncHighlightsFromReadwise,
@@ -264,3 +281,10 @@ export {
     typesenseAdvancedSearchMixlists,
     reindexMixlists
 } from './typesenseService';
+
+// Background Jobs
+export {
+    getBookEnrichmentStatus,
+    runBookEnrichment,
+    runBookEnrichmentAll
+} from './backgroundJobsService';

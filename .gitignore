@@ -695,3 +695,4 @@ for-claude/
 nul
 bash.exe.stackdump
 .claude/settings.local.json
+.claude/settings.local.json
