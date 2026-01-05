@@ -26,32 +26,32 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
+                // Get all genres in a single query
                 var genres = await _context.Genres
                     .AsNoTracking()
                     .OrderBy(g => g.Name)
                     .ToListAsync();
-                
-                // Load media items separately to avoid discriminator issues
-                var response = new List<GenreResponseDto>();
-                foreach (var genre in genres)
+
+                // Get all media item counts in a single batched query using GROUP BY
+                var genreCounts = await _context.Database
+                    .SqlQueryRaw<GenreCountResult>(@"
+                        SELECT mig.""GenreId"", COUNT(*) as ""Count""
+                        FROM ""MediaItemGenres"" mig
+                        GROUP BY mig.""GenreId""")
+                    .ToListAsync();
+
+                // Create a dictionary for O(1) lookup
+                var countsByGenreId = genreCounts.ToDictionary(gc => gc.GenreId, gc => gc.Count);
+
+                // Build response with counts (no need for individual queries)
+                var response = genres.Select(genre => new GenreResponseDto
                 {
-                    // Get media item IDs directly without loading full entities
-                    var mediaItemIds = await _context.Database
-                        .SqlQueryRaw<Guid>(@"
-                            SELECT mi.""Id"" 
-                            FROM ""MediaItems"" mi
-                            INNER JOIN ""MediaItemGenres"" mig ON mi.""Id"" = mig.""MediaItemId""
-                            WHERE mig.""GenreId"" = {0}", genre.Id)
-                        .ToListAsync();
-                    
-                    response.Add(new GenreResponseDto
-                    {
-                        Id = genre.Id,
-                        Name = genre.Name,
-                        MediaItemIds = mediaItemIds.ToArray()
-                    });
-                }
-                
+                    Id = genre.Id,
+                    Name = genre.Name,
+                    MediaItemIds = Array.Empty<Guid>(), // Not needed for list view
+                    MediaItemCount = countsByGenreId.GetValueOrDefault(genre.Id, 0)
+                }).ToList();
+
                 return Ok(response);
             }
             catch (Exception ex)
@@ -60,6 +60,13 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, new { error = "Failed to retrieve genres", details = ex.Message });
             }
+        }
+
+        // Helper class for count results
+        private class GenreCountResult
+        {
+            public Guid GenreId { get; set; }
+            public int Count { get; set; }
         }
 
         // GET: api/genres/search?query={query}
@@ -79,28 +86,25 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     .Where(g => g.Name.Contains(normalizedQuery))
                     .OrderBy(g => g.Name)
                     .ToListAsync();
-                
-                // Load media items separately to avoid discriminator issues
-                var response = new List<GenreResponseDto>();
-                foreach (var genre in genres)
+
+                // Get counts for all genres in a single query
+                var genreCounts = await _context.Database
+                    .SqlQueryRaw<GenreCountResult>(@"
+                        SELECT mig.""GenreId"", COUNT(*) as ""Count""
+                        FROM ""MediaItemGenres"" mig
+                        GROUP BY mig.""GenreId""")
+                    .ToListAsync();
+
+                var countsByGenreId = genreCounts.ToDictionary(gc => gc.GenreId, gc => gc.Count);
+
+                var response = genres.Select(genre => new GenreResponseDto
                 {
-                    // Get media item IDs directly without loading full entities
-                    var mediaItemIds = await _context.Database
-                        .SqlQueryRaw<Guid>(@"
-                            SELECT mi.""Id"" 
-                            FROM ""MediaItems"" mi
-                            INNER JOIN ""MediaItemGenres"" mig ON mi.""Id"" = mig.""MediaItemId""
-                            WHERE mig.""GenreId"" = {0}", genre.Id)
-                        .ToListAsync();
-                    
-                    response.Add(new GenreResponseDto
-                    {
-                        Id = genre.Id,
-                        Name = genre.Name,
-                        MediaItemIds = mediaItemIds.ToArray()
-                    });
-                }
-                
+                    Id = genre.Id,
+                    Name = genre.Name,
+                    MediaItemIds = Array.Empty<Guid>(),
+                    MediaItemCount = countsByGenreId.GetValueOrDefault(genre.Id, 0)
+                }).ToList();
+
                 return Ok(response);
             }
             catch (Exception ex)
@@ -125,20 +129,21 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return NotFound($"Genre with ID {id} not found.");
                 }
 
-                    // Get media item IDs directly without loading full entities
-                    var mediaItemIds = await _context.Database
-                        .SqlQueryRaw<Guid>(@"
-                            SELECT mi.""Id"" 
-                            FROM ""MediaItems"" mi
-                            INNER JOIN ""MediaItemGenres"" mig ON mi.""Id"" = mig.""MediaItemId""
-                            WHERE mig.""GenreId"" = {0}", id)
-                        .ToListAsync();
+                // Get media item IDs directly without loading full entities
+                var mediaItemIds = await _context.Database
+                    .SqlQueryRaw<Guid>(@"
+                        SELECT mi.""Id""
+                        FROM ""MediaItems"" mi
+                        INNER JOIN ""MediaItemGenres"" mig ON mi.""Id"" = mig.""MediaItemId""
+                        WHERE mig.""GenreId"" = {0}", id)
+                    .ToListAsync();
 
                 var response = new GenreResponseDto
                 {
                     Id = genre.Id,
                     Name = genre.Name,
-                    MediaItemIds = mediaItemIds.ToArray()
+                    MediaItemIds = mediaItemIds.ToArray(),
+                    MediaItemCount = mediaItemIds.Count
                 };
 
                 return Ok(response);
@@ -172,7 +177,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 {
                     Id = existingGenre.Id,
                     Name = existingGenre.Name,
-                    MediaItemIds = existingGenre.MediaItems.Select(m => m.Id).ToArray()
+                    MediaItemIds = existingGenre.MediaItems.Select(m => m.Id).ToArray(),
+                    MediaItemCount = existingGenre.MediaItems.Count
                 };
                 return Ok(existingResponse);
             }
@@ -185,7 +191,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             {
                 Id = genre.Id,
                 Name = genre.Name,
-                MediaItemIds = Array.Empty<Guid>()
+                MediaItemIds = Array.Empty<Guid>(),
+                MediaItemCount = 0
             };
 
             return CreatedAtAction(nameof(GetGenre), new { id = genre.Id }, response);
@@ -234,7 +241,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             {
                 Id = genre.Id,
                 Name = genre.Name,
-                MediaItemIds = mediaItemIds.ToArray()
+                MediaItemIds = mediaItemIds.ToArray(),
+                MediaItemCount = mediaItemIds.Count
             };
 
             return Ok(response);
@@ -305,7 +313,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     {
                         Id = genre.Id,
                         Name = genre.Name,
-                        MediaItemIds = Array.Empty<Guid>()
+                        MediaItemIds = Array.Empty<Guid>(),
+                        MediaItemCount = 0
                     });
                     result.SuccessCount++;
                 }
@@ -385,7 +394,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                         {
                             Id = genre.Id,
                             Name = genre.Name,
-                            MediaItemIds = Array.Empty<Guid>()
+                            MediaItemIds = Array.Empty<Guid>(),
+                            MediaItemCount = 0
                         });
                         result.SuccessCount++;
                     }
@@ -404,6 +414,4 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
     }
-
-
 }

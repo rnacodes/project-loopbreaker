@@ -693,3 +693,5 @@ scripts/temp-batches/
 !scripts/example-mixed-media.csv
 for-claude/
 nul
+bash.exe.stackdump
+.claude/settings.local.json
