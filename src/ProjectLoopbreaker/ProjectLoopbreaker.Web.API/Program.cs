@@ -308,6 +308,10 @@ builder.Services.AddScoped<IWebsiteService, WebsiteService>();
 builder.Services.AddScoped<IWebsiteMappingService, WebsiteMappingService>();
 builder.Services.AddScoped<IGoodreadsImportService, GoodreadsImportService>();
 
+// Register Document services
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+builder.Services.AddScoped<IDocumentMappingService, DocumentMappingService>();
+
 // Register a generic HttpClient for use in controllers
 builder.Services.AddHttpClient();
 
@@ -395,6 +399,46 @@ builder.Services.AddHttpClient<IOpenLibraryApiClient, OpenLibraryApiClient>(clie
 {
     client.BaseAddress = new Uri("https://openlibrary.org/");
     client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0 (https://github.com/yourrepo/projectloopbreaker)");
+});
+
+// Configure Paperless-ngx API client
+// NOTE: Requires PAPERLESS_API_URL and PAPERLESS_API_TOKEN environment variables
+// Example: PAPERLESS_API_URL=http://localhost:8000/api, PAPERLESS_API_TOKEN=your-token-here
+builder.Services.AddHttpClient<IPaperlessApiClient, PaperlessApiClient>(client =>
+{
+    var apiUrl = Environment.GetEnvironmentVariable("PAPERLESS_API_URL") ??
+                 builder.Configuration["Paperless:ApiUrl"];
+    var apiToken = Environment.GetEnvironmentVariable("PAPERLESS_API_TOKEN") ??
+                   builder.Configuration["Paperless:ApiToken"];
+
+    Console.WriteLine("=== Paperless-ngx Configuration Debug ===");
+    Console.WriteLine($"API URL: {(string.IsNullOrEmpty(apiUrl) ? "NOT CONFIGURED" : apiUrl)}");
+    Console.WriteLine($"API Token: {(string.IsNullOrEmpty(apiToken) ? "NOT CONFIGURED" : "SET")}");
+
+    if (string.IsNullOrEmpty(apiUrl) || string.IsNullOrEmpty(apiToken))
+    {
+        Console.WriteLine("WARNING: Paperless-ngx API is not configured.");
+        Console.WriteLine("Document sync functionality will not be available until properly configured.");
+        Console.WriteLine("Expected environment variables:");
+        Console.WriteLine("  PAPERLESS_API_URL (e.g., http://localhost:8000/api)");
+        Console.WriteLine("  PAPERLESS_API_TOKEN (API token from Paperless-ngx settings)");
+
+        // Set placeholder base address to prevent null reference
+        client.BaseAddress = new Uri("http://localhost:8000/api/");
+    }
+    else
+    {
+        // Ensure URL ends with /
+        if (!apiUrl.EndsWith("/"))
+            apiUrl += "/";
+
+        client.BaseAddress = new Uri(apiUrl);
+        client.DefaultRequestHeaders.Add("Authorization", $"Token {apiToken}");
+        Console.WriteLine("Paperless-ngx API client configured successfully.");
+    }
+
+    client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+    client.Timeout = TimeSpan.FromSeconds(60); // Longer timeout for document operations
 });
 
 // Register OpenLibrary service

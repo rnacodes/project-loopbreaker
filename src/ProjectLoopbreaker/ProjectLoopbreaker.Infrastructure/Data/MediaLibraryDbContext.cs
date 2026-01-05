@@ -21,6 +21,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<YouTubePlaylist> YouTubePlaylists { get; set; }
         public DbSet<Article> Articles { get; set; }
         public DbSet<Website> Websites { get; set; }
+        public DbSet<Document> Documents { get; set; }
         public DbSet<Topic> Topics { get; set; }
         public DbSet<Genre> Genres { get; set; }
         public DbSet<Highlight> Highlights { get; set; }
@@ -39,6 +40,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         IQueryable<YouTubePlaylist> IApplicationDbContext.YouTubePlaylists => YouTubePlaylists;
         IQueryable<Article> IApplicationDbContext.Articles => Articles;
         IQueryable<Website> IApplicationDbContext.Websites => Websites;
+        IQueryable<Document> IApplicationDbContext.Documents => Documents;
         IQueryable<Topic> IApplicationDbContext.Topics => Topics;
         IQueryable<Genre> IApplicationDbContext.Genres => Genres;
         IQueryable<Highlight> IApplicationDbContext.Highlights => Highlights;
@@ -216,6 +218,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             modelBuilder.Entity<YouTubeChannel>().ToTable("YouTubeChannels");
             modelBuilder.Entity<Article>().ToTable("Articles");
             modelBuilder.Entity<Website>().ToTable("Websites");
+            modelBuilder.Entity<Document>().ToTable("Documents");
 
             // Configure PodcastSeries specific properties
             modelBuilder.Entity<PodcastSeries>(entity =>
@@ -545,19 +548,52 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             {
                 entity.Property(e => e.RssFeedUrl)
                     .HasMaxLength(2000);
-                    
+
                 entity.Property(e => e.Domain)
                     .HasMaxLength(200);
-                    
+
                 entity.Property(e => e.Author)
                     .HasMaxLength(200);
-                    
+
                 entity.Property(e => e.Publication)
                     .HasMaxLength(200);
-                    
+
                 // Create indexes for better query performance
                 entity.HasIndex(e => e.Domain);
                 entity.HasIndex(e => e.LastCheckedDate);
+            });
+
+            // Configure Document specific properties
+            modelBuilder.Entity<Document>(entity =>
+            {
+                entity.Property(e => e.OriginalFileName)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.ArchiveSerialNumber)
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.DocumentType)
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Correspondent)
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.FileType)
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.PaperlessUrl)
+                    .HasMaxLength(2000);
+
+                entity.Property(e => e.IsArchived)
+                    .HasDefaultValue(false);
+
+                // Create indexes for better query performance
+                entity.HasIndex(e => e.PaperlessId);
+                entity.HasIndex(e => e.DocumentType);
+                entity.HasIndex(e => e.Correspondent);
+                entity.HasIndex(e => e.DocumentDate);
+                entity.HasIndex(e => e.FileType);
+                entity.HasIndex(e => e.IsArchived);
             });
 
             // Configure Highlight entity

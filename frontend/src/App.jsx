@@ -31,6 +31,7 @@ import UploadMediaPage from './components/UploadMediaPage';
 import YouTubeCallback from './pages/YouTubeCallback';
 import ReadwiseSyncPage from './components/ReadwiseSyncPage';
 import ArticlesPage from './components/ArticlesPage';
+import DocumentsPage from './components/DocumentsPage';
 import SourceDirectoryPage from './components/SourceDirectoryPage';
 import YouTubeChannelList from './components/YouTubeChannelList';
 import YouTubeChannelProfile from './components/YouTubeChannelProfile';
@@ -41,6 +42,7 @@ import WebsiteImportPage from './components/WebsiteImportPage';
 import WebsitesPage from './components/WebsitesPage';
 import TypesenseAdminPage from './components/TypesenseAdminPage';
 import GoodreadsUploadPage from './components/GoodreadsUploadPage';
+import BackgroundJobsPage from './components/BackgroundJobsPage';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
@@ -132,6 +134,9 @@ function App() {
             <Route path="/articles" element={
               <ConditionalProtectedRoute><ArticlesPage /></ConditionalProtectedRoute>
             } />
+            <Route path="/documents" element={
+              <ConditionalProtectedRoute><DocumentsPage /></ConditionalProtectedRoute>
+            } />
             <Route path="/sources" element={
               <ConditionalProtectedRoute><SourceDirectoryPage /></ConditionalProtectedRoute>
             } />
@@ -161,6 +166,9 @@ function App() {
             } />
             <Route path="/typesense-admin" element={
               <ConditionalProtectedRoute><TypesenseAdminPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/background-jobs" element={
+              <ConditionalProtectedRoute><BackgroundJobsPage /></ConditionalProtectedRoute>
             } />
           {/* Catch-all route for 404 */}
           <Route path="*" element={
