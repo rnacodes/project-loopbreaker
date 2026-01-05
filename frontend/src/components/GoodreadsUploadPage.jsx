@@ -252,6 +252,14 @@ const GoodreadsUploadPage = () => {
             For very large libraries (thousands of books), consider splitting your CSV into smaller chunks
             or using the PowerShell batch import script available in the scripts folder.
           </p>
+
+          <h3>Book Descriptions</h3>
+          <p>
+            Book descriptions are not included in Goodreads exports. A background service runs periodically
+            (every 48 hours) to automatically fetch descriptions from Open Library for books that have an ISBN.
+            This process runs in batches to respect API rate limits, so it may take some time for all
+            descriptions to be populated.
+          </p>
         </div>
       </section>
     </div>

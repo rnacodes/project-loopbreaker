@@ -22,6 +22,12 @@ namespace ProjectLoopbreaker.DTOs
         public List<string> Topics { get; set; } = new();
         public List<string> Genres { get; set; } = new();
         public string MediaType { get; set; } = "Website";
+
+        // Archive fields for future ArchiveBox integration
+        public string? ArchiveUrl { get; set; }
+        public DateTime? ArchivedAt { get; set; }
+        public string? ArchiveStatus { get; set; }
+        public string? WaybackUrl { get; set; }
     }
 }
 

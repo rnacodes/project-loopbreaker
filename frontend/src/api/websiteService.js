@@ -127,3 +127,19 @@ export const deleteWebsite = async (id) => {
         throw error;
     }
 };
+
+/**
+ * Gets the latest RSS feed items for a website
+ * @param {string} id - The website ID
+ * @param {number} maxItems - Maximum number of items to return (default 3)
+ * @returns {Array} - Array of RSS feed items
+ */
+export const getWebsiteRssFeedItems = async (id, maxItems = 3) => {
+    try {
+        const response = await apiClient.get(`/website/${id}/rss-items?maxItems=${maxItems}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching RSS feed items:', error);
+        throw error;
+    }
+};

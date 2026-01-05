@@ -400,6 +400,18 @@ builder.Services.AddHttpClient<IOpenLibraryApiClient, OpenLibraryApiClient>(clie
 // Register OpenLibrary service
 builder.Services.AddScoped<IOpenLibraryService, OpenLibraryService>();
 
+// Configure Book Description Enrichment background service
+builder.Services.Configure<BookDescriptionEnrichmentOptions>(
+    builder.Configuration.GetSection(BookDescriptionEnrichmentOptions.SectionName));
+builder.Services.AddScoped<IBookDescriptionEnrichmentService, BookDescriptionEnrichmentService>();
+
+// Only register the hosted service if not in Testing environment
+if (builder.Environment.EnvironmentName != "Testing")
+{
+    builder.Services.AddHostedService<BookDescriptionEnrichmentHostedService>();
+    Console.WriteLine("Book description enrichment background service registered.");
+}
+
 // Configure Website Scraper service
 builder.Services.AddHttpClient<IWebsiteScraperService, ProjectLoopbreaker.Infrastructure.Services.WebsiteScraperService>(client =>
 {
@@ -412,6 +424,13 @@ builder.Services.AddHttpClient<IWebsiteScreenshotService, ProjectLoopbreaker.Inf
 {
     client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
     client.Timeout = TimeSpan.FromSeconds(30);
+});
+
+// Configure RSS Feed service
+builder.Services.AddHttpClient<IRssFeedService, ProjectLoopbreaker.Infrastructure.Services.RssFeedService>(client =>
+{
+    client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+    client.Timeout = TimeSpan.FromSeconds(15);
 });
 
 // Configure TMDB API client

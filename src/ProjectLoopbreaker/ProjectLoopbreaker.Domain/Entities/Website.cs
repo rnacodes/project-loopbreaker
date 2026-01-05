@@ -40,6 +40,33 @@ namespace ProjectLoopbreaker.Domain.Entities
         /// </summary>
         [StringLength(200)]
         public string? Publication { get; set; }
+
+        /// <summary>
+        /// URL to the archived snapshot of this website (e.g., from ArchiveBox).
+        /// Used for permanent storage and offline access.
+        /// </summary>
+        [Url]
+        [StringLength(2000)]
+        public string? ArchiveUrl { get; set; }
+
+        /// <summary>
+        /// When the website was archived.
+        /// </summary>
+        public DateTime? ArchivedAt { get; set; }
+
+        /// <summary>
+        /// Status of the archival process: "pending", "archived", "failed".
+        /// </summary>
+        [StringLength(50)]
+        public string? ArchiveStatus { get; set; }
+
+        /// <summary>
+        /// URL to the Internet Archive Wayback Machine snapshot, if available.
+        /// Provides an additional layer of archival redundancy.
+        /// </summary>
+        [Url]
+        [StringLength(2000)]
+        public string? WaybackUrl { get; set; }
     }
 }
 

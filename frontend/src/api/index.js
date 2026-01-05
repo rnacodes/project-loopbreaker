@@ -18,7 +18,8 @@ export {
     deleteMedia,
     bulkDeleteMedia,
     getMediaByTopic,
-    getMediaByGenre
+    getMediaByGenre,
+    updateMediaTopicsGenres
 } from './mediaService';
 
 // Mixlists
@@ -64,12 +65,14 @@ export {
     searchTopics,
     createTopic,
     deleteTopic,
+    updateTopic,
     importTopicsFromJson,
     importTopicsFromCsv,
     getAllGenres,
     searchGenres,
     createGenre,
     deleteGenre,
+    updateGenre,
     importGenresFromJson,
     importGenresFromCsv
 } from './topicGenreService';
@@ -228,7 +231,8 @@ export {
     getWebsitesWithRss,
     createWebsite,
     updateWebsite,
-    deleteWebsite
+    deleteWebsite,
+    getWebsiteRssFeedItems
 } from './websiteService';
 
 // Development/Cleanup

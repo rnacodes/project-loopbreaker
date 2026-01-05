@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-    Button, Card, Box, Typography, Accordion, AccordionSummary, AccordionDetails, Link, Chip, IconButton, Tooltip, Alert
+    Button, Card, Box, Typography, Accordion, AccordionSummary, AccordionDetails, Link, Chip, IconButton, Tooltip, Alert,
+    CircularProgress, Divider
 } from '@mui/material';
-import { ExpandMore, OpenInNew, Star, RssFeed, ContentCopy, Language, Schedule } from '@mui/icons-material';
+import { ExpandMore, OpenInNew, Star, RssFeed, ContentCopy, Language, Schedule, Article } from '@mui/icons-material';
+import { getWebsiteRssFeedItems } from '../api';
 
 function getJustWatchUrl(title) {
   // Simple heuristic for generating a JustWatch search URL.
@@ -11,6 +13,30 @@ function getJustWatchUrl(title) {
 }
 
 function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
+  const [rssFeedItems, setRssFeedItems] = useState([]);
+  const [loadingRss, setLoadingRss] = useState(false);
+  const [rssError, setRssError] = useState(null);
+
+  // Fetch RSS feed items for websites with RSS feeds
+  useEffect(() => {
+    const fetchRssItems = async () => {
+      if (mediaItem.mediaType === 'Website' && mediaItem.rssFeedUrl && mediaItem.id) {
+        setLoadingRss(true);
+        setRssError(null);
+        try {
+          const items = await getWebsiteRssFeedItems(mediaItem.id, 3);
+          setRssFeedItems(items);
+        } catch (err) {
+          console.error('Error fetching RSS items:', err);
+          setRssError('Failed to load RSS feed');
+        } finally {
+          setLoadingRss(false);
+        }
+      }
+    };
+
+    fetchRssItems();
+  }, [mediaItem.id, mediaItem.mediaType, mediaItem.rssFeedUrl]);
   return (
     <Card sx={{ mt: 3, overflow: 'hidden', borderRadius: 2 }}>
       <Accordion sx={{ boxShadow: 'none', '&:before': { display: 'none' } }}>
@@ -1242,6 +1268,103 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 >
                   Visit Website
                 </Button>
+              </Box>
+            )}
+
+            {/* RSS Feed Items */}
+            {mediaItem.rssFeedUrl && (
+              <Box sx={{ mt: 3 }}>
+                <Divider sx={{ mb: 2 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <RssFeed sx={{ color: '#f5a623' }} />
+                  Latest Posts
+                </Typography>
+
+                {loadingRss && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 2 }}>
+                    <CircularProgress size={20} />
+                    <Typography variant="body2" color="text.secondary">Loading feed...</Typography>
+                  </Box>
+                )}
+
+                {rssError && (
+                  <Typography variant="body2" color="error" sx={{ py: 1 }}>
+                    {rssError}
+                  </Typography>
+                )}
+
+                {!loadingRss && !rssError && rssFeedItems.length === 0 && (
+                  <Typography variant="body2" color="text.secondary" sx={{ py: 1, fontStyle: 'italic' }}>
+                    No recent posts available
+                  </Typography>
+                )}
+
+                {!loadingRss && rssFeedItems.length > 0 && (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {rssFeedItems.map((item, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          p: 2,
+                          backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                          borderRadius: 1,
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          '&:hover': {
+                            backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                          <Article sx={{ color: 'text.secondary', mt: 0.5 }} />
+                          <Box sx={{ flex: 1 }}>
+                            <Link
+                              href={item.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              sx={{
+                                color: 'text.primary',
+                                textDecoration: 'none',
+                                fontWeight: 500,
+                                fontSize: '0.95rem',
+                                '&:hover': {
+                                  color: 'primary.main',
+                                  textDecoration: 'underline'
+                                }
+                              }}
+                            >
+                              {item.title}
+                            </Link>
+                            {item.publishedDate && (
+                              <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mt: 0.5 }}>
+                                {new Date(item.publishedDate).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric'
+                                })}
+                                {item.author && ` • ${item.author}`}
+                              </Typography>
+                            )}
+                            {item.description && (
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color: 'text.secondary',
+                                  mt: 1,
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden'
+                                }}
+                              >
+                                {item.description}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
               </Box>
             )}
 
