@@ -42,3 +42,5 @@ Get-Process -Name "dotnet" | Stop-Process -Force
 4. Look for one using port 5033 (or sort by CPU/Memory to find active ones)
 
 5. Right-click → "End task"
+
+Stop-Process -Id 24916 -Force

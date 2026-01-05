@@ -45,7 +45,15 @@ import {
   Sync,
   ImportExport,
   ExpandMore,
-  ExpandLess
+  ExpandLess,
+  Book,
+  Tv,
+  Podcasts,
+  VideoLibrary,
+  YouTube,
+  MusicNote,
+  SportsEsports,
+  Description
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -98,24 +106,28 @@ const ResponsiveNavigation = () => {
     { text: 'Home', path: '/', icon: <Home /> },
     { text: 'Search', path: '/search', icon: <Search /> },
     { text: 'Topics and Genres', path: '/search-by-topic-genre', icon: <Category /> },
-    { text: 'Mixlists', path: '/mixlists', icon: <QueueMusic /> }
+    { text: 'Mixlists', path: '/search?searchMode=mixlists', icon: <QueueMusic /> }
   ];
 
   const browseMediaMenuItems = [
-    { text: 'Articles', path: '/articles', icon: <Article /> },
-    { text: 'Books', path: '/search?mediaType=Book', icon: <Movie /> },
+    { text: 'Articles', path: '/search?mediaType=Article', icon: <Article /> },
+    { text: 'Books', path: '/search?mediaType=Book', icon: <Book /> },
+    { text: 'Channels', path: '/search?mediaType=Channel', icon: <YouTube /> },
+    { text: 'Documents', path: '/search?mediaType=Document', icon: <Description /> },
     { text: 'Movies', path: '/search?mediaType=Movie', icon: <Movie /> },
-    { text: 'Music', path: '/search?mediaType=Music', icon: <Movie /> },
-    { text: 'Podcasts', path: '/search?mediaType=Podcast', icon: <Movie /> },
-    { text: 'TV Shows', path: '/search?mediaType=TVShow', icon: <Movie /> },
-    { text: 'Videos', path: '/search?mediaType=Video', icon: <Movie /> },
-    { text: 'Websites', path: '/websites', icon: <Language /> }
+    { text: 'Music', path: '/search?mediaType=Music', icon: <MusicNote /> },
+    { text: 'Playlists', path: '/search?mediaType=Playlist', icon: <VideoLibrary /> },
+    { text: 'Podcasts', path: '/search?mediaType=Podcast', icon: <Podcasts /> },
+    { text: 'TV Shows', path: '/search?mediaType=TVShow', icon: <Tv /> },
+    { text: 'Videos', path: '/search?mediaType=Video', icon: <VideoLibrary /> },
+    { text: 'Video Games', path: '/search?mediaType=VideoGame', icon: <SportsEsports /> },
+    { text: 'Websites', path: '/search?mediaType=Website', icon: <Language /> }
   ];
 
   const mediaMenuItems = [
-    { text: 'Add Media', path: '/add-media', icon: <Add /> },
-    { text: 'Import Media', path: '/import-media', icon: <Download /> },
-    { text: 'Upload Media', path: '/upload-media', icon: <Upload /> }
+    { text: 'Media Form', path: '/add-media', icon: <Add /> },
+    { text: 'API Import', path: '/import-media', icon: <Download /> },
+    { text: 'Bulk Upload', path: '/upload-media', icon: <Upload /> }
   ];
 
   const adminMenuItems = [
@@ -136,7 +148,7 @@ const ResponsiveNavigation = () => {
         borderColor: 'divider'
       }}>
         <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-          Project Loopbreaker
+          My MediaVerse
         </Typography>
         <IconButton onClick={handleDrawerToggle}>
           <CloseIcon />
@@ -235,7 +247,7 @@ const ResponsiveNavigation = () => {
           </List>
         </Collapse>
         
-        {/* Media Submenu */}
+        {/* Add Media Submenu */}
         <ListItem
           button
           onClick={() => setMobileMediaOpen(!mobileMediaOpen)}
@@ -246,10 +258,10 @@ const ResponsiveNavigation = () => {
           }}
         >
           <ListItemIcon sx={{ color: 'primary.main' }}>
-            <Movie />
+            <Add />
           </ListItemIcon>
-          <ListItemText 
-            primary="Media"
+          <ListItemText
+            primary="Add Media"
             sx={{
               '& .MuiListItemText-primary': {
                 fontWeight: 'medium'
@@ -404,7 +416,7 @@ const ResponsiveNavigation = () => {
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             <Button color="inherit" component={Link} to="/" sx={{ textTransform: 'none', fontSize: '1.25rem' }}>
-              Project Loopbreaker
+              My MediaVerse
             </Button>
           </Typography>
           
@@ -467,18 +479,18 @@ const ResponsiveNavigation = () => {
                 ))}
               </Menu>
               
-              {/* Media Menu */}
+              {/* Add Media Menu */}
               <Button
                 color="inherit"
                 onClick={(e) => setMediaMenuAnchor(e.currentTarget)}
                 endIcon={<ExpandMore />}
-                sx={{ 
+                sx={{
                   textTransform: 'none',
                   minWidth: 'auto',
                   px: 2
                 }}
               >
-                Media
+                Add Media
               </Button>
               <Menu
                 anchorEl={mediaMenuAnchor}

@@ -39,7 +39,7 @@ const Footer = () => {
               fontSize: '0.95rem'
             }}
           >
-            MediaVerse is not affiliated with any of the brands or websites used in the application.
+           My MediaVerse is not affiliated with any of the brands or websites used in the application.
           </Typography>
 
           {/* Links */}

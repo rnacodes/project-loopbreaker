@@ -17,6 +17,7 @@ namespace ProjectLoopbreaker.Application.Services
     {
         private readonly IApplicationDbContext _context;
         private readonly IWebsiteScraperService _scraperService;
+        private readonly IWebsiteScreenshotService? _screenshotService;
         private readonly ILogger<WebsiteService> _logger;
         private readonly ITypeSenseService? _typeSenseService;
 
@@ -24,10 +25,12 @@ namespace ProjectLoopbreaker.Application.Services
             IApplicationDbContext context,
             IWebsiteScraperService scraperService,
             ILogger<WebsiteService> logger,
-            ITypeSenseService? typeSenseService = null)
+            ITypeSenseService? typeSenseService = null,
+            IWebsiteScreenshotService? screenshotService = null)
         {
             _context = context;
             _scraperService = scraperService;
+            _screenshotService = screenshotService;
             _logger = logger;
             _typeSenseService = typeSenseService;
         }
@@ -231,13 +234,28 @@ namespace ProjectLoopbreaker.Application.Services
             // Scrape the website
             var scrapedData = await _scraperService.ScrapeWebsiteAsync(dto.Url);
 
+            // Get thumbnail - use scraped image or capture screenshot if not available
+            var thumbnail = scrapedData.ImageUrl;
+            if (string.IsNullOrEmpty(thumbnail) && _screenshotService != null)
+            {
+                _logger.LogInformation("No og:image found, capturing screenshot for: {Url}", dto.Url);
+                try
+                {
+                    thumbnail = await _screenshotService.CaptureScreenshotAsync(dto.Url);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to capture screenshot for URL: {Url}. Continuing without thumbnail.", dto.Url);
+                }
+            }
+
             // Create the website using scraped data
             var createDto = new CreateWebsiteDto
             {
                 Url = dto.Url,
                 Title = dto.TitleOverride ?? scrapedData.Title ?? scrapedData.Domain ?? "Untitled Website",
                 Description = scrapedData.Description,
-                Thumbnail = scrapedData.ImageUrl,
+                Thumbnail = thumbnail,
                 RssFeedUrl = scrapedData.RssFeedUrl,
                 Notes = dto.Notes,
                 Topics = dto.Topics,

@@ -43,5 +43,17 @@ namespace ProjectLoopbreaker.DTOs
         // Simple list of mixlist names/IDs instead of full mixlist objects
         [JsonPropertyName("mixlistIds")]
         public Guid[] MixlistIds { get; set; } = Array.Empty<Guid>();
+
+        // Website-specific properties
+        [JsonPropertyName("rssFeedUrl")]
+        public string? RssFeedUrl { get; set; }
+        [JsonPropertyName("domain")]
+        public string? Domain { get; set; }
+        [JsonPropertyName("author")]
+        public string? Author { get; set; }
+        [JsonPropertyName("publication")]
+        public string? Publication { get; set; }
+        [JsonPropertyName("lastCheckedDate")]
+        public DateTime? LastCheckedDate { get; set; }
     }
 }

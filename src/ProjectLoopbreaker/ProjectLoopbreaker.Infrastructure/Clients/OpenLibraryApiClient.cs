@@ -100,18 +100,18 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
             try
             {
                 _logger.LogInformation("Getting OpenLibrary book details for ISBN: {ISBN}", isbn);
-                
+
                 var response = await _httpClient.GetAsync($"isbn/{isbn}.json");
                 response.EnsureSuccessStatusCode();
-                
+
                 var jsonContent = await response.Content.ReadAsStringAsync();
                 var result = JsonSerializer.Deserialize<OpenLibraryBookDto>(jsonContent, _jsonOptions);
-                
+
                 if (result == null)
                 {
                     throw new InvalidOperationException($"Book with ISBN {isbn} not found");
                 }
-                
+
                 return result;
             }
             catch (Exception ex)
@@ -119,6 +119,99 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                 _logger.LogError(ex, "Error getting OpenLibrary book details for ISBN: {ISBN}", isbn);
                 throw;
             }
+        }
+
+        public async Task<OpenLibraryEditionDto?> GetEditionByISBNAsync(string isbn)
+        {
+            try
+            {
+                _logger.LogInformation("Getting OpenLibrary edition for ISBN: {ISBN}", isbn);
+
+                var response = await _httpClient.GetAsync($"isbn/{isbn}.json");
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning("No edition found for ISBN: {ISBN}", isbn);
+                    return null;
+                }
+
+                response.EnsureSuccessStatusCode();
+
+                var jsonContent = await response.Content.ReadAsStringAsync();
+                return JsonSerializer.Deserialize<OpenLibraryEditionDto>(jsonContent, _jsonOptions);
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                _logger.LogWarning("No edition found for ISBN: {ISBN}", isbn);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting OpenLibrary edition for ISBN: {ISBN}", isbn);
+                throw;
+            }
+        }
+
+        public async Task<string?> GetBookDescriptionByISBNAsync(string isbn)
+        {
+            try
+            {
+                _logger.LogInformation("Getting book description for ISBN: {ISBN}", isbn);
+
+                // Step 1: Get edition to find Work ID
+                var edition = await GetEditionByISBNAsync(isbn);
+                if (edition == null)
+                {
+                    _logger.LogWarning("No edition found for ISBN: {ISBN}", isbn);
+                    return null;
+                }
+
+                var workId = edition.GetWorkId();
+                if (string.IsNullOrEmpty(workId))
+                {
+                    _logger.LogWarning("No work reference found for ISBN: {ISBN}", isbn);
+                    return null;
+                }
+
+                // Step 2: Get work to retrieve description
+                var work = await GetBookByOpenLibraryIdAsync(workId);
+
+                return ExtractDescription(work.Description);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting book description for ISBN: {ISBN}", isbn);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Extracts description text from the Open Library description field,
+        /// which can be either a string or an object with a "value" property.
+        /// </summary>
+        private static string? ExtractDescription(object? description)
+        {
+            if (description == null)
+                return null;
+
+            // If it's already a string, return it
+            if (description is string str)
+                return str;
+
+            // If it's a JsonElement (from deserialization), handle both cases
+            if (description is JsonElement element)
+            {
+                if (element.ValueKind == JsonValueKind.String)
+                {
+                    return element.GetString();
+                }
+                else if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty("value", out var valueElement))
+                {
+                    return valueElement.GetString();
+                }
+            }
+
+            return null;
         }
 
         public async Task<OpenLibraryAuthorDto> GetAuthorAsync(string authorId)

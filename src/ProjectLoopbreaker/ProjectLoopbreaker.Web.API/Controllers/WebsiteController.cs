@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.Shared.DTOs.WebsiteScraper;
+using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
 {
@@ -11,15 +12,18 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     {
         private readonly IWebsiteService _websiteService;
         private readonly IWebsiteMappingService _websiteMappingService;
+        private readonly IRssFeedService? _rssFeedService;
         private readonly ILogger<WebsiteController> _logger;
 
         public WebsiteController(
             IWebsiteService websiteService,
             IWebsiteMappingService websiteMappingService,
-            ILogger<WebsiteController> logger)
+            ILogger<WebsiteController> logger,
+            IRssFeedService? rssFeedService = null)
         {
             _websiteService = websiteService;
             _websiteMappingService = websiteMappingService;
+            _rssFeedService = rssFeedService;
             _logger = logger;
         }
 
@@ -201,6 +205,38 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             {
                 _logger.LogError(ex, "Error occurred while retrieving websites with RSS feeds");
                 return StatusCode(500, new { error = "Failed to retrieve websites", details = ex.Message });
+            }
+        }
+
+        // GET: api/website/{id}/rss-items
+        [HttpGet("{id}/rss-items")]
+        public async Task<ActionResult<IEnumerable<RssFeedItemDto>>> GetRssFeedItems(Guid id, [FromQuery] int maxItems = 3)
+        {
+            try
+            {
+                if (_rssFeedService == null)
+                {
+                    return StatusCode(503, new { error = "RSS feed service is not available" });
+                }
+
+                var website = await _websiteService.GetWebsiteByIdAsync(id);
+                if (website == null)
+                {
+                    return NotFound(new { error = $"Website with ID {id} not found" });
+                }
+
+                if (string.IsNullOrEmpty(website.RssFeedUrl))
+                {
+                    return Ok(new List<RssFeedItemDto>()); // Return empty list if no RSS feed
+                }
+
+                var items = await _rssFeedService.GetLatestFeedItemsAsync(website.RssFeedUrl, maxItems);
+                return Ok(items);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching RSS items for website {Id}", id);
+                return StatusCode(500, new { error = "Failed to fetch RSS feed items", details = ex.Message });
             }
         }
     }

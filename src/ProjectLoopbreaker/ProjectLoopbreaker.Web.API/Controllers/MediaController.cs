@@ -465,6 +465,16 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     MixlistIds = mediaItem.Mixlists.Select(m => m.Id).ToArray()
                 };
 
+                // Add website-specific properties if applicable
+                if (mediaItem is Website website)
+                {
+                    response.RssFeedUrl = website.RssFeedUrl;
+                    response.Domain = website.Domain;
+                    response.Author = website.Author;
+                    response.Publication = website.Publication;
+                    response.LastCheckedDate = website.LastCheckedDate;
+                }
+
                 return Ok(response);
             }
             catch (Exception ex)

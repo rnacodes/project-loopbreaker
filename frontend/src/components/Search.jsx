@@ -197,16 +197,18 @@ export default function Search() {
             const topics = searchParams.get('topics');
             const genres = searchParams.get('genres');
             const status = searchParams.get('status');
-            
+            const mode = searchParams.get('searchMode');
+
             if (query) setSearchQuery(query);
             if (mediaType) setSelectedMediaTypes([mediaType]);
             if (topics) setSelectedTopics(topics.split(',').map(t => t.trim()));
             if (genres) setSelectedGenres(genres.split(',').map(g => g.trim()));
             if (status) setSelectedStatus(status);
-            
+            if (mode === 'mixlists') setSearchMode('mixlists');
+
             setUrlParamsLoaded(true);
         };
-        
+
         loadUrlParams();
     }, [searchParams]);
 

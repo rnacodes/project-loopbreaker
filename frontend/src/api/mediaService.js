@@ -46,3 +46,28 @@ export const getMediaByTopic = (topicId) => {
 export const getMediaByGenre = (genreId) => {
     return apiClient.get(`/media/by-genre/${genreId}`);
 };
+
+// Update media item's topics and genres
+export const updateMediaTopicsGenres = async (mediaId, topics, genres) => {
+    // Get the current media item first
+    const response = await apiClient.get(`/media/${mediaId}`);
+    const currentMedia = response.data;
+
+    // Update with new topics and genres
+    return apiClient.put(`/media/${mediaId}`, {
+        title: currentMedia.title,
+        mediaType: currentMedia.mediaType,
+        status: currentMedia.status,
+        rating: currentMedia.rating || null,
+        ownershipStatus: currentMedia.ownershipStatus || null,
+        link: currentMedia.link || null,
+        description: currentMedia.description || null,
+        notes: currentMedia.notes || null,
+        relatedNotes: currentMedia.relatedNotes || null,
+        thumbnail: currentMedia.thumbnail || null,
+        genre: currentMedia.genre || null,
+        dateCompleted: currentMedia.dateCompleted || null,
+        topics: topics,
+        genres: genres
+    });
+};

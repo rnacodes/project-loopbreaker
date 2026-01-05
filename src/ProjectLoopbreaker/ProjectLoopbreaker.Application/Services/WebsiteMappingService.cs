@@ -37,7 +37,12 @@ namespace ProjectLoopbreaker.Application.Services
                 Notes = website.Notes,
                 Topics = website.Topics?.Select(t => t.Name).ToList() ?? new List<string>(),
                 Genres = website.Genres?.Select(g => g.Name).ToList() ?? new List<string>(),
-                MediaType = website.MediaType.ToString()
+                MediaType = website.MediaType.ToString(),
+                // Archive fields for future ArchiveBox integration
+                ArchiveUrl = website.ArchiveUrl,
+                ArchivedAt = website.ArchivedAt,
+                ArchiveStatus = website.ArchiveStatus,
+                WaybackUrl = website.WaybackUrl
             };
 
             return Task.FromResult(dto);

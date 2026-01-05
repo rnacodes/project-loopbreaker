@@ -20,7 +20,9 @@
       "WebFetch(domain:archivebox.io)",
       "Bash(dotnet ef migrations add:*)",
       "Bash(Select-Object -Last 20)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "WebSearch",
+      "WebFetch(domain:www.raindrop.io)"
     ]
   }
 }
