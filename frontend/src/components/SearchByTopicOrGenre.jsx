@@ -132,7 +132,7 @@ function SearchByTopicOrGenre() {
             type,
             id: item.id || item.Id,
             name: item.name || item.Name,
-            mediaItemCount: (item.mediaItemIds || item.MediaItemIds || []).length
+            mediaItemCount: item.mediaItemCount ?? (item.mediaItemIds || item.MediaItemIds || []).length
         });
         setOpenDeleteDialog(true);
     };

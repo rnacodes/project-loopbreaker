@@ -26,32 +26,32 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
+                // Get all topics in a single query
                 var topics = await _context.Topics
                     .AsNoTracking()
                     .OrderBy(t => t.Name)
                     .ToListAsync();
-                
-                // Load media items separately to avoid discriminator issues
-                var response = new List<TopicResponseDto>();
-                foreach (var topic in topics)
+
+                // Get all media item counts in a single batched query using GROUP BY
+                var topicCounts = await _context.Database
+                    .SqlQueryRaw<TopicCountResult>(@"
+                        SELECT mit.""TopicId"", COUNT(*) as ""Count""
+                        FROM ""MediaItemTopics"" mit
+                        GROUP BY mit.""TopicId""")
+                    .ToListAsync();
+
+                // Create a dictionary for O(1) lookup
+                var countsByTopicId = topicCounts.ToDictionary(tc => tc.TopicId, tc => tc.Count);
+
+                // Build response with counts (no need for individual queries)
+                var response = topics.Select(topic => new TopicResponseDto
                 {
-                    // Get media item IDs directly without loading full entities
-                    var mediaItemIds = await _context.Database
-                        .SqlQueryRaw<Guid>(@"
-                            SELECT mi.""Id"" 
-                            FROM ""MediaItems"" mi
-                            INNER JOIN ""MediaItemTopics"" mit ON mi.""Id"" = mit.""MediaItemId""
-                            WHERE mit.""TopicId"" = {0}", topic.Id)
-                        .ToListAsync();
-                    
-                    response.Add(new TopicResponseDto
-                    {
-                        Id = topic.Id,
-                        Name = topic.Name,
-                        MediaItemIds = mediaItemIds.ToArray()
-                    });
-                }
-                
+                    Id = topic.Id,
+                    Name = topic.Name,
+                    MediaItemIds = Array.Empty<Guid>(), // Not needed for list view
+                    MediaItemCount = countsByTopicId.GetValueOrDefault(topic.Id, 0)
+                }).ToList();
+
                 return Ok(response);
             }
             catch (Exception ex)
@@ -60,6 +60,13 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, new { error = "Failed to retrieve topics", details = ex.Message });
             }
+        }
+
+        // Helper class for count results
+        private class TopicCountResult
+        {
+            public Guid TopicId { get; set; }
+            public int Count { get; set; }
         }
 
         // GET: api/topics/search?query={query}
@@ -79,28 +86,28 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     .Where(t => EF.Functions.ILike(t.Name, $"%{normalizedQuery}%"))
                     .OrderBy(t => t.Name)
                     .ToListAsync();
-                
-                // Load media items separately to avoid discriminator issues
-                var response = new List<TopicResponseDto>();
-                foreach (var topic in topics)
+
+                // Get topic IDs for the filtered topics
+                var topicIds = topics.Select(t => t.Id).ToList();
+
+                // Get counts only for the filtered topics in a single query
+                var topicCounts = await _context.Database
+                    .SqlQueryRaw<TopicCountResult>(@"
+                        SELECT mit.""TopicId"", COUNT(*) as ""Count""
+                        FROM ""MediaItemTopics"" mit
+                        GROUP BY mit.""TopicId""")
+                    .ToListAsync();
+
+                var countsByTopicId = topicCounts.ToDictionary(tc => tc.TopicId, tc => tc.Count);
+
+                var response = topics.Select(topic => new TopicResponseDto
                 {
-                    // Get media item IDs directly without loading full entities
-                    var mediaItemIds = await _context.Database
-                        .SqlQueryRaw<Guid>(@"
-                            SELECT mi.""Id"" 
-                            FROM ""MediaItems"" mi
-                            INNER JOIN ""MediaItemTopics"" mit ON mi.""Id"" = mit.""MediaItemId""
-                            WHERE mit.""TopicId"" = {0}", topic.Id)
-                        .ToListAsync();
-                    
-                    response.Add(new TopicResponseDto
-                    {
-                        Id = topic.Id,
-                        Name = topic.Name,
-                        MediaItemIds = mediaItemIds.ToArray()
-                    });
-                }
-                
+                    Id = topic.Id,
+                    Name = topic.Name,
+                    MediaItemIds = Array.Empty<Guid>(),
+                    MediaItemCount = countsByTopicId.GetValueOrDefault(topic.Id, 0)
+                }).ToList();
+
                 return Ok(response);
             }
             catch (Exception ex)
@@ -125,20 +132,21 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     return NotFound($"Topic with ID {id} not found.");
                 }
 
-                    // Get media item IDs directly without loading full entities
-                    var mediaItemIds = await _context.Database
-                        .SqlQueryRaw<Guid>(@"
-                            SELECT mi.""Id"" 
-                            FROM ""MediaItems"" mi
-                            INNER JOIN ""MediaItemTopics"" mit ON mi.""Id"" = mit.""MediaItemId""
-                            WHERE mit.""TopicId"" = {0}", id)
-                        .ToListAsync();
+                // Get media item IDs directly without loading full entities
+                var mediaItemIds = await _context.Database
+                    .SqlQueryRaw<Guid>(@"
+                        SELECT mi.""Id""
+                        FROM ""MediaItems"" mi
+                        INNER JOIN ""MediaItemTopics"" mit ON mi.""Id"" = mit.""MediaItemId""
+                        WHERE mit.""TopicId"" = {0}", id)
+                    .ToListAsync();
 
                 var response = new TopicResponseDto
                 {
                     Id = topic.Id,
                     Name = topic.Name,
-                    MediaItemIds = mediaItemIds.ToArray()
+                    MediaItemIds = mediaItemIds.ToArray(),
+                    MediaItemCount = mediaItemIds.Count
                 };
 
                 return Ok(response);
@@ -171,17 +179,18 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 // Get media item IDs directly
                 var mediaItemIds = await _context.Database
                     .SqlQueryRaw<Guid>(@"
-                        SELECT mi.""Id"" 
+                        SELECT mi.""Id""
                         FROM ""MediaItems"" mi
                         INNER JOIN ""MediaItemTopics"" mit ON mi.""Id"" = mit.""MediaItemId""
                         WHERE mit.""TopicId"" = {0}", existingTopic.Id)
                     .ToListAsync();
-                
+
                 var existingResponse = new TopicResponseDto
                 {
                     Id = existingTopic.Id,
                     Name = existingTopic.Name,
-                    MediaItemIds = mediaItemIds.ToArray()
+                    MediaItemIds = mediaItemIds.ToArray(),
+                    MediaItemCount = mediaItemIds.Count
                 };
                 return Ok(existingResponse);
             }
@@ -194,7 +203,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             {
                 Id = topic.Id,
                 Name = topic.Name,
-                MediaItemIds = Array.Empty<Guid>()
+                MediaItemIds = Array.Empty<Guid>(),
+                MediaItemCount = 0
             };
 
             return CreatedAtAction(nameof(GetTopic), new { id = topic.Id }, response);
@@ -243,7 +253,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             {
                 Id = topic.Id,
                 Name = topic.Name,
-                MediaItemIds = mediaItemIds.ToArray()
+                MediaItemIds = mediaItemIds.ToArray(),
+                MediaItemCount = mediaItemIds.Count
             };
 
             return Ok(response);
@@ -314,7 +325,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     {
                         Id = topic.Id,
                         Name = topic.Name,
-                        MediaItemIds = Array.Empty<Guid>()
+                        MediaItemIds = Array.Empty<Guid>(),
+                        MediaItemCount = 0
                     });
                     result.SuccessCount++;
                 }
@@ -394,7 +406,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                         {
                             Id = topic.Id,
                             Name = topic.Name,
-                            MediaItemIds = Array.Empty<Guid>()
+                            MediaItemIds = Array.Empty<Guid>(),
+                            MediaItemCount = 0
                         });
                         result.SuccessCount++;
                     }
@@ -413,6 +426,4 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
     }
-
-
 }

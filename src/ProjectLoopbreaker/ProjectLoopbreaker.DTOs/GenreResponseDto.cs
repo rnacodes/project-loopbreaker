@@ -12,5 +12,8 @@ namespace ProjectLoopbreaker.DTOs
         
         [JsonPropertyName("mediaItemIds")]
         public Guid[] MediaItemIds { get; set; } = Array.Empty<Guid>();
+
+        [JsonPropertyName("mediaItemCount")]
+        public int MediaItemCount { get; set; }
     }
 }
