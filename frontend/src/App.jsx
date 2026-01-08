@@ -4,6 +4,7 @@ import { ThemeProvider, CssBaseline, Typography, Button, Box } from '@mui/materi
 
 // --- Import Auth Context ---
 import { AuthProvider } from './contexts/AuthContext';
+import { DemoAdminProvider } from './contexts/DemoAdminContext';
 
 // --- Import Route Protection ---
 import ConditionalProtectedRoute from './components/ConditionalProtectedRoute';
@@ -27,6 +28,7 @@ import SearchByTopicOrGenre from './components/SearchByTopicOrGenre';
 import SearchResults from './components/SearchResults';
 import Search from './components/Search';
 import DemoPage from './components/DemoPage';
+import DemoAdminPage from './components/DemoAdminPage';
 import UploadMediaPage from './components/UploadMediaPage';
 import YouTubeCallback from './pages/YouTubeCallback';
 import ReadwiseSyncPage from './components/ReadwiseSyncPage';
@@ -56,6 +58,7 @@ function App() {
       <CssBaseline />
       <Router>
         <AuthProvider>
+          <DemoAdminProvider>
           <Box
             sx={{
               display: 'flex',
@@ -72,6 +75,7 @@ function App() {
             {/* Public routes - always accessible */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/demo" element={<DemoPage />} />
+            <Route path="/demo-admin" element={<DemoAdminPage />} />
             
             {/* Protected routes - require login in production, open in demo */}
             <Route path="/" element={
@@ -186,6 +190,7 @@ function App() {
             {/* Footer Component */}
             <Footer />
           </Box>
+          </DemoAdminProvider>
         </AuthProvider>
       </Router>
     </ThemeProvider>

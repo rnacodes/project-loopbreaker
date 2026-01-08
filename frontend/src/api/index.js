@@ -288,3 +288,25 @@ export {
     runBookEnrichment,
     runBookEnrichmentAll
 } from './backgroundJobsService';
+
+// Notes (Obsidian)
+export {
+    getAllNotes,
+    getNoteById,
+    getNoteBySlug,
+    createNote,
+    updateNote,
+    deleteNote,
+    linkNoteToMedia,
+    unlinkNoteFromMedia,
+    getMediaForNote,
+    getNotesForMedia,
+    syncVault,
+    syncAllVaults,
+    getSyncStatus,
+    searchNotes,
+    searchNotesByVault,
+    multiSearch,
+    reindexNotes,
+    resetNotesCollection
+} from './noteService';

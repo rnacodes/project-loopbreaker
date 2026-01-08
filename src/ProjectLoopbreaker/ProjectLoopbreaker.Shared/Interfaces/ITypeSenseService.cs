@@ -125,5 +125,59 @@ namespace ProjectLoopbreaker.Shared.Interfaces
         /// Use this to completely reset the mixlist search index.
         /// </summary>
         Task ResetMixlistsCollectionAsync();
+
+        // ============================================
+        // Obsidian Notes collection methods
+        // ============================================
+
+        /// <summary>
+        /// Ensures the obsidian_notes collection exists in Typesense.
+        /// Creates the collection if it doesn't exist, or skips if it does.
+        /// Should be called during application startup.
+        /// </summary>
+        Task EnsureNotesCollectionExistsAsync();
+
+        /// <summary>
+        /// Indexes or updates an Obsidian note document in Typesense.
+        /// Uses upsert operation - creates if new, updates if exists.
+        /// </summary>
+        Task IndexNoteAsync(
+            Guid id,
+            string slug,
+            string title,
+            string? content,
+            string? description,
+            string vaultName,
+            string? sourceUrl,
+            List<string> tags,
+            DateTime dateImported,
+            DateTime? noteDate,
+            int linkedMediaCount);
+
+        /// <summary>
+        /// Deletes a note document from Typesense.
+        /// </summary>
+        Task DeleteNoteAsync(Guid id);
+
+        /// <summary>
+        /// Performs a search across the obsidian_notes collection.
+        /// </summary>
+        Task<object> SearchNotesAsync(string query, string? filters = null, int perPage = 20, int page = 1);
+
+        /// <summary>
+        /// Performs a bulk re-index of all notes from the database.
+        /// </summary>
+        Task<int> BulkReindexAllNotesAsync();
+
+        /// <summary>
+        /// Deletes and recreates the obsidian_notes collection.
+        /// </summary>
+        Task ResetNotesCollectionAsync();
+
+        /// <summary>
+        /// Performs a multi-search across media_items, mixlists, and obsidian_notes collections.
+        /// Returns unified search results from all collections.
+        /// </summary>
+        Task<object> MultiSearchAsync(string query, string? filters = null, int perPage = 20, int page = 1);
     }
 }
