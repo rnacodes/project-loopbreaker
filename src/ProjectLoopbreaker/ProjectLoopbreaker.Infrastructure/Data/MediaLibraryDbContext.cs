@@ -26,6 +26,8 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<Genre> Genres { get; set; }
         public DbSet<Highlight> Highlights { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<Note> Notes { get; set; }
+        public DbSet<MediaItemNote> MediaItemNotes { get; set; }
 
         // IApplicationDbContext interface implementations
         IQueryable<BaseMediaItem> IApplicationDbContext.MediaItems => MediaItems;
@@ -45,6 +47,8 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         IQueryable<Genre> IApplicationDbContext.Genres => Genres;
         IQueryable<Highlight> IApplicationDbContext.Highlights => Highlights;
         IQueryable<RefreshToken> IApplicationDbContext.RefreshTokens => RefreshTokens;
+        IQueryable<Note> IApplicationDbContext.Notes => Notes;
+        IQueryable<MediaItemNote> IApplicationDbContext.MediaItemNotes => MediaItemNotes;
 
 
         public MediaLibraryDbContext(DbContextOptions<MediaLibraryDbContext> options) : base(options) { }
@@ -673,30 +677,102 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             modelBuilder.Entity<RefreshToken>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                
+
                 entity.Property(e => e.Token)
                     .HasMaxLength(500)
                     .IsRequired();
-                    
+
                 entity.Property(e => e.UserId)
                     .HasMaxLength(100)
                     .IsRequired();
-                    
+
                 entity.Property(e => e.CreatedAt)
                     .IsRequired();
-                    
+
                 entity.Property(e => e.ExpiresAt)
                     .IsRequired();
-                    
+
                 entity.Property(e => e.ReplacedByToken)
                     .HasMaxLength(500);
-                    
+
                 // Create indexes for better query performance
                 entity.HasIndex(e => e.Token)
                     .IsUnique();
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.ExpiresAt);
                 entity.HasIndex(e => e.IsRevoked);
+            });
+
+            // Configure Note entity (Obsidian notes from Quartz vaults)
+            modelBuilder.Entity<Note>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Slug)
+                    .HasMaxLength(200)
+                    .IsRequired();
+
+                entity.Property(e => e.Title)
+                    .HasMaxLength(500)
+                    .IsRequired();
+
+                entity.Property(e => e.VaultName)
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(e => e.SourceUrl)
+                    .HasMaxLength(2000);
+
+                entity.Property(e => e.ContentHash)
+                    .HasMaxLength(64);
+
+                // Store Tags as JSON array in PostgreSQL
+                entity.Property(e => e.Tags)
+                    .HasColumnType("jsonb");
+
+                entity.Property(e => e.DateImported)
+                    .IsRequired();
+
+                // Create unique composite index on VaultName + Slug
+                entity.HasIndex(e => new { e.VaultName, e.Slug })
+                    .IsUnique();
+
+                // Create index on VaultName for vault filtering
+                entity.HasIndex(e => e.VaultName);
+
+                // Create index on LastSyncedAt for delta sync queries
+                entity.HasIndex(e => e.LastSyncedAt);
+
+                // Create index on DateImported for sorting
+                entity.HasIndex(e => e.DateImported);
+            });
+
+            // Configure MediaItemNote join entity
+            modelBuilder.Entity<MediaItemNote>(entity =>
+            {
+                // Composite primary key
+                entity.HasKey(e => new { e.MediaItemId, e.NoteId });
+
+                // Configure relationship with BaseMediaItem
+                entity.HasOne(e => e.MediaItem)
+                    .WithMany()
+                    .HasForeignKey(e => e.MediaItemId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Configure relationship with Note
+                entity.HasOne(e => e.Note)
+                    .WithMany(n => n.MediaItemNotes)
+                    .HasForeignKey(e => e.NoteId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(e => e.LinkDescription)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.LinkedAt)
+                    .IsRequired();
+
+                // Create index on LinkedAt for sorting
+                entity.HasIndex(e => e.LinkedAt);
             });
         }
 

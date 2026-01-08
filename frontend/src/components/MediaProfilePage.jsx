@@ -21,6 +21,7 @@ import MediaInfoCard from './MediaInfoCard';
 import MediaDetailAccordion from './MediaDetailAccordion';
 import HighlightsSection from './HighlightsSection';
 import TopicsGenresSection from './TopicsGenresSection';
+import RelatedNotesSection from './RelatedNotesSection';
 import { formatMediaType, formatStatus, getMediaTypeColor, getStatusColor, getRatingIcon, getRatingText } from '../utils/formatters';
 import {
     getMediaById, getAllMixlists,
@@ -451,6 +452,12 @@ function MediaProfilePage() {
         <HighlightsSection mediaItem={mediaItem} highlights={highlights} highlightsLoading={highlightsLoading} />
 
         <TopicsGenresSection
+          mediaItem={mediaItem}
+          setSnackbar={setSnackbar}
+          onUpdate={() => setRefreshKey(k => k + 1)}
+        />
+
+        <RelatedNotesSection
           mediaItem={mediaItem}
           setSnackbar={setSnackbar}
           onUpdate={() => setRefreshKey(k => k + 1)}

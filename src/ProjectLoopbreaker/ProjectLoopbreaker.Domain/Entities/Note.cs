@@ -1,0 +1,81 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace ProjectLoopbreaker.Domain.Entities
+{
+    /// <summary>
+    /// Represents an Obsidian note imported from a Quartz-published vault.
+    /// Notes are separate from media items but can be linked to them via MediaItemNote.
+    /// </summary>
+    public class Note
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+
+        /// <summary>
+        /// URL-friendly identifier from Quartz (the path portion of the note URL).
+        /// Combined with VaultName, forms a unique identifier.
+        /// </summary>
+        [Required]
+        [StringLength(200)]
+        public required string Slug { get; set; }
+
+        [Required]
+        [StringLength(500)]
+        public required string Title { get; set; }
+
+        /// <summary>
+        /// Full markdown content of the note.
+        /// </summary>
+        public string? Content { get; set; }
+
+        /// <summary>
+        /// Short excerpt or description of the note.
+        /// </summary>
+        public string? Description { get; set; }
+
+        /// <summary>
+        /// The vault this note belongs to: "general" or "programming".
+        /// </summary>
+        [Required]
+        [StringLength(50)]
+        public required string VaultName { get; set; }
+
+        /// <summary>
+        /// Full URL to the note on the Quartz static site.
+        /// </summary>
+        [Url]
+        [StringLength(2000)]
+        public string? SourceUrl { get; set; }
+
+        /// <summary>
+        /// Tags from the note's frontmatter. Stored as JSONB in PostgreSQL.
+        /// </summary>
+        public List<string> Tags { get; set; } = new List<string>();
+
+        /// <summary>
+        /// Original creation or modification date from the Quartz note.
+        /// </summary>
+        public DateTime? NoteDate { get; set; }
+
+        /// <summary>
+        /// When this note was first imported into ProjectLoopbreaker.
+        /// </summary>
+        public DateTime DateImported { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// Last time this note was synced from the Quartz vault.
+        /// Used for delta sync tracking.
+        /// </summary>
+        public DateTime? LastSyncedAt { get; set; }
+
+        /// <summary>
+        /// SHA-256 hash of the note content for detecting changes during sync.
+        /// </summary>
+        [StringLength(64)]
+        public string? ContentHash { get; set; }
+
+        /// <summary>
+        /// Navigation property for many-to-many relationship with media items.
+        /// </summary>
+        public ICollection<MediaItemNote> MediaItemNotes { get; set; } = new List<MediaItemNote>();
+    }
+}

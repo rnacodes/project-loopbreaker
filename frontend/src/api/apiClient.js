@@ -40,7 +40,7 @@ const processQueue = (error, token = null) => {
     failedQueue = [];
 };
 
-// Request Interceptor - Attach JWT token to all requests
+// Request Interceptor - Attach JWT token and demo admin key to all requests
 apiClient.interceptors.request.use(
     (config) => {
         // Get token from memory (not localStorage)
@@ -49,6 +49,12 @@ apiClient.interceptors.request.use(
         if (token) {
             // Attach the token as a Bearer token
             config.headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        // Check for demo admin key in sessionStorage
+        const demoAdminKey = sessionStorage.getItem('demoAdminKey');
+        if (demoAdminKey) {
+            config.headers['X-Demo-Admin-Key'] = demoAdminKey;
         }
 
         return config;

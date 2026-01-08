@@ -6,16 +6,23 @@ namespace ProjectLoopbreaker.Web.API.Filters
     /// <summary>
     /// Filter that blocks write operations (POST, PUT, DELETE, PATCH) in Demo environment.
     /// Allows browsing and GET requests only for demo users.
+    /// Can be bypassed with X-Demo-Admin-Key header matching DEMO_ADMIN_KEY environment variable.
     /// </summary>
     public class DemoReadOnlyFilter : IActionFilter
     {
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<DemoReadOnlyFilter> _logger;
+        private readonly IConfiguration _configuration;
+        private const string AdminKeyHeader = "X-Demo-Admin-Key";
 
-        public DemoReadOnlyFilter(IWebHostEnvironment environment, ILogger<DemoReadOnlyFilter> logger)
+        public DemoReadOnlyFilter(
+            IWebHostEnvironment environment,
+            ILogger<DemoReadOnlyFilter> logger,
+            IConfiguration configuration)
         {
             _environment = environment;
             _logger = logger;
+            _configuration = configuration;
         }
 
         public void OnActionExecuting(ActionExecutingContext context)
@@ -34,6 +41,21 @@ namespace ProjectLoopbreaker.Web.API.Filters
 
             if (isWriteOperation)
             {
+                // Check for admin key header bypass
+                var adminKey = _configuration["DEMO_ADMIN_KEY"];
+                if (!string.IsNullOrEmpty(adminKey))
+                {
+                    var providedKey = context.HttpContext.Request.Headers[AdminKeyHeader].FirstOrDefault();
+                    if (!string.IsNullOrEmpty(providedKey) && providedKey == adminKey)
+                    {
+                        _logger.LogInformation(
+                            "Demo admin key bypass used. Method: {Method}, Path: {Path}",
+                            httpMethod,
+                            context.HttpContext.Request.Path.Value);
+                        return; // Allow operation with valid admin key
+                    }
+                }
+
                 // Allow /dev/seed-demo-data endpoint specifically
                 var path = context.HttpContext.Request.Path.Value ?? "";
                 if (path.Contains("/dev/seed-demo-data", StringComparison.OrdinalIgnoreCase))

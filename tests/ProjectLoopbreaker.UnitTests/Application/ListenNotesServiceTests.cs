@@ -99,7 +99,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             var expectedResult = CreateListenNotesPodcastSeriesDto();
             
             _mockListenNotesApiClient
-                .Setup(x => x.GetPodcastByIdAsync(podcastId))
+                .Setup(x => x.GetPodcastByIdAsync(podcastId, null))
                 .ReturnsAsync(expectedResult);
 
             // Act
@@ -108,7 +108,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             // Assert
             result.Should().NotBeNull();
             result.Should().BeEquivalentTo(expectedResult);
-            _mockListenNotesApiClient.Verify(x => x.GetPodcastByIdAsync(podcastId), Times.Once);
+            _mockListenNotesApiClient.Verify(x => x.GetPodcastByIdAsync(podcastId, null), Times.Once);
         }
 
         [Fact]
@@ -317,7 +317,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             var expectedPodcastSeries = CreatePodcastSeries();
 
             _mockListenNotesApiClient
-                .Setup(x => x.GetPodcastByIdAsync(podcastId))
+                .Setup(x => x.GetPodcastByIdAsync(podcastId, null))
                 .ReturnsAsync(podcastDto);
 
             _mockPodcastService
@@ -338,7 +338,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             // Assert
             result.Should().NotBeNull();
             result.Should().BeEquivalentTo(expectedPodcastSeries);
-            _mockListenNotesApiClient.Verify(x => x.GetPodcastByIdAsync(podcastId), Times.Once);
+            _mockListenNotesApiClient.Verify(x => x.GetPodcastByIdAsync(podcastId, null), Times.Once);
             _mockPodcastService.Verify(x => x.GetPodcastSeriesByTitleAsync(podcastDto.Title, podcastDto.Publisher), Times.Once);
             _mockPodcastMappingService.Verify(x => x.MapFromListenNotesSeriesDto(podcastDto), Times.Once);
             _mockPodcastService.Verify(x => x.CreatePodcastSeriesAsync(createPodcastSeriesDto), Times.Once);
@@ -353,7 +353,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             var existingPodcastSeries = CreatePodcastSeries();
 
             _mockListenNotesApiClient
-                .Setup(x => x.GetPodcastByIdAsync(podcastId))
+                .Setup(x => x.GetPodcastByIdAsync(podcastId, null))
                 .ReturnsAsync(podcastDto);
 
             _mockPodcastService
@@ -366,7 +366,7 @@ namespace ProjectLoopbreaker.UnitTests.Application
             // Assert
             result.Should().NotBeNull();
             result.Should().BeEquivalentTo(existingPodcastSeries);
-            _mockListenNotesApiClient.Verify(x => x.GetPodcastByIdAsync(podcastId), Times.Once);
+            _mockListenNotesApiClient.Verify(x => x.GetPodcastByIdAsync(podcastId, null), Times.Once);
             _mockPodcastService.Verify(x => x.GetPodcastSeriesByTitleAsync(podcastDto.Title, podcastDto.Publisher), Times.Once);
             _mockPodcastMappingService.Verify(x => x.MapFromListenNotesSeriesDto(It.IsAny<PodcastSeriesDto>()), Times.Never);
             _mockPodcastService.Verify(x => x.CreatePodcastSeriesAsync(It.IsAny<CreatePodcastSeriesDto>()), Times.Never);

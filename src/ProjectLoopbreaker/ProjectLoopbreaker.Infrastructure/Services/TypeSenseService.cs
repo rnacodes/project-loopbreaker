@@ -20,6 +20,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
         private readonly ILogger<TypeSenseService> _logger;
         private readonly string _mediaCollectionName;
         private readonly string _mixlistCollectionName;
+        private readonly string _notesCollectionName;
 
         public TypeSenseService(
             ITypesenseClient typesenseClient,
@@ -39,9 +40,10 @@ namespace ProjectLoopbreaker.Infrastructure.Services
             // Dynamically set collection names with prefix
             _mediaCollectionName = $"{collectionPrefix}media_items";
             _mixlistCollectionName = $"{collectionPrefix}mixlists";
-            
-            _logger.LogInformation("TypeSense collections configured with prefix '{Prefix}': {MediaCollection}, {MixlistCollection}", 
-                collectionPrefix, _mediaCollectionName, _mixlistCollectionName);
+            _notesCollectionName = $"{collectionPrefix}obsidian_notes";
+
+            _logger.LogInformation("TypeSense collections configured with prefix '{Prefix}': {MediaCollection}, {MixlistCollection}, {NotesCollection}",
+                collectionPrefix, _mediaCollectionName, _mixlistCollectionName, _notesCollectionName);
         }
 
         /// <summary>
@@ -636,12 +638,270 @@ namespace ProjectLoopbreaker.Infrastructure.Services
 
                 // Recreate the collection with the schema
                 await EnsureMixlistCollectionExistsAsync();
-                
+
                 _logger.LogInformation("Successfully reset collection '{CollectionName}'.", _mixlistCollectionName);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error resetting Typesense collection '{CollectionName}'.", _mixlistCollectionName);
+                throw;
+            }
+        }
+
+        // ============================================
+        // Obsidian Notes collection methods
+        // ============================================
+
+        /// <summary>
+        /// Ensures the obsidian_notes collection exists with proper schema.
+        /// </summary>
+        public async Task EnsureNotesCollectionExistsAsync()
+        {
+            try
+            {
+                await _typesenseClient.RetrieveCollection(_notesCollectionName);
+                _logger.LogInformation("Typesense collection '{CollectionName}' already exists.", _notesCollectionName);
+            }
+            catch (TypesenseApiNotFoundException)
+            {
+                _logger.LogInformation("Creating Typesense collection '{CollectionName}'...", _notesCollectionName);
+
+                var schema = new Schema(_notesCollectionName, new List<Field>
+                {
+                    new Field("id", FieldType.String, false),
+                    new Field("slug", FieldType.String, false),
+                    new Field("title", FieldType.String, false),
+                    new Field("content", FieldType.String, false, optional: true),
+                    new Field("description", FieldType.String, false, optional: true),
+                    new Field("vault_name", FieldType.String, true), // Facetable
+                    new Field("source_url", FieldType.String, false, optional: true, index: false),
+                    new Field("tags", FieldType.StringArray, true), // Facetable array
+                    new Field("date_imported", FieldType.Int64, false),
+                    new Field("note_date", FieldType.Int64, false, optional: true),
+                    new Field("linked_media_count", FieldType.Int32, false)
+                })
+                {
+                    DefaultSortingField = "date_imported"
+                };
+
+                await _typesenseClient.CreateCollection(schema);
+                _logger.LogInformation("Successfully created Typesense collection '{CollectionName}'.", _notesCollectionName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error ensuring Typesense notes collection exists.");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Indexes or updates a note document in Typesense.
+        /// </summary>
+        public async Task IndexNoteAsync(
+            Guid id,
+            string slug,
+            string title,
+            string? content,
+            string? description,
+            string vaultName,
+            string? sourceUrl,
+            List<string> tags,
+            DateTime dateImported,
+            DateTime? noteDate,
+            int linkedMediaCount)
+        {
+            try
+            {
+                var document = new ObsidianNoteDocument
+                {
+                    Id = id.ToString(),
+                    Slug = slug,
+                    Title = title,
+                    Content = content,
+                    Description = description,
+                    VaultName = vaultName,
+                    SourceUrl = sourceUrl,
+                    Tags = tags ?? new List<string>(),
+                    DateImported = ((DateTimeOffset)dateImported).ToUnixTimeSeconds(),
+                    NoteDate = noteDate.HasValue ? ((DateTimeOffset)noteDate.Value).ToUnixTimeSeconds() : null,
+                    LinkedMediaCount = linkedMediaCount
+                };
+
+                await _typesenseClient.UpsertDocument<ObsidianNoteDocument>(_notesCollectionName, document);
+                _logger.LogDebug("Successfully indexed note {Id} ({Title}) in Typesense.", id, title);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error indexing note {Id} in Typesense.", id);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Deletes a note document from Typesense.
+        /// </summary>
+        public async Task DeleteNoteAsync(Guid id)
+        {
+            try
+            {
+                await _typesenseClient.DeleteDocument<ObsidianNoteDocument>(_notesCollectionName, id.ToString());
+                _logger.LogDebug("Successfully deleted note {Id} from Typesense.", id);
+            }
+            catch (TypesenseApiNotFoundException)
+            {
+                _logger.LogWarning("Note {Id} not found in Typesense (may have already been deleted).", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting note {Id} from Typesense.", id);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Searches the obsidian_notes collection in Typesense.
+        /// </summary>
+        public async Task<object> SearchNotesAsync(string query, string? filters = null, int perPage = 20, int page = 1)
+        {
+            try
+            {
+                var searchParameters = new SearchParameters(
+                    query,
+                    "title,content,description,tags"
+                )
+                {
+                    PerPage = perPage,
+                    Page = page,
+                    SortBy = "_text_match:desc,date_imported:desc"
+                };
+
+                if (!string.IsNullOrEmpty(filters))
+                {
+                    searchParameters.FilterBy = filters;
+                }
+
+                var searchResult = await _typesenseClient.Search<ObsidianNoteDocument>(_notesCollectionName, searchParameters);
+                _logger.LogDebug("Notes search for '{Query}' returned {Count} results.", query, searchResult.Found);
+                return searchResult;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching Typesense notes for query '{Query}'.", query);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Re-indexes all notes from PostgreSQL into Typesense.
+        /// </summary>
+        public async Task<int> BulkReindexAllNotesAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Starting bulk re-index of all notes...");
+
+                var notes = await _context.Notes
+                    .Include(n => n.MediaItemNotes)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                var documents = notes.Select(note => new ObsidianNoteDocument
+                {
+                    Id = note.Id.ToString(),
+                    Slug = note.Slug,
+                    Title = note.Title,
+                    Content = note.Content,
+                    Description = note.Description,
+                    VaultName = note.VaultName,
+                    SourceUrl = note.SourceUrl,
+                    Tags = note.Tags ?? new List<string>(),
+                    DateImported = ((DateTimeOffset)note.DateImported).ToUnixTimeSeconds(),
+                    NoteDate = note.NoteDate.HasValue ? ((DateTimeOffset)note.NoteDate.Value).ToUnixTimeSeconds() : null,
+                    LinkedMediaCount = note.MediaItemNotes.Count
+                }).ToList();
+
+                var importResults = await _typesenseClient.ImportDocuments<ObsidianNoteDocument>(
+                    _notesCollectionName,
+                    documents,
+                    40,
+                    ImportType.Upsert
+                );
+
+                var successCount = importResults.Count(r => r.Success);
+                var failureCount = importResults.Count(r => !r.Success);
+
+                _logger.LogInformation(
+                    "Bulk re-index of notes complete. Success: {SuccessCount}, Failures: {FailureCount}",
+                    successCount,
+                    failureCount
+                );
+
+                return successCount;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during bulk re-index of notes.");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Deletes and recreates the obsidian_notes collection.
+        /// </summary>
+        public async Task ResetNotesCollectionAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Resetting Typesense collection '{CollectionName}'...", _notesCollectionName);
+
+                try
+                {
+                    await _typesenseClient.DeleteCollection(_notesCollectionName);
+                    _logger.LogInformation("Deleted existing collection '{CollectionName}'.", _notesCollectionName);
+                }
+                catch (TypesenseApiNotFoundException)
+                {
+                    _logger.LogInformation("Collection '{CollectionName}' doesn't exist, skipping delete.", _notesCollectionName);
+                }
+
+                await EnsureNotesCollectionExistsAsync();
+                _logger.LogInformation("Successfully reset collection '{CollectionName}'.", _notesCollectionName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting Typesense collection '{CollectionName}'.", _notesCollectionName);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Performs a multi-search across media_items, mixlists, and obsidian_notes collections.
+        /// Returns combined results from all three collections.
+        /// </summary>
+        public async Task<object> MultiSearchAsync(string query, string? filters = null, int perPage = 20, int page = 1)
+        {
+            try
+            {
+                // Run all three searches in parallel
+                var mediaSearchTask = SearchAsync(query, filters, perPage, page);
+                var mixlistSearchTask = SearchMixlistsAsync(query, filters, perPage, page);
+                var notesSearchTask = SearchNotesAsync(query, filters, perPage, page);
+
+                await Task.WhenAll(mediaSearchTask, mixlistSearchTask, notesSearchTask);
+
+                var result = new
+                {
+                    media_items = mediaSearchTask.Result,
+                    mixlists = mixlistSearchTask.Result,
+                    notes = notesSearchTask.Result
+                };
+
+                _logger.LogDebug("Multi-search for '{Query}' completed.", query);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing multi-search for query '{Query}'.", query);
                 throw;
             }
         }

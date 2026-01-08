@@ -305,8 +305,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
 
                 _logger.LogInformation("Mixlists collection reset complete.");
 
-                return Ok(new 
-                { 
+                return Ok(new
+                {
                     message = "Mixlists collection reset successfully. All old data has been cleared.",
                     collection = "mixlists"
                 });
@@ -314,6 +314,172 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error resetting mixlists collection.");
+                return StatusCode(500, new { error = "An error occurred while resetting the collection. Please check logs." });
+            }
+        }
+
+        // ============================================
+        // Notes Search Endpoints
+        // ============================================
+
+        /// <summary>
+        /// Searches Obsidian notes using Typesense full-text search.
+        /// GET /api/search/notes?q=searchterm&filter=vault_name:=general&page=1&per_page=20
+        /// </summary>
+        [HttpGet("notes")]
+        public async Task<IActionResult> SearchNotes(
+            [FromQuery] string q,
+            [FromQuery] string? filter = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int per_page = 20)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(q))
+                {
+                    return BadRequest(new { error = "Search query 'q' parameter is required." });
+                }
+
+                if (per_page > 100) per_page = 100;
+                if (per_page < 1) per_page = 20;
+                if (page < 1) page = 1;
+
+                _logger.LogInformation("Notes search request: query='{Query}', filter='{Filter}', page={Page}, per_page={PerPage}",
+                    q, filter, page, per_page);
+
+                var results = await _typeSenseService.SearchNotesAsync(q, filter, per_page, page);
+
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing notes search for query '{Query}'", q);
+                return StatusCode(500, new { error = "An error occurred while searching notes. Please try again." });
+            }
+        }
+
+        /// <summary>
+        /// Searches notes by vault name.
+        /// GET /api/search/notes/by-vault/general?q=searchterm
+        /// </summary>
+        [HttpGet("notes/by-vault/{vault}")]
+        public async Task<IActionResult> SearchNotesByVault(
+            string vault,
+            [FromQuery] string q,
+            [FromQuery] int page = 1,
+            [FromQuery] int per_page = 20)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(q))
+                {
+                    return BadRequest(new { error = "Search query 'q' parameter is required." });
+                }
+
+                var filter = $"vault_name:={vault.ToLower()}";
+                var results = await _typeSenseService.SearchNotesAsync(q, filter, per_page, page);
+
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing notes search by vault '{Vault}' for query '{Query}'", vault, q);
+                return StatusCode(500, new { error = "An error occurred while searching notes. Please try again." });
+            }
+        }
+
+        /// <summary>
+        /// Performs a multi-search across media items, mixlists, and notes.
+        /// GET /api/search/all?q=searchterm&page=1&per_page=20
+        /// Returns results from all collections.
+        /// </summary>
+        [HttpGet("all")]
+        public async Task<IActionResult> MultiSearch(
+            [FromQuery] string q,
+            [FromQuery] string? filter = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int per_page = 20)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(q))
+                {
+                    return BadRequest(new { error = "Search query 'q' parameter is required." });
+                }
+
+                if (per_page > 100) per_page = 100;
+                if (per_page < 1) per_page = 20;
+                if (page < 1) page = 1;
+
+                _logger.LogInformation("Multi-search request: query='{Query}', filter='{Filter}', page={Page}, per_page={PerPage}",
+                    q, filter, page, per_page);
+
+                var results = await _typeSenseService.MultiSearchAsync(q, filter, per_page, page);
+
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing multi-search for query '{Query}'", q);
+                return StatusCode(500, new { error = "An error occurred while searching. Please try again." });
+            }
+        }
+
+        /// <summary>
+        /// Triggers a full re-index of all notes from PostgreSQL to Typesense.
+        /// POST /api/search/reindex-notes
+        /// </summary>
+        [HttpPost("reindex-notes")]
+        [Authorize]
+        public async Task<IActionResult> ReindexAllNotes()
+        {
+            try
+            {
+                _logger.LogInformation("Starting full re-index of all notes...");
+
+                var count = await _typeSenseService.BulkReindexAllNotesAsync();
+
+                _logger.LogInformation("Re-index of notes complete. Indexed {Count} notes.", count);
+
+                return Ok(new
+                {
+                    message = "Notes re-index completed successfully.",
+                    indexed_count = count
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during notes re-index operation.");
+                return StatusCode(500, new { error = "An error occurred during notes re-index. Please check logs." });
+            }
+        }
+
+        /// <summary>
+        /// Completely resets the obsidian_notes collection by deleting and recreating it.
+        /// POST /api/search/reset-notes
+        /// WARNING: This will delete all indexed notes from Typesense!
+        /// </summary>
+        [HttpPost("reset-notes")]
+        [Authorize]
+        public async Task<IActionResult> ResetNotesCollection()
+        {
+            try
+            {
+                _logger.LogInformation("Resetting obsidian_notes collection...");
+
+                await _typeSenseService.ResetNotesCollectionAsync();
+
+                _logger.LogInformation("Obsidian_notes collection reset complete.");
+
+                return Ok(new
+                {
+                    message = "Notes collection reset successfully. All old data has been cleared.",
+                    collection = "obsidian_notes"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting obsidian_notes collection.");
                 return StatusCode(500, new { error = "An error occurred while resetting the collection. Please check logs." });
             }
         }

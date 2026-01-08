@@ -22,7 +22,22 @@
       "Bash(Select-Object -Last 20)",
       "Bash(npm run build:*)",
       "WebSearch",
-      "WebFetch(domain:www.raindrop.io)"
+      "WebFetch(domain:www.raindrop.io)",
+      "WebFetch(domain:docs.paperless-ngx.com)",
+      "WebFetch(domain:www.reddit.com)",
+      "WebFetch(domain:noted.lol)",
+      "WebFetch(domain:calibre-ebook.com)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(del \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\tests\\\\ProjectLoopbreaker.IntegrationTests\\\\UnitTest1.cs\")",
+      "Bash(dotnet test:*)",
+      "Bash(npm run test:run:*)",
+      "WebFetch(domain:quartz.jzhao.xyz)",
+      "WebFetch(domain:garden.mymediaverseuniverse.com)",
+      "Bash(Select-Object -Last 30)",
+      "Bash(dir \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\official-documentation\")",
+      "Bash(dotnet ef database update:*)",
+      "Bash(del \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\src\\\\ProjectLoopbreaker\\\\ProjectLoopbreaker.Shared\\\\Interfaces\\\\INoteService.cs\")"
     ]
   }
 }

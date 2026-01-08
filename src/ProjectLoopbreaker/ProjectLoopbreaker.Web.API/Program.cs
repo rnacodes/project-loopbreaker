@@ -444,6 +444,27 @@ builder.Services.AddHttpClient<IPaperlessApiClient, PaperlessApiClient>(client =
 // Register OpenLibrary service
 builder.Services.AddScoped<IOpenLibraryService, OpenLibraryService>();
 
+// Configure Quartz API client for Obsidian notes sync
+builder.Services.AddHttpClient<IQuartzApiClient, QuartzApiClient>(client =>
+{
+    client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+    client.Timeout = TimeSpan.FromSeconds(60); // Longer timeout for fetching content index
+});
+
+// Register Note service
+builder.Services.AddScoped<INoteService, NoteService>();
+
+// Configure Obsidian Note Sync background service
+builder.Services.Configure<ObsidianNoteSyncOptions>(
+    builder.Configuration.GetSection(ObsidianNoteSyncOptions.SectionName));
+
+// Only register the Obsidian sync hosted service if not in Testing environment
+if (builder.Environment.EnvironmentName != "Testing")
+{
+    builder.Services.AddHostedService<ObsidianNoteSyncHostedService>();
+    Console.WriteLine("Obsidian note sync background service registered.");
+}
+
 // Configure Book Description Enrichment background service
 builder.Services.Configure<BookDescriptionEnrichmentOptions>(
     builder.Configuration.GetSection(BookDescriptionEnrichmentOptions.SectionName));
@@ -634,6 +655,8 @@ try
             Console.WriteLine("Typesense media_items collection initialized.");
             await typeSenseService.EnsureMixlistCollectionExistsAsync();
             Console.WriteLine("Typesense mixlists collection initialized.");
+            await typeSenseService.EnsureNotesCollectionExistsAsync();
+            Console.WriteLine("Typesense obsidian_notes collection initialized.");
             Console.WriteLine("Typesense collection initialization complete.");
         }
         else

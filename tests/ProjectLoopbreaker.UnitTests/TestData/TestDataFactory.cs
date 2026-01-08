@@ -378,6 +378,49 @@ namespace ProjectLoopbreaker.UnitTests.TestData
                 Genres = Array.Empty<string>()
             };
         }
+
+        // Document Test Data Factory Methods
+        public static Document CreateDocument(
+            string? title = null,
+            int? paperlessId = null,
+            string? documentType = null,
+            string? correspondent = null)
+        {
+            return new Document
+            {
+                Id = Guid.NewGuid(),
+                Title = title ?? "Test Document",
+                PaperlessId = paperlessId,
+                DocumentType = documentType ?? "Invoice",
+                Correspondent = correspondent ?? "Test Correspondent",
+                OriginalFileName = "test-document.pdf",
+                FileType = "pdf",
+                PageCount = 1,
+                FileSizeBytes = 1024,
+                IsArchived = false,
+                MediaType = MediaType.Document,
+                Status = Status.Uncharted,
+                DateAdded = DateTime.UtcNow,
+                DocumentDate = DateTime.UtcNow,
+                Topics = new List<Topic>(),
+                Genres = new List<Genre>(),
+                Mixlists = new List<Mixlist>()
+            };
+        }
+
+        public static List<Document> CreateDocuments(int count)
+        {
+            var documents = new List<Document>();
+            for (int i = 0; i < count; i++)
+            {
+                documents.Add(CreateDocument(
+                    $"Test Document {i + 1}",
+                    paperlessId: i + 1,
+                    documentType: i % 2 == 0 ? "Invoice" : "Receipt",
+                    correspondent: $"Correspondent {i + 1}"));
+            }
+            return documents;
+        }
     }
 }
 
