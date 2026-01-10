@@ -276,7 +276,7 @@ export default function HomePage() {
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
           <Box sx={{ textAlign: 'center' }}>
             <CircularProgress size={60} sx={{ mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">Loading MediaVerse...</Typography>
+            <Typography variant="h6" color="text.secondary">Loading My MediaVerse...</Typography>
           </Box>
         </Box>
       ) : mixlistsError ? (
@@ -314,7 +314,7 @@ export default function HomePage() {
               mb: { xs: 2, sm: 3 }
             }}
           >
-            MediaVerse
+            My MediaVerse
           </Typography>
           <SearchBar 
             placeholder="Your next adventure awaits..."
