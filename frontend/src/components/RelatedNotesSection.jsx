@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
     Box, Typography, Button, Card, CardContent, Dialog,
     DialogTitle, DialogContent, DialogActions, TextField, InputAdornment,
@@ -223,8 +224,18 @@ function RelatedNotesSection({ mediaItem, setSnackbar, onUpdate }) {
                                     <Box sx={{ flex: 1 }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                                             <Typography
+                                                component={RouterLink}
+                                                to={`/note/${note.id}`}
                                                 variant="subtitle1"
-                                                sx={{ fontWeight: 'bold', color: 'white' }}
+                                                sx={{
+                                                    fontWeight: 'bold',
+                                                    color: 'white',
+                                                    textDecoration: 'none',
+                                                    '&:hover': {
+                                                        textDecoration: 'underline',
+                                                        color: '#90caf9'
+                                                    }
+                                                }}
                                             >
                                                 {note.title}
                                             </Typography>
