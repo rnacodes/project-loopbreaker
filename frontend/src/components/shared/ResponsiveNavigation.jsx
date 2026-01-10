@@ -45,6 +45,8 @@ import {
   Sync,
   ImportExport,
   ExpandMore,
+  Work,
+  VpnKey,
   ExpandLess,
   Book,
   Tv,
@@ -131,7 +133,10 @@ const ResponsiveNavigation = () => {
   ];
 
   const adminMenuItems = [
+    { text: 'Background Jobs', path: '/background-jobs', icon: <Work />, requiresAuth: true },
     { text: 'Cleanup', path: '/cleanup', icon: <CleaningServices />, requiresAuth: true },
+    { text: 'Demo Admin', path: '/demo-admin', icon: <VpnKey />, requiresAuth: true },
+    { text: 'Documents', path: '/documents', icon: <Description />, requiresAuth: true },
     { text: 'Readwise Sync', path: '/readwise-sync', icon: <Sync />, requiresAuth: true },
     { text: 'Sources', path: '/sources', icon: <Apps />, requiresAuth: true },
     { text: 'Typesense Admin', path: '/typesense-admin', icon: <StorageIcon />, requiresAuth: true }

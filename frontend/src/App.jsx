@@ -45,6 +45,7 @@ import WebsitesPage from './components/WebsitesPage';
 import TypesenseAdminPage from './components/TypesenseAdminPage';
 import GoodreadsUploadPage from './components/GoodreadsUploadPage';
 import BackgroundJobsPage from './components/BackgroundJobsPage';
+import NoteProfilePage from './components/NoteProfilePage';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
@@ -173,6 +174,9 @@ function App() {
             } />
             <Route path="/background-jobs" element={
               <ConditionalProtectedRoute><BackgroundJobsPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/note/:id" element={
+              <ConditionalProtectedRoute><NoteProfilePage /></ConditionalProtectedRoute>
             } />
           {/* Catch-all route for 404 */}
           <Route path="*" element={
