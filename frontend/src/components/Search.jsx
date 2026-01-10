@@ -16,7 +16,7 @@ import {
 import { ResultHeader } from './search/ResultHeader';
 import { MediaCard } from './search/MediaCard';
 import { MediaListItem } from './search/MediaListItem';
-import { typesenseAdvancedSearch, typesenseAdvancedSearchMixlists } from '../api';
+import { typesenseAdvancedSearch, typesenseAdvancedSearchMixlists, searchNotes } from '../api';
 import { getAllTopics, getAllGenres, getAllMixlists, addMediaToMixlist, bulkDeleteMedia } from '../api';
 
 
@@ -35,6 +35,7 @@ const mediaTypeOptions = [
     { value: 'Document', label: 'Documents' },
     { value: 'Movie', label: 'Movies' },
     { value: 'Music', label: 'Music' },
+    { value: 'Note', label: 'Notes' },
     { value: 'Other', label: 'Other' },
     { value: 'Playlist', label: 'Playlists' },
     { value: 'Podcast', label: 'Podcasts' },
@@ -274,7 +275,7 @@ export default function Search() {
                 };
 
                 response = await typesenseAdvancedSearchMixlists(searchOptions);
-                
+
                 // Transform Typesense response for mixlists
                 const hits = response.hits || [];
                 const transformedResults = hits.map(hit => {
@@ -300,24 +301,13 @@ export default function Search() {
                 setTotalResults(response.found || 0);
                 setTotalPages(Math.ceil((response.found || 0) / perPage));
             } else {
-                // Search media items
-                const searchOptions = {
-                    query: searchQuery || '*',
-                    mediaTypes: selectedMediaTypes.filter(type => type !== 'all'),
-                    topics: selectedTopics,
-                    genres: selectedGenres,
-                    status: selectedStatus !== 'all' ? selectedStatus : null,
-                    ratings: selectedRatings,
-                    page: currentPage,
-                    perPage: perPage,
-                    sortBy: sortBy
-                };
+                // Search media items (and optionally notes)
+                const mediaTypesWithoutNote = selectedMediaTypes.filter(type => type !== 'all' && type !== 'Note');
+                const includeNotes = selectedMediaTypes.includes('all') || selectedMediaTypes.includes('Note');
+                const onlyNotes = selectedMediaTypes.length === 1 && selectedMediaTypes[0] === 'Note';
 
-                response = await typesenseAdvancedSearch(searchOptions);
-                
-                // Transform Typesense response to match component structure
-                const hits = response.hits || [];
-                const transformedResults = hits.map(hit => {
+                // Helper to transform media hits
+                const transformMediaHits = (hits) => hits.map(hit => {
                     const doc = hit.document;
                     return {
                         id: doc.id,
@@ -331,30 +321,21 @@ export default function Search() {
                         notes: doc.description || '',
                         thumbnail: doc.thumbnail,
                         isMixlist: false,
-                        
-                        // Media-type specific fields
+                        isNote: false,
                         author: doc.author || null,
                         director: doc.director || null,
                         creator: doc.creator || null,
                         publisher: doc.publisher || null,
                         channel: doc.channel_title || doc.channel || null,
                         platform: doc.platform || null,
-                        
-                        // Ratings and metadata
                         goodreadsRating: doc.goodreads_rating || null,
                         tmdbRating: doc.tmdb_rating || null,
                         releaseYear: doc.release_year || null,
                         runtimeMinutes: doc.runtime_minutes || null,
-                        
-                        // Duration fields
                         lengthInSeconds: doc.length_in_seconds || null,
                         durationInSeconds: doc.duration_in_seconds || null,
-                        
-                        // Type fields
                         podcastType: doc.podcast_type || null,
                         videoType: doc.video_type || null,
-                        
-                        // Article fields
                         publication: doc.publication || null,
                         estimatedReadingTimeMinutes: doc.estimated_reading_time_minutes || null,
                         wordCount: doc.word_count || null,
@@ -362,9 +343,92 @@ export default function Search() {
                     };
                 });
 
-                setSearchResults(transformedResults);
-                setTotalResults(response.found || 0);
-                setTotalPages(Math.ceil((response.found || 0) / perPage));
+                // Helper to transform note hits
+                const transformNoteHits = (hits) => hits.map(hit => {
+                    const doc = hit.document;
+                    return {
+                        id: doc.id,
+                        title: doc.title,
+                        mediaType: 'Note',
+                        status: null,
+                        ratingType: null,
+                        topics: doc.tags || [],
+                        genres: [],
+                        author: doc.vault_name || 'Unknown Vault',
+                        dateAdded: doc.date_imported ? new Date(doc.date_imported * 1000).toISOString().split('T')[0] : null,
+                        notes: doc.description || '',
+                        thumbnail: null,
+                        isMixlist: false,
+                        isNote: true,
+                        sourceUrl: doc.source_url,
+                        vaultName: doc.vault_name,
+                        linkedMediaCount: doc.linked_media_count || 0
+                    };
+                });
+
+                if (onlyNotes) {
+                    // Only searching notes
+                    const noteFilter = selectedTopics.length > 0 ? `tags:=[${selectedTopics.map(t => `"${t}"`).join(',')}]` : null;
+                    response = await searchNotes(searchQuery || '*', noteFilter, currentPage, perPage);
+                    const transformedResults = transformNoteHits(response.hits || []);
+                    setSearchResults(transformedResults);
+                    setTotalResults(response.found || 0);
+                    setTotalPages(Math.ceil((response.found || 0) / perPage));
+                } else if (includeNotes && (mediaTypesWithoutNote.length > 0 || selectedMediaTypes.includes('all'))) {
+                    // Search both media and notes in parallel
+                    const mediaSearchOptions = {
+                        query: searchQuery || '*',
+                        mediaTypes: selectedMediaTypes.includes('all') ? [] : mediaTypesWithoutNote,
+                        topics: selectedTopics,
+                        genres: selectedGenres,
+                        status: selectedStatus !== 'all' ? selectedStatus : null,
+                        ratings: selectedRatings,
+                        page: currentPage,
+                        perPage: Math.ceil(perPage / 2), // Split results between media and notes
+                        sortBy: sortBy
+                    };
+                    const noteFilter = selectedTopics.length > 0 ? `tags:=[${selectedTopics.map(t => `"${t}"`).join(',')}]` : null;
+
+                    // Run both searches in parallel for speed
+                    const [mediaResponse, notesResponse] = await Promise.all([
+                        typesenseAdvancedSearch(mediaSearchOptions),
+                        searchNotes(searchQuery || '*', noteFilter, currentPage, Math.ceil(perPage / 2))
+                    ]);
+
+                    const mediaResults = transformMediaHits(mediaResponse.hits || []);
+                    const noteResults = transformNoteHits(notesResponse.hits || []);
+
+                    // Combine and interleave results
+                    const combinedResults = [];
+                    const maxLen = Math.max(mediaResults.length, noteResults.length);
+                    for (let i = 0; i < maxLen; i++) {
+                        if (i < mediaResults.length) combinedResults.push(mediaResults[i]);
+                        if (i < noteResults.length) combinedResults.push(noteResults[i]);
+                    }
+
+                    setSearchResults(combinedResults);
+                    setTotalResults((mediaResponse.found || 0) + (notesResponse.found || 0));
+                    setTotalPages(Math.ceil(((mediaResponse.found || 0) + (notesResponse.found || 0)) / perPage));
+                } else {
+                    // Only searching media items (no notes)
+                    const searchOptions = {
+                        query: searchQuery || '*',
+                        mediaTypes: mediaTypesWithoutNote,
+                        topics: selectedTopics,
+                        genres: selectedGenres,
+                        status: selectedStatus !== 'all' ? selectedStatus : null,
+                        ratings: selectedRatings,
+                        page: currentPage,
+                        perPage: perPage,
+                        sortBy: sortBy
+                    };
+
+                    response = await typesenseAdvancedSearch(searchOptions);
+                    const transformedResults = transformMediaHits(response.hits || []);
+                    setSearchResults(transformedResults);
+                    setTotalResults(response.found || 0);
+                    setTotalPages(Math.ceil((response.found || 0) / perPage));
+                }
             }
         } catch (err) {
             console.error('Search error:', err);
@@ -440,7 +504,7 @@ export default function Search() {
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
                         {searchMode === 'media'
-                            ? 'Search across all your media with powerful filters and instant results'
+                            ? 'Search across all your media and notes with powerful filters and instant results'
                             : 'Search and discover curated mixlists by name, topics, or genres'}
                     </Typography>
                 </Box>
