@@ -287,6 +287,12 @@ namespace ProjectLoopbreaker.Application.Services
                 {
                     try
                     {
+                        // Debug logging for tags deserialization
+                        _logger.LogDebug("Processing note {Slug}: Tags count = {TagsCount}, Tags = [{Tags}]",
+                            slug,
+                            noteDto.Tags?.Count ?? 0,
+                            noteDto.Tags != null ? string.Join(", ", noteDto.Tags) : "null");
+
                         var existingNote = await _context.Notes
                             .FirstOrDefaultAsync(n => n.Slug == slug && n.VaultName == vaultName.ToLower());
 
@@ -335,7 +341,16 @@ namespace ProjectLoopbreaker.Application.Services
                         }
                         else
                         {
-                            // No changes
+                            // Content unchanged, but still update tags in case they were missed in a previous sync
+                            var tagsChanged = !TagsAreEqual(existingNote.Tags, noteDto.Tags);
+                            if (tagsChanged)
+                            {
+                                _logger.LogDebug("Updating tags for unchanged note {Slug}: [{OldTags}] -> [{NewTags}]",
+                                    slug,
+                                    string.Join(", ", existingNote.Tags ?? new List<string>()),
+                                    string.Join(", ", noteDto.Tags ?? new List<string>()));
+                                existingNote.Tags = noteDto.Tags ?? new List<string>();
+                            }
                             existingNote.LastSyncedAt = DateTime.UtcNow;
                             _context.Update(existingNote);
                             result.Unchanged++;
@@ -493,6 +508,16 @@ namespace ProjectLoopbreaker.Application.Services
             }
 
             return null;
+        }
+
+        private static bool TagsAreEqual(List<string>? tags1, List<string>? tags2)
+        {
+            var list1 = tags1 ?? new List<string>();
+            var list2 = tags2 ?? new List<string>();
+
+            if (list1.Count != list2.Count) return false;
+
+            return list1.OrderBy(t => t).SequenceEqual(list2.OrderBy(t => t));
         }
     }
 }

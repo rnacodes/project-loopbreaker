@@ -104,7 +104,11 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                     return new Dictionary<string, QuartzNoteDto>();
                 }
 
-                _logger.LogInformation("Successfully fetched {Count} notes from Quartz vault at {Url}", result.Count, vaultBaseUrl);
+                // Log tag statistics for debugging
+                var notesWithTags = result.Count(kvp => kvp.Value.Tags != null && kvp.Value.Tags.Count > 0);
+                _logger.LogInformation("Successfully fetched {Count} notes from Quartz vault at {Url}. {NotesWithTags} notes have tags.",
+                    result.Count, vaultBaseUrl, notesWithTags);
+
                 return result;
             }
             catch (UnauthorizedAccessException)

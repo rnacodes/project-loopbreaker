@@ -21,7 +21,7 @@
 }
 
 .subtitle {
-  font-size: 1.125rem;
+  font-size: 1rem;
   color: #fcfafa; /* white text for dark background */
   margin: 0;
 }
@@ -84,14 +84,14 @@
 }
 
 .btn-secondary {
-  background-color: #4caf50; /* success green */
+  background-color: #362759; /* primary purple */
   color: #fcfafa;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #45a049;
+  background-color: #4f3a7a; /* primary light */
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(76, 175, 80, 0.4);
+  box-shadow: 0 4px 6px rgba(54, 39, 89, 0.4);
 }
 
 .connection-status {
@@ -166,14 +166,14 @@
 }
 
 .result-label {
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: #fcfafa;
   font-weight: 500;
   opacity: 0.8;
 }
 
 .result-value {
-  font-size: 1.125rem;
+  font-size: 1rem;
   color: #fcfafa;
   font-weight: 600;
 }
@@ -247,7 +247,7 @@
 .status-mapping-info strong {
   display: block;
   margin-bottom: 0.75rem;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 
 .status-mapping-info ul {
@@ -267,7 +267,7 @@
   display: inline-block;
   padding: 0.25rem 0.75rem;
   border-radius: 4px;
-  font-size: 0.85rem;
+  font-size: 1rem;
   font-weight: 500;
 }
 
@@ -289,7 +289,7 @@
   padding: 0.75rem 1rem;
   border-radius: 6px;
   margin-top: 1rem;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #fcfafa;
   opacity: 0.9;
 }
