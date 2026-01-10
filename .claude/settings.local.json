@@ -37,7 +37,11 @@
       "Bash(Select-Object -Last 30)",
       "Bash(dir \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\official-documentation\")",
       "Bash(dotnet ef database update:*)",
-      "Bash(del \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\src\\\\ProjectLoopbreaker\\\\ProjectLoopbreaker.Shared\\\\Interfaces\\\\INoteService.cs\")"
+      "Bash(del \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\src\\\\ProjectLoopbreaker\\\\ProjectLoopbreaker.Shared\\\\Interfaces\\\\INoteService.cs\")",
+      "Bash(Remove-Item -Recurse -Force \"C:\\\\Users\\\\rashi\\\\source\\\\repos\\\\ProjectLoopbreaker\\\\frontend\\\\node_modules\\\\.vite\")",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File - <<'PWSH'\n$authString = \"rasante:AllThatGlitt3rs!\"\n$bytes = [System.Text.Encoding]::ASCII.GetBytes\\($authString\\)\n$base64 = [Convert]::ToBase64String\\($bytes\\)\nWrite-Host \"Base64 encoded: $base64\"\ntry {\n    $headers = @{ Authorization = \"Basic $base64\" }\n    $response = Invoke-WebRequest -Uri \"https://garden.mymediaverseuniverse.com/static/contentIndex.json\" -Headers $headers -UseBasicParsing\n    Write-Host \"Success! Status: $\\($response.StatusCode\\)\"\n    Write-Host \"Content length: $\\($response.Content.Length\\) chars\"\n} catch {\n    Write-Host \"Error: $\\($_.Exception.Message\\)\"\n}\nPWSH)",
+      "Bash(curl:*)",
+      "WebFetch(domain:www.digitalocean.com)"
     ]
   }
 }

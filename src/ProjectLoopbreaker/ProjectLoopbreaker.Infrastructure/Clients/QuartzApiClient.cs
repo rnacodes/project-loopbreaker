@@ -43,13 +43,33 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
                 // Add authentication header if provided
                 if (!string.IsNullOrEmpty(authToken))
                 {
-                    // Support both Bearer token and API key formats
-                    if (authToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                    // Support multiple auth formats:
+                    // 1. "username:password" - Basic Auth (detected by colon)
+                    // 2. "Basic <base64>" - Pre-formatted Basic Auth
+                    // 3. "Bearer <token>" - Bearer token
+                    // 4. Just a token - defaults to Bearer
+
+                    if (authToken.Contains(':') && !authToken.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase)
+                        && !authToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
                     {
+                        // Basic Auth with username:password format
+                        var credentials = Convert.ToBase64String(System.Text.Encoding.ASCII.GetBytes(authToken));
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", credentials);
+                        _logger.LogDebug("Using Basic Authentication for vault request");
+                    }
+                    else if (authToken.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Pre-formatted Basic Auth header
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Basic", authToken.Substring(6));
+                    }
+                    else if (authToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // Bearer token
                         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken.Substring(7));
                     }
                     else
                     {
+                        // Default to Bearer token
                         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", authToken);
                     }
                 }
