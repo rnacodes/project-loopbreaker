@@ -40,6 +40,26 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("lastSyncedAt")]
         public DateTime? LastSyncedAt { get; set; }
 
+        // AI-generated fields
+
+        [JsonPropertyName("aiDescription")]
+        public string? AiDescription { get; set; }
+
+        [JsonPropertyName("aiDescriptionGeneratedAt")]
+        public DateTime? AiDescriptionGeneratedAt { get; set; }
+
+        [JsonPropertyName("isDescriptionManual")]
+        public bool IsDescriptionManual { get; set; }
+
+        [JsonPropertyName("hasEmbedding")]
+        public bool HasEmbedding { get; set; }
+
+        [JsonPropertyName("embeddingGeneratedAt")]
+        public DateTime? EmbeddingGeneratedAt { get; set; }
+
+        [JsonPropertyName("embeddingModel")]
+        public string? EmbeddingModel { get; set; }
+
         [JsonPropertyName("linkedMediaItems")]
         public List<LinkedMediaItemDto> LinkedMediaItems { get; set; } = new();
     }

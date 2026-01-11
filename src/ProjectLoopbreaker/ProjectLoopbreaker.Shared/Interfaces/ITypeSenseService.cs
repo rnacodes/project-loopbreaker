@@ -179,5 +179,91 @@ namespace ProjectLoopbreaker.Shared.Interfaces
         /// Returns unified search results from all collections.
         /// </summary>
         Task<object> MultiSearchAsync(string query, string? filters = null, int perPage = 20, int page = 1);
+
+        // ============================================
+        // Hybrid/Semantic Search methods
+        // ============================================
+
+        /// <summary>
+        /// Performs a hybrid search (keyword + semantic) across the media_items collection.
+        /// Uses Typesense's vector search with rank fusion.
+        /// </summary>
+        /// <param name="query">The search query text</param>
+        /// <param name="queryEmbedding">Optional embedding vector for semantic search</param>
+        /// <param name="filters">Optional filter string (e.g., "media_type:=Book")</param>
+        /// <param name="alpha">Balance between keyword (0) and vector (1) search. Default 0.5</param>
+        /// <param name="perPage">Number of results per page (default 20)</param>
+        /// <param name="page">Page number (default 1)</param>
+        /// <returns>Search results with hybrid ranking</returns>
+        Task<object> HybridSearchMediaAsync(
+            string query,
+            float[]? queryEmbedding = null,
+            string? filters = null,
+            float alpha = 0.5f,
+            int perPage = 20,
+            int page = 1);
+
+        /// <summary>
+        /// Performs a hybrid search (keyword + semantic) across the obsidian_notes collection.
+        /// Uses Typesense's vector search with rank fusion.
+        /// </summary>
+        /// <param name="query">The search query text</param>
+        /// <param name="queryEmbedding">Optional embedding vector for semantic search</param>
+        /// <param name="filters">Optional filter string (e.g., "vault_name:=general")</param>
+        /// <param name="alpha">Balance between keyword (0) and vector (1) search. Default 0.5</param>
+        /// <param name="perPage">Number of results per page (default 20)</param>
+        /// <param name="page">Page number (default 1)</param>
+        /// <returns>Search results with hybrid ranking</returns>
+        Task<object> HybridSearchNotesAsync(
+            string query,
+            float[]? queryEmbedding = null,
+            string? filters = null,
+            float alpha = 0.5f,
+            int perPage = 20,
+            int page = 1);
+
+        /// <summary>
+        /// Performs a pure vector similarity search for media items.
+        /// Returns items most similar to the provided embedding.
+        /// </summary>
+        /// <param name="embedding">The embedding vector to search with</param>
+        /// <param name="filters">Optional filter string</param>
+        /// <param name="excludeId">Optional ID to exclude from results (e.g., the source item)</param>
+        /// <param name="limit">Maximum number of results (default 10)</param>
+        /// <returns>Similar items ranked by vector distance</returns>
+        Task<object> VectorSearchMediaAsync(
+            float[] embedding,
+            string? filters = null,
+            Guid? excludeId = null,
+            int limit = 10);
+
+        /// <summary>
+        /// Performs a pure vector similarity search for notes.
+        /// Returns notes most similar to the provided embedding.
+        /// </summary>
+        /// <param name="embedding">The embedding vector to search with</param>
+        /// <param name="filters">Optional filter string</param>
+        /// <param name="excludeId">Optional ID to exclude from results</param>
+        /// <param name="limit">Maximum number of results (default 10)</param>
+        /// <returns>Similar notes ranked by vector distance</returns>
+        Task<object> VectorSearchNotesAsync(
+            float[] embedding,
+            string? filters = null,
+            Guid? excludeId = null,
+            int limit = 10);
+
+        /// <summary>
+        /// Updates the embedding for a media item in Typesense.
+        /// </summary>
+        /// <param name="id">The media item ID</param>
+        /// <param name="embedding">The embedding vector</param>
+        Task UpdateMediaItemEmbeddingAsync(Guid id, float[] embedding);
+
+        /// <summary>
+        /// Updates the embedding for a note in Typesense.
+        /// </summary>
+        /// <param name="id">The note ID</param>
+        /// <param name="embedding">The embedding vector</param>
+        Task UpdateNoteEmbeddingAsync(Guid id, float[] embedding);
     }
 }

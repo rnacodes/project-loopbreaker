@@ -100,6 +100,10 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 // Configure required fields
                 entity.Property(e => e.DateAdded)
                     .IsRequired();
+
+                // AI/Embedding fields
+                entity.Property(e => e.EmbeddingModel)
+                    .HasMaxLength(100);
             });
 
             // Configure Mixlist entity
@@ -745,6 +749,16 @@ namespace ProjectLoopbreaker.Infrastructure.Data
 
                 // Create index on DateImported for sorting
                 entity.HasIndex(e => e.DateImported);
+
+                // AI/Embedding fields
+                entity.Property(e => e.EmbeddingModel)
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.IsDescriptionManual)
+                    .HasDefaultValue(false);
+
+                // Create index on IsDescriptionManual for AI processing queries
+                entity.HasIndex(e => e.IsDescriptionManual);
             });
 
             // Configure MediaItemNote join entity

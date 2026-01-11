@@ -81,6 +81,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
                     new Field("publisher", FieldType.String, true, optional: true), // Searchable and facetable
                     new Field("release_year", FieldType.Int32, true, optional: true), // Facetable
                     new Field("platform", FieldType.String, true, optional: true) // Facetable
+                    // Note: Vector embeddings are stored in PostgreSQL with pgvector for similarity search
                 })
                 {
                     DefaultSortingField = "date_added" // Sort by most recently added by default
@@ -679,6 +680,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
                     new Field("date_imported", FieldType.Int64, false),
                     new Field("note_date", FieldType.Int64, false, optional: true),
                     new Field("linked_media_count", FieldType.Int32, false)
+                    // Note: Vector embeddings are stored in PostgreSQL with pgvector for similarity search
                 })
                 {
                     DefaultSortingField = "date_imported"
@@ -904,6 +906,170 @@ namespace ProjectLoopbreaker.Infrastructure.Services
                 _logger.LogError(ex, "Error performing multi-search for query '{Query}'.", query);
                 throw;
             }
+        }
+
+        // ============================================
+        // Hybrid/Semantic Search methods
+        // Note: Vector similarity search is handled by PostgreSQL with pgvector
+        // These methods provide Typesense keyword search with optional embedding-based
+        // result boosting that will be implemented via the RecommendationService
+        // ============================================
+
+        /// <summary>
+        /// Performs a keyword search across the media_items collection.
+        /// For semantic/vector search, use the RecommendationService which queries PostgreSQL with pgvector.
+        /// The queryEmbedding parameter is reserved for future hybrid search integration.
+        /// </summary>
+        public async Task<object> HybridSearchMediaAsync(
+            string query,
+            float[]? queryEmbedding = null,
+            string? filters = null,
+            float alpha = 0.5f,
+            int perPage = 20,
+            int page = 1)
+        {
+            try
+            {
+                // Currently using keyword-only search via Typesense
+                // Vector similarity search is handled separately via PostgreSQL + pgvector
+                var searchParameters = new SearchParameters(
+                    query,
+                    "title,description,author,director,creator,publisher"
+                )
+                {
+                    PerPage = perPage,
+                    Page = page,
+                    SortBy = "_text_match:desc,date_added:desc"
+                };
+
+                if (!string.IsNullOrEmpty(filters))
+                {
+                    searchParameters.FilterBy = filters;
+                }
+
+                var searchResult = await _typesenseClient.Search<MediaItemDocument>(_mediaCollectionName, searchParameters);
+
+                _logger.LogDebug("Media search for '{Query}' returned {Count} results (embedding provided: {HasEmbedding}).",
+                    query, searchResult.Found, queryEmbedding != null);
+
+                return searchResult;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing media search for query '{Query}'.", query);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Performs a keyword search across the obsidian_notes collection.
+        /// For semantic/vector search, use the RecommendationService which queries PostgreSQL with pgvector.
+        /// </summary>
+        public async Task<object> HybridSearchNotesAsync(
+            string query,
+            float[]? queryEmbedding = null,
+            string? filters = null,
+            float alpha = 0.5f,
+            int perPage = 20,
+            int page = 1)
+        {
+            try
+            {
+                var searchParameters = new SearchParameters(
+                    query,
+                    "title,content,description,tags"
+                )
+                {
+                    PerPage = perPage,
+                    Page = page,
+                    SortBy = "_text_match:desc,date_imported:desc"
+                };
+
+                if (!string.IsNullOrEmpty(filters))
+                {
+                    searchParameters.FilterBy = filters;
+                }
+
+                var searchResult = await _typesenseClient.Search<ObsidianNoteDocument>(_notesCollectionName, searchParameters);
+
+                _logger.LogDebug("Notes search for '{Query}' returned {Count} results (embedding provided: {HasEmbedding}).",
+                    query, searchResult.Found, queryEmbedding != null);
+
+                return searchResult;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing notes search for query '{Query}'.", query);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Vector similarity search for media items.
+        /// Note: This is a placeholder. Actual vector search is handled by PostgreSQL + pgvector
+        /// via the RecommendationService for better performance and consistency.
+        /// </summary>
+        public async Task<object> VectorSearchMediaAsync(
+            float[] embedding,
+            string? filters = null,
+            Guid? excludeId = null,
+            int limit = 10)
+        {
+            // Vector search should be done via PostgreSQL + pgvector through RecommendationService
+            // This method returns empty results as a fallback
+            _logger.LogWarning("VectorSearchMediaAsync called but vector search is handled by PostgreSQL. Use RecommendationService instead.");
+
+            return await Task.FromResult(new
+            {
+                found = 0,
+                hits = Array.Empty<object>(),
+                message = "Vector search is handled by PostgreSQL + pgvector. Use RecommendationService for similarity queries."
+            });
+        }
+
+        /// <summary>
+        /// Vector similarity search for notes.
+        /// Note: This is a placeholder. Actual vector search is handled by PostgreSQL + pgvector
+        /// via the RecommendationService.
+        /// </summary>
+        public async Task<object> VectorSearchNotesAsync(
+            float[] embedding,
+            string? filters = null,
+            Guid? excludeId = null,
+            int limit = 10)
+        {
+            _logger.LogWarning("VectorSearchNotesAsync called but vector search is handled by PostgreSQL. Use RecommendationService instead.");
+
+            return await Task.FromResult(new
+            {
+                found = 0,
+                hits = Array.Empty<object>(),
+                message = "Vector search is handled by PostgreSQL + pgvector. Use RecommendationService for similarity queries."
+            });
+        }
+
+        /// <summary>
+        /// Updates the embedding for a media item.
+        /// Note: Embeddings are stored in PostgreSQL, not Typesense.
+        /// This method is a no-op placeholder for interface compatibility.
+        /// </summary>
+        public Task UpdateMediaItemEmbeddingAsync(Guid id, float[] embedding)
+        {
+            // Embeddings are stored in PostgreSQL with pgvector, not in Typesense
+            _logger.LogDebug("UpdateMediaItemEmbeddingAsync called for {Id} - embeddings are stored in PostgreSQL, not Typesense.", id);
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Updates the embedding for a note.
+        /// Note: Embeddings are stored in PostgreSQL, not Typesense.
+        /// This method is a no-op placeholder for interface compatibility.
+        /// </summary>
+        public Task UpdateNoteEmbeddingAsync(Guid id, float[] embedding)
+        {
+            // Embeddings are stored in PostgreSQL with pgvector, not in Typesense
+            _logger.LogDebug("UpdateNoteEmbeddingAsync called for {Id} - embeddings are stored in PostgreSQL, not Typesense.", id);
+            return Task.CompletedTask;
         }
     }
 }

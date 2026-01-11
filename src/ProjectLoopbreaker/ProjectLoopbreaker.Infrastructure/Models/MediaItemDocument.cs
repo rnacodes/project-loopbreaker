@@ -108,5 +108,7 @@ namespace ProjectLoopbreaker.Infrastructure.Models
         /// </summary>
         [JsonPropertyName("platform")]
         public string? Platform { get; set; }
+
+        // Note: Vector embeddings are stored in PostgreSQL with pgvector, not in Typesense
     }
 }

@@ -76,5 +76,7 @@ namespace ProjectLoopbreaker.Infrastructure.Models
         /// </summary>
         [JsonPropertyName("linked_media_count")]
         public int LinkedMediaCount { get; set; }
+
+        // Note: Vector embeddings are stored in PostgreSQL with pgvector, not in Typesense
     }
 }
