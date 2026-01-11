@@ -475,6 +475,17 @@ if (builder.Environment.EnvironmentName != "Testing")
     Console.WriteLine("Note description generation background service registered.");
 }
 
+// Configure Embedding Generation background service
+builder.Services.Configure<EmbeddingGenerationOptions>(
+    builder.Configuration.GetSection(EmbeddingGenerationOptions.SectionName));
+
+// Only register the Embedding Generation hosted service if not in Testing environment
+if (builder.Environment.EnvironmentName != "Testing")
+{
+    builder.Services.AddHostedService<EmbeddingGenerationHostedService>();
+    Console.WriteLine("Embedding generation background service registered.");
+}
+
 // Configure Obsidian Note Sync background service
 builder.Services.Configure<ObsidianNoteSyncOptions>(
     builder.Configuration.GetSection(ObsidianNoteSyncOptions.SectionName));
@@ -496,6 +507,30 @@ if (builder.Environment.EnvironmentName != "Testing")
 {
     builder.Services.AddHostedService<BookDescriptionEnrichmentHostedService>();
     Console.WriteLine("Book description enrichment background service registered.");
+}
+
+// Configure Movie/TV TMDB Enrichment background service
+builder.Services.Configure<MovieTvEnrichmentOptions>(
+    builder.Configuration.GetSection(MovieTvEnrichmentOptions.SectionName));
+builder.Services.AddScoped<IMovieTvEnrichmentService, MovieTvEnrichmentService>();
+
+// Only register the hosted service if not in Testing environment
+if (builder.Environment.EnvironmentName != "Testing")
+{
+    builder.Services.AddHostedService<MovieTvEnrichmentHostedService>();
+    Console.WriteLine("Movie/TV TMDB enrichment background service registered.");
+}
+
+// Configure Podcast ListenNotes Enrichment background service
+builder.Services.Configure<PodcastEnrichmentOptions>(
+    builder.Configuration.GetSection(PodcastEnrichmentOptions.SectionName));
+builder.Services.AddScoped<IPodcastEnrichmentService, PodcastEnrichmentService>();
+
+// Only register the hosted service if not in Testing environment
+if (builder.Environment.EnvironmentName != "Testing")
+{
+    builder.Services.AddHostedService<PodcastEnrichmentHostedService>();
+    Console.WriteLine("Podcast ListenNotes enrichment background service registered.");
 }
 
 // Configure Gradient AI client for embeddings and text generation
