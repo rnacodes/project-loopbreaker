@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
@@ -14,11 +15,16 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     public class SearchController : ControllerBase
     {
         private readonly ITypeSenseService _typeSenseService;
+        private readonly IGradientAIClient _gradientClient;
         private readonly ILogger<SearchController> _logger;
 
-        public SearchController(ITypeSenseService typeSenseService, ILogger<SearchController> logger)
+        public SearchController(
+            ITypeSenseService typeSenseService,
+            IGradientAIClient gradientClient,
+            ILogger<SearchController> logger)
         {
             _typeSenseService = typeSenseService;
+            _gradientClient = gradientClient;
             _logger = logger;
         }
 
@@ -483,5 +489,230 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return StatusCode(500, new { error = "An error occurred while resetting the collection. Please check logs." });
             }
         }
+
+        // ============================================
+        // Semantic/Hybrid Search Endpoints
+        // ============================================
+
+        /// <summary>
+        /// Performs a semantic/hybrid search across media items.
+        /// POST /api/search/semantic
+        /// Uses AI-generated embeddings for semantic understanding.
+        /// </summary>
+        /// <param name="request">Search request with query and optional parameters</param>
+        [HttpPost("semantic")]
+        public async Task<IActionResult> SemanticSearchMedia([FromBody] SemanticSearchRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Query))
+                {
+                    return BadRequest(new { error = "Search query is required." });
+                }
+
+                var perPage = Math.Clamp(request.PerPage ?? 20, 1, 100);
+                var page = Math.Max(request.Page ?? 1, 1);
+                var alpha = Math.Clamp(request.Alpha ?? 0.5f, 0f, 1f);
+
+                _logger.LogInformation(
+                    "Semantic media search: query='{Query}', alpha={Alpha}, page={Page}, per_page={PerPage}",
+                    request.Query, alpha, page, perPage);
+
+                // Generate embedding for the query
+                float[]? queryEmbedding = null;
+                if (await _gradientClient.IsAvailableAsync())
+                {
+                    try
+                    {
+                        queryEmbedding = await _gradientClient.GenerateEmbeddingAsync(request.Query);
+                        _logger.LogDebug("Generated embedding with {Dims} dimensions for query", queryEmbedding.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to generate embedding for query, falling back to keyword search");
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Gradient AI not available, falling back to keyword search");
+                }
+
+                var results = await _typeSenseService.HybridSearchMediaAsync(
+                    request.Query,
+                    queryEmbedding,
+                    request.Filter,
+                    alpha,
+                    perPage,
+                    page);
+
+                return Ok(new
+                {
+                    results,
+                    semantic_enabled = queryEmbedding != null,
+                    alpha
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing semantic media search for query '{Query}'", request.Query);
+                return StatusCode(500, new { error = "An error occurred during semantic search. Please try again." });
+            }
+        }
+
+        /// <summary>
+        /// Performs a semantic/hybrid search across notes.
+        /// POST /api/search/semantic/notes
+        /// </summary>
+        [HttpPost("semantic/notes")]
+        public async Task<IActionResult> SemanticSearchNotes([FromBody] SemanticSearchRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Query))
+                {
+                    return BadRequest(new { error = "Search query is required." });
+                }
+
+                var perPage = Math.Clamp(request.PerPage ?? 20, 1, 100);
+                var page = Math.Max(request.Page ?? 1, 1);
+                var alpha = Math.Clamp(request.Alpha ?? 0.5f, 0f, 1f);
+
+                _logger.LogInformation(
+                    "Semantic notes search: query='{Query}', alpha={Alpha}, page={Page}, per_page={PerPage}",
+                    request.Query, alpha, page, perPage);
+
+                float[]? queryEmbedding = null;
+                if (await _gradientClient.IsAvailableAsync())
+                {
+                    try
+                    {
+                        queryEmbedding = await _gradientClient.GenerateEmbeddingAsync(request.Query);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to generate embedding for query, falling back to keyword search");
+                    }
+                }
+
+                var results = await _typeSenseService.HybridSearchNotesAsync(
+                    request.Query,
+                    queryEmbedding,
+                    request.Filter,
+                    alpha,
+                    perPage,
+                    page);
+
+                return Ok(new
+                {
+                    results,
+                    semantic_enabled = queryEmbedding != null,
+                    alpha
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing semantic notes search for query '{Query}'", request.Query);
+                return StatusCode(500, new { error = "An error occurred during semantic search. Please try again." });
+            }
+        }
+
+        /// <summary>
+        /// Performs a "search by vibe" - pure semantic search using a description.
+        /// POST /api/search/by-vibe
+        /// Useful for queries like "dark atmospheric sci-fi movies" or "uplifting productivity podcasts".
+        /// </summary>
+        [HttpPost("by-vibe")]
+        public async Task<IActionResult> SearchByVibe([FromBody] VibeSearchRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Description))
+                {
+                    return BadRequest(new { error = "Description is required for vibe search." });
+                }
+
+                var limit = Math.Clamp(request.Limit ?? 20, 1, 100);
+
+                _logger.LogInformation("Vibe search: description='{Description}', limit={Limit}", request.Description, limit);
+
+                if (!await _gradientClient.IsAvailableAsync())
+                {
+                    return StatusCode(503, new { error = "Semantic search is not available. AI service is not configured." });
+                }
+
+                // Generate embedding for the vibe description
+                var embedding = await _gradientClient.GenerateEmbeddingAsync(request.Description);
+
+                var results = await _typeSenseService.VectorSearchMediaAsync(
+                    embedding,
+                    request.Filter,
+                    null,
+                    limit);
+
+                return Ok(new
+                {
+                    results,
+                    description = request.Description
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error performing vibe search for description '{Description}'", request.Description);
+                return StatusCode(500, new { error = "An error occurred during vibe search. Please try again." });
+            }
+        }
+    }
+
+    /// <summary>
+    /// Request model for semantic search operations.
+    /// </summary>
+    public class SemanticSearchRequest
+    {
+        /// <summary>
+        /// The search query text.
+        /// </summary>
+        public string Query { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Optional filter string (e.g., "media_type:=Book").
+        /// </summary>
+        public string? Filter { get; set; }
+
+        /// <summary>
+        /// Balance between keyword (0) and semantic (1) search. Default: 0.5
+        /// </summary>
+        public float? Alpha { get; set; }
+
+        /// <summary>
+        /// Page number (default: 1).
+        /// </summary>
+        public int? Page { get; set; }
+
+        /// <summary>
+        /// Results per page (default: 20, max: 100).
+        /// </summary>
+        public int? PerPage { get; set; }
+    }
+
+    /// <summary>
+    /// Request model for vibe-based search.
+    /// </summary>
+    public class VibeSearchRequest
+    {
+        /// <summary>
+        /// A description of the "vibe" or mood you're looking for.
+        /// Examples: "dark atmospheric sci-fi", "uplifting productivity content"
+        /// </summary>
+        public string Description { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Optional filter string.
+        /// </summary>
+        public string? Filter { get; set; }
+
+        /// <summary>
+        /// Maximum number of results (default: 20, max: 100).
+        /// </summary>
+        public int? Limit { get; set; }
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Infrastructure.Data;
 using ProjectLoopbreaker.Infrastructure.Clients;
 using ProjectLoopbreaker.Infrastructure.Services;
+using ProjectLoopbreaker.Infrastructure.Repositories;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Application.Services;
@@ -454,6 +455,26 @@ builder.Services.AddHttpClient<IQuartzApiClient, QuartzApiClient>(client =>
 // Register Note service
 builder.Services.AddScoped<INoteService, NoteService>();
 
+// Register AI service for description and embedding generation
+builder.Services.AddScoped<IAIService, AIService>();
+
+// Register Vector Search repository (uses pgvector for similarity queries)
+builder.Services.AddScoped<IVectorSearchRepository, VectorSearchRepository>();
+
+// Register Recommendation service for vector similarity searches (uses pgvector)
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+
+// Configure Note Description Generation background service
+builder.Services.Configure<NoteDescriptionGenerationOptions>(
+    builder.Configuration.GetSection(NoteDescriptionGenerationOptions.SectionName));
+
+// Only register the Note Description Generation hosted service if not in Testing environment
+if (builder.Environment.EnvironmentName != "Testing")
+{
+    builder.Services.AddHostedService<NoteDescriptionGenerationHostedService>();
+    Console.WriteLine("Note description generation background service registered.");
+}
+
 // Configure Obsidian Note Sync background service
 builder.Services.Configure<ObsidianNoteSyncOptions>(
     builder.Configuration.GetSection(ObsidianNoteSyncOptions.SectionName));
@@ -476,6 +497,34 @@ if (builder.Environment.EnvironmentName != "Testing")
     builder.Services.AddHostedService<BookDescriptionEnrichmentHostedService>();
     Console.WriteLine("Book description enrichment background service registered.");
 }
+
+// Configure Gradient AI client for embeddings and text generation
+// Requires GRADIENT_API_KEY environment variable
+// Optional: GRADIENT_EMBEDDING_MODEL (default: gte-large-v1.5)
+// Optional: GRADIENT_GENERATION_MODEL (default: gpt-4-turbo)
+builder.Services.AddHttpClient<IGradientAIClient, GradientAIClient>(client =>
+{
+    var baseUrl = Environment.GetEnvironmentVariable("GRADIENT_BASE_URL") ??
+                  builder.Configuration["GradientAI:BaseUrl"] ??
+                  "https://api.gradient.ai/api/v1/";
+
+    client.BaseAddress = new Uri(baseUrl);
+    client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+    client.Timeout = TimeSpan.FromSeconds(60); // Longer timeout for AI operations
+
+    var apiKey = Environment.GetEnvironmentVariable("GRADIENT_API_KEY") ??
+                 builder.Configuration["GradientAI:ApiKey"];
+
+    if (!string.IsNullOrEmpty(apiKey))
+    {
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+        Console.WriteLine("Gradient AI client configured with API key.");
+    }
+    else
+    {
+        Console.WriteLine("WARNING: Gradient AI API key not configured. AI features will be disabled.");
+    }
+});
 
 // Configure Website Scraper service
 builder.Services.AddHttpClient<IWebsiteScraperService, ProjectLoopbreaker.Infrastructure.Services.WebsiteScraperService>(client =>
