@@ -112,7 +112,12 @@ namespace ProjectLoopbreaker.Application.Services
                 note.Content = dto.Content;
                 note.ContentHash = ComputeContentHash(dto.Content);
             }
-            if (dto.Description != null) note.Description = dto.Description;
+            if (dto.Description != null)
+            {
+                note.Description = dto.Description;
+                // Mark as manually edited so AI won't overwrite during sync
+                note.IsDescriptionManual = true;
+            }
             if (dto.Tags != null) note.Tags = dto.Tags;
             if (dto.NoteDate.HasValue) note.NoteDate = dto.NoteDate;
 
