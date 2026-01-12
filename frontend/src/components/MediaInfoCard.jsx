@@ -15,8 +15,15 @@ function MediaInfoCard({
 
   const imageUrl = useMemo(() => {
     if (!mediaItem?.thumbnail) return '';
-    return `/api/ListenNotes/image-proxy?imageUrl=${encodeURIComponent(mediaItem.thumbnail)}`;
-  }, [mediaItem?.thumbnail]);
+
+    // Only use the ListenNotes proxy for podcast images to handle CORS
+    // Other media types (books, movies, etc.) load images directly
+    if (mediaItem.mediaType === 'Podcast') {
+      return `/api/ListenNotes/image-proxy?imageUrl=${encodeURIComponent(mediaItem.thumbnail)}`;
+    }
+
+    return mediaItem.thumbnail;
+  }, [mediaItem?.thumbnail, mediaItem?.mediaType]);
 
   const description = mediaItem?.description || mediaItem?.notes;
 

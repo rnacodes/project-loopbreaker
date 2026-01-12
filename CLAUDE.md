@@ -135,6 +135,12 @@ Cannot use && in terminal commands when using run_terminal_cmd tool. Must use se
 
 For ProjectLoopbreaker, Entity Framework commands should ALWAYS be run from the Web.API startup project directory: C:\Users\rashi\source\repos\ProjectLoopbreaker\src\ProjectLoopbreaker\ProjectLoopbreaker.Web.API. Use commands like: `dotnet ef migrations add [name] --project ..\ProjectLoopbreaker.Infrastructure` and `dotnet ef database update --project ..\ProjectLoopbreaker.Infrastructure`
 
+**IMPORTANT - Database Migrations:** When running database migrations, ALWAYS use the `run-migrations.ps1` script from the project root to ensure BOTH production and demo databases are updated. Usage:
+- `.\run-migrations.ps1` - Update both databases with existing migrations
+- `.\run-migrations.ps1 -MigrationName "MigrationName"` - Add new migration and update both databases
+- `.\run-migrations.ps1 -UpdateOnly` - Only update databases without adding a migration
+The script requires `PRODUCTION_DB_CONNECTION` and `DEMO_DB_CONNECTION` environment variables to be set. NEVER run `dotnet ef database update` directly against a single database - always use this script to keep both databases in sync.
+
 For ProjectLoopbreaker frontend, these are the exact route URLs that must be used consistently: "/" (HomePage), "/add-media" (AddMediaForm), "/all-media" (AllMedia), "/mixlists" (MixlistsPage), "/mixlist/:id" (MixlistDetailPage), "/create-mixlist" (CreateMixlistForm), "/import-media" (ImportMediaPage), "/search-by-topic-genre" (SearchByTopicOrGenre), "/search-results" (SearchResults), "/media/:id" (MediaItemProfile), "/demo" (DemoPage). Never change these base page routes unless specifically requested.
 
 ProjectLoopbreaker backend API endpoints: 

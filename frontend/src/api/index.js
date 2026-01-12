@@ -310,3 +310,13 @@ export {
     reindexNotes,
     resetNotesCollection
 } from './noteService';
+
+// Script Execution
+export {
+    checkScriptRunnerHealth,
+    getScriptJobs,
+    getScriptJob,
+    runNormalizeNotes,
+    runNormalizeVault,
+    cancelScriptJob
+} from './scriptExecutionService';

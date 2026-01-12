@@ -316,6 +316,31 @@ builder.Services.AddScoped<IDocumentMappingService, DocumentMappingService>();
 // Register a generic HttpClient for use in controllers
 builder.Services.AddHttpClient();
 
+// Configure Script Runner HTTP client (for Python FastAPI script execution service)
+builder.Services.AddHttpClient("ScriptRunner", client =>
+{
+    var baseUrl = Environment.GetEnvironmentVariable("SCRIPT_RUNNER_URL")
+        ?? builder.Configuration["ScriptRunner:BaseUrl"]
+        ?? "http://localhost:8001";
+
+    client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromMinutes(10); // Long timeout for script execution
+    client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+
+    var apiKey = Environment.GetEnvironmentVariable("SCRIPT_RUNNER_API_KEY")
+        ?? builder.Configuration["ScriptRunner:ApiKey"];
+
+    if (!string.IsNullOrEmpty(apiKey))
+    {
+        client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+        Console.WriteLine("Script Runner HTTP client configured with API key.");
+    }
+    else
+    {
+        Console.WriteLine("Script Runner HTTP client configured (no API key).");
+    }
+});
+
 // Register Readwise services
 builder.Services.AddScoped<IHighlightService, HighlightService>();
 builder.Services.AddScoped<IReadwiseService, ReadwiseService>();
