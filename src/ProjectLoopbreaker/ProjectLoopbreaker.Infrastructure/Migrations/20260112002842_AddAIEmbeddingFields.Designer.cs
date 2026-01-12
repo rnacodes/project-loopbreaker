@@ -13,7 +13,7 @@ using ProjectLoopbreaker.Infrastructure.Data;
 namespace ProjectLoopbreaker.Infrastructure.Migrations
 {
     [DbContext(typeof(MediaLibraryDbContext))]
-    [Migration("20260110233410_AddAIEmbeddingFields")]
+    [Migration("20260112002842_AddAIEmbeddingFields")]
     partial class AddAIEmbeddingFields
     {
         /// <inheritdoc />

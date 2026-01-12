@@ -46,6 +46,7 @@ import TypesenseAdminPage from './components/TypesenseAdminPage';
 import GoodreadsUploadPage from './components/GoodreadsUploadPage';
 import BackgroundJobsPage from './components/BackgroundJobsPage';
 import NoteProfilePage from './components/NoteProfilePage';
+import ScriptExecutionPage from './components/ScriptExecutionPage';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
@@ -174,6 +175,9 @@ function App() {
             } />
             <Route path="/background-jobs" element={
               <ConditionalProtectedRoute><BackgroundJobsPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/script-execution" element={
+              <ConditionalProtectedRoute><ScriptExecutionPage /></ConditionalProtectedRoute>
             } />
             <Route path="/note/:id" element={
               <ConditionalProtectedRoute><NoteProfilePage /></ConditionalProtectedRoute>
