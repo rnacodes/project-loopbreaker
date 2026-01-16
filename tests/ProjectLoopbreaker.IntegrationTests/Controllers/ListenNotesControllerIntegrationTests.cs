@@ -131,7 +131,7 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
             var mockService = new Mock<IListenNotesService>();
             var expectedResult = CreatePodcastSeriesDto();
             
-            mockService.Setup(x => x.GetPodcastByIdAsync("test-id"))
+            mockService.Setup(x => x.GetPodcastByIdAsync("test-id", null))
                       .ReturnsAsync(expectedResult);
 
             var client = _factory.WithWebHostBuilder(builder =>
