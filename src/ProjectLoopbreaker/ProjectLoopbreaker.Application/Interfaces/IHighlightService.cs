@@ -10,6 +10,7 @@ namespace ProjectLoopbreaker.Application.Interfaces
         Task<IEnumerable<Highlight>> GetHighlightsByArticleIdAsync(Guid articleId);
         Task<IEnumerable<Highlight>> GetHighlightsByBookIdAsync(Guid bookId);
         Task<IEnumerable<Highlight>> GetHighlightsByTagAsync(string tag);
+        Task<IEnumerable<Highlight>> GetUnlinkedHighlightsAsync();
         Task<Highlight> CreateHighlightAsync(CreateHighlightDto dto);
         Task<Highlight> UpdateHighlightAsync(Guid id, CreateHighlightDto dto);
         Task<bool> DeleteHighlightAsync(Guid id);
