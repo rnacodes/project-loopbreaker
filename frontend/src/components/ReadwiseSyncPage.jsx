@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   validateReadwiseConnection,
   syncReadwiseAll,
-  fetchReadwiseContent
+  fetchReadwiseContent,
+  getUnlinkedHighlights,
+  updateHighlight,
+  getAllBooks,
+  getAllArticles
 } from '../api';
 import './ReadwiseSyncPage.css';
 
@@ -12,6 +16,16 @@ const ReadwiseSyncPage = () => {
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Unlinked highlights state
+  const [unlinkedHighlights, setUnlinkedHighlights] = useState([]);
+  const [unlinkedLoading, setUnlinkedLoading] = useState(false);
+  const [books, setBooks] = useState([]);
+  const [articles, setArticles] = useState([]);
+  const [expandedHighlight, setExpandedHighlight] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [linkingId, setLinkingId] = useState(null);
+  const [linkSuccess, setLinkSuccess] = useState(null);
 
   const handleValidateConnection = async () => {
     setLoading(true);
@@ -72,6 +86,85 @@ const ReadwiseSyncPage = () => {
     if (parseInt(hours) > 0) return `${hours}h ${minutes}m ${seconds}s`;
     if (parseInt(minutes) > 0) return `${minutes}m ${seconds}s`;
     return `${seconds}s`;
+  };
+
+  // Load unlinked highlights and media on mount
+  useEffect(() => {
+    loadUnlinkedHighlights();
+    loadMediaOptions();
+  }, []);
+
+  const loadUnlinkedHighlights = async () => {
+    setUnlinkedLoading(true);
+    try {
+      const highlights = await getUnlinkedHighlights();
+      setUnlinkedHighlights(highlights);
+    } catch (err) {
+      console.error('Error loading unlinked highlights:', err);
+    } finally {
+      setUnlinkedLoading(false);
+    }
+  };
+
+  const loadMediaOptions = async () => {
+    try {
+      const [booksRes, articlesRes] = await Promise.all([
+        getAllBooks(),
+        getAllArticles()
+      ]);
+      setBooks(booksRes.data || []);
+      setArticles(articlesRes.data || []);
+    } catch (err) {
+      console.error('Error loading media options:', err);
+    }
+  };
+
+  const handleLinkHighlight = async (highlightId, mediaType, mediaId) => {
+    setLinkingId(highlightId);
+    setLinkSuccess(null);
+    try {
+      const highlight = unlinkedHighlights.find(h => h.id === highlightId);
+      if (!highlight) return;
+
+      const updateData = {
+        text: highlight.text,
+        note: highlight.note,
+        tags: highlight.tags || [],
+        articleId: mediaType === 'article' ? mediaId : null,
+        bookId: mediaType === 'book' ? mediaId : null
+      };
+
+      await updateHighlight(highlightId, updateData);
+      setLinkSuccess(`Highlight linked to ${mediaType} successfully!`);
+      setExpandedHighlight(null);
+      setSearchQuery('');
+
+      // Refresh unlinked highlights
+      await loadUnlinkedHighlights();
+    } catch (err) {
+      setError(`Failed to link highlight: ${err.message}`);
+    } finally {
+      setLinkingId(null);
+    }
+  };
+
+  const filteredBooks = books.filter(book =>
+    searchQuery.length > 0 && (
+      book.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      book.author?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  ).slice(0, 10);
+
+  const filteredArticles = articles.filter(article =>
+    searchQuery.length > 0 && (
+      article.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      article.author?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  ).slice(0, 10);
+
+  const truncateText = (text, maxLength = 150) => {
+    if (!text || text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
   };
 
   return (
@@ -257,6 +350,143 @@ const ReadwiseSyncPage = () => {
           <li><strong>Archive = Content:</strong> Only archived articles get full content saved</li>
           <li><strong>Recommended:</strong> Run Sync regularly; Fetch when you want to archive</li>
         </ul>
+      </section>
+
+      {/* Unlinked Highlights Section */}
+      <section className="sync-section unlinked-highlights-section">
+        <h2>Manage Unlinked Highlights</h2>
+        <p>
+          These highlights are not linked to any book or article in your library.
+          Link them manually to see them on the media profile pages.
+        </p>
+
+        {linkSuccess && (
+          <div className="alert alert-success">
+            {linkSuccess}
+          </div>
+        )}
+
+        <button
+          onClick={loadUnlinkedHighlights}
+          disabled={unlinkedLoading}
+          className="btn btn-secondary"
+          style={{ marginBottom: '1rem' }}
+        >
+          {unlinkedLoading ? 'Loading...' : 'Refresh List'}
+        </button>
+
+        {unlinkedLoading ? (
+          <div className="loading-state">Loading unlinked highlights...</div>
+        ) : unlinkedHighlights.length === 0 ? (
+          <div className="empty-state">
+            <p>No unlinked highlights found. All highlights are linked to books or articles.</p>
+          </div>
+        ) : (
+          <>
+            <div className="unlinked-count">
+              <strong>{unlinkedHighlights.length}</strong> highlight{unlinkedHighlights.length !== 1 ? 's' : ''} need manual linking
+            </div>
+
+            <div className="unlinked-highlights-list">
+              {unlinkedHighlights.map((highlight) => (
+                <div key={highlight.id} className="highlight-card">
+                  <div className="highlight-text">
+                    "{truncateText(highlight.text)}"
+                  </div>
+                  <div className="highlight-meta">
+                    {highlight.title && (
+                      <span className="meta-item">
+                        <strong>From:</strong> {highlight.title}
+                        {highlight.author && ` by ${highlight.author}`}
+                      </span>
+                    )}
+                    {highlight.category && (
+                      <span className="meta-badge">{highlight.category}</span>
+                    )}
+                    {highlight.highlightedAt && (
+                      <span className="meta-date">
+                        {new Date(highlight.highlightedAt).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+
+                  {expandedHighlight === highlight.id ? (
+                    <div className="link-panel">
+                      <input
+                        type="text"
+                        placeholder="Search books or articles..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="search-input"
+                        autoFocus
+                      />
+
+                      {searchQuery.length > 0 && (
+                        <div className="search-results">
+                          {filteredBooks.length > 0 && (
+                            <div className="result-section">
+                              <h4>Books</h4>
+                              {filteredBooks.map((book) => (
+                                <button
+                                  key={book.id}
+                                  className="result-item"
+                                  onClick={() => handleLinkHighlight(highlight.id, 'book', book.id)}
+                                  disabled={linkingId === highlight.id}
+                                >
+                                  <span className="result-title">{book.title}</span>
+                                  {book.author && <span className="result-author">by {book.author}</span>}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {filteredArticles.length > 0 && (
+                            <div className="result-section">
+                              <h4>Articles</h4>
+                              {filteredArticles.map((article) => (
+                                <button
+                                  key={article.id}
+                                  className="result-item"
+                                  onClick={() => handleLinkHighlight(highlight.id, 'article', article.id)}
+                                  disabled={linkingId === highlight.id}
+                                >
+                                  <span className="result-title">{article.title}</span>
+                                  {article.author && <span className="result-author">by {article.author}</span>}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {filteredBooks.length === 0 && filteredArticles.length === 0 && (
+                            <div className="no-results">No matches found</div>
+                          )}
+                        </div>
+                      )}
+
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => {
+                          setExpandedHighlight(null);
+                          setSearchQuery('');
+                        }}
+                        style={{ marginTop: '0.5rem' }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={() => setExpandedHighlight(highlight.id)}
+                    >
+                      Link to Media
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </section>
     </div>
   );

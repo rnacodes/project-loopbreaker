@@ -73,6 +73,15 @@ namespace ProjectLoopbreaker.Application.Services
                 .ToListAsync();
         }
 
+        public async Task<IEnumerable<Highlight>> GetUnlinkedHighlightsAsync()
+        {
+            return await _context.Highlights
+                .AsNoTracking()
+                .Where(h => h.ArticleId == null && h.BookId == null)
+                .OrderByDescending(h => h.HighlightedAt ?? h.CreatedAt)
+                .ToListAsync();
+        }
+
         public async Task<Highlight> CreateHighlightAsync(CreateHighlightDto dto)
         {
             var highlight = new Highlight
@@ -113,6 +122,8 @@ namespace ProjectLoopbreaker.Application.Services
             highlight.Text = dto.Text;
             highlight.Note = dto.Note;
             highlight.Tags = dto.Tags != null ? string.Join(",", dto.Tags.Select(t => t.ToLowerInvariant())) : null;
+            highlight.ArticleId = dto.ArticleId;
+            highlight.BookId = dto.BookId;
             highlight.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -263,7 +274,7 @@ namespace ProjectLoopbreaker.Application.Services
                         Location = highlightDto.location,
                         LocationType = highlightDto.location_type,
                         HighlightedAt = !string.IsNullOrEmpty(highlightDto.highlighted_at)
-                            ? DateTime.Parse(highlightDto.highlighted_at)
+                            ? DateTime.Parse(highlightDto.highlighted_at, null, System.Globalization.DateTimeStyles.RoundtripKind).ToUniversalTime()
                             : null,
                         ReadwiseBookId = bookDto.user_book_id,
                         Tags = highlightDto.tags != null

@@ -51,9 +51,10 @@ When the backend runs in the Demo environment:
    }
    ```
 
-**Exceptions:**
-- `/api/dev/seed-demo-data` endpoint is always allowed (for seeding demo data)
-- Requests with a valid `X-Demo-Admin-Key` header bypass the restriction (see [Demo Admin Bypass](demo-admin-bypass.md))
+**Exceptions (in priority order):**
+1. `DEMO_WRITE_ENABLED=true` environment variable - allows ALL write operations globally
+2. Requests with a valid `X-Demo-Admin-Key` header bypass the restriction (see [Demo Admin Bypass](demo-admin-bypass.md))
+3. `/api/dev/seed-demo-data` endpoint is always allowed (for seeding demo data)
 
 ### Frontend: ConditionalProtectedRoute
 
@@ -98,7 +99,8 @@ VITE_DEMO_MODE=false
 ```
 # Backend
 ASPNETCORE_ENVIRONMENT=Demo
-DEMO_ADMIN_KEY=your-secret-key  # Optional, for admin access
+DEMO_ADMIN_KEY=your-secret-key     # Optional, for per-session admin access
+DEMO_WRITE_ENABLED=false           # Optional, set to "true" to allow all writes globally
 
 # Frontend
 VITE_DEMO_MODE=true
@@ -107,7 +109,9 @@ VITE_API_URL=https://your-demo-api.com/api
 
 - No login required
 - Read-only access for public visitors
-- Admin can enable write access via `/demo-admin` page
+- Two options for enabling write access:
+  - **Quick toggle:** Set `DEMO_WRITE_ENABLED=true` to allow all writes (useful for maintenance)
+  - **Per-session:** Use `/demo-admin` page with `DEMO_ADMIN_KEY` for controlled access
 
 ### Development (Local)
 

@@ -93,6 +93,23 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
+        // GET: api/highlight/unlinked
+        [HttpGet("unlinked")]
+        public async Task<ActionResult<IEnumerable<HighlightResponseDto>>> GetUnlinkedHighlights()
+        {
+            try
+            {
+                var highlights = await _highlightService.GetUnlinkedHighlightsAsync();
+                var response = highlights.Select(MapToResponseDto);
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving unlinked highlights");
+                return StatusCode(500, new { error = "Failed to retrieve unlinked highlights", details = ex.Message });
+            }
+        }
+
         // GET: api/highlight/tag/{tag}
         [HttpGet("tag/{tag}")]
         public async Task<ActionResult<IEnumerable<HighlightResponseDto>>> GetHighlightsByTag(string tag)

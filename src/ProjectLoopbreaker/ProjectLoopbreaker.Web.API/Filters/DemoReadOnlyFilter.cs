@@ -41,11 +41,30 @@ namespace ProjectLoopbreaker.Web.API.Filters
 
             if (isWriteOperation)
             {
-                // Check for admin key header bypass
-                var adminKey = _configuration["DEMO_ADMIN_KEY"];
+                // Check for simple write-enabled toggle (highest priority)
+                var writeEnabled = Environment.GetEnvironmentVariable("DEMO_WRITE_ENABLED");
+                if (!string.IsNullOrEmpty(writeEnabled) &&
+                    writeEnabled.Equals("true", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogInformation(
+                        "Demo write mode globally enabled via DEMO_WRITE_ENABLED. Method: {Method}, Path: {Path}",
+                        httpMethod,
+                        context.HttpContext.Request.Path.Value);
+                    return;
+                }
+
+                // Check for admin key header bypass (check env var directly first, then config)
+                var adminKey = Environment.GetEnvironmentVariable("DEMO_ADMIN_KEY")
+                               ?? _configuration["DEMO_ADMIN_KEY"];
                 if (!string.IsNullOrEmpty(adminKey))
                 {
                     var providedKey = context.HttpContext.Request.Headers[AdminKeyHeader].FirstOrDefault();
+
+                    _logger.LogDebug(
+                        "Demo admin key check - Key configured: {Configured}, Header present: {HeaderPresent}",
+                        !string.IsNullOrEmpty(adminKey),
+                        !string.IsNullOrEmpty(providedKey));
+
                     if (!string.IsNullOrEmpty(providedKey) && providedKey == adminKey)
                     {
                         _logger.LogInformation(

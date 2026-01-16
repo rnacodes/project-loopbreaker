@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
     Box, Card, CardContent, Typography, CircularProgress, Chip, Paper, Link, Button
 } from '@mui/material';
@@ -213,7 +214,7 @@ function HighlightsSection({ mediaItem, highlights, highlightsLoading }) {
                   No highlights found for this {mediaItem.mediaType.toLowerCase()}.
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  Visit the <Link href="/readwise-sync" sx={{ color: '#FFD700' }}>Readwise Sync page</Link> to import highlights.
+                  Visit the <Link component={RouterLink} to="/readwise-sync" sx={{ color: '#FFD700' }}>Readwise Sync page</Link> to import highlights.
                 </Typography>
               </Box>
             )}

@@ -1,9 +1,5 @@
-//TODO: Ensure that this file is up to date with the latest changes to the API and frontend.
-//TODO: Add a description field to the mixlist creation form.
 //TODO: Use Pixabay API so that user can easily search for and select a thumbnail for their mixlist. That will automatically be downloaded to DigitalOcean Spaces and the URL will be set as the thumbnail for the mixlist.
 //TODO: Pixabay documentation can be found here: https://pixabay.com/api/docs/
-//TODO: Update Choose File and Cancel buttons to match formatting of “Create Mixlist”
-//TODO: Add line about ideal image size
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -13,6 +9,7 @@ import { createMixlist, uploadThumbnail } from '../api';
 
 function CreateMixlistForm() {
     const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
     const [thumbnail, setThumbnail] = useState('');
     const [thumbnailFile, setThumbnailFile] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -50,6 +47,7 @@ function CreateMixlistForm() {
             // Create mixlist data
             const mixlistData = {
                 name: name.trim(),
+                description: description.trim() || null,
                 thumbnail: thumbnail || `https://picsum.photos/400/400?random=${Date.now()}&blur=1`
             };
 
@@ -136,6 +134,36 @@ function CreateMixlistForm() {
                     }}
                 />
 
+                {/* Description */}
+                <Typography variant="h5" sx={{
+                    fontSize: '20px',
+                    fontWeight: 'bold',
+                    mb: 1,
+                    color: '#ffffff'
+                }}>
+                    Description
+                </Typography>
+                <TextField
+                    placeholder="Enter a description for your mixlist..."
+                    variant="outlined"
+                    fullWidth
+                    multiline
+                    rows={3}
+                    margin="normal"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    sx={{
+                        mb: 3,
+                        '& .MuiInputBase-input': {
+                            fontSize: '16px'
+                        },
+                        '& .MuiInputBase-input::placeholder': {
+                            color: '#ffffff',
+                            opacity: 1
+                        }
+                    }}
+                />
+
                 {/* Thumbnail URL */}
                 <TextField
                     label="Thumbnail URL"
@@ -178,13 +206,11 @@ function CreateMixlistForm() {
                         variant="contained"
                         color="secondary"
                         component="label"
-                        sx={{ 
+                        sx={{
                             fontSize: '16px',
                             fontWeight: 'bold',
                             textTransform: 'none',
-                            py: 1.5,
-                            px: 3,
-                            borderRadius: '8px'
+                            py: 1.5
                         }}
                     >
                         Choose File
@@ -217,38 +243,48 @@ function CreateMixlistForm() {
 
                 {/* Info about thumbnail generation */}
                 <Box sx={{ mb: 3, p: 2, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}>
-                    <Typography variant="body2" sx={{ 
+                    <Typography variant="body2" sx={{
+                        fontSize: '14px',
+                        color: '#ffffff',
+                        opacity: 0.8,
+                        mb: 1
+                    }}>
+                        🎨 Upload a custom thumbnail or leave empty for a placeholder image.
+                    </Typography>
+                    <Typography variant="body2" sx={{
                         fontSize: '14px',
                         color: '#ffffff',
                         opacity: 0.8
                     }}>
-                        🎨 Upload a custom thumbnail or leave empty for a placeholder image.
+                        📐 Ideal image size: 400x400 pixels (square format recommended).
                     </Typography>
                 </Box>
 
                 <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
-                    <Button 
+                    <Button
                         type="button"
-                        variant="outlined" 
+                        variant="outlined"
                         onClick={() => navigate(-1)}
-                        sx={{ 
+                        sx={{
                             flex: 1,
                             fontSize: '16px',
                             fontWeight: 'bold',
+                            textTransform: 'none',
                             py: 1.5
                         }}
                     >
                         Cancel
                     </Button>
-                    <Button 
-                        type="submit" 
-                        variant="contained" 
-                        color="primary" 
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
                         disabled={!name || isSubmitting}
-                        sx={{ 
+                        sx={{
                             flex: 2,
                             fontSize: '16px',
                             fontWeight: 'bold',
+                            textTransform: 'none',
                             py: 1.5
                         }}
                     >

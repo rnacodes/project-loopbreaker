@@ -224,6 +224,7 @@ export {
     getHighlightsByArticle,
     getHighlightsByBook,
     getHighlightsByTag,
+    getUnlinkedHighlights,
     createHighlight,
     updateHighlight,
     deleteHighlight,

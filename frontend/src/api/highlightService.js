@@ -88,6 +88,19 @@ export const getHighlightsByTag = async (tag) => {
 };
 
 /**
+ * Gets all unlinked highlights (not associated with any book or article)
+ */
+export const getUnlinkedHighlights = async () => {
+    try {
+        const response = await apiClient.get('/highlight/unlinked');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching unlinked highlights:', error);
+        throw error;
+    }
+};
+
+/**
  * Creates a new highlight
  * @param {Object} highlightData - The highlight data
  */
