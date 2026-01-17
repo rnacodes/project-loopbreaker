@@ -28,6 +28,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Note> Notes { get; set; }
         public DbSet<MediaItemNote> MediaItemNotes { get; set; }
+        public DbSet<FeatureFlag> FeatureFlags { get; set; }
 
         // IApplicationDbContext interface implementations
         IQueryable<BaseMediaItem> IApplicationDbContext.MediaItems => MediaItems;
@@ -49,6 +50,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         IQueryable<RefreshToken> IApplicationDbContext.RefreshTokens => RefreshTokens;
         IQueryable<Note> IApplicationDbContext.Notes => Notes;
         IQueryable<MediaItemNote> IApplicationDbContext.MediaItemNotes => MediaItemNotes;
+        IQueryable<FeatureFlag> IApplicationDbContext.FeatureFlags => FeatureFlags;
 
 
         public MediaLibraryDbContext(DbContextOptions<MediaLibraryDbContext> options) : base(options) { }
@@ -759,6 +761,29 @@ namespace ProjectLoopbreaker.Infrastructure.Data
 
                 // Create index on IsDescriptionManual for AI processing queries
                 entity.HasIndex(e => e.IsDescriptionManual);
+            });
+
+            // Configure FeatureFlag entity
+            modelBuilder.Entity<FeatureFlag>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Key)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.IsEnabled)
+                    .HasDefaultValue(false);
+
+                entity.Property(e => e.CreatedAt)
+                    .IsRequired();
+
+                // Create unique index on Key to prevent duplicates
+                entity.HasIndex(e => e.Key)
+                    .IsUnique();
             });
 
             // Configure MediaItemNote join entity

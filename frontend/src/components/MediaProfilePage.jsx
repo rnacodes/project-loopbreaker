@@ -22,6 +22,7 @@ import MediaDetailAccordion from './MediaDetailAccordion';
 import HighlightsSection from './HighlightsSection';
 import TopicsGenresSection from './TopicsGenresSection';
 import RelatedNotesSection from './RelatedNotesSection';
+import SimilarItemsSection from './SimilarItemsSection';
 import { formatMediaType, formatStatus, getMediaTypeColor, getStatusColor, getRatingIcon, getRatingText } from '../utils/formatters';
 import {
     getMediaById, getAllMixlists,
@@ -461,6 +462,11 @@ function MediaProfilePage() {
           mediaItem={mediaItem}
           setSnackbar={setSnackbar}
           onUpdate={() => setRefreshKey(k => k + 1)}
+        />
+
+        <SimilarItemsSection
+          mediaItem={mediaItem}
+          setSnackbar={setSnackbar}
         />
 
         <MixlistCarousel 

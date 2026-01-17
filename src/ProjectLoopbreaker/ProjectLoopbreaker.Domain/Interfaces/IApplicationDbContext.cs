@@ -26,6 +26,7 @@ namespace ProjectLoopbreaker.Domain.Interfaces
         IQueryable<RefreshToken> RefreshTokens { get; }
         IQueryable<Note> Notes { get; }
         IQueryable<MediaItemNote> MediaItemNotes { get; }
+        IQueryable<FeatureFlag> FeatureFlags { get; }
 
         // Basic operations
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

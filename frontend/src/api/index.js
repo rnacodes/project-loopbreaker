@@ -321,3 +321,28 @@ export {
     runNormalizeVault,
     cancelScriptJob
 } from './scriptExecutionService';
+
+// AI Service
+export {
+    getAiStatus,
+    generateNoteDescription,
+    generateNoteDescriptionsBatch,
+    getPendingNoteDescriptions,
+    generateMediaEmbedding,
+    generateMediaEmbeddingsBatch,
+    getPendingMediaEmbeddings,
+    generateNoteEmbedding,
+    generateNoteEmbeddingsBatch,
+    getPendingNoteEmbeddings
+} from './aiService';
+
+// Recommendations
+export {
+    getRecommendationStatus,
+    getSimilarMedia,
+    getSimilarNotes,
+    searchByVibe,
+    getForYouRecommendations,
+    getMediaForNote as getRecommendedMediaForNote,
+    getNotesForMedia as getRecommendedNotesForMedia
+} from './recommendationService';

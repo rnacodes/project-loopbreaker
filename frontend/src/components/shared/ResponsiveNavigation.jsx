@@ -55,7 +55,10 @@ import {
   YouTube,
   MusicNote,
   SportsEsports,
-  Description
+  Description,
+  Note as NoteIcon,
+  AutoAwesome,
+  Psychology
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -107,6 +110,7 @@ const ResponsiveNavigation = () => {
   const navigationItems = [
     { text: 'Home', path: '/', icon: <Home /> },
     { text: 'Search', path: '/search', icon: <Search /> },
+    { text: 'Search by Vibe', path: '/search-by-vibe', icon: <AutoAwesome /> },
     { text: 'Topics and Genres', path: '/search-by-topic-genre', icon: <Category /> },
     { text: 'Mixlists', path: '/search?searchMode=mixlists', icon: <QueueMusic /> }
   ];
@@ -118,6 +122,7 @@ const ResponsiveNavigation = () => {
     { text: 'Documents', path: '/search?mediaType=Document', icon: <Description /> },
     { text: 'Movies', path: '/search?mediaType=Movie', icon: <Movie /> },
     { text: 'Music', path: '/search?mediaType=Music', icon: <MusicNote /> },
+    { text: 'Notes', path: '/notes', icon: <NoteIcon /> },
     { text: 'Playlists', path: '/search?mediaType=Playlist', icon: <VideoLibrary /> },
     { text: 'Podcasts', path: '/search?mediaType=Podcast', icon: <Podcasts /> },
     { text: 'TV Shows', path: '/search?mediaType=TVShow', icon: <Tv /> },
@@ -133,6 +138,7 @@ const ResponsiveNavigation = () => {
   ];
 
   const adminMenuItems = [
+    { text: 'AI Admin', path: '/ai-admin', icon: <Psychology />, requiresAuth: true },
     { text: 'Background Jobs', path: '/background-jobs', icon: <Work />, requiresAuth: true },
     { text: 'Cleanup', path: '/cleanup', icon: <CleaningServices />, requiresAuth: true },
     { text: 'Demo Admin', path: '/demo-admin', icon: <VpnKey />, requiresAuth: true },

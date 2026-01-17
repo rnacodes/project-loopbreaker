@@ -1,36 +1,45 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using ProjectLoopbreaker.Shared.Interfaces;
 
 namespace ProjectLoopbreaker.Web.API.Filters
 {
     /// <summary>
     /// Filter that blocks write operations (POST, PUT, DELETE, PATCH) in Demo environment.
     /// Allows browsing and GET requests only for demo users.
-    /// Can be bypassed with X-Demo-Admin-Key header matching DEMO_ADMIN_KEY environment variable.
+    /// Can be bypassed with:
+    /// - X-Demo-Admin-Key header matching DEMO_ADMIN_KEY environment variable
+    /// - Database feature flag "demo_write_enabled" set to true (no restart required)
+    /// - DEMO_WRITE_ENABLED environment variable set to "true" (requires restart)
     /// </summary>
-    public class DemoReadOnlyFilter : IActionFilter
+    public class DemoReadOnlyFilter : IAsyncActionFilter
     {
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<DemoReadOnlyFilter> _logger;
         private readonly IConfiguration _configuration;
+        private readonly IFeatureFlagService _featureFlagService;
         private const string AdminKeyHeader = "X-Demo-Admin-Key";
+        private const string DemoWriteEnabledFlag = "demo_write_enabled";
 
         public DemoReadOnlyFilter(
             IWebHostEnvironment environment,
             ILogger<DemoReadOnlyFilter> logger,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IFeatureFlagService featureFlagService)
         {
             _environment = environment;
             _logger = logger;
             _configuration = configuration;
+            _featureFlagService = featureFlagService;
         }
 
-        public void OnActionExecuting(ActionExecutingContext context)
+        public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             // Only restrict in Demo environment
             if (!_environment.EnvironmentName.Equals("Demo", StringComparison.OrdinalIgnoreCase))
             {
-                return; // Allow all operations in non-demo environments
+                await next(); // Allow all operations in non-demo environments
+                return;
             }
 
             var httpMethod = context.HttpContext.Request.Method;
@@ -41,19 +50,49 @@ namespace ProjectLoopbreaker.Web.API.Filters
 
             if (isWriteOperation)
             {
-                // Check for simple write-enabled toggle (highest priority)
+                // Allow feature flag management endpoints to always work
+                var path = context.HttpContext.Request.Path.Value ?? "";
+                if (path.Contains("/dev/feature-flags", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogDebug("Allowing feature flag management endpoint: {Path}", path);
+                    await next();
+                    return;
+                }
+
+                // Check database feature flag first (highest priority - instant effect without restart)
+                try
+                {
+                    var dbFlagEnabled = await _featureFlagService.IsEnabledAsync(DemoWriteEnabledFlag);
+                    if (dbFlagEnabled)
+                    {
+                        _logger.LogInformation(
+                            "Demo write mode globally enabled via database feature flag. Method: {Method}, Path: {Path}",
+                            httpMethod,
+                            path);
+                        await next();
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // If we can't check the database, log and continue to fallback checks
+                    _logger.LogWarning(ex, "Failed to check database feature flag, falling back to other methods");
+                }
+
+                // Fallback: Check for environment variable (requires restart)
                 var writeEnabled = Environment.GetEnvironmentVariable("DEMO_WRITE_ENABLED");
                 if (!string.IsNullOrEmpty(writeEnabled) &&
                     writeEnabled.Equals("true", StringComparison.OrdinalIgnoreCase))
                 {
                     _logger.LogInformation(
-                        "Demo write mode globally enabled via DEMO_WRITE_ENABLED. Method: {Method}, Path: {Path}",
+                        "Demo write mode globally enabled via DEMO_WRITE_ENABLED env var. Method: {Method}, Path: {Path}",
                         httpMethod,
-                        context.HttpContext.Request.Path.Value);
+                        path);
+                    await next();
                     return;
                 }
 
-                // Check for admin key header bypass (check env var directly first, then config)
+                // Check for admin key header bypass
                 var adminKey = Environment.GetEnvironmentVariable("DEMO_ADMIN_KEY")
                                ?? _configuration["DEMO_ADMIN_KEY"];
                 if (!string.IsNullOrEmpty(adminKey))
@@ -70,16 +109,17 @@ namespace ProjectLoopbreaker.Web.API.Filters
                         _logger.LogInformation(
                             "Demo admin key bypass used. Method: {Method}, Path: {Path}",
                             httpMethod,
-                            context.HttpContext.Request.Path.Value);
-                        return; // Allow operation with valid admin key
+                            path);
+                        await next();
+                        return;
                     }
                 }
 
                 // Allow /dev/seed-demo-data endpoint specifically
-                var path = context.HttpContext.Request.Path.Value ?? "";
                 if (path.Contains("/dev/seed-demo-data", StringComparison.OrdinalIgnoreCase))
                 {
-                    return; // Allow seeding demo data
+                    await next();
+                    return;
                 }
 
                 _logger.LogWarning(
@@ -97,13 +137,10 @@ namespace ProjectLoopbreaker.Web.API.Filters
                 {
                     StatusCode = 403 // Forbidden
                 };
+                return;
             }
-        }
 
-        public void OnActionExecuted(ActionExecutedContext context)
-        {
-            // Nothing to do after action execution
+            await next();
         }
     }
 }
-

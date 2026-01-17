@@ -47,6 +47,9 @@ import GoodreadsUploadPage from './components/GoodreadsUploadPage';
 import BackgroundJobsPage from './components/BackgroundJobsPage';
 import NoteProfilePage from './components/NoteProfilePage';
 import ScriptExecutionPage from './components/ScriptExecutionPage';
+import NotesListingPage from './components/NotesListingPage';
+import AiAdminPage from './components/AiAdminPage';
+import SearchByVibePage from './components/SearchByVibePage';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
@@ -181,6 +184,15 @@ function App() {
             } />
             <Route path="/note/:id" element={
               <ConditionalProtectedRoute><NoteProfilePage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/notes" element={
+              <ConditionalProtectedRoute><NotesListingPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/ai-admin" element={
+              <ConditionalProtectedRoute><AiAdminPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/search-by-vibe" element={
+              <ConditionalProtectedRoute><SearchByVibePage /></ConditionalProtectedRoute>
             } />
           {/* Catch-all route for 404 */}
           <Route path="*" element={

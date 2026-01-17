@@ -287,6 +287,7 @@ if (builder.Environment.EnvironmentName != "Testing")
 
 // Register Application Services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IFeatureFlagService, FeatureFlagService>();
 builder.Services.AddScoped<IPodcastMappingService, PodcastMappingService>();
 builder.Services.AddScoped<IPodcastService, PodcastService>();
 builder.Services.AddScoped<IBookService, BookService>();
