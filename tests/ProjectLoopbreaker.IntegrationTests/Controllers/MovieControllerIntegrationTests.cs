@@ -13,13 +13,13 @@ using Xunit;
 
 namespace ProjectLoopbreaker.IntegrationTests.Controllers
 {
-    public class MovieControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+    public class MovieControllerIntegrationTests : IClassFixture<WebApplicationFactory>
     {
-        private readonly WebApplicationFactory<Program> _factory;
+        private readonly WebApplicationFactory _factory;
         private readonly HttpClient _client;
         private readonly JsonSerializerOptions _jsonOptions;
 
-        public MovieControllerIntegrationTests(WebApplicationFactory<Program> factory)
+        public MovieControllerIntegrationTests(WebApplicationFactory factory)
         {
             _factory = factory;
             _client = _factory.CreateClient();

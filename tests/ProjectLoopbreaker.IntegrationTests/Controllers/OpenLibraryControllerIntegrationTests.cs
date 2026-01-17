@@ -9,12 +9,12 @@ using Xunit;
 
 namespace ProjectLoopbreaker.IntegrationTests.Controllers
 {
-    public class OpenLibraryControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+    public class OpenLibraryControllerIntegrationTests : IClassFixture<WebApplicationFactory>
     {
-        private readonly WebApplicationFactory<Program> _factory;
+        private readonly WebApplicationFactory _factory;
         private readonly HttpClient _client;
 
-        public OpenLibraryControllerIntegrationTests(WebApplicationFactory<Program> factory)
+        public OpenLibraryControllerIntegrationTests(WebApplicationFactory factory)
         {
             _factory = factory;
             _client = _factory.CreateClient();

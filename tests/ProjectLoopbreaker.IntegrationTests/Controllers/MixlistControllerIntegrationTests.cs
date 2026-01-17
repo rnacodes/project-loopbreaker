@@ -14,13 +14,13 @@ using Xunit;
 
 namespace ProjectLoopbreaker.IntegrationTests.Controllers
 {
-    public class MixlistControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+    public class MixlistControllerIntegrationTests : IClassFixture<WebApplicationFactory>
     {
-        private readonly WebApplicationFactory<Program> _factory;
+        private readonly WebApplicationFactory _factory;
         private readonly HttpClient _client;
         private readonly JsonSerializerOptions _jsonOptions;
 
-        public MixlistControllerIntegrationTests(WebApplicationFactory<Program> factory)
+        public MixlistControllerIntegrationTests(WebApplicationFactory factory)
         {
             _factory = factory;
             _client = _factory.CreateClient();

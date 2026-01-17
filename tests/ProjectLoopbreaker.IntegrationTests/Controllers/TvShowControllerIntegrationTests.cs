@@ -13,13 +13,13 @@ using Xunit;
 
 namespace ProjectLoopbreaker.IntegrationTests.Controllers
 {
-    public class TvShowControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+    public class TvShowControllerIntegrationTests : IClassFixture<WebApplicationFactory>
     {
-        private readonly WebApplicationFactory<Program> _factory;
+        private readonly WebApplicationFactory _factory;
         private readonly HttpClient _client;
         private readonly JsonSerializerOptions _jsonOptions;
 
-        public TvShowControllerIntegrationTests(WebApplicationFactory<Program> factory)
+        public TvShowControllerIntegrationTests(WebApplicationFactory factory)
         {
             _factory = factory;
             _client = _factory.CreateClient();

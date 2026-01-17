@@ -16,13 +16,13 @@ using Xunit;
 
 namespace ProjectLoopbreaker.IntegrationTests.Controllers
 {
-    public class YouTubeControllerIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+    public class YouTubeControllerIntegrationTests : IClassFixture<WebApplicationFactory>
     {
-        private readonly WebApplicationFactory<Program> _factory;
+        private readonly WebApplicationFactory _factory;
         private readonly HttpClient _client;
         private readonly JsonSerializerOptions _jsonOptions;
 
-        public YouTubeControllerIntegrationTests(WebApplicationFactory<Program> factory)
+        public YouTubeControllerIntegrationTests(WebApplicationFactory factory)
         {
             _factory = factory;
             _client = _factory.CreateClient();
