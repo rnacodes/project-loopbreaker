@@ -262,7 +262,7 @@ namespace ProjectLoopbreaker.Application.Services
                         ? (int)(dto.reading_progress.Value * 100) 
                         : null,
                     PublicationDate = !string.IsNullOrEmpty(dto.published_date)
-                        ? DateTime.Parse(dto.published_date)
+                        ? DateTime.Parse(dto.published_date, null, System.Globalization.DateTimeStyles.RoundtripKind).ToUniversalTime()
                         : null,
                     LastReaderSync = DateTime.UtcNow,
                     DateAdded = DateTime.UtcNow,
