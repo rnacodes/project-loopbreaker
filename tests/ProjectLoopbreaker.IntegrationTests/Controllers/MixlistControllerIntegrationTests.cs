@@ -394,6 +394,98 @@ namespace ProjectLoopbreaker.IntegrationTests.Controllers
             Assert.DoesNotContain(media.Id, updatedMixlist.MediaItemIds);
         }
 
+        [Fact]
+        public async Task GetMixlist_ShouldReturnMediaItemDescriptions()
+        {
+            // Arrange - Create a mixlist
+            var mixlistDto = new CreateMixlistDto { Name = "Mixlist for Description Test " + Guid.NewGuid().ToString()[..8] };
+            var mixlistContent = new StringContent(JsonSerializer.Serialize(mixlistDto, _jsonOptions), Encoding.UTF8, "application/json");
+            var mixlistResponse = await _client.PostAsync("/api/mixlist", mixlistContent);
+            var mixlist = JsonSerializer.Deserialize<MixlistResponseDto>(await mixlistResponse.Content.ReadAsStringAsync(), _jsonOptions);
+
+            // Create a media item with a description
+            var mediaDescription = "This is a detailed description for testing " + Guid.NewGuid().ToString()[..8];
+            var mediaDto = new CreateMediaItemDto
+            {
+                Title = "Media with Description",
+                MediaType = MediaType.Article,
+                Status = Status.Uncharted,
+                Description = mediaDescription
+            };
+            var mediaContent = new StringContent(JsonSerializer.Serialize(mediaDto, _jsonOptions), Encoding.UTF8, "application/json");
+            var mediaResponse = await _client.PostAsync("/api/media", mediaContent);
+            var media = JsonSerializer.Deserialize<MediaItemResponseDto>(await mediaResponse.Content.ReadAsStringAsync(), _jsonOptions);
+
+            // Add media item to mixlist
+            await _client.PostAsync($"/api/mixlist/{mixlist.Id}/items/{media.Id}", null);
+
+            // Act - Get the mixlist
+            var getMixlistResponse = await _client.GetAsync($"/api/mixlist/{mixlist.Id}");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, getMixlistResponse.StatusCode);
+
+            var content = await getMixlistResponse.Content.ReadAsStringAsync();
+            var retrievedMixlist = JsonSerializer.Deserialize<MixlistResponseDto>(content, _jsonOptions);
+
+            Assert.NotNull(retrievedMixlist);
+            Assert.NotNull(retrievedMixlist.MediaItems);
+            Assert.Single(retrievedMixlist.MediaItems);
+
+            var mediaItem = retrievedMixlist.MediaItems[0];
+            Assert.Equal(media.Id, mediaItem.Id);
+            Assert.Equal("Media with Description", mediaItem.Title);
+            Assert.Equal(mediaDescription, mediaItem.Description);
+        }
+
+        [Fact]
+        public async Task GetAllMixlists_ShouldReturnMediaItemDescriptions()
+        {
+            // Arrange - Create a mixlist
+            var uniqueName = "Mixlist All Desc Test " + Guid.NewGuid().ToString()[..8];
+            var mixlistDto = new CreateMixlistDto { Name = uniqueName };
+            var mixlistContent = new StringContent(JsonSerializer.Serialize(mixlistDto, _jsonOptions), Encoding.UTF8, "application/json");
+            var mixlistResponse = await _client.PostAsync("/api/mixlist", mixlistContent);
+            var mixlist = JsonSerializer.Deserialize<MixlistResponseDto>(await mixlistResponse.Content.ReadAsStringAsync(), _jsonOptions);
+
+            // Create a media item with a description
+            var mediaDescription = "Description for GetAll test " + Guid.NewGuid().ToString()[..8];
+            var mediaDto = new CreateMediaItemDto
+            {
+                Title = "Media for GetAll Test",
+                MediaType = MediaType.Book,
+                Status = Status.Uncharted,
+                Description = mediaDescription
+            };
+            var mediaContent = new StringContent(JsonSerializer.Serialize(mediaDto, _jsonOptions), Encoding.UTF8, "application/json");
+            var mediaResponse = await _client.PostAsync("/api/media", mediaContent);
+            var media = JsonSerializer.Deserialize<MediaItemResponseDto>(await mediaResponse.Content.ReadAsStringAsync(), _jsonOptions);
+
+            // Add media item to mixlist
+            await _client.PostAsync($"/api/mixlist/{mixlist.Id}/items/{media.Id}", null);
+
+            // Act - Get all mixlists
+            var getAllResponse = await _client.GetAsync("/api/mixlist");
+
+            // Assert
+            Assert.Equal(HttpStatusCode.OK, getAllResponse.StatusCode);
+
+            var content = await getAllResponse.Content.ReadAsStringAsync();
+            var mixlists = JsonSerializer.Deserialize<List<MixlistResponseDto>>(content, _jsonOptions);
+
+            Assert.NotNull(mixlists);
+
+            // Find our mixlist by name
+            var retrievedMixlist = mixlists.FirstOrDefault(m => m.Name == uniqueName);
+            Assert.NotNull(retrievedMixlist);
+            Assert.NotNull(retrievedMixlist.MediaItems);
+            Assert.Single(retrievedMixlist.MediaItems);
+
+            var mediaItem = retrievedMixlist.MediaItems[0];
+            Assert.Equal(media.Id, mediaItem.Id);
+            Assert.Equal(mediaDescription, mediaItem.Description);
+        }
+
         #endregion
 
         #region Search Tests
