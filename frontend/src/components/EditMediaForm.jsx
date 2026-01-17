@@ -148,8 +148,8 @@ function EditMediaForm() {
                 thumbnail: formData.thumbnail || null,
                 genre: formData.genre || null,
                 dateCompleted: formData.dateCompleted ? new Date(formData.dateCompleted).toISOString() : null,
-                topics: [], // TODO: Add topic editing in future
-                genres: []  // TODO: Add genre editing in future
+                topics: [],
+                genres: []
             };
 
             await updateMedia(id, updateData);

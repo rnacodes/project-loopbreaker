@@ -31,6 +31,8 @@ namespace ProjectLoopbreaker.DTOs
         public Guid Id { get; set; }
         [JsonPropertyName("title")]
         public string Title { get; set; } = string.Empty;
+        [JsonPropertyName("description")]
+        public string? Description { get; set; }
         [JsonPropertyName("mediaType")]
         public MediaType MediaType { get; set; }
         [JsonPropertyName("thumbnail")]

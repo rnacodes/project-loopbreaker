@@ -696,3 +696,7 @@ nul
 bash.exe.stackdump
 .claude/settings.local.json
 
+CUsersrashisourcereposProjectLoopbreakertemp_content_index.json
+temp_content.json
+.claude/settings.local.json
+tmp*
