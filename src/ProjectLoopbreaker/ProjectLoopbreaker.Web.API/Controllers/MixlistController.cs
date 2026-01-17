@@ -60,12 +60,13 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                         {
                             Id = mi.Id,
                             Title = mi.Title,
+                            Description = mi.Description,
                             MediaType = mi.MediaType,
                             Thumbnail = mi.Thumbnail
                         }).ToArray()
                     })
                     .ToListAsync();
-                
+
                 return Ok(mixlists);
             }
             catch (Exception ex)
@@ -97,6 +98,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                         {
                             Id = mi.Id,
                             Title = mi.Title,
+                            Description = mi.Description,
                             MediaType = mi.MediaType,
                             Thumbnail = mi.Thumbnail
                         }).ToArray()
@@ -149,6 +151,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                         {
                             Id = mi.Id,
                             Title = mi.Title,
+                            Description = mi.Description,
                             MediaType = mi.MediaType,
                             Thumbnail = mi.Thumbnail
                         }).ToArray()

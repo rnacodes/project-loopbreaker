@@ -1,4 +1,3 @@
-//TODO: Correct - individual media description not showing up
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
