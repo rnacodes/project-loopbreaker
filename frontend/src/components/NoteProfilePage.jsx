@@ -14,6 +14,8 @@ import {
 } from '@mui/icons-material';
 import { getNoteById, getMediaForNote, updateNote } from '../api';
 import { formatMediaType, getMediaTypeColor } from '../utils/formatters';
+import SimilarNotesSection from './SimilarNotesSection';
+import RelatedMediaByEmbeddingSection from './RelatedMediaByEmbeddingSection';
 
 function NoteProfilePage() {
     const [note, setNote] = useState(null);
@@ -495,6 +497,19 @@ function NoteProfilePage() {
                         </Box>
                     </CardContent>
                 </Card>
+
+                {/* AI Recommendation Sections */}
+                <Box sx={{ mt: 3 }}>
+                    <SimilarNotesSection
+                        note={note}
+                        setSnackbar={setSnackbar}
+                    />
+
+                    <RelatedMediaByEmbeddingSection
+                        note={note}
+                        setSnackbar={setSnackbar}
+                    />
+                </Box>
             </Box>
 
             {/* Snackbar for notifications */}

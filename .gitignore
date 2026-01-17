@@ -677,11 +677,7 @@ psd
 thumb
 sketch
 
-# Ignore DevController.cs
-ProjectLoopbreaker.Web.API/Controllers/DevController.cs
-
 # End of https://www.toptal.com/developers/gitignore/api/csharp,react,node,aspnetcore
-/src/ProjectLoopbreaker/ProjectLoopbreaker.Web.API/Controllers/DevController.cs
 
 # Project-specific ignores
 temp-docs/
@@ -700,3 +696,4 @@ CUsersrashisourcereposProjectLoopbreakertemp_content_index.json
 temp_content.json
 .claude/settings.local.json
 tmp*
+.claude/settings.local.json

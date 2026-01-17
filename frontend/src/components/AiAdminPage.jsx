@@ -1,0 +1,567 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Container,
+  Paper,
+  Typography,
+  Button,
+  Box,
+  Alert,
+  CircularProgress,
+  Card,
+  CardContent,
+  Grid,
+  Chip,
+  Divider,
+} from '@mui/material';
+import {
+  Refresh as RefreshIcon,
+  CheckCircle as CheckCircleIcon,
+  Error as ErrorIcon,
+  Info as InfoIcon,
+  Psychology as PsychologyIcon,
+  AutoAwesome as AutoAwesomeIcon,
+} from '@mui/icons-material';
+import {
+  getAiStatus,
+  generateNoteDescriptionsBatch,
+  getPendingNoteDescriptions,
+  generateMediaEmbeddingsBatch,
+  generateNoteEmbeddingsBatch,
+  getPendingMediaEmbeddings,
+  getPendingNoteEmbeddings,
+  getRecommendationStatus,
+} from '../api';
+
+const AiAdminPage = () => {
+  // State for AI service status
+  const [aiStatus, setAiStatus] = useState(null);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [statusError, setStatusError] = useState(null);
+
+  // State for recommendation service status
+  const [recommendationStatus, setRecommendationStatus] = useState(null);
+
+  // State for pending counts
+  const [pendingDescriptions, setPendingDescriptions] = useState(null);
+  const [pendingMediaEmbeddings, setPendingMediaEmbeddings] = useState(null);
+  const [pendingNoteEmbeddings, setPendingNoteEmbeddings] = useState(null);
+
+  // State for note description generation
+  const [generatingDescriptions, setGeneratingDescriptions] = useState(false);
+  const [descriptionsResult, setDescriptionsResult] = useState(null);
+  const [descriptionsError, setDescriptionsError] = useState(null);
+
+  // State for media embeddings generation
+  const [generatingMediaEmbeddings, setGeneratingMediaEmbeddings] = useState(false);
+  const [mediaEmbeddingsResult, setMediaEmbeddingsResult] = useState(null);
+  const [mediaEmbeddingsError, setMediaEmbeddingsError] = useState(null);
+
+  // State for note embeddings generation
+  const [generatingNoteEmbeddings, setGeneratingNoteEmbeddings] = useState(false);
+  const [noteEmbeddingsResult, setNoteEmbeddingsResult] = useState(null);
+  const [noteEmbeddingsError, setNoteEmbeddingsError] = useState(null);
+
+  // Fetch status on mount
+  useEffect(() => {
+    fetchAllStatus();
+  }, []);
+
+  const fetchAllStatus = async () => {
+    setStatusLoading(true);
+    setStatusError(null);
+
+    try {
+      // Fetch AI status
+      const aiResult = await getAiStatus();
+      setAiStatus(aiResult);
+
+      // Fetch recommendation status
+      try {
+        const recResult = await getRecommendationStatus();
+        setRecommendationStatus(recResult);
+      } catch {
+        // Recommendation might not be available
+        setRecommendationStatus({ isAvailable: false });
+      }
+
+      // Fetch pending counts
+      try {
+        const descCount = await getPendingNoteDescriptions();
+        setPendingDescriptions(descCount);
+      } catch {
+        setPendingDescriptions(null);
+      }
+
+      try {
+        const mediaCount = await getPendingMediaEmbeddings();
+        setPendingMediaEmbeddings(mediaCount);
+      } catch {
+        setPendingMediaEmbeddings(null);
+      }
+
+      try {
+        const noteCount = await getPendingNoteEmbeddings();
+        setPendingNoteEmbeddings(noteCount);
+      } catch {
+        setPendingNoteEmbeddings(null);
+      }
+    } catch (error) {
+      setStatusError(error.response?.data?.message || error.message || 'Failed to fetch AI status');
+      setAiStatus(null);
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  // Handler for generating note descriptions
+  const handleGenerateDescriptions = async () => {
+    setGeneratingDescriptions(true);
+    setDescriptionsResult(null);
+    setDescriptionsError(null);
+
+    try {
+      const result = await generateNoteDescriptionsBatch();
+      setDescriptionsResult(result);
+      // Refresh pending count
+      try {
+        const descCount = await getPendingNoteDescriptions();
+        setPendingDescriptions(descCount);
+      } catch {
+        // Ignore
+      }
+    } catch (error) {
+      setDescriptionsError(error.response?.data?.message || error.message || 'Failed to generate descriptions');
+    } finally {
+      setGeneratingDescriptions(false);
+    }
+  };
+
+  // Handler for generating media embeddings
+  const handleGenerateMediaEmbeddings = async () => {
+    setGeneratingMediaEmbeddings(true);
+    setMediaEmbeddingsResult(null);
+    setMediaEmbeddingsError(null);
+
+    try {
+      const result = await generateMediaEmbeddingsBatch();
+      setMediaEmbeddingsResult(result);
+      // Refresh pending count
+      try {
+        const mediaCount = await getPendingMediaEmbeddings();
+        setPendingMediaEmbeddings(mediaCount);
+      } catch {
+        // Ignore
+      }
+    } catch (error) {
+      setMediaEmbeddingsError(error.response?.data?.message || error.message || 'Failed to generate media embeddings');
+    } finally {
+      setGeneratingMediaEmbeddings(false);
+    }
+  };
+
+  // Handler for generating note embeddings
+  const handleGenerateNoteEmbeddings = async () => {
+    setGeneratingNoteEmbeddings(true);
+    setNoteEmbeddingsResult(null);
+    setNoteEmbeddingsError(null);
+
+    try {
+      const result = await generateNoteEmbeddingsBatch();
+      setNoteEmbeddingsResult(result);
+      // Refresh pending count
+      try {
+        const noteCount = await getPendingNoteEmbeddings();
+        setPendingNoteEmbeddings(noteCount);
+      } catch {
+        // Ignore
+      }
+    } catch (error) {
+      setNoteEmbeddingsError(error.response?.data?.message || error.message || 'Failed to generate note embeddings');
+    } finally {
+      setGeneratingNoteEmbeddings(false);
+    }
+  };
+
+  const isAiAvailable = aiStatus?.isAvailable || aiStatus?.available;
+
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Typography variant="h3" gutterBottom sx={{ mb: 4, fontWeight: 'bold' }}>
+        AI Administration
+      </Typography>
+
+      {/* Service Status Section */}
+      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+            Service Status
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<RefreshIcon />}
+            onClick={fetchAllStatus}
+            disabled={statusLoading}
+            sx={{
+              backgroundColor: '#9c27b0',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: '#7b1fa2'
+              }
+            }}
+          >
+            Refresh
+          </Button>
+        </Box>
+
+        {statusLoading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+            <CircularProgress />
+          </Box>
+        )}
+
+        {statusError && (
+          <Alert severity="error" icon={<ErrorIcon />} sx={{ mb: 2 }}>
+            <strong>Status Check Failed:</strong> {statusError}
+          </Alert>
+        )}
+
+        <Grid container spacing={2}>
+          {/* AI Service Status */}
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined" sx={{
+              bgcolor: isAiAvailable ? 'success.light' : 'error.light',
+              height: '100%'
+            }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {isAiAvailable ? (
+                    <CheckCircleIcon sx={{ fontSize: 40, color: 'success.main' }} />
+                  ) : (
+                    <ErrorIcon sx={{ fontSize: 40, color: 'error.main' }} />
+                  )}
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                      Gradient AI Service
+                    </Typography>
+                    <Chip
+                      label={isAiAvailable ? 'Available' : 'Unavailable'}
+                      color={isAiAvailable ? 'success' : 'error'}
+                      size="small"
+                    />
+                  </Box>
+                </Box>
+                {aiStatus?.embeddingModel && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Embedding Model: {aiStatus.embeddingModel}
+                  </Typography>
+                )}
+                {aiStatus?.generationModel && (
+                  <Typography variant="body2">
+                    Generation Model: {aiStatus.generationModel}
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Recommendation Service Status */}
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined" sx={{
+              bgcolor: recommendationStatus?.isAvailable ? 'success.light' : 'warning.light',
+              height: '100%'
+            }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {recommendationStatus?.isAvailable ? (
+                    <CheckCircleIcon sx={{ fontSize: 40, color: 'success.main' }} />
+                  ) : (
+                    <ErrorIcon sx={{ fontSize: 40, color: 'warning.main' }} />
+                  )}
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                      Recommendation Service
+                    </Typography>
+                    <Chip
+                      label={recommendationStatus?.isAvailable ? 'Available' : 'Unavailable'}
+                      color={recommendationStatus?.isAvailable ? 'success' : 'warning'}
+                      size="small"
+                    />
+                  </Box>
+                </Box>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {recommendationStatus?.isAvailable
+                    ? 'pgvector similarity search is ready'
+                    : 'Requires AI service and pgvector'}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* Pending Counts */}
+        {(pendingDescriptions !== null || pendingMediaEmbeddings !== null || pendingNoteEmbeddings !== null) && (
+          <Box sx={{ mt: 3 }}>
+            <Divider sx={{ mb: 2 }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1 }}>
+              Pending Operations
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+              {pendingDescriptions !== null && (
+                <Chip
+                  icon={<PsychologyIcon />}
+                  label={`${pendingDescriptions} notes need descriptions`}
+                  color={pendingDescriptions > 0 ? 'warning' : 'success'}
+                />
+              )}
+              {pendingMediaEmbeddings !== null && (
+                <Chip
+                  icon={<AutoAwesomeIcon />}
+                  label={`${pendingMediaEmbeddings} media need embeddings`}
+                  color={pendingMediaEmbeddings > 0 ? 'warning' : 'success'}
+                />
+              )}
+              {pendingNoteEmbeddings !== null && (
+                <Chip
+                  icon={<AutoAwesomeIcon />}
+                  label={`${pendingNoteEmbeddings} notes need embeddings`}
+                  color={pendingNoteEmbeddings > 0 ? 'warning' : 'success'}
+                />
+              )}
+            </Box>
+          </Box>
+        )}
+      </Paper>
+
+      {/* Note Description Generation Section */}
+      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+          Note Description Generation
+        </Typography>
+
+        <Alert severity="info" icon={<InfoIcon />} sx={{ mb: 2 }}>
+          Generate AI descriptions for notes that don't have manual descriptions.
+          The AI analyzes note content and creates concise summaries.
+        </Alert>
+
+        <Card variant="outlined">
+          <CardContent>
+            <Typography variant="h6" gutterBottom>
+              Generate Batch Descriptions
+            </Typography>
+            <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+              Process notes without descriptions in batches. Each batch processes up to 20 notes.
+              {pendingDescriptions !== null && pendingDescriptions > 0 && (
+                <strong> ({pendingDescriptions} notes pending)</strong>
+              )}
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={generatingDescriptions ? <CircularProgress size={20} color="inherit" /> : <PsychologyIcon />}
+              onClick={handleGenerateDescriptions}
+              disabled={generatingDescriptions || !isAiAvailable}
+              fullWidth
+            >
+              {generatingDescriptions ? 'Generating...' : 'Generate Descriptions'}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {descriptionsError && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            <strong>Generation Failed:</strong> {descriptionsError}
+          </Alert>
+        )}
+
+        {descriptionsResult && (
+          <Card variant="outlined" sx={{ mt: 2, bgcolor: 'success.light' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+                Description Generation Complete
+              </Typography>
+              <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                  {descriptionsResult.successCount || descriptionsResult.processed || 0}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Descriptions Generated
+                </Typography>
+              </Box>
+              {descriptionsResult.failedCount > 0 && (
+                <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                  {descriptionsResult.failedCount} failed
+                </Typography>
+              )}
+              {descriptionsResult.elapsedTime && (
+                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                  Completed in {descriptionsResult.elapsedTime}
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </Paper>
+
+      {/* Embedding Generation Section */}
+      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+        <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+          Embedding Generation
+        </Typography>
+
+        <Alert severity="info" icon={<InfoIcon />} sx={{ mb: 2 }}>
+          Generate vector embeddings for semantic search and recommendations.
+          Embeddings enable "similar items" and "search by vibe" features.
+        </Alert>
+
+        <Grid container spacing={2}>
+          {/* Media Embeddings */}
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Media Item Embeddings
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  Generate embeddings for books, articles, videos, and other media.
+                  {pendingMediaEmbeddings !== null && pendingMediaEmbeddings > 0 && (
+                    <strong> ({pendingMediaEmbeddings} pending)</strong>
+                  )}
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={generatingMediaEmbeddings ? <CircularProgress size={20} color="inherit" /> : <AutoAwesomeIcon />}
+                  onClick={handleGenerateMediaEmbeddings}
+                  disabled={generatingMediaEmbeddings || !isAiAvailable}
+                  fullWidth
+                >
+                  {generatingMediaEmbeddings ? 'Generating...' : 'Generate Media Embeddings'}
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Note Embeddings */}
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="h6" gutterBottom>
+                  Note Embeddings
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  Generate embeddings for Obsidian notes to enable semantic search.
+                  {pendingNoteEmbeddings !== null && pendingNoteEmbeddings > 0 && (
+                    <strong> ({pendingNoteEmbeddings} pending)</strong>
+                  )}
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  startIcon={generatingNoteEmbeddings ? <CircularProgress size={20} color="inherit" /> : <AutoAwesomeIcon />}
+                  onClick={handleGenerateNoteEmbeddings}
+                  disabled={generatingNoteEmbeddings || !isAiAvailable}
+                  fullWidth
+                >
+                  {generatingNoteEmbeddings ? 'Generating...' : 'Generate Note Embeddings'}
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* Media Embeddings Results */}
+        {mediaEmbeddingsError && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            <strong>Media Embeddings Failed:</strong> {mediaEmbeddingsError}
+          </Alert>
+        )}
+
+        {mediaEmbeddingsResult && (
+          <Card variant="outlined" sx={{ mt: 2, bgcolor: 'success.light' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+                Media Embeddings Complete
+              </Typography>
+              <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                  {mediaEmbeddingsResult.successCount || mediaEmbeddingsResult.processed || 0}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Embeddings Generated
+                </Typography>
+              </Box>
+              {mediaEmbeddingsResult.failedCount > 0 && (
+                <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                  {mediaEmbeddingsResult.failedCount} failed
+                </Typography>
+              )}
+              {mediaEmbeddingsResult.elapsedTime && (
+                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                  Completed in {mediaEmbeddingsResult.elapsedTime}
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Note Embeddings Results */}
+        {noteEmbeddingsError && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            <strong>Note Embeddings Failed:</strong> {noteEmbeddingsError}
+          </Alert>
+        )}
+
+        {noteEmbeddingsResult && (
+          <Card variant="outlined" sx={{ mt: 2, bgcolor: 'success.light' }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+                Note Embeddings Complete
+              </Typography>
+              <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.paper', borderRadius: 1 }}>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                  {noteEmbeddingsResult.successCount || noteEmbeddingsResult.processed || 0}
+                </Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Embeddings Generated
+                </Typography>
+              </Box>
+              {noteEmbeddingsResult.failedCount > 0 && (
+                <Typography variant="body2" color="error" sx={{ mt: 1 }}>
+                  {noteEmbeddingsResult.failedCount} failed
+                </Typography>
+              )}
+              {noteEmbeddingsResult.elapsedTime && (
+                <Typography variant="body2" sx={{ mt: 1, fontStyle: 'italic' }}>
+                  Completed in {noteEmbeddingsResult.elapsedTime}
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </Paper>
+
+      {/* Background Service Info */}
+      <Paper elevation={3} sx={{ p: 3 }}>
+        <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+          Background Services
+        </Typography>
+
+        <Alert severity="info" icon={<InfoIcon />}>
+          <Typography variant="body2">
+            <strong>Automatic Processing:</strong> When enabled, background services automatically generate
+            descriptions and embeddings on a schedule.
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 1 }}>
+            Configure with environment variables:
+          </Typography>
+          <ul style={{ margin: '8px 0', paddingLeft: '20px' }}>
+            <li><code>NoteDescriptionGeneration__Enabled=true</code> - Enable automatic description generation (every 12 hours)</li>
+            <li><code>EmbeddingGeneration__Enabled=true</code> - Enable automatic embedding generation (every 24 hours)</li>
+          </ul>
+        </Alert>
+      </Paper>
+    </Container>
+  );
+};
+
+export default AiAdminPage;
