@@ -14,6 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Typesense;
 using Typesense.Setup;
+using Pgvector.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -268,16 +269,13 @@ catch (Exception ex)
     }
 }
 
-// Configure Npgsql for JSON serialization and pgvector support
-var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
-dataSourceBuilder.EnableDynamicJson(); // Enable dynamic JSON serialization for arrays
-var dataSource = dataSourceBuilder.Build();
-
 // Register DbContext (skip for Testing environment - WebApplicationFactory will register InMemory)
 if (builder.Environment.EnvironmentName != "Testing")
 {
+    // Configure EF Core with PostgreSQL and pgvector support
+    // Note: Npgsql 9.x has dynamic JSON enabled by default
     builder.Services.AddDbContext<MediaLibraryDbContext>(options =>
-        options.UseNpgsql(dataSource, o => o.UseVector())); // Enable pgvector support
+        options.UseNpgsql(connectionString, o => o.UseVector())); // Enable pgvector support
 
     // Register IApplicationDbContext
     builder.Services.AddScoped<IApplicationDbContext>(provider =>
