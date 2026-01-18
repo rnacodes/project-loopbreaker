@@ -268,7 +268,7 @@ catch (Exception ex)
     }
 }
 
-// Configure Npgsql for JSON serialization
+// Configure Npgsql for JSON serialization and pgvector support
 var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
 dataSourceBuilder.EnableDynamicJson(); // Enable dynamic JSON serialization for arrays
 var dataSource = dataSourceBuilder.Build();
@@ -277,7 +277,7 @@ var dataSource = dataSourceBuilder.Build();
 if (builder.Environment.EnvironmentName != "Testing")
 {
     builder.Services.AddDbContext<MediaLibraryDbContext>(options =>
-        options.UseNpgsql(dataSource));
+        options.UseNpgsql(dataSource, o => o.UseVector())); // Enable pgvector support
 
     // Register IApplicationDbContext
     builder.Services.AddScoped<IApplicationDbContext>(provider =>

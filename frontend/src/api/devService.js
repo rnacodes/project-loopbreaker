@@ -133,3 +133,49 @@ export const cleanupAllMedia = async () => {
         throw error;
     }
 };
+
+// ============================================
+// Feature Flag API calls
+// ============================================
+
+export const getAllFeatureFlags = async () => {
+    try {
+        const response = await apiClient.get('/dev/feature-flags');
+        return response.data;
+    } catch (error) {
+        console.error('Error getting feature flags:', error);
+        throw error;
+    }
+};
+
+export const getFeatureFlag = async (key) => {
+    try {
+        const response = await apiClient.get(`/dev/feature-flags/${key}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error getting feature flag ${key}:`, error);
+        throw error;
+    }
+};
+
+export const enableFeatureFlag = async (key, description = null) => {
+    try {
+        const response = await apiClient.post(`/dev/feature-flags/${key}/enable`,
+            description ? { description } : {});
+        return response.data;
+    } catch (error) {
+        console.error(`Error enabling feature flag ${key}:`, error);
+        throw error;
+    }
+};
+
+export const disableFeatureFlag = async (key, description = null) => {
+    try {
+        const response = await apiClient.post(`/dev/feature-flags/${key}/disable`,
+            description ? { description } : {});
+        return response.data;
+    } catch (error) {
+        console.error(`Error disabling feature flag ${key}:`, error);
+        throw error;
+    }
+};

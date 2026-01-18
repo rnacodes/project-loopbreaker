@@ -267,7 +267,11 @@ export {
     cleanupAllGenres,
     cleanupOrphanedTopics,
     cleanupOrphanedGenres,
-    cleanupAllMedia
+    cleanupAllMedia,
+    getAllFeatureFlags,
+    getFeatureFlag,
+    enableFeatureFlag,
+    disableFeatureFlag
 } from './devService';
 
 // Typesense Search

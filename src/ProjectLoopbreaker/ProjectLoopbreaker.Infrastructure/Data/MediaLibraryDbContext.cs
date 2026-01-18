@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Pgvector;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Domain.Interfaces;
 using System.Collections.Generic;
@@ -106,6 +107,10 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 // AI/Embedding fields
                 entity.Property(e => e.EmbeddingModel)
                     .HasMaxLength(100);
+
+                // Configure pgvector column type for embeddings
+                entity.Property(e => e.Embedding)
+                    .HasColumnType("vector(1024)");
             });
 
             // Configure Mixlist entity
@@ -758,6 +763,10 @@ namespace ProjectLoopbreaker.Infrastructure.Data
 
                 entity.Property(e => e.IsDescriptionManual)
                     .HasDefaultValue(false);
+
+                // Configure pgvector column type for embeddings
+                entity.Property(e => e.Embedding)
+                    .HasColumnType("vector(1024)");
 
                 // Create index on IsDescriptionManual for AI processing queries
                 entity.HasIndex(e => e.IsDescriptionManual);
