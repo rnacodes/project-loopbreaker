@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using Pgvector.EntityFrameworkCore;
 using System.IO;
 
 namespace ProjectLoopbreaker.Infrastructure.Data
@@ -20,9 +21,10 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             // Get connection string from configuration
             var connectionString = configuration.GetConnectionString("DefaultConnection");
 
-            // Create DbContext options
+            // Create DbContext options with pgvector support
+            // The Pgvector.EntityFrameworkCore package handles Vector type mapping via UseVector()
             var optionsBuilder = new DbContextOptionsBuilder<MediaLibraryDbContext>();
-            optionsBuilder.UseNpgsql(connectionString);
+            optionsBuilder.UseNpgsql(connectionString, o => o.UseVector());
 
             // Create and return a new instance of the DbContext
             return new MediaLibraryDbContext(optionsBuilder.Options);

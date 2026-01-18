@@ -63,6 +63,9 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // Enable pgvector extension for vector similarity search
+            modelBuilder.HasPostgresExtension("vector");
+
             // Configure BaseMediaItem entity
             modelBuilder.Entity<BaseMediaItem>(entity =>
             {
@@ -107,10 +110,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 // AI/Embedding fields
                 entity.Property(e => e.EmbeddingModel)
                     .HasMaxLength(100);
-
-                // Configure pgvector column type for embeddings
-                entity.Property(e => e.Embedding)
-                    .HasColumnType("vector(1024)");
+                // Note: Embedding column type is configured via [Column] attribute on entity
             });
 
             // Configure Mixlist entity
@@ -763,10 +763,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
 
                 entity.Property(e => e.IsDescriptionManual)
                     .HasDefaultValue(false);
-
-                // Configure pgvector column type for embeddings
-                entity.Property(e => e.Embedding)
-                    .HasColumnType("vector(1024)");
+                // Note: Embedding column type is configured via [Column] attribute on entity
 
                 // Create index on IsDescriptionManual for AI processing queries
                 entity.HasIndex(e => e.IsDescriptionManual);

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Pgvector;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Domain.Interfaces;
@@ -247,10 +248,10 @@ Content (excerpt):
                 }
 
                 // Generate embedding
-                var embedding = await _gradientClient.GenerateEmbeddingAsync(embeddingText, cancellationToken);
+                var embeddingArray = await _gradientClient.GenerateEmbeddingAsync(embeddingText, cancellationToken);
 
-                // Update the media item
-                mediaItem.Embedding = embedding;
+                // Update the media item (convert float[] to Vector)
+                mediaItem.Embedding = new Vector(embeddingArray);
                 mediaItem.EmbeddingGeneratedAt = DateTime.UtcNow;
                 mediaItem.EmbeddingModel = _gradientClient.EmbeddingModelName;
 
@@ -289,10 +290,10 @@ Content (excerpt):
                 }
 
                 // Generate embedding
-                var embedding = await _gradientClient.GenerateEmbeddingAsync(embeddingText, cancellationToken);
+                var embeddingArray = await _gradientClient.GenerateEmbeddingAsync(embeddingText, cancellationToken);
 
-                // Update the note
-                note.Embedding = embedding;
+                // Update the note (convert float[] to Vector)
+                note.Embedding = new Vector(embeddingArray);
                 note.EmbeddingGeneratedAt = DateTime.UtcNow;
                 note.EmbeddingModel = _gradientClient.EmbeddingModelName;
 

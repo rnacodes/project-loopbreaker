@@ -15,6 +15,7 @@ using System.Text;
 using Typesense;
 using Typesense.Setup;
 using Pgvector.EntityFrameworkCore;
+using ProjectLoopbreaker.Web.API.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -96,7 +97,7 @@ builder.Services.AddControllers(options =>
         options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
-// --- Configure JWT Authentication ---
+// --- Configure JWT and API Key Authentication ---
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET") ?? jwtSettings["Secret"];
 
@@ -109,12 +110,14 @@ else
 {
     var key = Encoding.ASCII.GetBytes(jwtSecret);
 
+    // Configure authentication with multiple schemes: JWT Bearer and API Key
+    // Uses a policy scheme to automatically select the appropriate scheme based on the request
     builder.Services.AddAuthentication(options =>
     {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultScheme = "MultiAuth";
+        options.DefaultChallengeScheme = "MultiAuth";
     })
-    .AddJwtBearer(options =>
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
         options.RequireHttpsMetadata = true; // Set to true in production if using HTTPS
         options.SaveToken = true;
@@ -129,13 +132,39 @@ else
             IssuerSigningKey = new SymmetricSecurityKey(key),
             ClockSkew = TimeSpan.Zero // Remove default 5 minute clock skew
         };
+    })
+    .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(
+        ApiKeyAuthenticationOptions.DefaultScheme, options => { })
+    .AddPolicyScheme("MultiAuth", "JWT or API Key", options =>
+    {
+        // If X-API-Key header is present, use API key authentication
+        // Otherwise, use JWT Bearer authentication
+        options.ForwardDefaultSelector = context =>
+        {
+            if (context.Request.Headers.ContainsKey(ApiKeyAuthenticationOptions.HeaderName))
+            {
+                return ApiKeyAuthenticationOptions.DefaultScheme;
+            }
+            return JwtBearerDefaults.AuthenticationScheme;
+        };
     });
 
     builder.Services.AddAuthorization();
-    
+
     Console.WriteLine("JWT Authentication configured successfully.");
     Console.WriteLine($"JWT Issuer: {jwtSettings["Issuer"]}");
     Console.WriteLine($"JWT Audience: {jwtSettings["Audience"]}");
+
+    // Check if API key authentication is configured
+    var n8nApiKey = Environment.GetEnvironmentVariable("N8N_API_KEY");
+    if (!string.IsNullOrEmpty(n8nApiKey))
+    {
+        Console.WriteLine("API Key authentication configured for N8N.");
+    }
+    else
+    {
+        Console.WriteLine("INFO: N8N_API_KEY not configured. API key authentication is disabled.");
+    }
 }
 
 // --- Configure EF Core & PostgreSQL ---
@@ -273,9 +302,9 @@ catch (Exception ex)
 if (builder.Environment.EnvironmentName != "Testing")
 {
     // Configure EF Core with PostgreSQL and pgvector support
-    // Note: Npgsql 9.x has dynamic JSON enabled by default
+    // The Pgvector.EntityFrameworkCore package handles Vector type mapping via UseVector()
     builder.Services.AddDbContext<MediaLibraryDbContext>(options =>
-        options.UseNpgsql(connectionString, o => o.UseVector())); // Enable pgvector support
+        options.UseNpgsql(connectionString, o => o.UseVector()));
 
     // Register IApplicationDbContext
     builder.Services.AddScoped<IApplicationDbContext>(provider =>

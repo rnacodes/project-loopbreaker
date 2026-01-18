@@ -224,8 +224,8 @@ namespace ProjectLoopbreaker.Application.Services
                     return new List<SimilarItemResult>();
                 }
 
-                // Calculate average embedding of liked items
-                var averageEmbedding = CalculateAverageEmbedding(likedItems.Select(i => i.Embedding!).ToList());
+                // Calculate average embedding of liked items (convert Vector to float[])
+                var averageEmbedding = CalculateAverageEmbedding(likedItems.Select(i => i.Embedding!.ToArray()).ToList());
 
                 // Use pgvector to find similar items
                 var results = await _vectorSearch.FindSimilarMediaItemsAsync(

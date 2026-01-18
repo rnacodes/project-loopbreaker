@@ -269,13 +269,14 @@ namespace ProjectLoopbreaker.Infrastructure.Repositories
         {
             try
             {
-                var item = await _context.MediaItems
+                var embedding = await _context.MediaItems
                     .AsNoTracking()
                     .Where(m => m.Id == id)
                     .Select(m => m.Embedding)
                     .FirstOrDefaultAsync();
 
-                return item;
+                // Convert Vector to float[] for callers
+                return embedding?.ToArray();
             }
             catch (Exception ex)
             {
@@ -295,7 +296,8 @@ namespace ProjectLoopbreaker.Infrastructure.Repositories
                     .Select(n => n.Embedding)
                     .FirstOrDefaultAsync();
 
-                return embedding;
+                // Convert Vector to float[] for callers
+                return embedding?.ToArray();
             }
             catch (Exception ex)
             {
