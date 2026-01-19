@@ -64,7 +64,6 @@ namespace ProjectLoopbreaker.Infrastructure.Data
             base.OnModelCreating(modelBuilder);
 
             // Check if we're using InMemory database (for tests) by checking provider name
-            // InMemory provider doesn't support pgvector types, so we need to ignore Embedding properties
             var isInMemory = Database.ProviderName?.Contains("InMemory", StringComparison.OrdinalIgnoreCase) ?? false;
 
             if (!isInMemory)
@@ -72,12 +71,13 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 // Enable pgvector extension for vector similarity search (PostgreSQL only)
                 modelBuilder.HasPostgresExtension("vector");
             }
-            else
-            {
-                // Ignore Embedding properties for InMemory database
-                modelBuilder.Entity<BaseMediaItem>().Ignore(e => e.Embedding);
-                modelBuilder.Entity<Note>().Ignore(e => e.Embedding);
-            }
+
+            // Always ignore Embedding properties in EF Core queries.
+            // The Pgvector NuGet package doesn't properly support reading vector types via EF Core,
+            // so we handle embeddings via raw SQL in AIService and VectorSearchRepository.
+            // This prevents "Reading as 'System.Object' is not supported for fields having DataTypeName 'public.vector'" errors.
+            modelBuilder.Entity<BaseMediaItem>().Ignore(e => e.Embedding);
+            modelBuilder.Entity<Note>().Ignore(e => e.Embedding);
 
             // Configure BaseMediaItem entity
             modelBuilder.Entity<BaseMediaItem>(entity =>

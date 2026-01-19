@@ -273,18 +273,13 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 var movie = await _movieMappingService.MapFromTmdbAsync(tmdbMovie);
                 _logger.LogInformation("Mapped movie data for: {Title}", movie.Title);
 
-                // Upload thumbnail to S3 if available
-                if (!string.IsNullOrEmpty(movie.Thumbnail))
-                {
-                    movie.Thumbnail = await UploadImageFromUrlAsync(movie.Thumbnail);
-                }
-
-                // Save to database
+                // Save to database (keeping TMDB thumbnail URL directly instead of re-uploading)
                 var createdMovie = await _movieService.CreateMovieAsync(new CreateMovieDto
                 {
                     Title = movie.Title,
                     Description = movie.Description,
                     Thumbnail = movie.Thumbnail,
+                    Link = $"https://www.themoviedb.org/movie/{movie.TmdbId}",
                     TmdbId = movie.TmdbId,
                     TmdbRating = movie.TmdbRating,
                     TmdbBackdropPath = movie.TmdbBackdropPath,

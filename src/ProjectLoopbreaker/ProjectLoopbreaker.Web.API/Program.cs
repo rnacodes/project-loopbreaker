@@ -240,7 +240,8 @@ catch (Exception ex)
     }
     
     // Issue 4: Check if the connection string is complete (has all required parts)
-    var uriMatch = System.Text.RegularExpressions.Regex.Match(fixedConnectionString, @"^postgresql://([^:]+):([^@]+)@([^/]+)/(.+)$");
+    // Use [^?]+ to stop at query parameters (e.g., ?sslmode=require)
+    var uriMatch = System.Text.RegularExpressions.Regex.Match(fixedConnectionString, @"^postgresql://([^:]+):([^@]+)@([^/]+)/([^?]+)");
     if (!uriMatch.Success)
     {
         Console.WriteLine("ERROR: Connection string doesn't match expected PostgreSQL URL format: postgresql://user:password@host/database");
@@ -301,10 +302,16 @@ catch (Exception ex)
 // Register DbContext (skip for Testing environment - WebApplicationFactory will register InMemory)
 if (builder.Environment.EnvironmentName != "Testing")
 {
-    // Configure EF Core with PostgreSQL and pgvector support
-    // The Pgvector.EntityFrameworkCore package handles Vector type mapping via UseVector()
+    // Configure EF Core with PostgreSQL, pgvector support, and dynamic JSON serialization
+    // EnableDynamicJson() is required for Npgsql 8.x to serialize List<string> properties as JSONB
+    // Note: The Pgvector NuGet package 0.3.x doesn't include the NpgsqlDataSourceBuilder extension,
+    // so we rely on the EF Core UseVector() configuration which handles the type mapping internally.
+    var dataSourceBuilder = new Npgsql.NpgsqlDataSourceBuilder(connectionString);
+    dataSourceBuilder.EnableDynamicJson();
+    var dataSource = dataSourceBuilder.Build();
+
     builder.Services.AddDbContext<MediaLibraryDbContext>(options =>
-        options.UseNpgsql(connectionString, o => o.UseVector()));
+        options.UseNpgsql(dataSource, o => o.UseVector()));
 
     // Register IApplicationDbContext
     builder.Services.AddScoped<IApplicationDbContext>(provider =>

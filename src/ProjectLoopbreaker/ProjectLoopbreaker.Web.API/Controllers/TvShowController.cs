@@ -273,18 +273,13 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 var tvShow = await _tvShowMappingService.MapFromTmdbAsync(tmdbTvShow);
                 _logger.LogInformation("Mapped TV show data for: {Title}", tvShow.Title);
 
-                // Upload thumbnail to S3 if available
-                if (!string.IsNullOrEmpty(tvShow.Thumbnail))
-                {
-                    tvShow.Thumbnail = await UploadImageFromUrlAsync(tvShow.Thumbnail);
-                }
-
-                // Save to database
+                // Save to database (keeping TMDB thumbnail URL directly instead of re-uploading)
                 var createdTvShow = await _tvShowService.CreateTvShowAsync(new CreateTvShowDto
                 {
                     Title = tvShow.Title,
                     Description = tvShow.Description,
                     Thumbnail = tvShow.Thumbnail,
+                    Link = $"https://www.themoviedb.org/tv/{tvShow.TmdbId}",
                     TmdbId = tvShow.TmdbId,
                     TmdbRating = tvShow.TmdbRating,
                     TmdbPosterPath = tvShow.TmdbPosterPath,

@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Npgsql;
+using NpgsqlTypes;
 using Pgvector;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
@@ -250,12 +252,58 @@ Content (excerpt):
                 // Generate embedding
                 var embeddingArray = await _gradientClient.GenerateEmbeddingAsync(embeddingText, cancellationToken);
 
-                // Update the media item (convert float[] to Vector)
-                mediaItem.Embedding = new Vector(embeddingArray);
-                mediaItem.EmbeddingGeneratedAt = DateTime.UtcNow;
-                mediaItem.EmbeddingModel = _gradientClient.EmbeddingModelName;
+                // Use raw SQL to update embedding (Embedding property is ignored in EF Core)
+                var dbContext = _context as DbContext;
+                if (dbContext == null)
+                {
+                    _logger.LogWarning("Unable to cast context to DbContext for raw SQL update");
+                    return false;
+                }
 
-                await _context.SaveChangesAsync(cancellationToken);
+                var embeddingGeneratedAt = DateTime.UtcNow;
+                var embeddingModel = _gradientClient.EmbeddingModelName;
+
+                // Convert float[] to string format for PostgreSQL vector: '[1.0,2.0,3.0]'
+                var vectorString = "[" + string.Join(",", embeddingArray) + "]";
+
+                var connection = dbContext.Database.GetDbConnection();
+                await connection.OpenAsync(cancellationToken);
+                try
+                {
+                    using var command = connection.CreateCommand();
+                    command.CommandText = @"
+                        UPDATE ""MediaItems""
+                        SET ""Embedding"" = @embedding::vector,
+                            ""EmbeddingGeneratedAt"" = @generatedAt,
+                            ""EmbeddingModel"" = @model
+                        WHERE ""Id"" = @id";
+
+                    var idParam = command.CreateParameter();
+                    idParam.ParameterName = "@id";
+                    idParam.Value = mediaItemId;
+                    command.Parameters.Add(idParam);
+
+                    var embeddingParam = command.CreateParameter();
+                    embeddingParam.ParameterName = "@embedding";
+                    embeddingParam.Value = vectorString;
+                    command.Parameters.Add(embeddingParam);
+
+                    var generatedAtParam = command.CreateParameter();
+                    generatedAtParam.ParameterName = "@generatedAt";
+                    generatedAtParam.Value = embeddingGeneratedAt;
+                    command.Parameters.Add(generatedAtParam);
+
+                    var modelParam = command.CreateParameter();
+                    modelParam.ParameterName = "@model";
+                    modelParam.Value = embeddingModel ?? (object)DBNull.Value;
+                    command.Parameters.Add(modelParam);
+
+                    await command.ExecuteNonQueryAsync(cancellationToken);
+                }
+                finally
+                {
+                    await connection.CloseAsync();
+                }
 
                 _logger.LogInformation("Generated embedding for media item {MediaItemId} ({Title})", mediaItemId, mediaItem.Title);
                 return true;
@@ -292,12 +340,58 @@ Content (excerpt):
                 // Generate embedding
                 var embeddingArray = await _gradientClient.GenerateEmbeddingAsync(embeddingText, cancellationToken);
 
-                // Update the note (convert float[] to Vector)
-                note.Embedding = new Vector(embeddingArray);
-                note.EmbeddingGeneratedAt = DateTime.UtcNow;
-                note.EmbeddingModel = _gradientClient.EmbeddingModelName;
+                // Use raw SQL to update embedding (Embedding property is ignored in EF Core)
+                var dbContext = _context as DbContext;
+                if (dbContext == null)
+                {
+                    _logger.LogWarning("Unable to cast context to DbContext for raw SQL update");
+                    return false;
+                }
 
-                await _context.SaveChangesAsync(cancellationToken);
+                var embeddingGeneratedAt = DateTime.UtcNow;
+                var embeddingModel = _gradientClient.EmbeddingModelName;
+
+                // Convert float[] to string format for PostgreSQL vector: '[1.0,2.0,3.0]'
+                var vectorString = "[" + string.Join(",", embeddingArray) + "]";
+
+                var connection = dbContext.Database.GetDbConnection();
+                await connection.OpenAsync(cancellationToken);
+                try
+                {
+                    using var command = connection.CreateCommand();
+                    command.CommandText = @"
+                        UPDATE ""Notes""
+                        SET ""Embedding"" = @embedding::vector,
+                            ""EmbeddingGeneratedAt"" = @generatedAt,
+                            ""EmbeddingModel"" = @model
+                        WHERE ""Id"" = @id";
+
+                    var idParam = command.CreateParameter();
+                    idParam.ParameterName = "@id";
+                    idParam.Value = noteId;
+                    command.Parameters.Add(idParam);
+
+                    var embeddingParam = command.CreateParameter();
+                    embeddingParam.ParameterName = "@embedding";
+                    embeddingParam.Value = vectorString;
+                    command.Parameters.Add(embeddingParam);
+
+                    var generatedAtParam = command.CreateParameter();
+                    generatedAtParam.ParameterName = "@generatedAt";
+                    generatedAtParam.Value = embeddingGeneratedAt;
+                    command.Parameters.Add(generatedAtParam);
+
+                    var modelParam = command.CreateParameter();
+                    modelParam.ParameterName = "@model";
+                    modelParam.Value = embeddingModel ?? (object)DBNull.Value;
+                    command.Parameters.Add(modelParam);
+
+                    await command.ExecuteNonQueryAsync(cancellationToken);
+                }
+                finally
+                {
+                    await connection.CloseAsync();
+                }
 
                 _logger.LogInformation("Generated embedding for note {NoteId} ({Title})", noteId, note.Title);
                 return true;
@@ -316,13 +410,37 @@ Content (excerpt):
 
             try
             {
-                // Get media items that need embeddings
+                // Use raw SQL to get IDs of media items needing embeddings (Embedding property is ignored in EF Core)
+                var dbContext = _context as DbContext;
+                if (dbContext == null)
+                {
+                    _logger.LogWarning("Unable to cast context to DbContext for raw SQL query");
+                    return result;
+                }
+
+                var mediaItemIds = new List<Guid>();
+                var connection = dbContext.Database.GetDbConnection();
+                await connection.OpenAsync(cancellationToken);
+                try
+                {
+                    using var command = connection.CreateCommand();
+                    command.CommandText = $@"SELECT ""Id"" FROM ""MediaItems"" WHERE ""Embedding"" IS NULL ORDER BY ""DateAdded"" LIMIT {batchSize}";
+                    using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                    while (await reader.ReadAsync(cancellationToken))
+                    {
+                        mediaItemIds.Add(reader.GetGuid(0));
+                    }
+                }
+                finally
+                {
+                    await connection.CloseAsync();
+                }
+
+                // Load the full media items by ID using EF Core (works because Embedding is ignored)
                 var mediaItems = await _context.MediaItems
-                    .Where(m => m.Embedding == null)
+                    .Where(m => mediaItemIds.Contains(m.Id))
                     .Include(m => m.Topics)
                     .Include(m => m.Genres)
-                    .OrderBy(m => m.DateAdded)
-                    .Take(batchSize)
                     .ToListAsync(cancellationToken);
 
                 result.TotalProcessed = mediaItems.Count;
@@ -392,11 +510,35 @@ Content (excerpt):
 
             try
             {
-                // Get notes that need embeddings
+                // Use raw SQL to get IDs of notes needing embeddings (Embedding property is ignored in EF Core)
+                var dbContext = _context as DbContext;
+                if (dbContext == null)
+                {
+                    _logger.LogWarning("Unable to cast context to DbContext for raw SQL query");
+                    return result;
+                }
+
+                var noteIds = new List<Guid>();
+                var connection = dbContext.Database.GetDbConnection();
+                await connection.OpenAsync(cancellationToken);
+                try
+                {
+                    using var command = connection.CreateCommand();
+                    command.CommandText = $@"SELECT ""Id"" FROM ""Notes"" WHERE ""Embedding"" IS NULL ORDER BY ""DateImported"" LIMIT {batchSize}";
+                    using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                    while (await reader.ReadAsync(cancellationToken))
+                    {
+                        noteIds.Add(reader.GetGuid(0));
+                    }
+                }
+                finally
+                {
+                    await connection.CloseAsync();
+                }
+
+                // Load the full notes by ID using EF Core (works because Embedding is ignored)
                 var notes = await _context.Notes
-                    .Where(n => n.Embedding == null)
-                    .OrderBy(n => n.DateImported)
-                    .Take(batchSize)
+                    .Where(n => noteIds.Contains(n.Id))
                     .ToListAsync(cancellationToken);
 
                 result.TotalProcessed = notes.Count;
@@ -461,14 +603,52 @@ Content (excerpt):
 
         public async Task<int> GetMediaItemsNeedingEmbeddingCountAsync()
         {
-            return await _context.MediaItems
-                .CountAsync(m => m.Embedding == null);
+            // Use raw SQL because Embedding property is ignored in EF Core
+            var dbContext = _context as DbContext;
+            if (dbContext == null)
+            {
+                _logger.LogWarning("Unable to cast context to DbContext for raw SQL query");
+                return 0;
+            }
+
+            var connection = dbContext.Database.GetDbConnection();
+            await connection.OpenAsync();
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = @"SELECT COUNT(*) FROM ""MediaItems"" WHERE ""Embedding"" IS NULL";
+                var result = await command.ExecuteScalarAsync();
+                return Convert.ToInt32(result);
+            }
+            finally
+            {
+                await connection.CloseAsync();
+            }
         }
 
         public async Task<int> GetNotesNeedingEmbeddingCountAsync()
         {
-            return await _context.Notes
-                .CountAsync(n => n.Embedding == null);
+            // Use raw SQL because Embedding property is ignored in EF Core
+            var dbContext = _context as DbContext;
+            if (dbContext == null)
+            {
+                _logger.LogWarning("Unable to cast context to DbContext for raw SQL query");
+                return 0;
+            }
+
+            var connection = dbContext.Database.GetDbConnection();
+            await connection.OpenAsync();
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = @"SELECT COUNT(*) FROM ""Notes"" WHERE ""Embedding"" IS NULL";
+                var result = await command.ExecuteScalarAsync();
+                return Convert.ToInt32(result);
+            }
+            finally
+            {
+                await connection.CloseAsync();
+            }
         }
 
         #endregion
