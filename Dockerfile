@@ -1,5 +1,5 @@
 # Stage 1: Build the application
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /app
 
 # Copy the solution file and project files (including test projects)
@@ -30,7 +30,7 @@ WORKDIR /app/src/ProjectLoopbreaker/ProjectLoopbreaker.Web.API
 RUN dotnet publish "ProjectLoopbreaker.Web.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 # Stage 2: Create the runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app/publish
 # Copy only the published output from the build stage
 COPY --from=build /app/publish .
