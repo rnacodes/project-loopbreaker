@@ -8,6 +8,7 @@ import {
 } from '@mui/material';
 import { Search, Download, MenuBook, ExpandMore, OpenInNew } from '@mui/icons-material';
 import { searchBooksFromOpenLibrary, importBookFromOpenLibrary } from '../../api';
+import WhiteOutlineButton from '../shared/WhiteOutlineButton';
 
 function BookImportSection({ expanded, onAccordionChange }) {
     const navigate = useNavigate();
@@ -375,7 +376,16 @@ function BookImportSection({ expanded, onAccordionChange }) {
                                                                 sx={{ mb: 1 }}
                                                             />
                                                         )}
-                                                        <Box>
+                                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                                            <WhiteOutlineButton
+                                                                size="small"
+                                                                href={`https://openlibrary.org${book.key}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                endIcon={<OpenInNew fontSize="small" />}
+                                                            >
+                                                                View Details
+                                                            </WhiteOutlineButton>
                                                             <Button
                                                                 variant="contained"
                                                                 size="small"

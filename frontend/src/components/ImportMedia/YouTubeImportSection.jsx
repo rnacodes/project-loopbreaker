@@ -456,6 +456,21 @@ function YouTubeImportSection({ expanded, onAccordionChange, onSnackbar }) {
                                                         </Typography>
                                                         <Box sx={{ display: 'flex', gap: 1 }}>
                                                             <WhiteOutlineButton
+                                                                size="small"
+                                                                href={
+                                                                    item.kind === 'youtube#video'
+                                                                        ? `https://www.youtube.com/watch?v=${item.id}`
+                                                                        : item.kind === 'youtube#playlist'
+                                                                            ? `https://www.youtube.com/playlist?list=${item.id}`
+                                                                            : `https://www.youtube.com/channel/${item.id}`
+                                                                }
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                endIcon={<OpenInNew fontSize="small" />}
+                                                            >
+                                                                View Details
+                                                            </WhiteOutlineButton>
+                                                            <Button
                                                                 variant="contained"
                                                                 size="small"
                                                                 onClick={() => handleImportYoutubeItem(item)}
@@ -463,7 +478,7 @@ function YouTubeImportSection({ expanded, onAccordionChange, onSnackbar }) {
                                                                 startIcon={<Download />}
                                                             >
                                                                 Import
-                                                            </WhiteOutlineButton>
+                                                            </Button>
                                                         </Box>
                                                     </Box>
                                                 </Box>

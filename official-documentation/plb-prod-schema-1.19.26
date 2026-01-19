@@ -1,0 +1,1635 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 16.10 (Debian 16.10-1.pgdg12+1)
+-- Dumped by pg_dump version 16.2
+
+-- Started on 2026-01-19 16:57:50 UTC
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- TOC entry 228 (class 1259 OID 25205)
+-- Name: Articles; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."Articles" (
+    "Id" uuid NOT NULL,
+    "Author" character varying(200),
+    "Publication" character varying(200),
+    "PublicationDate" timestamp with time zone,
+    "LastSyncDate" timestamp with time zone,
+    "ReadingProgress" integer,
+    "WordCount" integer,
+    "IsStarred" boolean DEFAULT false NOT NULL,
+    "IsArchived" boolean DEFAULT false NOT NULL,
+    "ContentStoragePath" character varying(500),
+    "LastReaderSync" timestamp with time zone,
+    "ReaderLocation" character varying(50),
+    "ReadwiseDocumentId" character varying(100),
+    "SyncStatus" integer DEFAULT 0 NOT NULL,
+    "FullTextContent" text
+);
+
+
+ALTER TABLE public."Articles" OWNER TO loopbreaker;
+
+--
+-- TOC entry 224 (class 1259 OID 25136)
+-- Name: Books; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."Books" (
+    "Id" uuid NOT NULL,
+    "Author" character varying(300) NOT NULL,
+    "ISBN" character varying(17),
+    "ASIN" character varying(20),
+    "Format" character varying(50) NOT NULL,
+    "PartOfSeries" boolean NOT NULL,
+    "GoodreadsRating" numeric,
+    "LastReadwiseSync" timestamp with time zone,
+    "ReadwiseBookId" integer,
+    "AverageRating" numeric,
+    "DateRead" timestamp with time zone,
+    "GoodreadsTags" jsonb DEFAULT '[]'::jsonb NOT NULL,
+    "MyReview" character varying(10000),
+    "OriginalPublicationYear" integer,
+    "Publisher" character varying(500),
+    "YearPublished" integer
+);
+
+
+ALTER TABLE public."Books" OWNER TO loopbreaker;
+
+--
+-- TOC entry 238 (class 1259 OID 33321)
+-- Name: Documents; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."Documents" (
+    "Id" uuid NOT NULL,
+    "PaperlessId" integer,
+    "OriginalFileName" character varying(500),
+    "ArchiveSerialNumber" character varying(100),
+    "DocumentType" character varying(200),
+    "Correspondent" character varying(200),
+    "OcrContent" text,
+    "DocumentDate" timestamp with time zone,
+    "PageCount" integer,
+    "FileType" character varying(20),
+    "FileSizeBytes" bigint,
+    "PaperlessTagsCsv" text,
+    "CustomFieldsJson" text,
+    "LastPaperlessSync" timestamp with time zone,
+    "PaperlessUrl" character varying(2000),
+    "IsArchived" boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE public."Documents" OWNER TO loopbreaker;
+
+--
+-- TOC entry 241 (class 1259 OID 33860)
+-- Name: FeatureFlags; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."FeatureFlags" (
+    "Id" uuid NOT NULL,
+    "Key" character varying(100) NOT NULL,
+    "IsEnabled" boolean DEFAULT false NOT NULL,
+    "Description" character varying(500),
+    "CreatedAt" timestamp with time zone NOT NULL,
+    "UpdatedAt" timestamp with time zone
+);
+
+
+ALTER TABLE public."FeatureFlags" OWNER TO loopbreaker;
+
+--
+-- TOC entry 217 (class 1259 OID 25012)
+-- Name: Genres; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."Genres" (
+    "Id" uuid NOT NULL,
+    "Name" character varying(100) NOT NULL
+);
+
+
+ALTER TABLE public."Genres" OWNER TO loopbreaker;
+
+--
+-- TOC entry 232 (class 1259 OID 25315)
+-- Name: Highlights; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."Highlights" (
+    "Id" uuid NOT NULL,
+    "ReadwiseId" integer NOT NULL,
+    "Text" character varying(8191) NOT NULL,
+    "Note" character varying(8191),
+    "Title" character varying(511),
+    "Author" character varying(1024),
+    "Category" character varying(50),
+    "SourceUrl" character varying(2047),
+    "ImageUrl" character varying(2047),
+    "HighlightUrl" character varying(4095),
+    "Location" integer,
+    "LocationType" character varying(50),
+    "HighlightedAt" timestamp with time zone,
+    "UpdatedAt" timestamp with time zone,
+    "Tags" character varying(1000),
+    "ArticleId" uuid,
+    "BookId" uuid,
+    "ReadwiseBookId" integer,
+    "CreatedAt" timestamp with time zone NOT NULL,
+    "SourceType" character varying(64),
+    "IsFavorite" boolean DEFAULT false NOT NULL,
+    "Color" character varying(50),
+    "Metadata" jsonb
+);
+
+
+ALTER TABLE public."Highlights" OWNER TO loopbreaker;
+
+--
+-- TOC entry 221 (class 1259 OID 25036)
+-- Name: MediaItemGenres; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."MediaItemGenres" (
+    "MediaItemId" uuid NOT NULL,
+    "GenreId" uuid NOT NULL
+);
+
+
+ALTER TABLE public."MediaItemGenres" OWNER TO loopbreaker;
+
+--
+-- TOC entry 240 (class 1259 OID 33347)
+-- Name: MediaItemNotes; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."MediaItemNotes" (
+    "MediaItemId" uuid NOT NULL,
+    "NoteId" uuid NOT NULL,
+    "LinkedAt" timestamp with time zone NOT NULL,
+    "LinkDescription" character varying(500)
+);
+
+
+ALTER TABLE public."MediaItemNotes" OWNER TO loopbreaker;
+
+--
+-- TOC entry 223 (class 1259 OID 25076)
+-- Name: MediaItemTopics; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."MediaItemTopics" (
+    "MediaItemId" uuid NOT NULL,
+    "TopicId" uuid NOT NULL
+);
+
+
+ALTER TABLE public."MediaItemTopics" OWNER TO loopbreaker;
+
+--
+-- TOC entry 218 (class 1259 OID 25017)
+-- Name: MediaItems; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."MediaItems" (
+    "Id" uuid NOT NULL,
+    "Title" character varying(500) NOT NULL,
+    "MediaType" character varying(50) NOT NULL,
+    "Link" character varying(2000),
+    "Notes" text,
+    "DateAdded" timestamp with time zone NOT NULL,
+    "Status" character varying(50) NOT NULL,
+    "DateCompleted" timestamp with time zone,
+    "Rating" character varying(50),
+    "OwnershipStatus" character varying(50),
+    "Description" text,
+    "RelatedNotes" text,
+    "Thumbnail" character varying(2000),
+    "Embedding" public.vector(1024),
+    "EmbeddingGeneratedAt" timestamp with time zone,
+    "EmbeddingModel" character varying(100)
+);
+
+
+ALTER TABLE public."MediaItems" OWNER TO loopbreaker;
+
+--
+-- TOC entry 222 (class 1259 OID 25061)
+-- Name: MixlistMediaItems; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."MixlistMediaItems" (
+    "MixlistId" uuid NOT NULL,
+    "MediaItemId" uuid NOT NULL
+);
+
+
+ALTER TABLE public."MixlistMediaItems" OWNER TO loopbreaker;
+
+--
+-- TOC entry 219 (class 1259 OID 25024)
+-- Name: Mixlists; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."Mixlists" (
+    "Id" uuid NOT NULL,
+    "Name" character varying(200) NOT NULL,
+    "Description" character varying(1000),
+    "Thumbnail" character varying(2000),
+    "DateCreated" timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public."Mixlists" OWNER TO loopbreaker;
+
+--
+-- TOC entry 225 (class 1259 OID 25149)
+-- Name: Movies; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."Movies" (
+    "Id" uuid NOT NULL,
+    "Director" character varying(100),
+    "Cast" character varying(500),
+    "ReleaseYear" integer,
+    "RuntimeMinutes" integer,
+    "MpaaRating" character varying(50),
+    "ImdbId" character varying(20),
+    "TmdbId" character varying(20),
+    "TmdbRating" double precision,
+    "TmdbBackdropPath" character varying(2000),
+    "Tagline" character varying(1000),
+    "Homepage" character varying(2000),
+    "OriginalLanguage" character varying(10),
+    "OriginalTitle" character varying(500)
+);
+
+
+ALTER TABLE public."Movies" OWNER TO loopbreaker;
+
+--
+-- TOC entry 239 (class 1259 OID 33340)
+-- Name: Notes; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."Notes" (
+    "Id" uuid NOT NULL,
+    "Slug" character varying(200) NOT NULL,
+    "Title" character varying(500) NOT NULL,
+    "Content" text,
+    "Description" text,
+    "VaultName" character varying(50) NOT NULL,
+    "SourceUrl" character varying(2000),
+    "Tags" jsonb NOT NULL,
+    "NoteDate" timestamp with time zone,
+    "DateImported" timestamp with time zone NOT NULL,
+    "LastSyncedAt" timestamp with time zone,
+    "ContentHash" character varying(64),
+    "AiDescription" text,
+    "AiDescriptionGeneratedAt" timestamp with time zone,
+    "Embedding" public.vector(1024),
+    "EmbeddingGeneratedAt" timestamp with time zone,
+    "EmbeddingModel" character varying(100),
+    "IsDescriptionManual" boolean DEFAULT false NOT NULL
+);
+
+
+ALTER TABLE public."Notes" OWNER TO loopbreaker;
+
+--
+-- TOC entry 230 (class 1259 OID 25272)
+-- Name: PodcastEpisodes; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."PodcastEpisodes" (
+    "Id" uuid NOT NULL,
+    "SeriesId" uuid NOT NULL,
+    "AudioLink" character varying(2000),
+    "ReleaseDate" timestamp with time zone,
+    "DurationInSeconds" integer DEFAULT 0 NOT NULL,
+    "EpisodeNumber" integer,
+    "SeasonNumber" integer,
+    "ExternalId" character varying(200),
+    "Publisher" character varying(500)
+);
+
+
+ALTER TABLE public."PodcastEpisodes" OWNER TO loopbreaker;
+
+--
+-- TOC entry 229 (class 1259 OID 25258)
+-- Name: PodcastSeries; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."PodcastSeries" (
+    "Id" uuid NOT NULL,
+    "Publisher" character varying(500),
+    "ExternalId" character varying(200),
+    "IsSubscribed" boolean DEFAULT false NOT NULL,
+    "LastSyncDate" timestamp with time zone,
+    "TotalEpisodes" integer DEFAULT 0 NOT NULL
+);
+
+
+ALTER TABLE public."PodcastSeries" OWNER TO loopbreaker;
+
+--
+-- TOC entry 237 (class 1259 OID 25394)
+-- Name: RefreshTokens; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."RefreshTokens" (
+    "Id" integer NOT NULL,
+    "Token" character varying(500) NOT NULL,
+    "UserId" character varying(100) NOT NULL,
+    "CreatedAt" timestamp with time zone NOT NULL,
+    "ExpiresAt" timestamp with time zone NOT NULL,
+    "IsRevoked" boolean NOT NULL,
+    "RevokedAt" timestamp with time zone,
+    "ReplacedByToken" character varying(500)
+);
+
+
+ALTER TABLE public."RefreshTokens" OWNER TO loopbreaker;
+
+--
+-- TOC entry 236 (class 1259 OID 25393)
+-- Name: RefreshTokens_Id_seq; Type: SEQUENCE; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE public."RefreshTokens" ALTER COLUMN "Id" ADD GENERATED BY DEFAULT AS IDENTITY (
+    SEQUENCE NAME public."RefreshTokens_Id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 220 (class 1259 OID 25031)
+-- Name: Topics; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."Topics" (
+    "Id" uuid NOT NULL,
+    "Name" character varying(100) NOT NULL
+);
+
+
+ALTER TABLE public."Topics" OWNER TO loopbreaker;
+
+--
+-- TOC entry 226 (class 1259 OID 25161)
+-- Name: TvShows; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."TvShows" (
+    "Id" uuid NOT NULL,
+    "Creator" character varying(100),
+    "Cast" character varying(500),
+    "FirstAirYear" integer,
+    "LastAirYear" integer,
+    "NumberOfSeasons" integer,
+    "NumberOfEpisodes" integer,
+    "ContentRating" character varying(50),
+    "TmdbId" character varying(20),
+    "TmdbRating" double precision,
+    "TmdbPosterPath" character varying(2000),
+    "Tagline" character varying(1000),
+    "Homepage" character varying(2000),
+    "OriginalLanguage" character varying(10),
+    "OriginalName" character varying(500)
+);
+
+
+ALTER TABLE public."TvShows" OWNER TO loopbreaker;
+
+--
+-- TOC entry 227 (class 1259 OID 25182)
+-- Name: Videos; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."Videos" (
+    "Id" uuid NOT NULL,
+    "VideoType" character varying(50) NOT NULL,
+    "ParentVideoId" uuid,
+    "Platform" character varying(100) NOT NULL,
+    "LengthInSeconds" integer DEFAULT 0 NOT NULL,
+    "ExternalId" character varying(200),
+    "ChannelId" uuid
+);
+
+
+ALTER TABLE public."Videos" OWNER TO loopbreaker;
+
+--
+-- TOC entry 235 (class 1259 OID 25379)
+-- Name: Websites; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."Websites" (
+    "Id" uuid NOT NULL,
+    "RssFeedUrl" character varying(2000),
+    "LastCheckedDate" timestamp with time zone,
+    "Domain" character varying(200),
+    "Author" character varying(200),
+    "Publication" character varying(200),
+    "ArchiveStatus" character varying(50),
+    "ArchiveUrl" character varying(2000),
+    "ArchivedAt" timestamp with time zone,
+    "WaybackUrl" character varying(2000)
+);
+
+
+ALTER TABLE public."Websites" OWNER TO loopbreaker;
+
+--
+-- TOC entry 231 (class 1259 OID 25295)
+-- Name: YouTubeChannels; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."YouTubeChannels" (
+    "Id" uuid NOT NULL,
+    "ChannelExternalId" character varying(100) NOT NULL,
+    "CustomUrl" character varying(200),
+    "SubscriberCount" bigint,
+    "VideoCount" bigint,
+    "ViewCount" bigint,
+    "UploadsPlaylistId" character varying(100),
+    "Country" character varying(10),
+    "PublishedAt" timestamp with time zone,
+    "LastSyncedAt" timestamp with time zone
+);
+
+
+ALTER TABLE public."YouTubeChannels" OWNER TO loopbreaker;
+
+--
+-- TOC entry 234 (class 1259 OID 25357)
+-- Name: YouTubePlaylistVideo; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."YouTubePlaylistVideo" (
+    "YouTubePlaylistId" uuid NOT NULL,
+    "VideoId" uuid NOT NULL,
+    "Position" integer,
+    "AddedAt" timestamp with time zone NOT NULL,
+    "VideoPublishedAt" timestamp with time zone
+);
+
+
+ALTER TABLE public."YouTubePlaylistVideo" OWNER TO loopbreaker;
+
+--
+-- TOC entry 233 (class 1259 OID 25342)
+-- Name: YouTubePlaylists; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."YouTubePlaylists" (
+    "Id" uuid NOT NULL,
+    "PlaylistExternalId" character varying(100) NOT NULL,
+    "ChannelExternalId" character varying(100),
+    "LinkedYouTubeChannelId" uuid,
+    "VideoCount" integer,
+    "PublishedAt" timestamp with time zone,
+    "LastSyncedAt" timestamp with time zone,
+    "PrivacyStatus" character varying(50)
+);
+
+
+ALTER TABLE public."YouTubePlaylists" OWNER TO loopbreaker;
+
+--
+-- TOC entry 216 (class 1259 OID 25007)
+-- Name: __EFMigrationsHistory; Type: TABLE; Schema: public; Owner: loopbreaker
+--
+
+CREATE TABLE public."__EFMigrationsHistory" (
+    "MigrationId" character varying(150) NOT NULL,
+    "ProductVersion" character varying(32) NOT NULL
+);
+
+
+ALTER TABLE public."__EFMigrationsHistory" OWNER TO loopbreaker;
+
+--
+-- TOC entry 3587 (class 2606 OID 25216)
+-- Name: Articles PK_Articles; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Articles"
+    ADD CONSTRAINT "PK_Articles" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3559 (class 2606 OID 25140)
+-- Name: Books PK_Books; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Books"
+    ADD CONSTRAINT "PK_Books" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3641 (class 2606 OID 33328)
+-- Name: Documents PK_Documents; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Documents"
+    ADD CONSTRAINT "PK_Documents" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3656 (class 2606 OID 33867)
+-- Name: FeatureFlags PK_FeatureFlags; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."FeatureFlags"
+    ADD CONSTRAINT "PK_FeatureFlags" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3533 (class 2606 OID 25016)
+-- Name: Genres PK_Genres; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Genres"
+    ADD CONSTRAINT "PK_Genres" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3612 (class 2606 OID 25322)
+-- Name: Highlights PK_Highlights; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Highlights"
+    ADD CONSTRAINT "PK_Highlights" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3545 (class 2606 OID 25040)
+-- Name: MediaItemGenres PK_MediaItemGenres; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."MediaItemGenres"
+    ADD CONSTRAINT "PK_MediaItemGenres" PRIMARY KEY ("MediaItemId", "GenreId");
+
+
+--
+-- TOC entry 3653 (class 2606 OID 33353)
+-- Name: MediaItemNotes PK_MediaItemNotes; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."MediaItemNotes"
+    ADD CONSTRAINT "PK_MediaItemNotes" PRIMARY KEY ("MediaItemId", "NoteId");
+
+
+--
+-- TOC entry 3551 (class 2606 OID 25080)
+-- Name: MediaItemTopics PK_MediaItemTopics; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."MediaItemTopics"
+    ADD CONSTRAINT "PK_MediaItemTopics" PRIMARY KEY ("MediaItemId", "TopicId");
+
+
+--
+-- TOC entry 3536 (class 2606 OID 25023)
+-- Name: MediaItems PK_MediaItems; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."MediaItems"
+    ADD CONSTRAINT "PK_MediaItems" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3548 (class 2606 OID 25065)
+-- Name: MixlistMediaItems PK_MixlistMediaItems; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."MixlistMediaItems"
+    ADD CONSTRAINT "PK_MixlistMediaItems" PRIMARY KEY ("MixlistId", "MediaItemId");
+
+
+--
+-- TOC entry 3539 (class 2606 OID 25030)
+-- Name: Mixlists PK_Mixlists; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Mixlists"
+    ADD CONSTRAINT "PK_Mixlists" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3565 (class 2606 OID 25155)
+-- Name: Movies PK_Movies; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Movies"
+    ADD CONSTRAINT "PK_Movies" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3648 (class 2606 OID 33346)
+-- Name: Notes PK_Notes; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Notes"
+    ADD CONSTRAINT "PK_Notes" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3596 (class 2606 OID 25279)
+-- Name: PodcastEpisodes PK_PodcastEpisodes; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."PodcastEpisodes"
+    ADD CONSTRAINT "PK_PodcastEpisodes" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3591 (class 2606 OID 25266)
+-- Name: PodcastSeries PK_PodcastSeries; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."PodcastSeries"
+    ADD CONSTRAINT "PK_PodcastSeries" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3633 (class 2606 OID 25400)
+-- Name: RefreshTokens PK_RefreshTokens; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."RefreshTokens"
+    ADD CONSTRAINT "PK_RefreshTokens" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3542 (class 2606 OID 25035)
+-- Name: Topics PK_Topics; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Topics"
+    ADD CONSTRAINT "PK_Topics" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3571 (class 2606 OID 25167)
+-- Name: TvShows PK_TvShows; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."TvShows"
+    ADD CONSTRAINT "PK_TvShows" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3578 (class 2606 OID 25189)
+-- Name: Videos PK_Videos; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Videos"
+    ADD CONSTRAINT "PK_Videos" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3627 (class 2606 OID 25385)
+-- Name: Websites PK_Websites; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Websites"
+    ADD CONSTRAINT "PK_Websites" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3602 (class 2606 OID 25299)
+-- Name: YouTubeChannels PK_YouTubeChannels; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."YouTubeChannels"
+    ADD CONSTRAINT "PK_YouTubeChannels" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3623 (class 2606 OID 25361)
+-- Name: YouTubePlaylistVideo PK_YouTubePlaylistVideo; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."YouTubePlaylistVideo"
+    ADD CONSTRAINT "PK_YouTubePlaylistVideo" PRIMARY KEY ("YouTubePlaylistId", "VideoId");
+
+
+--
+-- TOC entry 3618 (class 2606 OID 25346)
+-- Name: YouTubePlaylists PK_YouTubePlaylists; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."YouTubePlaylists"
+    ADD CONSTRAINT "PK_YouTubePlaylists" PRIMARY KEY ("Id");
+
+
+--
+-- TOC entry 3530 (class 2606 OID 25011)
+-- Name: __EFMigrationsHistory PK___EFMigrationsHistory; Type: CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."__EFMigrationsHistory"
+    ADD CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId");
+
+
+--
+-- TOC entry 3579 (class 1259 OID 25245)
+-- Name: IX_Articles_Author; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Articles_Author" ON public."Articles" USING btree ("Author");
+
+
+--
+-- TOC entry 3580 (class 1259 OID 25224)
+-- Name: IX_Articles_IsArchived; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Articles_IsArchived" ON public."Articles" USING btree ("IsArchived");
+
+
+--
+-- TOC entry 3581 (class 1259 OID 25225)
+-- Name: IX_Articles_IsStarred; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Articles_IsStarred" ON public."Articles" USING btree ("IsStarred");
+
+
+--
+-- TOC entry 3582 (class 1259 OID 25226)
+-- Name: IX_Articles_Publication; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Articles_Publication" ON public."Articles" USING btree ("Publication");
+
+
+--
+-- TOC entry 3583 (class 1259 OID 25227)
+-- Name: IX_Articles_PublicationDate; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Articles_PublicationDate" ON public."Articles" USING btree ("PublicationDate");
+
+
+--
+-- TOC entry 3584 (class 1259 OID 25333)
+-- Name: IX_Articles_ReaderLocation; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Articles_ReaderLocation" ON public."Articles" USING btree ("ReaderLocation");
+
+
+--
+-- TOC entry 3585 (class 1259 OID 25334)
+-- Name: IX_Articles_ReadwiseDocumentId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Articles_ReadwiseDocumentId" ON public."Articles" USING btree ("ReadwiseDocumentId");
+
+
+--
+-- TOC entry 3552 (class 1259 OID 25146)
+-- Name: IX_Books_ASIN; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Books_ASIN" ON public."Books" USING btree ("ASIN");
+
+
+--
+-- TOC entry 3553 (class 1259 OID 25147)
+-- Name: IX_Books_Author; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Books_Author" ON public."Books" USING btree ("Author");
+
+
+--
+-- TOC entry 3554 (class 1259 OID 33318)
+-- Name: IX_Books_DateRead; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Books_DateRead" ON public."Books" USING btree ("DateRead");
+
+
+--
+-- TOC entry 3555 (class 1259 OID 25148)
+-- Name: IX_Books_ISBN; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Books_ISBN" ON public."Books" USING btree ("ISBN");
+
+
+--
+-- TOC entry 3556 (class 1259 OID 33319)
+-- Name: IX_Books_OriginalPublicationYear; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Books_OriginalPublicationYear" ON public."Books" USING btree ("OriginalPublicationYear");
+
+
+--
+-- TOC entry 3557 (class 1259 OID 33320)
+-- Name: IX_Books_YearPublished; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Books_YearPublished" ON public."Books" USING btree ("YearPublished");
+
+
+--
+-- TOC entry 3634 (class 1259 OID 33334)
+-- Name: IX_Documents_Correspondent; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Documents_Correspondent" ON public."Documents" USING btree ("Correspondent");
+
+
+--
+-- TOC entry 3635 (class 1259 OID 33335)
+-- Name: IX_Documents_DocumentDate; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Documents_DocumentDate" ON public."Documents" USING btree ("DocumentDate");
+
+
+--
+-- TOC entry 3636 (class 1259 OID 33336)
+-- Name: IX_Documents_DocumentType; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Documents_DocumentType" ON public."Documents" USING btree ("DocumentType");
+
+
+--
+-- TOC entry 3637 (class 1259 OID 33337)
+-- Name: IX_Documents_FileType; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Documents_FileType" ON public."Documents" USING btree ("FileType");
+
+
+--
+-- TOC entry 3638 (class 1259 OID 33338)
+-- Name: IX_Documents_IsArchived; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Documents_IsArchived" ON public."Documents" USING btree ("IsArchived");
+
+
+--
+-- TOC entry 3639 (class 1259 OID 33339)
+-- Name: IX_Documents_PaperlessId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Documents_PaperlessId" ON public."Documents" USING btree ("PaperlessId");
+
+
+--
+-- TOC entry 3654 (class 1259 OID 33868)
+-- Name: IX_FeatureFlags_Key; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE UNIQUE INDEX "IX_FeatureFlags_Key" ON public."FeatureFlags" USING btree ("Key");
+
+
+--
+-- TOC entry 3531 (class 1259 OID 25109)
+-- Name: IX_Genres_Name; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE UNIQUE INDEX "IX_Genres_Name" ON public."Genres" USING btree ("Name");
+
+
+--
+-- TOC entry 3603 (class 1259 OID 25335)
+-- Name: IX_Highlights_ArticleId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Highlights_ArticleId" ON public."Highlights" USING btree ("ArticleId");
+
+
+--
+-- TOC entry 3604 (class 1259 OID 25336)
+-- Name: IX_Highlights_BookId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Highlights_BookId" ON public."Highlights" USING btree ("BookId");
+
+
+--
+-- TOC entry 3605 (class 1259 OID 25337)
+-- Name: IX_Highlights_Category; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Highlights_Category" ON public."Highlights" USING btree ("Category");
+
+
+--
+-- TOC entry 3606 (class 1259 OID 25338)
+-- Name: IX_Highlights_HighlightedAt; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Highlights_HighlightedAt" ON public."Highlights" USING btree ("HighlightedAt");
+
+
+--
+-- TOC entry 3607 (class 1259 OID 25339)
+-- Name: IX_Highlights_IsFavorite; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Highlights_IsFavorite" ON public."Highlights" USING btree ("IsFavorite");
+
+
+--
+-- TOC entry 3608 (class 1259 OID 33301)
+-- Name: IX_Highlights_Metadata; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Highlights_Metadata" ON public."Highlights" USING gin ("Metadata");
+
+
+--
+-- TOC entry 3609 (class 1259 OID 25340)
+-- Name: IX_Highlights_ReadwiseBookId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Highlights_ReadwiseBookId" ON public."Highlights" USING btree ("ReadwiseBookId");
+
+
+--
+-- TOC entry 3610 (class 1259 OID 25341)
+-- Name: IX_Highlights_ReadwiseId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE UNIQUE INDEX "IX_Highlights_ReadwiseId" ON public."Highlights" USING btree ("ReadwiseId");
+
+
+--
+-- TOC entry 3543 (class 1259 OID 25110)
+-- Name: IX_MediaItemGenres_GenreId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_MediaItemGenres_GenreId" ON public."MediaItemGenres" USING btree ("GenreId");
+
+
+--
+-- TOC entry 3650 (class 1259 OID 33364)
+-- Name: IX_MediaItemNotes_LinkedAt; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_MediaItemNotes_LinkedAt" ON public."MediaItemNotes" USING btree ("LinkedAt");
+
+
+--
+-- TOC entry 3651 (class 1259 OID 33365)
+-- Name: IX_MediaItemNotes_NoteId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_MediaItemNotes_NoteId" ON public."MediaItemNotes" USING btree ("NoteId");
+
+
+--
+-- TOC entry 3549 (class 1259 OID 25111)
+-- Name: IX_MediaItemTopics_TopicId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_MediaItemTopics_TopicId" ON public."MediaItemTopics" USING btree ("TopicId");
+
+
+--
+-- TOC entry 3534 (class 1259 OID 33303)
+-- Name: IX_MediaItems_Link_Normalized_Articles; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_MediaItems_Link_Normalized_Articles" ON public."MediaItems" USING btree (public.normalize_article_url(("Link")::text)) WHERE (("Link" IS NOT NULL) AND (("MediaType")::text = 'Article'::text));
+
+
+--
+-- TOC entry 3546 (class 1259 OID 25112)
+-- Name: IX_MixlistMediaItems_MediaItemId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_MixlistMediaItems_MediaItemId" ON public."MixlistMediaItems" USING btree ("MediaItemId");
+
+
+--
+-- TOC entry 3560 (class 1259 OID 25173)
+-- Name: IX_Movies_Director; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Movies_Director" ON public."Movies" USING btree ("Director");
+
+
+--
+-- TOC entry 3561 (class 1259 OID 25174)
+-- Name: IX_Movies_ImdbId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Movies_ImdbId" ON public."Movies" USING btree ("ImdbId");
+
+
+--
+-- TOC entry 3562 (class 1259 OID 25175)
+-- Name: IX_Movies_ReleaseYear; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Movies_ReleaseYear" ON public."Movies" USING btree ("ReleaseYear");
+
+
+--
+-- TOC entry 3563 (class 1259 OID 25176)
+-- Name: IX_Movies_TmdbId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Movies_TmdbId" ON public."Movies" USING btree ("TmdbId");
+
+
+--
+-- TOC entry 3642 (class 1259 OID 33366)
+-- Name: IX_Notes_DateImported; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Notes_DateImported" ON public."Notes" USING btree ("DateImported");
+
+
+--
+-- TOC entry 3643 (class 1259 OID 33776)
+-- Name: IX_Notes_IsDescriptionManual; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Notes_IsDescriptionManual" ON public."Notes" USING btree ("IsDescriptionManual");
+
+
+--
+-- TOC entry 3644 (class 1259 OID 33367)
+-- Name: IX_Notes_LastSyncedAt; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Notes_LastSyncedAt" ON public."Notes" USING btree ("LastSyncedAt");
+
+
+--
+-- TOC entry 3645 (class 1259 OID 33368)
+-- Name: IX_Notes_VaultName; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Notes_VaultName" ON public."Notes" USING btree ("VaultName");
+
+
+--
+-- TOC entry 3646 (class 1259 OID 33369)
+-- Name: IX_Notes_VaultName_Slug; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE UNIQUE INDEX "IX_Notes_VaultName_Slug" ON public."Notes" USING btree ("VaultName", "Slug");
+
+
+--
+-- TOC entry 3592 (class 1259 OID 25290)
+-- Name: IX_PodcastEpisodes_ExternalId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_PodcastEpisodes_ExternalId" ON public."PodcastEpisodes" USING btree ("ExternalId");
+
+
+--
+-- TOC entry 3593 (class 1259 OID 25291)
+-- Name: IX_PodcastEpisodes_ReleaseDate; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_PodcastEpisodes_ReleaseDate" ON public."PodcastEpisodes" USING btree ("ReleaseDate");
+
+
+--
+-- TOC entry 3594 (class 1259 OID 25292)
+-- Name: IX_PodcastEpisodes_SeriesId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_PodcastEpisodes_SeriesId" ON public."PodcastEpisodes" USING btree ("SeriesId");
+
+
+--
+-- TOC entry 3588 (class 1259 OID 25293)
+-- Name: IX_PodcastSeries_ExternalId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_PodcastSeries_ExternalId" ON public."PodcastSeries" USING btree ("ExternalId");
+
+
+--
+-- TOC entry 3589 (class 1259 OID 25294)
+-- Name: IX_PodcastSeries_IsSubscribed; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_PodcastSeries_IsSubscribed" ON public."PodcastSeries" USING btree ("IsSubscribed");
+
+
+--
+-- TOC entry 3628 (class 1259 OID 25401)
+-- Name: IX_RefreshTokens_ExpiresAt; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_RefreshTokens_ExpiresAt" ON public."RefreshTokens" USING btree ("ExpiresAt");
+
+
+--
+-- TOC entry 3629 (class 1259 OID 25402)
+-- Name: IX_RefreshTokens_IsRevoked; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_RefreshTokens_IsRevoked" ON public."RefreshTokens" USING btree ("IsRevoked");
+
+
+--
+-- TOC entry 3630 (class 1259 OID 25403)
+-- Name: IX_RefreshTokens_Token; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE UNIQUE INDEX "IX_RefreshTokens_Token" ON public."RefreshTokens" USING btree ("Token");
+
+
+--
+-- TOC entry 3631 (class 1259 OID 25404)
+-- Name: IX_RefreshTokens_UserId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_RefreshTokens_UserId" ON public."RefreshTokens" USING btree ("UserId");
+
+
+--
+-- TOC entry 3540 (class 1259 OID 25114)
+-- Name: IX_Topics_Name; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE UNIQUE INDEX "IX_Topics_Name" ON public."Topics" USING btree ("Name");
+
+
+--
+-- TOC entry 3566 (class 1259 OID 25177)
+-- Name: IX_TvShows_Creator; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_TvShows_Creator" ON public."TvShows" USING btree ("Creator");
+
+
+--
+-- TOC entry 3567 (class 1259 OID 25178)
+-- Name: IX_TvShows_FirstAirYear; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_TvShows_FirstAirYear" ON public."TvShows" USING btree ("FirstAirYear");
+
+
+--
+-- TOC entry 3568 (class 1259 OID 25179)
+-- Name: IX_TvShows_LastAirYear; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_TvShows_LastAirYear" ON public."TvShows" USING btree ("LastAirYear");
+
+
+--
+-- TOC entry 3569 (class 1259 OID 25181)
+-- Name: IX_TvShows_TmdbId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_TvShows_TmdbId" ON public."TvShows" USING btree ("TmdbId");
+
+
+--
+-- TOC entry 3572 (class 1259 OID 25305)
+-- Name: IX_Videos_ChannelId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Videos_ChannelId" ON public."Videos" USING btree ("ChannelId");
+
+
+--
+-- TOC entry 3573 (class 1259 OID 25201)
+-- Name: IX_Videos_ExternalId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Videos_ExternalId" ON public."Videos" USING btree ("ExternalId");
+
+
+--
+-- TOC entry 3574 (class 1259 OID 25202)
+-- Name: IX_Videos_ParentVideoId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Videos_ParentVideoId" ON public."Videos" USING btree ("ParentVideoId");
+
+
+--
+-- TOC entry 3575 (class 1259 OID 25203)
+-- Name: IX_Videos_Platform; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Videos_Platform" ON public."Videos" USING btree ("Platform");
+
+
+--
+-- TOC entry 3576 (class 1259 OID 25204)
+-- Name: IX_Videos_VideoType; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Videos_VideoType" ON public."Videos" USING btree ("VideoType");
+
+
+--
+-- TOC entry 3624 (class 1259 OID 25391)
+-- Name: IX_Websites_Domain; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Websites_Domain" ON public."Websites" USING btree ("Domain");
+
+
+--
+-- TOC entry 3625 (class 1259 OID 25392)
+-- Name: IX_Websites_LastCheckedDate; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_Websites_LastCheckedDate" ON public."Websites" USING btree ("LastCheckedDate");
+
+
+--
+-- TOC entry 3597 (class 1259 OID 25306)
+-- Name: IX_YouTubeChannels_ChannelExternalId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE UNIQUE INDEX "IX_YouTubeChannels_ChannelExternalId" ON public."YouTubeChannels" USING btree ("ChannelExternalId");
+
+
+--
+-- TOC entry 3598 (class 1259 OID 25307)
+-- Name: IX_YouTubeChannels_LastSyncedAt; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_YouTubeChannels_LastSyncedAt" ON public."YouTubeChannels" USING btree ("LastSyncedAt");
+
+
+--
+-- TOC entry 3599 (class 1259 OID 25308)
+-- Name: IX_YouTubeChannels_PublishedAt; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_YouTubeChannels_PublishedAt" ON public."YouTubeChannels" USING btree ("PublishedAt");
+
+
+--
+-- TOC entry 3600 (class 1259 OID 25309)
+-- Name: IX_YouTubeChannels_SubscriberCount; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_YouTubeChannels_SubscriberCount" ON public."YouTubeChannels" USING btree ("SubscriberCount");
+
+
+--
+-- TOC entry 3619 (class 1259 OID 25376)
+-- Name: IX_YouTubePlaylistVideo_AddedAt; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_YouTubePlaylistVideo_AddedAt" ON public."YouTubePlaylistVideo" USING btree ("AddedAt");
+
+
+--
+-- TOC entry 3620 (class 1259 OID 25377)
+-- Name: IX_YouTubePlaylistVideo_Position; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_YouTubePlaylistVideo_Position" ON public."YouTubePlaylistVideo" USING btree ("Position");
+
+
+--
+-- TOC entry 3621 (class 1259 OID 25378)
+-- Name: IX_YouTubePlaylistVideo_VideoId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_YouTubePlaylistVideo_VideoId" ON public."YouTubePlaylistVideo" USING btree ("VideoId");
+
+
+--
+-- TOC entry 3613 (class 1259 OID 25372)
+-- Name: IX_YouTubePlaylists_LastSyncedAt; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_YouTubePlaylists_LastSyncedAt" ON public."YouTubePlaylists" USING btree ("LastSyncedAt");
+
+
+--
+-- TOC entry 3614 (class 1259 OID 25373)
+-- Name: IX_YouTubePlaylists_LinkedYouTubeChannelId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_YouTubePlaylists_LinkedYouTubeChannelId" ON public."YouTubePlaylists" USING btree ("LinkedYouTubeChannelId");
+
+
+--
+-- TOC entry 3615 (class 1259 OID 25374)
+-- Name: IX_YouTubePlaylists_PlaylistExternalId; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE UNIQUE INDEX "IX_YouTubePlaylists_PlaylistExternalId" ON public."YouTubePlaylists" USING btree ("PlaylistExternalId");
+
+
+--
+-- TOC entry 3616 (class 1259 OID 25375)
+-- Name: IX_YouTubePlaylists_PublishedAt; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX "IX_YouTubePlaylists_PublishedAt" ON public."YouTubePlaylists" USING btree ("PublishedAt");
+
+
+--
+-- TOC entry 3537 (class 1259 OID 33870)
+-- Name: idx_media_items_embedding; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX idx_media_items_embedding ON public."MediaItems" USING ivfflat ("Embedding" public.vector_cosine_ops) WITH (lists='100');
+
+
+--
+-- TOC entry 3649 (class 1259 OID 33869)
+-- Name: idx_notes_embedding; Type: INDEX; Schema: public; Owner: loopbreaker
+--
+
+CREATE INDEX idx_notes_embedding ON public."Notes" USING ivfflat ("Embedding" public.vector_cosine_ops) WITH (lists='100');
+
+
+--
+-- TOC entry 3669 (class 2606 OID 25217)
+-- Name: Articles FK_Articles_MediaItems_Id; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Articles"
+    ADD CONSTRAINT "FK_Articles_MediaItems_Id" FOREIGN KEY ("Id") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3663 (class 2606 OID 25141)
+-- Name: Books FK_Books_MediaItems_Id; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Books"
+    ADD CONSTRAINT "FK_Books_MediaItems_Id" FOREIGN KEY ("Id") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3681 (class 2606 OID 33329)
+-- Name: Documents FK_Documents_MediaItems_Id; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Documents"
+    ADD CONSTRAINT "FK_Documents_MediaItems_Id" FOREIGN KEY ("Id") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3674 (class 2606 OID 25323)
+-- Name: Highlights FK_Highlights_Articles_ArticleId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Highlights"
+    ADD CONSTRAINT "FK_Highlights_Articles_ArticleId" FOREIGN KEY ("ArticleId") REFERENCES public."Articles"("Id") ON DELETE SET NULL;
+
+
+--
+-- TOC entry 3675 (class 2606 OID 25328)
+-- Name: Highlights FK_Highlights_Books_BookId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Highlights"
+    ADD CONSTRAINT "FK_Highlights_Books_BookId" FOREIGN KEY ("BookId") REFERENCES public."Books"("Id") ON DELETE SET NULL;
+
+
+--
+-- TOC entry 3657 (class 2606 OID 25041)
+-- Name: MediaItemGenres FK_MediaItemGenres_Genres_GenreId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."MediaItemGenres"
+    ADD CONSTRAINT "FK_MediaItemGenres_Genres_GenreId" FOREIGN KEY ("GenreId") REFERENCES public."Genres"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3658 (class 2606 OID 25046)
+-- Name: MediaItemGenres FK_MediaItemGenres_MediaItems_MediaItemId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."MediaItemGenres"
+    ADD CONSTRAINT "FK_MediaItemGenres_MediaItems_MediaItemId" FOREIGN KEY ("MediaItemId") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3682 (class 2606 OID 33354)
+-- Name: MediaItemNotes FK_MediaItemNotes_MediaItems_MediaItemId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."MediaItemNotes"
+    ADD CONSTRAINT "FK_MediaItemNotes_MediaItems_MediaItemId" FOREIGN KEY ("MediaItemId") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3683 (class 2606 OID 33359)
+-- Name: MediaItemNotes FK_MediaItemNotes_Notes_NoteId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."MediaItemNotes"
+    ADD CONSTRAINT "FK_MediaItemNotes_Notes_NoteId" FOREIGN KEY ("NoteId") REFERENCES public."Notes"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3661 (class 2606 OID 25081)
+-- Name: MediaItemTopics FK_MediaItemTopics_MediaItems_MediaItemId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."MediaItemTopics"
+    ADD CONSTRAINT "FK_MediaItemTopics_MediaItems_MediaItemId" FOREIGN KEY ("MediaItemId") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3662 (class 2606 OID 25086)
+-- Name: MediaItemTopics FK_MediaItemTopics_Topics_TopicId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."MediaItemTopics"
+    ADD CONSTRAINT "FK_MediaItemTopics_Topics_TopicId" FOREIGN KEY ("TopicId") REFERENCES public."Topics"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3659 (class 2606 OID 25066)
+-- Name: MixlistMediaItems FK_MixlistMediaItems_MediaItems_MediaItemId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."MixlistMediaItems"
+    ADD CONSTRAINT "FK_MixlistMediaItems_MediaItems_MediaItemId" FOREIGN KEY ("MediaItemId") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3660 (class 2606 OID 25071)
+-- Name: MixlistMediaItems FK_MixlistMediaItems_Mixlists_MixlistId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."MixlistMediaItems"
+    ADD CONSTRAINT "FK_MixlistMediaItems_Mixlists_MixlistId" FOREIGN KEY ("MixlistId") REFERENCES public."Mixlists"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3664 (class 2606 OID 25156)
+-- Name: Movies FK_Movies_MediaItems_Id; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Movies"
+    ADD CONSTRAINT "FK_Movies_MediaItems_Id" FOREIGN KEY ("Id") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3671 (class 2606 OID 25280)
+-- Name: PodcastEpisodes FK_PodcastEpisodes_MediaItems_Id; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."PodcastEpisodes"
+    ADD CONSTRAINT "FK_PodcastEpisodes_MediaItems_Id" FOREIGN KEY ("Id") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3672 (class 2606 OID 25285)
+-- Name: PodcastEpisodes FK_PodcastEpisodes_PodcastSeries_SeriesId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."PodcastEpisodes"
+    ADD CONSTRAINT "FK_PodcastEpisodes_PodcastSeries_SeriesId" FOREIGN KEY ("SeriesId") REFERENCES public."PodcastSeries"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3670 (class 2606 OID 25267)
+-- Name: PodcastSeries FK_PodcastSeries_MediaItems_Id; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."PodcastSeries"
+    ADD CONSTRAINT "FK_PodcastSeries_MediaItems_Id" FOREIGN KEY ("Id") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3665 (class 2606 OID 25168)
+-- Name: TvShows FK_TvShows_MediaItems_Id; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."TvShows"
+    ADD CONSTRAINT "FK_TvShows_MediaItems_Id" FOREIGN KEY ("Id") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3666 (class 2606 OID 25190)
+-- Name: Videos FK_Videos_MediaItems_Id; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Videos"
+    ADD CONSTRAINT "FK_Videos_MediaItems_Id" FOREIGN KEY ("Id") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3667 (class 2606 OID 25195)
+-- Name: Videos FK_Videos_Videos_ParentVideoId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Videos"
+    ADD CONSTRAINT "FK_Videos_Videos_ParentVideoId" FOREIGN KEY ("ParentVideoId") REFERENCES public."Videos"("Id") ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 3668 (class 2606 OID 25310)
+-- Name: Videos FK_Videos_YouTubeChannels_ChannelId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Videos"
+    ADD CONSTRAINT "FK_Videos_YouTubeChannels_ChannelId" FOREIGN KEY ("ChannelId") REFERENCES public."YouTubeChannels"("Id") ON DELETE SET NULL;
+
+
+--
+-- TOC entry 3680 (class 2606 OID 25386)
+-- Name: Websites FK_Websites_MediaItems_Id; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."Websites"
+    ADD CONSTRAINT "FK_Websites_MediaItems_Id" FOREIGN KEY ("Id") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3673 (class 2606 OID 25300)
+-- Name: YouTubeChannels FK_YouTubeChannels_MediaItems_Id; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."YouTubeChannels"
+    ADD CONSTRAINT "FK_YouTubeChannels_MediaItems_Id" FOREIGN KEY ("Id") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3678 (class 2606 OID 25362)
+-- Name: YouTubePlaylistVideo FK_YouTubePlaylistVideo_Videos_VideoId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."YouTubePlaylistVideo"
+    ADD CONSTRAINT "FK_YouTubePlaylistVideo_Videos_VideoId" FOREIGN KEY ("VideoId") REFERENCES public."Videos"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3679 (class 2606 OID 25367)
+-- Name: YouTubePlaylistVideo FK_YouTubePlaylistVideo_YouTubePlaylists_YouTubePlaylistId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."YouTubePlaylistVideo"
+    ADD CONSTRAINT "FK_YouTubePlaylistVideo_YouTubePlaylists_YouTubePlaylistId" FOREIGN KEY ("YouTubePlaylistId") REFERENCES public."YouTubePlaylists"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3676 (class 2606 OID 25347)
+-- Name: YouTubePlaylists FK_YouTubePlaylists_MediaItems_Id; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."YouTubePlaylists"
+    ADD CONSTRAINT "FK_YouTubePlaylists_MediaItems_Id" FOREIGN KEY ("Id") REFERENCES public."MediaItems"("Id") ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3677 (class 2606 OID 25352)
+-- Name: YouTubePlaylists FK_YouTubePlaylists_YouTubeChannels_LinkedYouTubeChannelId; Type: FK CONSTRAINT; Schema: public; Owner: loopbreaker
+--
+
+ALTER TABLE ONLY public."YouTubePlaylists"
+    ADD CONSTRAINT "FK_YouTubePlaylists_YouTubeChannels_LinkedYouTubeChannelId" FOREIGN KEY ("LinkedYouTubeChannelId") REFERENCES public."YouTubeChannels"("Id") ON DELETE SET NULL;
+
+
+-- Completed on 2026-01-19 16:57:50 UTC
+
+--
+-- PostgreSQL database dump complete
+--
+

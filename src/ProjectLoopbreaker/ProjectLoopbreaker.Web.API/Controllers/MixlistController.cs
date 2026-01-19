@@ -231,58 +231,81 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var mixlist = await _context.Mixlists
-                    .Include(m => m.MediaItems)
-                        .ThenInclude(mi => mi.Topics)
-                    .Include(m => m.MediaItems)
-                        .ThenInclude(mi => mi.Genres)
-                    .FirstOrDefaultAsync(m => m.Id == mixlistId);
+                // Lightweight check: only fetch the fields we need
+                var mixlistInfo = await _context.Mixlists
+                    .AsNoTracking()
+                    .Where(m => m.Id == mixlistId)
+                    .Select(m => new { m.Id, m.Name, m.Description, m.Thumbnail, m.DateCreated })
+                    .FirstOrDefaultAsync();
 
-                if (mixlist == null)
+                if (mixlistInfo == null)
                 {
                     return NotFound($"Mixlist with ID {mixlistId} not found.");
                 }
 
-                var mediaItem = await _context.MediaItems
-                    .Include(m => m.Topics)
-                    .Include(m => m.Genres)
-                    .Include(m => m.Mixlists)
-                    .FirstOrDefaultAsync(m => m.Id == mediaItemId);
+                // Lightweight check: only fetch title to verify existence
+                var mediaItemTitle = await _context.MediaItems
+                    .AsNoTracking()
+                    .Where(m => m.Id == mediaItemId)
+                    .Select(m => m.Title)
+                    .FirstOrDefaultAsync();
 
-                if (mediaItem == null)
+                if (mediaItemTitle == null)
                 {
                     return NotFound($"Media item with ID {mediaItemId} not found.");
                 }
 
-                // Check if the media item is already in the mixlist
-                if (mixlist.MediaItems.Any(m => m.Id == mediaItemId))
+                // Check if already in mixlist - query only the IDs we need
+                var alreadyInMixlist = await _context.Mixlists
+                    .AsNoTracking()
+                    .Where(m => m.Id == mixlistId)
+                    .SelectMany(m => m.MediaItems.Select(mi => mi.Id))
+                    .AnyAsync(id => id == mediaItemId);
+
+                if (alreadyInMixlist)
                 {
                     return BadRequest($"Media item with ID {mediaItemId} is already in the mixlist.");
                 }
 
-                // Add media item to mixlist
-                mixlist.MediaItems.Add(mediaItem);
+                // Add the relationship by loading minimal entities for EF tracking
+                var mixlist = await _context.Mixlists.FindAsync(mixlistId);
+                var mediaItem = await _context.MediaItems.FindAsync(mediaItemId);
+
+                mixlist!.MediaItems.Add(mediaItem!);
                 await _context.SaveChangesAsync();
 
-                // Re-index in Typesense with updated media items
+                // Re-index in Typesense with lightweight queries for the data we need
                 try
                 {
-                    var mediaItemTitles = mixlist.MediaItems.Select(mi => mi.Title).ToList();
-                    var topics = mixlist.MediaItems
-                        .SelectMany(mi => mi.Topics.Select(t => t.Name))
+                    // Get just the titles of media items in this mixlist
+                    var mediaItemTitles = await _context.Mixlists
+                        .AsNoTracking()
+                        .Where(m => m.Id == mixlistId)
+                        .SelectMany(m => m.MediaItems.Select(mi => mi.Title))
+                        .ToListAsync();
+
+                    // Get distinct topics from media items in this mixlist
+                    var topics = await _context.Mixlists
+                        .AsNoTracking()
+                        .Where(m => m.Id == mixlistId)
+                        .SelectMany(m => m.MediaItems.SelectMany(mi => mi.Topics.Select(t => t.Name)))
                         .Distinct()
-                        .ToList();
-                    var genres = mixlist.MediaItems
-                        .SelectMany(mi => mi.Genres.Select(g => g.Name))
+                        .ToListAsync();
+
+                    // Get distinct genres from media items in this mixlist
+                    var genres = await _context.Mixlists
+                        .AsNoTracking()
+                        .Where(m => m.Id == mixlistId)
+                        .SelectMany(m => m.MediaItems.SelectMany(mi => mi.Genres.Select(g => g.Name)))
                         .Distinct()
-                        .ToList();
+                        .ToListAsync();
 
                     await _typeSenseService.IndexMixlistAsync(
-                        mixlist.Id,
-                        mixlist.Name,
-                        mixlist.Description,
-                        mixlist.Thumbnail,
-                        mixlist.DateCreated,
+                        mixlistInfo.Id,
+                        mixlistInfo.Name,
+                        mixlistInfo.Description,
+                        mixlistInfo.Thumbnail,
+                        mixlistInfo.DateCreated,
                         mediaItemTitles,
                         topics,
                         genres
@@ -294,7 +317,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     // Don't fail the request if Typesense indexing fails
                 }
 
-                return Ok(new { message = $"Media item '{mediaItem.Title}' added to mixlist '{mixlist.Name}'" });
+                return Ok(new { message = $"Media item '{mediaItemTitle}' added to mixlist '{mixlistInfo.Name}'" });
             }
             catch (Exception ex)
             {
@@ -308,47 +331,68 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var mixlist = await _context.Mixlists
-                    .Include(m => m.MediaItems)
-                        .ThenInclude(mi => mi.Topics)
-                    .Include(m => m.MediaItems)
-                        .ThenInclude(mi => mi.Genres)
-                    .FirstOrDefaultAsync(m => m.Id == mixlistId);
+                // Lightweight check: only fetch the fields we need
+                var mixlistInfo = await _context.Mixlists
+                    .AsNoTracking()
+                    .Where(m => m.Id == mixlistId)
+                    .Select(m => new { m.Id, m.Name, m.Description, m.Thumbnail, m.DateCreated })
+                    .FirstOrDefaultAsync();
 
-                if (mixlist == null)
+                if (mixlistInfo == null)
                 {
                     return NotFound($"Mixlist with ID {mixlistId} not found.");
                 }
 
-                var mediaItem = mixlist.MediaItems.FirstOrDefault(m => m.Id == mediaItemId);
-                if (mediaItem == null)
+                // Check if media item is in the mixlist
+                var isInMixlist = await _context.Mixlists
+                    .AsNoTracking()
+                    .Where(m => m.Id == mixlistId)
+                    .SelectMany(m => m.MediaItems.Select(mi => mi.Id))
+                    .AnyAsync(id => id == mediaItemId);
+
+                if (!isInMixlist)
                 {
                     return NotFound($"Media item with ID {mediaItemId} not found in the mixlist.");
                 }
 
-                // Remove the media item from the mixlist
+                // Load minimal entities for EF tracking to perform the removal
+                var mixlist = await _context.Mixlists
+                    .Include(m => m.MediaItems.Where(mi => mi.Id == mediaItemId))
+                    .FirstAsync(m => m.Id == mixlistId);
+
+                var mediaItem = mixlist.MediaItems.First();
                 mixlist.MediaItems.Remove(mediaItem);
                 await _context.SaveChangesAsync();
 
-                // Re-index in Typesense with updated media items
+                // Re-index in Typesense with lightweight queries
                 try
                 {
-                    var mediaItemTitles = mixlist.MediaItems.Select(mi => mi.Title).ToList();
-                    var topics = mixlist.MediaItems
-                        .SelectMany(mi => mi.Topics.Select(t => t.Name))
+                    var mediaItemTitles = await _context.Mixlists
+                        .AsNoTracking()
+                        .Where(m => m.Id == mixlistId)
+                        .SelectMany(m => m.MediaItems.Select(mi => mi.Title))
+                        .ToListAsync();
+
+                    var topics = await _context.Mixlists
+                        .AsNoTracking()
+                        .Where(m => m.Id == mixlistId)
+                        .SelectMany(m => m.MediaItems.SelectMany(mi => mi.Topics.Select(t => t.Name)))
                         .Distinct()
-                        .ToList();
-                    var genres = mixlist.MediaItems
-                        .SelectMany(mi => mi.Genres.Select(g => g.Name))
+                        .ToListAsync();
+
+                    var genres = await _context.Mixlists
+                        .AsNoTracking()
+                        .Where(m => m.Id == mixlistId)
+                        .SelectMany(m => m.MediaItems.SelectMany(mi => mi.Genres.Select(g => g.Name)))
                         .Distinct()
-                        .ToList();
+                        .ToListAsync();
 
                     await _typeSenseService.IndexMixlistAsync(
-                        mixlist.Id,
-                        mixlist.Name,
-                        mixlist.Description,
-                        mixlist.Thumbnail,
-                        mixlist.DateCreated,
+                        mixlistInfo.Id,
+                        mixlistInfo.Name,
+                        mixlistInfo.Description,
+                        mixlistInfo.Thumbnail,
+                        mixlistInfo.DateCreated,
                         mediaItemTitles,
                         topics,
                         genres
@@ -360,7 +404,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     // Don't fail the request if Typesense indexing fails
                 }
 
-                return Ok(new { message = $"Media item removed from mixlist '{mixlist.Name}'" });
+                return Ok(new { message = $"Media item removed from mixlist '{mixlistInfo.Name}'" });
             }
             catch (Exception ex)
             {
@@ -374,12 +418,8 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         {
             try
             {
-                var mixlist = await _context.Mixlists
-                    .Include(m => m.MediaItems)
-                        .ThenInclude(mi => mi.Topics)
-                    .Include(m => m.MediaItems)
-                        .ThenInclude(mi => mi.Genres)
-                    .FirstOrDefaultAsync(m => m.Id == id);
+                // Load only the mixlist entity without related data
+                var mixlist = await _context.Mixlists.FindAsync(id);
 
                 if (mixlist == null)
                 {
@@ -389,27 +429,37 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 // Update properties
                 if (!string.IsNullOrWhiteSpace(dto.Name))
                     mixlist.Name = dto.Name;
-                
+
                 if (dto.Description != null)
                     mixlist.Description = dto.Description;
-                
+
                 if (dto.Thumbnail != null)
                     mixlist.Thumbnail = dto.Thumbnail;
 
                 await _context.SaveChangesAsync();
 
-                // Re-index in Typesense with updated data
+                // Re-index in Typesense with lightweight queries
                 try
                 {
-                    var mediaItemTitles = mixlist.MediaItems.Select(mi => mi.Title).ToList();
-                    var topics = mixlist.MediaItems
-                        .SelectMany(mi => mi.Topics.Select(t => t.Name))
+                    var mediaItemTitles = await _context.Mixlists
+                        .AsNoTracking()
+                        .Where(m => m.Id == id)
+                        .SelectMany(m => m.MediaItems.Select(mi => mi.Title))
+                        .ToListAsync();
+
+                    var topics = await _context.Mixlists
+                        .AsNoTracking()
+                        .Where(m => m.Id == id)
+                        .SelectMany(m => m.MediaItems.SelectMany(mi => mi.Topics.Select(t => t.Name)))
                         .Distinct()
-                        .ToList();
-                    var genres = mixlist.MediaItems
-                        .SelectMany(mi => mi.Genres.Select(g => g.Name))
+                        .ToListAsync();
+
+                    var genres = await _context.Mixlists
+                        .AsNoTracking()
+                        .Where(m => m.Id == id)
+                        .SelectMany(m => m.MediaItems.SelectMany(mi => mi.Genres.Select(g => g.Name)))
                         .Distinct()
-                        .ToList();
+                        .ToListAsync();
 
                     await _typeSenseService.IndexMixlistAsync(
                         mixlist.Id,
@@ -428,7 +478,16 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     // Don't fail the request if Typesense indexing fails
                 }
 
-                return Ok(mixlist);
+                return Ok(new MixlistResponseDto
+                {
+                    Id = mixlist.Id,
+                    Name = mixlist.Name,
+                    Description = mixlist.Description,
+                    DateCreated = mixlist.DateCreated,
+                    Thumbnail = mixlist.Thumbnail,
+                    MediaItemIds = Array.Empty<Guid>(),
+                    MediaItems = Array.Empty<MediaItemSummary>()
+                });
             }
             catch (Exception ex)
             {

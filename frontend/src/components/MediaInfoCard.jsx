@@ -108,6 +108,7 @@ function MediaInfoCard({
             alt={mediaItem.title}
             loading="lazy"
             decoding="async"
+            referrerPolicy="no-referrer"
           />
         )}
       </Box>

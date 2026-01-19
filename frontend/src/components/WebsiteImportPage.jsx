@@ -1,3 +1,5 @@
+//TODO: Change color of the buttons to match the theme
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
