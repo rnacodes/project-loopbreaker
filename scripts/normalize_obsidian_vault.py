@@ -57,15 +57,11 @@ IGNORE_PATTERNS = [
 ]
 
 # AI Configuration
-AI_DESCRIPTION_PROMPT = """You are a helpful assistant that creates concise descriptions for notes.
+AI_DESCRIPTION_PROMPT = """Write a 1-2 sentence summary of this note. Be concise and direct. Output only the summary, nothing else.
 
-Given the following note content, write a brief 1-2 sentence description (max 150 characters) that summarizes what the note is about. The description should be clear and informative.
+Title: {title}
 
-Do not include any preamble or explanation - just output the description text directly.
-
-Note title: {title}
-
-Note content:
+Content:
 {content}"""
 
 
@@ -108,17 +104,38 @@ class AIDescriptionGenerator:
                     "messages": [
                         {"role": "user", "content": prompt}
                     ],
-                    "max_tokens": 100,
+                    # High token limit for reasoning models that do extensive chain-of-thought
+                    "max_tokens": 3000,
                     "temperature": 0.3
                 },
-                timeout=30
+                timeout=90  # Longer timeout for reasoning models
             )
 
             self.request_count += 1
 
             if response.status_code == 200:
                 result = response.json()
-                description = result['choices'][0]['message']['content'].strip()
+                message = result['choices'][0]['message']
+                raw_content = message.get('content')
+
+                # Some reasoning models put output in reasoning_content instead of content
+                # Try to extract a description from reasoning_content if content is empty
+                if not raw_content:
+                    reasoning = message.get('reasoning_content', '')
+                    if reasoning:
+                        # Try to find a quoted description in the reasoning
+                        import re
+                        # Look for text in quotes that looks like a description
+                        quoted = re.findall(r'"([^"]{20,150})"', reasoning)
+                        if quoted:
+                            # Use the longest quoted text as the description
+                            raw_content = max(quoted, key=len)
+                            print(f"  [AI Info] Extracted description from reasoning_content")
+
+                if not raw_content:
+                    print(f"  [AI Warning] API returned empty content")
+                    return None
+                description = raw_content.strip()
 
                 # Clean up the description
                 description = description.strip('"\'')
@@ -342,24 +359,28 @@ def normalize_file(
         frontmatter['title'] = title
         changes['changes'].append(f"title: (none) -> '{title}'")
 
-    # 3. Add description if missing
-    if 'description' not in frontmatter or not frontmatter['description']:
-        new_description = None
+    # 3. Add or regenerate description
+    # TEMPORARY: Always regenerate descriptions with AI (will revert after one-time run)
+    old_description = frontmatter.get('description', '')
+    new_description = None
 
-        # Try AI generation first if available
-        if ai_generator and body.strip():
-            new_description = ai_generator.generate_description(title, body)
-            if new_description:
+    # Try AI generation first if available
+    if ai_generator and body.strip():
+        new_description = ai_generator.generate_description(title, body)
+        if new_description:
+            if old_description:
+                changes['changes'].append(f"description (AI regenerated): '{new_description[:50]}...'")
+            else:
                 changes['changes'].append(f"description (AI): '{new_description[:50]}...'")
 
-        # Fall back to simple extraction
-        if not new_description:
-            new_description = generate_description(body)
-            if new_description:
-                changes['changes'].append(f"description: (none) -> '{new_description[:50]}...'")
-
+    # Fall back to simple extraction only if no existing description AND no AI
+    if not new_description and not old_description:
+        new_description = generate_description(body)
         if new_description:
-            frontmatter['description'] = new_description
+            changes['changes'].append(f"description: (none) -> '{new_description[:50]}...'")
+
+    if new_description:
+        frontmatter['description'] = new_description
 
     # Check if anything changed
     if frontmatter != original_frontmatter:

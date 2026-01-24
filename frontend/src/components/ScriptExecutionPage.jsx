@@ -1,3 +1,5 @@
+//TODO: Make text in Job History table more readable - smaller or add scrollbar
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Container,
@@ -310,13 +312,13 @@ const ScriptExecutionPage = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                     <StorageIcon sx={{ fontSize: 32 }} />
                     <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                        Normalize Notes (Database)
+                        Standardize Notes (Database)
                     </Typography>
                 </Box>
 
                 <Alert severity="info" sx={{ mb: 2 }}>
-                    Normalizes notes in the PostgreSQL database: fixes empty content, generates descriptions from content,
-                    normalizes tags to lowercase, and ensures source URLs are valid.
+                    Standardizes notes in the PostgreSQL database: fixes empty content, generates descriptions from content,
+                    converts tags to lowercase, and ensures source URLs are valid.
                 </Alert>
 
                 <Grid container spacing={2} sx={{ mb: 2 }}>
@@ -353,7 +355,7 @@ const ScriptExecutionPage = () => {
                     onClick={handleRunNormalizeNotes}
                     disabled={isRunning || !isServiceHealthy}
                 >
-                    {notesRunning ? 'Running...' : 'Run Normalize Notes'}
+                    {notesRunning ? 'Running...' : 'Run Standardize Notes'}
                 </Button>
             </Paper>
 
@@ -362,13 +364,13 @@ const ScriptExecutionPage = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                     <DescriptionIcon sx={{ fontSize: 32 }} />
                     <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                        Normalize Obsidian Vault (Files)
+                        Standardize Obsidian Vault (Files)
                     </Typography>
                 </Box>
 
                 <Alert severity="info" sx={{ mb: 2 }}>
-                    Normalizes markdown files in an Obsidian vault: converts inline #tags to frontmatter,
-                    standardizes tag casing to lowercase, adds titles from filenames, and generates descriptions.
+                    Standardizes markdown files in an Obsidian vault: converts inline #tags to frontmatter,
+                    converts tags to lowercase, adds titles from filenames, and generates descriptions.
                 </Alert>
 
                 <TextField
@@ -440,7 +442,7 @@ const ScriptExecutionPage = () => {
                     onClick={handleRunNormalizeVault}
                     disabled={isRunning || !isServiceHealthy || !vaultPath.trim()}
                 >
-                    {vaultRunning ? 'Running...' : 'Run Normalize Vault'}
+                    {vaultRunning ? 'Running...' : 'Run Standardize Vault'}
                 </Button>
             </Paper>
 
@@ -562,7 +564,7 @@ const ScriptExecutionPage = () => {
                 <Typography variant="body2" component="div" sx={{ mt: 1, fontFamily: 'monospace', bgcolor: 'background.default', p: 1, borderRadius: 1 }}>
                     cd scripts<br />
                     pip install -r requirements.txt<br />
-                    uvicorn api.main:app --port 8001
+                    python -m uvicorn api.main:app --port 8001
                 </Typography>
             </Alert>
         </Container>

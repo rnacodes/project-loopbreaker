@@ -16,7 +16,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
-from .routers import health, jobs
+from .routers import health, jobs, ai_test
 from .services.job_manager import JobManager
 
 
@@ -65,6 +65,7 @@ app.add_middleware(
 # Include routers
 app.include_router(health.router, prefix="/health", tags=["Health"])
 app.include_router(jobs.router, prefix="/jobs", tags=["Jobs"])
+app.include_router(ai_test.router, prefix="/ai-test", tags=["AI Testing"])
 
 
 @app.get("/")

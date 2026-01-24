@@ -1,25 +1,143 @@
 """Job management service for tracking script execution."""
 
 import asyncio
+import json
 import uuid
 from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from ..models import JobProgress, JobResponse, JobStatus, ScriptType
 
 
+def _serialize_datetime(obj):
+    """JSON serializer for datetime objects."""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
+
+def _deserialize_job(data: dict) -> JobResponse:
+    """Deserialize a job from JSON data."""
+    # Convert string dates back to datetime
+    started_at = None
+    if data.get('started_at'):
+        started_at = datetime.fromisoformat(data['started_at'])
+
+    completed_at = None
+    if data.get('completed_at'):
+        completed_at = datetime.fromisoformat(data['completed_at'])
+
+    # Convert status string to enum
+    status = JobStatus(data['status'])
+
+    # Convert script_type string to enum
+    script_type = ScriptType(data['script_type'])
+
+    # Build progress object
+    progress_data = data.get('progress', {})
+    progress = JobProgress(
+        total=progress_data.get('total', 0),
+        processed=progress_data.get('processed', 0),
+        succeeded=progress_data.get('succeeded', 0),
+        failed=progress_data.get('failed', 0),
+        current_item=progress_data.get('current_item')
+    )
+
+    return JobResponse(
+        job_id=data['job_id'],
+        script_type=script_type,
+        status=status,
+        progress=progress,
+        started_at=started_at,
+        completed_at=completed_at,
+        logs=data.get('logs', []),
+        result=data.get('result'),
+        error_message=data.get('error_message')
+    )
+
+
 class JobManager:
     """
-    Manages script execution jobs with in-memory storage.
+    Manages script execution jobs with file-based persistence.
 
     Tracks job state, progress, and results for concurrent script executions.
+    Jobs are persisted to JSON files in the logs directory.
     """
 
-    def __init__(self, max_jobs_history: int = 100):
+    def __init__(self, max_jobs_history: int = 100, logs_dir: Optional[Path] = None):
         self._jobs: Dict[str, JobResponse] = {}
         self._lock = asyncio.Lock()
         self._max_jobs_history = max_jobs_history
         self._cancellation_flags: Dict[str, bool] = {}
+
+        # Set up logs directory
+        if logs_dir:
+            self._logs_dir = Path(logs_dir)
+        else:
+            # Default to scripts/logs directory
+            self._logs_dir = Path(__file__).parent.parent.parent / "logs"
+
+        self._logs_dir.mkdir(parents=True, exist_ok=True)
+
+        # Load existing jobs from log files
+        self._load_jobs_from_files()
+
+    def _get_job_file_path(self, job_id: str, started_at: Optional[datetime] = None) -> Path:
+        """Get the file path for a job's log file."""
+        # Use date prefix for better organization
+        if started_at:
+            date_prefix = started_at.strftime("%Y-%m-%d")
+        else:
+            date_prefix = datetime.utcnow().strftime("%Y-%m-%d")
+        return self._logs_dir / f"{date_prefix}_{job_id}.json"
+
+    def _save_job_to_file(self, job: JobResponse) -> None:
+        """Save a job to its log file."""
+        try:
+            file_path = self._get_job_file_path(job.job_id, job.started_at)
+            job_data = {
+                'job_id': job.job_id,
+                'script_type': job.script_type.value,
+                'status': job.status.value,
+                'progress': {
+                    'total': job.progress.total,
+                    'processed': job.progress.processed,
+                    'succeeded': job.progress.succeeded,
+                    'failed': job.progress.failed,
+                    'current_item': job.progress.current_item
+                },
+                'started_at': job.started_at,
+                'completed_at': job.completed_at,
+                'logs': job.logs,
+                'result': job.result,
+                'error_message': job.error_message
+            }
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(job_data, f, indent=2, default=_serialize_datetime)
+        except Exception as e:
+            print(f"Warning: Failed to save job {job.job_id} to file: {e}")
+
+    def _load_jobs_from_files(self) -> None:
+        """Load existing jobs from log files on startup."""
+        try:
+            log_files = list(self._logs_dir.glob("*.json"))
+            # Sort by modification time, most recent first
+            log_files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
+
+            # Only load the most recent jobs up to max_jobs_history
+            for log_file in log_files[:self._max_jobs_history]:
+                try:
+                    with open(log_file, 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                        job = _deserialize_job(data)
+                        self._jobs[job.job_id] = job
+                except Exception as e:
+                    print(f"Warning: Failed to load job from {log_file}: {e}")
+
+            print(f"Loaded {len(self._jobs)} jobs from log files")
+        except Exception as e:
+            print(f"Warning: Failed to load jobs from files: {e}")
 
     async def create_job(self, script_type: ScriptType, **kwargs) -> str:
         """
@@ -48,6 +166,7 @@ class JobManager:
                 logs=[]
             )
             self._cancellation_flags[job_id] = False
+            self._save_job_to_file(self._jobs[job_id])
 
         return job_id
 
@@ -86,6 +205,7 @@ class JobManager:
             if job_id in self._jobs:
                 self._jobs[job_id].status = JobStatus.RUNNING
                 self._jobs[job_id].started_at = datetime.utcnow()
+                self._save_job_to_file(self._jobs[job_id])
 
     async def update_progress(
         self,
@@ -111,14 +231,22 @@ class JobManager:
                 if current_item is not None:
                     progress.current_item = current_item
 
+                # Save to file periodically (every 10 items) to reduce I/O
+                if processed is not None and (processed % 10 == 0 or processed == progress.total):
+                    self._save_job_to_file(self._jobs[job_id])
+
     async def add_log(self, job_id: str, message: str) -> None:
         """Add a log message to a job."""
         async with self._lock:
             if job_id in self._jobs:
-                # Keep only last 100 log entries
+                # Keep only last 100 log entries in memory
                 if len(self._jobs[job_id].logs) >= 100:
                     self._jobs[job_id].logs = self._jobs[job_id].logs[-99:]
                 self._jobs[job_id].logs.append(message)
+
+                # Save to file periodically (every 5 logs)
+                if len(self._jobs[job_id].logs) % 5 == 0:
+                    self._save_job_to_file(self._jobs[job_id])
 
     async def complete_job(
         self,
@@ -148,6 +276,9 @@ class JobManager:
                 # Clear cancellation flag
                 self._cancellation_flags.pop(job_id, None)
 
+                # Save final state to file
+                self._save_job_to_file(self._jobs[job_id])
+
     async def cancel_job(self, job_id: str) -> bool:
         """
         Request cancellation of a running job.
@@ -165,6 +296,7 @@ class JobManager:
             self._cancellation_flags[job_id] = True
             job.status = JobStatus.CANCELLED
             job.completed_at = datetime.utcnow()
+            self._save_job_to_file(job)
             return True
 
     def is_cancelled(self, job_id: str) -> bool:
@@ -191,10 +323,11 @@ class JobManager:
 
     async def shutdown(self) -> None:
         """Cleanup on shutdown."""
-        # Mark all running jobs as failed
+        # Mark all running jobs as failed and save to files
         async with self._lock:
             for job_id, job in self._jobs.items():
                 if job.status == JobStatus.RUNNING:
                     job.status = JobStatus.FAILED
                     job.error_message = "Service shutdown"
                     job.completed_at = datetime.utcnow()
+                    self._save_job_to_file(job)

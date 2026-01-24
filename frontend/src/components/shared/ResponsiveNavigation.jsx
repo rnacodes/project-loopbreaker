@@ -58,7 +58,8 @@ import {
   Description,
   Note as NoteIcon,
   AutoAwesome,
-  Psychology
+  Psychology,
+  Terminal
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -143,6 +144,7 @@ const ResponsiveNavigation = () => {
     { text: 'Cleanup', path: '/cleanup', icon: <CleaningServices />, requiresAuth: true },
     { text: 'Demo Admin', path: '/demo-admin', icon: <VpnKey />, requiresAuth: true },
     { text: 'Documents', path: '/documents', icon: <Description />, requiresAuth: true },
+    { text: 'Local Scripts', path: '/script-execution', icon: <Terminal />, requiresAuth: true },
     { text: 'Readwise Sync', path: '/readwise-sync', icon: <Sync />, requiresAuth: true },
     { text: 'Sources', path: '/sources', icon: <Apps />, requiresAuth: true },
     { text: 'Typesense Admin', path: '/typesense-admin', icon: <StorageIcon />, requiresAuth: true }

@@ -18,10 +18,11 @@ class Settings:
     # CORS
     allowed_origins: List[str] = None
 
-    # AI Settings (for vault normalization)
+    # AI Settings (for vault standardization)
+    # Uses same env vars as .NET backend: GRADIENT_API_KEY, GRADIENT_BASE_URL, GRADIENT_GENERATION_MODEL
     gradient_api_key: Optional[str] = None
     gradient_base_url: str = "https://api.gradient.ai/v1"
-    ai_model: str = "llama-3.1-8b-instruct"
+    ai_model: str = "llama-3.1-8b-instruct"  # Overridden by AI_MODEL or GRADIENT_GENERATION_MODEL env var
 
     # Job settings
     max_concurrent_jobs: int = 2
@@ -46,7 +47,8 @@ def load_settings() -> Settings:
         allowed_origins=allowed_origins,
         gradient_api_key=os.environ.get("GRADIENT_API_KEY"),
         gradient_base_url=os.environ.get("GRADIENT_BASE_URL", "https://api.gradient.ai/v1"),
-        ai_model=os.environ.get("AI_MODEL", "llama-3.1-8b-instruct"),
+        # Check both AI_MODEL (legacy) and GRADIENT_GENERATION_MODEL (matches .NET backend)
+        ai_model=os.environ.get("AI_MODEL") or os.environ.get("GRADIENT_GENERATION_MODEL") or "llama-3.1-8b-instruct",
         max_concurrent_jobs=int(os.environ.get("MAX_CONCURRENT_JOBS", "2")),
     )
 
