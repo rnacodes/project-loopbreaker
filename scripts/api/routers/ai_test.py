@@ -216,7 +216,7 @@ Content:
 
 
 @router.post("/direct-prompt", response_model=DirectPromptResponse)
-async def test_direct_prompt(request: DirectPromptRequest):
+async def execute_direct_prompt(request: DirectPromptRequest):
     """
     Test the AI API with a direct prompt.
 

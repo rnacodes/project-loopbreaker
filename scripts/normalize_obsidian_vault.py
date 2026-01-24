@@ -78,7 +78,7 @@ class AIDescriptionGenerator:
         self.request_count = 0
         self.rate_limit_delay = 0.5  # Delay between requests in seconds
 
-    def generate_description(self, title: str, content: str, max_length: int = 150) -> Optional[str]:
+    def generate_description(self, title: str, content: str, max_length: int = 2000) -> Optional[str]:
         """Generate a description using the AI model."""
         if not content or not content.strip():
             return None
@@ -126,7 +126,7 @@ class AIDescriptionGenerator:
                         # Try to find a quoted description in the reasoning
                         import re
                         # Look for text in quotes that looks like a description
-                        quoted = re.findall(r'"([^"]{20,150})"', reasoning)
+                        quoted = re.findall(r'"([^"]{20,2000})"', reasoning)
                         if quoted:
                             # Use the longest quoted text as the description
                             raw_content = max(quoted, key=len)
@@ -140,7 +140,7 @@ class AIDescriptionGenerator:
                 # Clean up the description
                 description = description.strip('"\'')
 
-                # Truncate if too long
+                # Truncate if too long (max 2000 chars for Typesense compatibility)
                 if len(description) > max_length:
                     last_period = description[:max_length].rfind('.')
                     if last_period > max_length * 0.6:
@@ -237,7 +237,7 @@ def title_from_filename(filepath: Path) -> str:
     return name.title()
 
 
-def generate_description(content: str, max_length: int = 150) -> str:
+def generate_description(content: str, max_length: int = 2000) -> str:
     """Generate description from content."""
     if not content or not content.strip():
         return ""
@@ -280,7 +280,7 @@ def generate_description(content: str, max_length: int = 150) -> str:
     if not text:
         return ""
 
-    # Truncate to max_length
+    # Truncate to max_length (2000 chars for Typesense compatibility)
     if len(text) <= max_length:
         return text
 
@@ -359,28 +359,26 @@ def normalize_file(
         frontmatter['title'] = title
         changes['changes'].append(f"title: (none) -> '{title}'")
 
-    # 3. Add or regenerate description
-    # TEMPORARY: Always regenerate descriptions with AI (will revert after one-time run)
-    old_description = frontmatter.get('description', '')
-    new_description = None
+    # 3. Add description only if missing (never overwrite existing descriptions)
+    existing_description = frontmatter.get('description', '')
 
-    # Try AI generation first if available
-    if ai_generator and body.strip():
-        new_description = ai_generator.generate_description(title, body)
-        if new_description:
-            if old_description:
-                changes['changes'].append(f"description (AI regenerated): '{new_description[:50]}...'")
-            else:
+    if not existing_description:
+        new_description = None
+
+        # Try AI generation first if available
+        if ai_generator and body.strip():
+            new_description = ai_generator.generate_description(title, body)
+            if new_description:
                 changes['changes'].append(f"description (AI): '{new_description[:50]}...'")
 
-    # Fall back to simple extraction only if no existing description AND no AI
-    if not new_description and not old_description:
-        new_description = generate_description(body)
-        if new_description:
-            changes['changes'].append(f"description: (none) -> '{new_description[:50]}...'")
+        # Fall back to simple extraction if no AI description generated
+        if not new_description:
+            new_description = generate_description(body)
+            if new_description:
+                changes['changes'].append(f"description: (none) -> '{new_description[:50]}...'")
 
-    if new_description:
-        frontmatter['description'] = new_description
+        if new_description:
+            frontmatter['description'] = new_description
 
     # Check if anything changed
     if frontmatter != original_frontmatter:
