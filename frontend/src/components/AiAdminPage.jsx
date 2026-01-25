@@ -226,7 +226,7 @@ const AiAdminPage = () => {
         )}
 
         <Grid container spacing={2}>
-          {/* AI Service Status */}
+          {/* Embeddings Service Status (OpenAI) */}
           <Grid item xs={12} md={6}>
             <Card variant="outlined" sx={{
               bgcolor: isAiAvailable ? 'success.light' : 'error.light',
@@ -241,7 +241,7 @@ const AiAdminPage = () => {
                   )}
                   <Box>
                     <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                      Gradient AI Service
+                      Embeddings ({aiStatus?.embeddingProvider || 'OpenAI'})
                     </Typography>
                     <Chip
                       label={isAiAvailable ? 'Available' : 'Unavailable'}
@@ -252,12 +252,45 @@ const AiAdminPage = () => {
                 </Box>
                 {aiStatus?.embeddingModel && (
                   <Typography variant="body2" sx={{ mt: 1 }}>
-                    Embedding Model: {aiStatus.embeddingModel}
+                    Model: {aiStatus.embeddingModel}
                   </Typography>
                 )}
-                {aiStatus?.generationModel && (
+                {aiStatus?.embeddingDimensions && (
                   <Typography variant="body2">
-                    Generation Model: {aiStatus.generationModel}
+                    Dimensions: {aiStatus.embeddingDimensions}
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Text Generation Service Status (DigitalOcean) */}
+          <Grid item xs={12} md={6}>
+            <Card variant="outlined" sx={{
+              bgcolor: isAiAvailable ? 'success.light' : 'error.light',
+              height: '100%'
+            }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {isAiAvailable ? (
+                    <CheckCircleIcon sx={{ fontSize: 40, color: 'success.main' }} />
+                  ) : (
+                    <ErrorIcon sx={{ fontSize: 40, color: 'error.main' }} />
+                  )}
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                      Text Generation ({aiStatus?.generationProvider || 'DigitalOcean'})
+                    </Typography>
+                    <Chip
+                      label={isAiAvailable ? 'Available' : 'Unavailable'}
+                      color={isAiAvailable ? 'success' : 'error'}
+                      size="small"
+                    />
+                  </Box>
+                </Box>
+                {aiStatus?.generationModel && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Model: {aiStatus.generationModel}
                   </Typography>
                 )}
               </CardContent>

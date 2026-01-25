@@ -663,7 +663,10 @@ Content (excerpt):
             {
                 IsAvailable = isAvailable,
                 EmbeddingModel = _gradientClient.EmbeddingModelName,
+                EmbeddingProvider = "OpenAI",
+                EmbeddingDimensions = _gradientClient.EmbeddingDimensions,
                 GenerationModel = _gradientClient.GenerationModelName,
+                GenerationProvider = "DigitalOcean",
                 PendingNoteDescriptions = await GetNotesNeedingDescriptionCountAsync(),
                 PendingMediaEmbeddings = await GetMediaItemsNeedingEmbeddingCountAsync(),
                 PendingNoteEmbeddings = await GetNotesNeedingEmbeddingCountAsync(),

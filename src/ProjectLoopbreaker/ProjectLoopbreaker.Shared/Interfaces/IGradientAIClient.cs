@@ -1,14 +1,15 @@
 namespace ProjectLoopbreaker.Shared.Interfaces
 {
     /// <summary>
-    /// Client for interacting with DigitalOcean Gradient AI Platform.
-    /// Provides embedding generation and text generation capabilities.
+    /// Client for AI operations using multiple providers:
+    /// - OpenAI for embeddings (text-embedding-3-large with configurable dimensions)
+    /// - DigitalOcean Gradient AI for text generation (chat completions)
     /// </summary>
     public interface IGradientAIClient
     {
         /// <summary>
-        /// Generates a vector embedding for the given text.
-        /// Uses the configured embedding model (e.g., GTE Large v1.5 with 1024 dimensions).
+        /// Generates a vector embedding for the given text using OpenAI.
+        /// Uses text-embedding-3-large with configurable dimensions (default: 1024).
         /// </summary>
         /// <param name="text">The text to generate an embedding for</param>
         /// <param name="cancellationToken">Cancellation token</param>
@@ -16,7 +17,7 @@ namespace ProjectLoopbreaker.Shared.Interfaces
         Task<float[]> GenerateEmbeddingAsync(string text, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Generates vector embeddings for multiple texts in a single batch request.
+        /// Generates vector embeddings for multiple texts in a single batch request using OpenAI.
         /// More efficient than calling GenerateEmbeddingAsync multiple times.
         /// </summary>
         /// <param name="texts">The list of texts to generate embeddings for</param>
@@ -25,7 +26,7 @@ namespace ProjectLoopbreaker.Shared.Interfaces
         Task<List<float[]>> GenerateEmbeddingsBatchAsync(List<string> texts, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Generates text using the configured language model (e.g., GPT-4 Turbo).
+        /// Generates text using DigitalOcean Gradient AI (chat completions).
         /// Used for generating note descriptions and other AI-powered content.
         /// </summary>
         /// <param name="prompt">The user prompt to send to the model</param>
@@ -40,18 +41,23 @@ namespace ProjectLoopbreaker.Shared.Interfaces
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Checks if the Gradient AI service is available and properly configured.
+        /// Checks if AI services are available (either OpenAI embeddings or Gradient text generation).
         /// </summary>
-        /// <returns>True if the service is available, false otherwise</returns>
+        /// <returns>True if at least one service is available, false otherwise</returns>
         Task<bool> IsAvailableAsync();
 
         /// <summary>
-        /// Gets the name of the currently configured embedding model.
+        /// Gets the name of the currently configured embedding model (OpenAI).
         /// </summary>
         string EmbeddingModelName { get; }
 
         /// <summary>
-        /// Gets the name of the currently configured text generation model.
+        /// Gets the configured embedding dimensions (default: 1024).
+        /// </summary>
+        int EmbeddingDimensions { get; }
+
+        /// <summary>
+        /// Gets the name of the currently configured text generation model (Gradient).
         /// </summary>
         string GenerationModelName { get; }
     }

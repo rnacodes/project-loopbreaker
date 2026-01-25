@@ -40,8 +40,17 @@ namespace ProjectLoopbreaker.DTOs
         [JsonPropertyName("embeddingModel")]
         public string EmbeddingModel { get; set; } = string.Empty;
 
+        [JsonPropertyName("embeddingProvider")]
+        public string EmbeddingProvider { get; set; } = "OpenAI";
+
+        [JsonPropertyName("embeddingDimensions")]
+        public int EmbeddingDimensions { get; set; }
+
         [JsonPropertyName("generationModel")]
         public string GenerationModel { get; set; } = string.Empty;
+
+        [JsonPropertyName("generationProvider")]
+        public string GenerationProvider { get; set; } = "DigitalOcean";
 
         [JsonPropertyName("pendingNoteDescriptions")]
         public int PendingNoteDescriptions { get; set; }

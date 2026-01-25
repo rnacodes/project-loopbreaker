@@ -593,9 +593,34 @@ if (builder.Environment.EnvironmentName != "Testing")
     Console.WriteLine("Podcast ListenNotes enrichment background service registered.");
 }
 
-// Configure Gradient AI client for embeddings and text generation
+// Configure OpenAI client for embeddings
+// Requires OPENAI_API_KEY environment variable
+// Optional: OPENAI_EMBEDDING_MODEL (default: text-embedding-3-large)
+// Optional: OPENAI_DIMENSIONS (default: 1024)
+var openAIApiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY") ??
+                   builder.Configuration["OpenAI:ApiKey"];
+
+builder.Services.AddHttpClient("OpenAIEmbeddings", client =>
+{
+    client.BaseAddress = new Uri("https://api.openai.com/v1/");
+    client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+    client.Timeout = TimeSpan.FromSeconds(60);
+
+    if (!string.IsNullOrEmpty(openAIApiKey))
+    {
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {openAIApiKey}");
+        var embeddingModel = Environment.GetEnvironmentVariable("OPENAI_EMBEDDING_MODEL") ?? "text-embedding-3-large";
+        var dimensions = Environment.GetEnvironmentVariable("OPENAI_DIMENSIONS") ?? "1024";
+        Console.WriteLine($"OpenAI embeddings configured: {embeddingModel} ({dimensions}D)");
+    }
+    else
+    {
+        Console.WriteLine("WARNING: OpenAI API key not configured. Embedding generation will be disabled.");
+    }
+});
+
+// Configure Gradient/DigitalOcean AI client for text generation (descriptions)
 // Requires GRADIENT_API_KEY environment variable
-// Optional: GRADIENT_EMBEDDING_MODEL (default: gte-large-v1.5)
 // Optional: GRADIENT_GENERATION_MODEL (default: gpt-4-turbo)
 builder.Services.AddHttpClient<IGradientAIClient, GradientAIClient>(client =>
 {
@@ -607,17 +632,17 @@ builder.Services.AddHttpClient<IGradientAIClient, GradientAIClient>(client =>
     client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
     client.Timeout = TimeSpan.FromSeconds(60); // Longer timeout for AI operations
 
-    var apiKey = Environment.GetEnvironmentVariable("GRADIENT_API_KEY") ??
-                 builder.Configuration["GradientAI:ApiKey"];
+    var gradientApiKey = Environment.GetEnvironmentVariable("GRADIENT_API_KEY") ??
+                         builder.Configuration["GradientAI:ApiKey"];
 
-    if (!string.IsNullOrEmpty(apiKey))
+    if (!string.IsNullOrEmpty(gradientApiKey))
     {
-        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
-        Console.WriteLine("Gradient AI client configured with API key.");
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {gradientApiKey}");
+        Console.WriteLine("Gradient AI client configured for text generation.");
     }
     else
     {
-        Console.WriteLine("WARNING: Gradient AI API key not configured. AI features will be disabled.");
+        Console.WriteLine("WARNING: Gradient AI API key not configured. Text generation will be disabled.");
     }
 });
 
