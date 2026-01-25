@@ -7,7 +7,7 @@ import {
     Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import { Search, Download, MenuBook, ExpandMore, OpenInNew } from '@mui/icons-material';
-import { searchBooksFromOpenLibrary, importBookFromOpenLibrary } from '../../api';
+import { searchBooksFromGoogleBooks, importBookFromGoogleBooks } from '../../api';
 import WhiteOutlineButton from '../shared/WhiteOutlineButton';
 
 function BookImportSection({ expanded, onAccordionChange }) {
@@ -46,7 +46,7 @@ function BookImportSection({ expanded, onAccordionChange }) {
                 limit: 50
             };
 
-            const results = await searchBooksFromOpenLibrary(searchParams);
+            const results = await searchBooksFromGoogleBooks(searchParams);
             setBookSearchResults(results || []);
             setBookIsLoading(false);
 
@@ -76,7 +76,7 @@ function BookImportSection({ expanded, onAccordionChange }) {
         try {
             console.log('Importing book by ISBN:', bookIsbn);
 
-            const result = await importBookFromOpenLibrary({ isbn: bookIsbn });
+            const result = await importBookFromGoogleBooks({ isbn: bookIsbn });
 
             console.log('Book import response:', result);
 
@@ -129,7 +129,7 @@ function BookImportSection({ expanded, onAccordionChange }) {
 
             console.log('Importing book by title/author:', importData);
 
-            const result = await importBookFromOpenLibrary(importData);
+            const result = await importBookFromGoogleBooks(importData);
 
             console.log('Book import response:', result);
 
@@ -178,14 +178,14 @@ function BookImportSection({ expanded, onAccordionChange }) {
             });
 
             const importData = {
-                openLibraryKey: book.key,
+                volumeId: book.key,
                 title: book.title,
                 author: book.authors?.[0]
             };
 
             console.log('Import data being sent:', importData);
 
-            const result = await importBookFromOpenLibrary(importData);
+            const result = await importBookFromGoogleBooks(importData);
 
             console.log('Book import response:', result);
 
@@ -245,7 +245,7 @@ function BookImportSection({ expanded, onAccordionChange }) {
                         <Button
                             variant="text"
                             size="small"
-                            href="https://openlibrary.org"
+                            href="https://books.google.com"
                             target="_blank"
                             rel="noopener noreferrer"
                             endIcon={<OpenInNew fontSize="small" />}
@@ -257,7 +257,7 @@ function BookImportSection({ expanded, onAccordionChange }) {
                             }}
                             onClick={(e) => e.stopPropagation()}
                         >
-                            Open Library
+                            Google Books
                         </Button>
                     </Box>
                 </Box>
@@ -379,7 +379,7 @@ function BookImportSection({ expanded, onAccordionChange }) {
                                                         <Box sx={{ display: 'flex', gap: 1 }}>
                                                             <WhiteOutlineButton
                                                                 size="small"
-                                                                href={`https://openlibrary.org${book.key}`}
+                                                                href={`https://books.google.com/books?id=${book.key}`}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 endIcon={<OpenInNew fontSize="small" />}
@@ -493,7 +493,7 @@ function BookImportSection({ expanded, onAccordionChange }) {
                     <Alert severity="info" sx={{ mt: 3 }} icon={<MenuBook />}>
                         <Typography variant="body2">
                             <strong>Book Descriptions:</strong> A background service runs every 48 hours to automatically
-                            fetch descriptions from Open Library for books with an ISBN. Descriptions will be added
+                            fetch descriptions from Google Books for books with an ISBN. Descriptions will be added
                             gradually after import.
                         </Typography>
                     </Alert>

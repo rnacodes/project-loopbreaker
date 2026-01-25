@@ -505,6 +505,16 @@ builder.Services.AddHttpClient<IPaperlessApiClient, PaperlessApiClient>(client =
 // Register OpenLibrary service
 builder.Services.AddScoped<IOpenLibraryService, OpenLibraryService>();
 
+// Configure Google Books API client
+builder.Services.AddHttpClient<IGoogleBooksApiClient, GoogleBooksApiClient>(client =>
+{
+    client.BaseAddress = new Uri("https://www.googleapis.com/books/v1/");
+    client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
+});
+
+// Register Google Books service
+builder.Services.AddScoped<IGoogleBooksService, GoogleBooksService>();
+
 // Configure Quartz API client for Obsidian notes sync
 builder.Services.AddHttpClient<IQuartzApiClient, QuartzApiClient>(client =>
 {

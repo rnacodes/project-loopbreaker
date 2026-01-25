@@ -61,3 +61,33 @@ export const importBookFromOpenLibrary = async (importData) => {
         throw error;
     }
 };
+
+// ============================================
+// Google Books API calls
+// ============================================
+
+export const searchBooksFromGoogleBooks = async (searchParams) => {
+    try {
+        const params = new URLSearchParams({
+            query: searchParams.query,
+            searchType: searchParams.searchType || 'General',
+            ...(searchParams.offset && { offset: searchParams.offset }),
+            ...(searchParams.limit && { limit: searchParams.limit })
+        });
+        const response = await apiClient.get(`/book/search-googlebooks?${params}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error searching Google Books:', error);
+        throw error;
+    }
+};
+
+export const importBookFromGoogleBooks = async (importData) => {
+    try {
+        const response = await apiClient.post('/book/import-from-googlebooks', importData);
+        return response.data;
+    } catch (error) {
+        console.error('Error importing book from Google Books:', error);
+        throw error;
+    }
+};

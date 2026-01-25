@@ -451,7 +451,7 @@ function MediaProfilePage() {
             />
 
 
-        <MediaDetailAccordion mediaItem={mediaItem} navigate={navigate} videoPlaylists={videoPlaylists} />
+        <MediaDetailAccordion mediaItem={mediaItem} navigate={navigate} videoPlaylists={videoPlaylists} onBookEnriched={() => setRefreshKey(k => k + 1)} />
 
         <HighlightsSection mediaItem={mediaItem} highlights={highlights} highlightsLoading={highlightsLoading} />
 

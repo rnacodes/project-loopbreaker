@@ -214,7 +214,7 @@ namespace ProjectLoopbreaker.Application.Services
                 Title = record.Title.Trim(),
                 Author = record.Author.Trim(),
                 MediaType = MediaType.Book,
-                ISBN = CleanIsbn(record.ISBN),
+                ISBN = CleanIsbn(record.ISBN) ?? CleanIsbn(record.ISBN13),
                 Status = MapShelfToStatus(record.Shelves),
                 Format = MapBindingToFormat(record.Binding),
                 GoodreadsRating = record.MyRating,
@@ -241,7 +241,7 @@ namespace ProjectLoopbreaker.Application.Services
         private void UpdateBookFromRecord(Book book, GoodreadsCsvImportDto record)
         {
             // Update fields from Goodreads (preserve local-only fields)
-            book.ISBN = CleanIsbn(record.ISBN) ?? book.ISBN;
+            book.ISBN = CleanIsbn(record.ISBN) ?? CleanIsbn(record.ISBN13) ?? book.ISBN;
             book.Status = MapShelfToStatus(record.Shelves);
             book.Format = MapBindingToFormat(record.Binding);
             book.GoodreadsRating = record.MyRating ?? book.GoodreadsRating;

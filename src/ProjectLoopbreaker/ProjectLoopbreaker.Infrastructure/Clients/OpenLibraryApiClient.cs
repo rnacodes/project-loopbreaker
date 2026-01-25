@@ -28,6 +28,9 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
             {
                 var queryParams = new List<string> { $"q={Uri.EscapeDataString(query)}" };
 
+                // Request specific fields including isbn to ensure it's returned in results
+                queryParams.Add("fields=key,title,author_name,author_key,first_publish_year,isbn,subject,cover_i,publisher,language,publish_date,publish_year,number_of_pages_median,rating_average,rating_count,has_fulltext,edition_count,edition_key");
+
                 if (offset.HasValue) queryParams.Add($"offset={offset}");
                 if (limit.HasValue) queryParams.Add($"limit={limit}");
 

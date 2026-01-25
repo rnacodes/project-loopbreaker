@@ -6,22 +6,22 @@ using ProjectLoopbreaker.Shared.Interfaces;
 namespace ProjectLoopbreaker.Infrastructure.Services
 {
     /// <summary>
-    /// Service for enriching book descriptions from Open Library API.
+    /// Service for enriching book descriptions from Google Books API.
     /// Processes books in batches with rate limiting to respect API guidelines.
     /// </summary>
     public class BookDescriptionEnrichmentService : IBookDescriptionEnrichmentService
     {
         private readonly IApplicationDbContext _context;
-        private readonly IOpenLibraryApiClient _openLibraryClient;
+        private readonly IGoogleBooksApiClient _googleBooksClient;
         private readonly ILogger<BookDescriptionEnrichmentService> _logger;
 
         public BookDescriptionEnrichmentService(
             IApplicationDbContext context,
-            IOpenLibraryApiClient openLibraryClient,
+            IGoogleBooksApiClient googleBooksClient,
             ILogger<BookDescriptionEnrichmentService> logger)
         {
             _context = context;
-            _openLibraryClient = openLibraryClient;
+            _googleBooksClient = googleBooksClient;
             _logger = logger;
         }
 
@@ -82,7 +82,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
 
                         _logger.LogDebug("Fetching description for book: {Title} (ISBN: {ISBN})", book.Title, cleanIsbn);
 
-                        var description = await _openLibraryClient.GetBookDescriptionByISBNAsync(cleanIsbn);
+                        var description = await _googleBooksClient.GetBookDescriptionByISBNAsync(cleanIsbn);
 
                         if (!string.IsNullOrWhiteSpace(description))
                         {
@@ -130,6 +130,70 @@ namespace ProjectLoopbreaker.Infrastructure.Services
             {
                 result.Errors.Add($"Enrichment run failed: {ex.Message}");
                 _logger.LogError(ex, "Book description enrichment run failed");
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc />
+        public async Task<SingleBookEnrichmentResult> EnrichBookByIdAsync(Guid bookId, CancellationToken cancellationToken = default)
+        {
+            var result = new SingleBookEnrichmentResult();
+
+            try
+            {
+                var book = await _context.Books.FirstOrDefaultAsync(b => b.Id == bookId, cancellationToken);
+
+                if (book == null)
+                {
+                    result.NotFound = true;
+                    result.ErrorMessage = "Book not found";
+                    return result;
+                }
+
+                result.BookTitle = book.Title;
+
+                if (!string.IsNullOrWhiteSpace(book.Description))
+                {
+                    result.AlreadyHasDescription = true;
+                    result.Description = book.Description;
+                    result.Success = true;
+                    return result;
+                }
+
+                if (string.IsNullOrWhiteSpace(book.ISBN))
+                {
+                    result.NoIsbn = true;
+                    result.ErrorMessage = "Book has no ISBN to look up";
+                    return result;
+                }
+
+                var cleanIsbn = book.ISBN.Replace("-", "").Replace(" ", "").Trim();
+
+                _logger.LogInformation("Fetching description for book: {Title} (ISBN: {ISBN})", book.Title, cleanIsbn);
+
+                var description = await _googleBooksClient.GetBookDescriptionByISBNAsync(cleanIsbn);
+
+                if (!string.IsNullOrWhiteSpace(description))
+                {
+                    book.Description = description;
+                    _context.Update(book);
+                    await _context.SaveChangesAsync(cancellationToken);
+
+                    result.Success = true;
+                    result.Description = description;
+                    _logger.LogInformation("Successfully enriched description for: {Title}", book.Title);
+                }
+                else
+                {
+                    result.ErrorMessage = "No description found in Google Books for this ISBN";
+                    _logger.LogInformation("No description found for: {Title} (ISBN: {ISBN})", book.Title, cleanIsbn);
+                }
+            }
+            catch (Exception ex)
+            {
+                result.ErrorMessage = $"Failed to enrich book: {ex.Message}";
+                _logger.LogError(ex, "Failed to enrich description for book ID: {BookId}", bookId);
             }
 
             return result;

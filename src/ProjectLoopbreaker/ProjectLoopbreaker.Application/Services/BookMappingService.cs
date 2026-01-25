@@ -1,8 +1,10 @@
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.DTOs;
+using ProjectLoopbreaker.Shared.DTOs.GoogleBooks;
 using ProjectLoopbreaker.Shared.DTOs.OpenLibrary;
 using ProjectLoopbreaker.Application.Interfaces;
 using ProjectLoopbreaker.Application.Utilities;
@@ -205,6 +207,91 @@ namespace ProjectLoopbreaker.Application.Services
                 return $"Subjects: {string.Join(", ", bookData.Subject.Take(3))}";
             }
             return null;
+        }
+
+        // ============================================
+        // Google Books Mapping Methods
+        // ============================================
+
+        public async Task<Book> MapFromGoogleBooksAsync(GoogleBooksVolumeDto volume)
+        {
+            var volumeInfo = volume.VolumeInfo;
+
+            var book = new Book
+            {
+                Title = volumeInfo?.Title ?? "Unknown Title",
+                Author = volumeInfo?.Authors?.FirstOrDefault() ?? "Unknown Author",
+                MediaType = MediaType.Book,
+                Status = Status.Uncharted,
+                DateAdded = DateTime.UtcNow,
+                ISBN = volumeInfo?.GetBestIsbn(),
+                Format = volume.SaleInfo?.IsEbook == true ? BookFormat.Digital : BookFormat.Physical,
+                PartOfSeries = false,
+                Thumbnail = volumeInfo?.ImageLinks?.GetBestThumbnail(),
+                Description = StripHtmlTags(volumeInfo?.Description),
+                Link = volumeInfo?.CanonicalVolumeLink ?? volumeInfo?.InfoLink,
+                Publisher = volumeInfo?.Publisher,
+                AverageRating = (decimal?)volumeInfo?.AverageRating,
+                YearPublished = volumeInfo?.GetPublishedYear()
+            };
+
+            // Note: Topics and genres are NOT auto-imported from Google Books categories
+            // Users can add them manually after import if desired
+
+            return book;
+        }
+
+        public async Task<BookSearchResultDto> MapGoogleBooksToSearchResultDtoAsync(GoogleBooksVolumeDto volume)
+        {
+            var volumeInfo = volume.VolumeInfo;
+
+            return new BookSearchResultDto
+            {
+                Key = volume.Id, // Google Books Volume ID
+                Title = volumeInfo?.Title,
+                Authors = volumeInfo?.Authors,
+                FirstPublishYear = volumeInfo?.GetPublishedYear(),
+                Isbn = volumeInfo?.IndustryIdentifiers?
+                    .Where(i => i.Type == "ISBN_13" || i.Type == "ISBN_10")
+                    .Select(i => i.Identifier)
+                    .Where(i => i != null)
+                    .ToArray() as string[],
+                Subjects = volumeInfo?.Categories,
+                CoverUrl = volumeInfo?.ImageLinks?.GetBestThumbnail(),
+                Publishers = volumeInfo?.Publisher != null ? new[] { volumeInfo.Publisher } : null,
+                Languages = volumeInfo?.Language != null ? new[] { volumeInfo.Language } : null,
+                PageCount = volumeInfo?.PageCount,
+                AverageRating = volumeInfo?.AverageRating,
+                RatingCount = volumeInfo?.RatingsCount,
+                HasFulltext = null, // Not available in Google Books
+                EditionCount = null // Not available in Google Books
+            };
+        }
+
+        /// <summary>
+        /// Strips HTML tags from a string and decodes HTML entities.
+        /// </summary>
+        private static string? StripHtmlTags(string? html)
+        {
+            if (string.IsNullOrEmpty(html)) return null;
+
+            // Remove HTML tags
+            var withoutTags = Regex.Replace(html, "<.*?>", " ");
+
+            // Decode common HTML entities
+            withoutTags = withoutTags
+                .Replace("&nbsp;", " ")
+                .Replace("&amp;", "&")
+                .Replace("&lt;", "<")
+                .Replace("&gt;", ">")
+                .Replace("&quot;", "\"")
+                .Replace("&#39;", "'")
+                .Replace("&apos;", "'");
+
+            // Collapse multiple spaces into one
+            withoutTags = Regex.Replace(withoutTags, @"\s+", " ");
+
+            return withoutTags.Trim();
         }
     }
 }

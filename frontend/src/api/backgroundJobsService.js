@@ -48,3 +48,14 @@ export const runBookEnrichmentAll = async (options = {}) => {
     });
     return response.data;
 };
+
+/**
+ * Enrich a single book by its ID
+ * Fetches description from Open Library using the book's ISBN
+ * @param {string} bookId - The media ID of the book to enrich
+ * @returns {Object} Result with success, bookTitle, description, errorMessage, etc.
+ */
+export const enrichBookById = async (bookId) => {
+    const response = await apiClient.post(`/bookenrichment/${bookId}`);
+    return response.data;
+};

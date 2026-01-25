@@ -87,7 +87,9 @@ export {
     updateBook,
     deleteBook,
     searchBooksFromOpenLibrary,
-    importBookFromOpenLibrary
+    importBookFromOpenLibrary,
+    searchBooksFromGoogleBooks,
+    importBookFromGoogleBooks
 } from './bookService';
 
 // Uploads
@@ -291,7 +293,8 @@ export {
 export {
     getBookEnrichmentStatus,
     runBookEnrichment,
-    runBookEnrichmentAll
+    runBookEnrichmentAll,
+    enrichBookById
 } from './backgroundJobsService';
 
 // Notes (Obsidian)

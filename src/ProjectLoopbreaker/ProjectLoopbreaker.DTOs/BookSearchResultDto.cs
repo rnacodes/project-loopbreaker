@@ -3,10 +3,34 @@ using System.Text.Json.Serialization;
 
 namespace ProjectLoopbreaker.DTOs
 {
+    /// <summary>
+    /// DTO for importing a book from OpenLibrary (kept for potential future use).
+    /// </summary>
     public class ImportBookFromOpenLibraryDto
     {
         [JsonPropertyName("openLibraryKey")]
         public string? OpenLibraryKey { get; set; }
+
+        [JsonPropertyName("isbn")]
+        public string? Isbn { get; set; }
+
+        [JsonPropertyName("title")]
+        public string? Title { get; set; }
+
+        [JsonPropertyName("author")]
+        public string? Author { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for importing a book from Google Books.
+    /// </summary>
+    public class ImportBookFromGoogleBooksDto
+    {
+        /// <summary>
+        /// Google Books Volume ID (e.g., "EMMWDwAAQBAJ")
+        /// </summary>
+        [JsonPropertyName("volumeId")]
+        public string? VolumeId { get; set; }
 
         [JsonPropertyName("isbn")]
         public string? Isbn { get; set; }

@@ -3,8 +3,8 @@ import {
     Button, Card, Box, Typography, Accordion, AccordionSummary, AccordionDetails, Link, Chip, IconButton, Tooltip, Alert,
     CircularProgress, Divider
 } from '@mui/material';
-import { ExpandMore, OpenInNew, Star, RssFeed, ContentCopy, Language, Schedule, Article } from '@mui/icons-material';
-import { getWebsiteRssFeedItems } from '../api';
+import { ExpandMore, OpenInNew, Star, RssFeed, ContentCopy, Language, Schedule, Article, AutoFixHigh } from '@mui/icons-material';
+import { getWebsiteRssFeedItems, enrichBookById } from '../api';
 
 function getJustWatchUrl(title) {
   // Simple heuristic for generating a JustWatch search URL.
@@ -12,10 +12,12 @@ function getJustWatchUrl(title) {
   return `https://www.justwatch.com/us/search?q=${encodeURIComponent(title)}`;
 }
 
-function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
+function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [], onBookEnriched }) {
   const [rssFeedItems, setRssFeedItems] = useState([]);
   const [loadingRss, setLoadingRss] = useState(false);
   const [rssError, setRssError] = useState(null);
+  const [enriching, setEnriching] = useState(false);
+  const [enrichResult, setEnrichResult] = useState(null);
 
   // Fetch RSS feed items for websites with RSS feeds
   useEffect(() => {
@@ -37,6 +39,26 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
 
     fetchRssItems();
   }, [mediaItem.id, mediaItem.mediaType, mediaItem.rssFeedUrl]);
+
+  const handleEnrichBook = async () => {
+    setEnriching(true);
+    setEnrichResult(null);
+    try {
+      const result = await enrichBookById(mediaItem.id);
+      setEnrichResult(result);
+      if (result.success && onBookEnriched) {
+        onBookEnriched();
+      }
+    } catch (error) {
+      setEnrichResult({
+        success: false,
+        errorMessage: error.response?.data?.error || error.message || 'Failed to enrich book'
+      });
+    } finally {
+      setEnriching(false);
+    }
+  };
+
   return (
     <Card sx={{ mt: 3, overflow: 'hidden', borderRadius: 2 }}>
       <Accordion sx={{ boxShadow: 'none', '&:before': { display: 'none' } }}>
@@ -404,6 +426,62 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [] }) {
                 </Box>
               </Box>
             )}
+
+            {/* Enrich Book Button */}
+            <Divider sx={{ my: 2 }} />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              <Typography variant="body1" sx={{ fontSize: '1rem' }}>
+                <strong>Enrich from Open Library:</strong>
+              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={enriching ? <CircularProgress size={16} /> : <AutoFixHigh />}
+                  onClick={handleEnrichBook}
+                  disabled={enriching || !mediaItem.isbn}
+                  sx={{
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    color: 'text.primary',
+                    '&:hover': {
+                      borderColor: 'rgba(255, 255, 255, 0.5)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                    },
+                    '&.Mui-disabled': {
+                      borderColor: 'rgba(255, 255, 255, 0.1)',
+                      color: 'rgba(255, 255, 255, 0.3)'
+                    }
+                  }}
+                >
+                  {enriching ? 'Enriching...' : 'Fetch Description'}
+                </Button>
+                {!mediaItem.isbn && (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                    (Requires ISBN)
+                  </Typography>
+                )}
+              </Box>
+              {enrichResult && (
+                <Alert
+                  severity={enrichResult.success ? 'success' : enrichResult.alreadyHasDescription ? 'info' : 'warning'}
+                  sx={{ mt: 1 }}
+                  onClose={() => setEnrichResult(null)}
+                >
+                  {enrichResult.success && !enrichResult.alreadyHasDescription && (
+                    <>Description fetched successfully! Refresh the page to see it.</>
+                  )}
+                  {enrichResult.alreadyHasDescription && (
+                    <>This book already has a description.</>
+                  )}
+                  {enrichResult.noIsbn && (
+                    <>This book has no ISBN to look up.</>
+                  )}
+                  {!enrichResult.success && !enrichResult.alreadyHasDescription && !enrichResult.noIsbn && (
+                    <>{enrichResult.errorMessage || 'No description found in Open Library for this ISBN.'}</>
+                  )}
+                </Alert>
+              )}
+            </Box>
           </Box>
         )}
 

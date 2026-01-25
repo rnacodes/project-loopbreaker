@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Shared.DTOs.GoogleBooks;
 using ProjectLoopbreaker.Shared.DTOs.OpenLibrary;
 using ProjectLoopbreaker.DTOs;
 using Amazon.S3;
@@ -16,6 +17,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         private readonly IBookMappingService _bookMappingService;
         private readonly ILogger<BookController> _logger;
         private readonly IOpenLibraryService _openLibraryService;
+        private readonly IGoogleBooksService _googleBooksService;
         private readonly IAmazonS3? _s3Client;
         private readonly IConfiguration _configuration;
 
@@ -24,6 +26,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             IBookMappingService bookMappingService,
             ILogger<BookController> logger,
             IOpenLibraryService openLibraryService,
+            IGoogleBooksService googleBooksService,
             IAmazonS3? s3Client,
             IConfiguration configuration)
         {
@@ -31,6 +34,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             _bookMappingService = bookMappingService;
             _logger = logger;
             _openLibraryService = openLibraryService;
+            _googleBooksService = googleBooksService;
             _s3Client = s3Client;
             _configuration = configuration;
         }
@@ -345,6 +349,101 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
+        // ============================================
+        // Google Books Endpoints
+        // ============================================
 
+        // GET: api/book/search-googlebooks
+        [HttpGet("search-googlebooks")]
+        public async Task<ActionResult<IEnumerable<BookSearchResultDto>>> SearchGoogleBooks([FromQuery] SearchBooksDto searchDto)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchDto.Query))
+                {
+                    return BadRequest("Search query is required");
+                }
+
+                GoogleBooksSearchResultDto searchResult;
+
+                switch (searchDto.SearchType)
+                {
+                    case BookSearchType.Title:
+                        searchResult = await _googleBooksService.SearchBooksByTitleAsync(searchDto.Query, searchDto.Offset, searchDto.Limit);
+                        break;
+                    case BookSearchType.Author:
+                        searchResult = await _googleBooksService.SearchBooksByAuthorAsync(searchDto.Query, searchDto.Offset, searchDto.Limit);
+                        break;
+                    case BookSearchType.ISBN:
+                        searchResult = await _googleBooksService.SearchBooksByISBNAsync(searchDto.Query);
+                        break;
+                    default:
+                        searchResult = await _googleBooksService.SearchBooksAsync(searchDto.Query, searchDto.Offset, searchDto.Limit);
+                        break;
+                }
+
+                if (searchResult?.Items == null)
+                {
+                    return Ok(new List<BookSearchResultDto>());
+                }
+
+                var results = await Task.WhenAll(searchResult.Items.Select(volume => _bookMappingService.MapGoogleBooksToSearchResultDtoAsync(volume)));
+
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while searching Google Books for query: {Query}", searchDto.Query);
+                return StatusCode(500, new { error = "Failed to search Google Books", details = ex.Message });
+            }
+        }
+
+        // POST: api/book/import-from-googlebooks
+        [HttpPost("import-from-googlebooks")]
+        public async Task<IActionResult> ImportFromGoogleBooks([FromBody] ImportBookFromGoogleBooksDto importDto)
+        {
+            try
+            {
+                if (importDto == null)
+                {
+                    return BadRequest("Import data is required");
+                }
+
+                Domain.Entities.Book createdBook;
+
+                // Use the Google Books service to import the book based on available data
+                if (!string.IsNullOrWhiteSpace(importDto.VolumeId))
+                {
+                    createdBook = await _googleBooksService.ImportBookFromVolumeIdAsync(importDto.VolumeId);
+                }
+                else if (!string.IsNullOrWhiteSpace(importDto.Isbn))
+                {
+                    createdBook = await _googleBooksService.ImportBookFromISBNAsync(importDto.Isbn);
+                }
+                else if (!string.IsNullOrWhiteSpace(importDto.Title))
+                {
+                    createdBook = await _googleBooksService.ImportBookFromTitleAndAuthorAsync(importDto.Title, importDto.Author);
+                }
+                else
+                {
+                    return BadRequest("At least one of VolumeId, ISBN, or Title must be provided");
+                }
+
+                _logger.LogInformation("Successfully imported book from Google Books: {Title} by {Author}", createdBook.Title, createdBook.Author);
+
+                var responseDto = await _bookMappingService.MapToResponseDtoAsync(createdBook);
+                return CreatedAtAction(nameof(GetBook), new { id = createdBook.Id }, responseDto);
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Book not found in Google Books");
+                return NotFound(new { error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while importing book from Google Books");
+                return StatusCode(500, new { error = "Failed to import book from Google Books", details = ex.Message });
+            }
+        }
     }
 }

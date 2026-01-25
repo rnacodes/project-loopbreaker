@@ -43,6 +43,37 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         }
 
         /// <summary>
+        /// Enriches a single book by its ID.
+        /// </summary>
+        /// <param name="id">The media ID of the book to enrich</param>
+        [HttpPost("{id:guid}")]
+        public async Task<ActionResult<SingleBookEnrichmentResult>> EnrichSingleBook(Guid id)
+        {
+            try
+            {
+                _logger.LogInformation("Starting single book enrichment for ID: {BookId}", id);
+
+                var result = await _enrichmentService.EnrichBookByIdAsync(id);
+
+                if (result.NotFound)
+                {
+                    return NotFound(new { error = result.ErrorMessage });
+                }
+
+                _logger.LogInformation(
+                    "Single book enrichment completed for {Title}. Success: {Success}",
+                    result.BookTitle, result.Success);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error running single book enrichment for ID: {BookId}", id);
+                return StatusCode(500, new { error = "Enrichment failed", details = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Triggers an on-demand book description enrichment run.
         /// </summary>
         /// <param name="request">Optional parameters for the enrichment run</param>
