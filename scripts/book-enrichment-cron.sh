@@ -3,7 +3,7 @@
 # Book Description Enrichment Cron Job
 # =============================================================================
 # This script calls the book enrichment API endpoint to fetch descriptions
-# from Open Library for books that have an ISBN but no description.
+# from Google Books API for books that have an ISBN but no description.
 #
 # SETUP INSTRUCTIONS:
 # 1. Copy this script to your DigitalOcean VM

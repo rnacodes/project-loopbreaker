@@ -431,7 +431,7 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [], onBook
             <Divider sx={{ my: 2 }} />
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
               <Typography variant="body1" sx={{ fontSize: '1rem' }}>
-                <strong>Enrich from Open Library:</strong>
+                <strong>Enrich from Google Books:</strong>
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                 <Button
@@ -477,7 +477,7 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [], onBook
                     <>This book has no ISBN to look up.</>
                   )}
                   {!enrichResult.success && !enrichResult.alreadyHasDescription && !enrichResult.noIsbn && (
-                    <>{enrichResult.errorMessage || 'No description found in Open Library for this ISBN.'}</>
+                    <>{enrichResult.errorMessage || 'No description found in Google Books for this ISBN.'}</>
                   )}
                 </Alert>
               )}

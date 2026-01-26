@@ -1,3 +1,4 @@
+//TODO: Update pink to purple that is a palette color for the site
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     Container,

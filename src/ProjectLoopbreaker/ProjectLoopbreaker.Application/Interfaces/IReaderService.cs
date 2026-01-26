@@ -7,7 +7,9 @@ namespace ProjectLoopbreaker.Application.Interfaces
         /// <summary>
         /// Syncs documents from Readwise Reader
         /// </summary>
-        Task<ReaderSyncResultDto> SyncDocumentsAsync(string? location = null);
+        /// <param name="location">Filter by location (archive, new, later, feed)</param>
+        /// <param name="updatedAfter">Only sync documents updated after this date (for incremental sync)</param>
+        Task<ReaderSyncResultDto> SyncDocumentsAsync(string? location = null, DateTime? updatedAfter = null);
         
         /// <summary>
         /// Fetches and stores full HTML content for an article

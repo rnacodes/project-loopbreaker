@@ -95,7 +95,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
                         {
                             // Mark as attempted by setting empty description to avoid re-processing
                             // Note: We don't set an empty string here - we leave it null
-                            // so it can potentially be enriched later if Open Library gets updated
+                            // so it can potentially be enriched later if Google Books gets updated
                             result.FailedCount++;
                             _logger.LogDebug("No description found for: {Title} (ISBN: {ISBN})", book.Title, cleanIsbn);
                         }

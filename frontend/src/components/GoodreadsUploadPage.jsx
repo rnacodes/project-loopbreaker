@@ -256,7 +256,7 @@ const GoodreadsUploadPage = () => {
           <h3>Book Descriptions</h3>
           <p>
             Book descriptions are not included in Goodreads exports. A background service runs periodically
-            (every 48 hours) to automatically fetch descriptions from Open Library for books that have an ISBN.
+            (every 48 hours) to automatically fetch descriptions from Google Books for books that have an ISBN.
             This process runs in batches to respect API rate limits, so it may take some time for all
             descriptions to be populated.
           </p>

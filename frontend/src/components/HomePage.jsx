@@ -187,7 +187,7 @@ export default function HomePage() {
         
         // Provide more specific error messages based on the error type
         if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
-          setMixlistsError("Unable to connect to the server. Please make sure the backend API is running on localhost:5000");
+          setMixlistsError("Unable to connect to the server. Please make sure the backend API is running.");
         } else if (error.response?.status === 404) {
           setMixlistsError("API endpoint not found. Please check the backend configuration.");
         } else if (error.response?.status >= 500) {
@@ -220,7 +220,7 @@ export default function HomePage() {
         
         // Provide more specific error messages based on the error type
         if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
-          setActivelyExploringError("Unable to connect to the server. Please make sure the backend API is running on localhost:5000");
+          setActivelyExploringError("Unable to connect to the server. Please make sure the backend API is running.");
         } else if (error.response?.status === 404) {
           setActivelyExploringError("API endpoint not found. Please check the backend configuration.");
         } else if (error.response?.status >= 500) {

@@ -51,7 +51,7 @@ export const runBookEnrichmentAll = async (options = {}) => {
 
 /**
  * Enrich a single book by its ID
- * Fetches description from Open Library using the book's ISBN
+ * Fetches description from Google Books using the book's ISBN
  * @param {string} bookId - The media ID of the book to enrich
  * @returns {Object} Result with success, bookTitle, description, errorMessage, etc.
  */

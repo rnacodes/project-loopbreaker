@@ -138,8 +138,8 @@ const BackgroundJobsPage = () => {
                 </Box>
 
                 <Alert severity="info" icon={<InfoIcon />} sx={{ mb: 3 }}>
-                    Fetches book descriptions from Open Library for books that have an ISBN but no description.
-                    This uses a two-step API lookup and respects rate limits.
+                    Fetches book descriptions from Google Books for books that have an ISBN but no description.
+                    HTML tags are automatically stripped from descriptions. Respects API rate limits.
                 </Alert>
 
                 {/* Status Section */}

@@ -96,9 +96,9 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 // Calculate the date for incremental sync (7 days ago)
                 DateTime? lastSync = incremental ? DateTime.UtcNow.AddDays(-7) : null;
 
-                // Step 1: Sync Reader documents
+                // Step 1: Sync Reader documents (pass lastSync for incremental filtering)
                 _logger.LogInformation("Step 1: Syncing Reader documents...");
-                var readerResult = await _readerService.SyncDocumentsAsync();
+                var readerResult = await _readerService.SyncDocumentsAsync(updatedAfter: lastSync);
 
                 if (!readerResult.Success)
                 {

@@ -26,7 +26,7 @@ namespace ProjectLoopbreaker.Application.Services
             _logger = logger;
         }
 
-        public async Task<ReaderSyncResultDto> SyncDocumentsAsync(string? location = null)
+        public async Task<ReaderSyncResultDto> SyncDocumentsAsync(string? location = null, DateTime? updatedAfter = null)
         {
             var result = new ReaderSyncResultDto
             {
@@ -35,8 +35,11 @@ namespace ProjectLoopbreaker.Application.Services
 
             try
             {
-                _logger.LogInformation("Starting Reader document sync (location: {Location})", 
-                    location ?? "all");
+                // Format updatedAfter for the API (ISO 8601 format)
+                string? updatedAfterStr = updatedAfter?.ToString("yyyy-MM-ddTHH:mm:ssZ");
+
+                _logger.LogInformation("Starting Reader document sync (location: {Location}, updatedAfter: {UpdatedAfter})",
+                    location ?? "all", updatedAfterStr ?? "none");
 
                 string? pageCursor = null;
                 var hasMore = true;
@@ -45,6 +48,7 @@ namespace ProjectLoopbreaker.Application.Services
                 while (hasMore && iteration < 100) // Safety limit
                 {
                     var response = await _readerClient.GetDocumentsAsync(
+                        updatedAfter: updatedAfterStr,
                         location: location,
                         category: "article",
                         pageCursor: pageCursor);
