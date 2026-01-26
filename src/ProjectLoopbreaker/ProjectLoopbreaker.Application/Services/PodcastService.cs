@@ -461,7 +461,6 @@ namespace ProjectLoopbreaker.Application.Services
                             MediaType = MediaType.Podcast,
                             SeriesId = seriesId,
                             Link = createEpisodeDto.Link,
-                            Notes = createEpisodeDto.Notes,
                             Status = Status.Uncharted,
                             AudioLink = createEpisodeDto.AudioLink,
                             ExternalId = createEpisodeDto.ExternalId,

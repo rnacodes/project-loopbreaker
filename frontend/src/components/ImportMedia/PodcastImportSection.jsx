@@ -20,7 +20,6 @@ function PodcastImportSection({ expanded, onAccordionChange, onSnackbar }) {
     const [podcastSearchResults, setPodcastSearchResults] = useState([]);
     const [podcastIsLoading, setPodcastIsLoading] = useState(false);
     const [podcastError, setPodcastError] = useState('');
-    const [podcastSuccess, setPodcastSuccess] = useState('');
     const [displayedCount, setDisplayedCount] = useState(10);
     const [hasSearched, setHasSearched] = useState(false);
 
@@ -70,7 +69,6 @@ function PodcastImportSection({ expanded, onAccordionChange, onSnackbar }) {
         try {
             const result = await importPodcastSeriesFromApi(podcastId);
 
-            setPodcastSuccess(`Podcast series imported successfully!`);
             onSnackbar?.({ open: true, message: 'Podcast series imported successfully!', severity: 'success' });
             setPodcastIsLoading(false);
             setPodcastId('');
@@ -103,7 +101,6 @@ function PodcastImportSection({ expanded, onAccordionChange, onSnackbar }) {
         try {
             const result = await importPodcastSeriesByName(podcastName);
 
-            setPodcastSuccess(`Podcast series imported successfully!`);
             onSnackbar?.({ open: true, message: 'Podcast series imported successfully!', severity: 'success' });
             setPodcastIsLoading(false);
             setPodcastName('');
@@ -131,7 +128,6 @@ function PodcastImportSection({ expanded, onAccordionChange, onSnackbar }) {
         try {
             const result = await importPodcastSeriesFromApi(podcast.id);
 
-            setPodcastSuccess(`"${podcast.title}" imported successfully as a podcast series!`);
             onSnackbar?.({ open: true, message: `"${podcast.title}" imported successfully!`, severity: 'success' });
             setPodcastIsLoading(false);
 
@@ -373,12 +369,6 @@ function PodcastImportSection({ expanded, onAccordionChange, onSnackbar }) {
                     {podcastError && (
                         <Alert severity="error" sx={{ mt: 2 }}>
                             {podcastError}
-                        </Alert>
-                    )}
-
-                    {podcastSuccess && (
-                        <Alert severity="success" sx={{ mt: 2 }}>
-                            {podcastSuccess}
                         </Alert>
                     )}
                 </Box>
