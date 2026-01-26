@@ -1294,12 +1294,10 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         // ==================== Feature Flag Endpoints ====================
 
         // GET: api/dev/feature-flags
+        // Note: Feature flag endpoints are allowed in production for demo site management
         [HttpGet("feature-flags")]
         public async Task<IActionResult> GetAllFeatureFlags()
         {
-            var envCheck = CheckEnvironment();
-            if (envCheck != null) return envCheck;
-
             try
             {
                 var flags = await _featureFlagService.GetAllAsync();
@@ -1320,9 +1318,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         [HttpGet("feature-flags/{key}")]
         public async Task<IActionResult> GetFeatureFlag(string key)
         {
-            var envCheck = CheckEnvironment();
-            if (envCheck != null) return envCheck;
-
             try
             {
                 var flag = await _featureFlagService.GetAsync(key);
@@ -1344,9 +1339,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         [HttpPost("feature-flags/{key}/enable")]
         public async Task<IActionResult> EnableFeatureFlag(string key, [FromBody] FeatureFlagDescriptionRequest? request = null)
         {
-            var envCheck = CheckEnvironment();
-            if (envCheck != null) return envCheck;
-
             try
             {
                 await _featureFlagService.EnableAsync(key, request?.Description);
@@ -1370,9 +1362,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         [HttpPost("feature-flags/{key}/disable")]
         public async Task<IActionResult> DisableFeatureFlag(string key, [FromBody] FeatureFlagDescriptionRequest? request = null)
         {
-            var envCheck = CheckEnvironment();
-            if (envCheck != null) return envCheck;
-
             try
             {
                 await _featureFlagService.DisableAsync(key, request?.Description);
