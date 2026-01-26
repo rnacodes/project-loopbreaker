@@ -13,7 +13,7 @@ namespace ProjectLoopbreaker.Shared.DTOs.ReadwiseReader
         public string? source { get; set; }
         public string? category { get; set; }
         public string location { get; set; } = "new";
-        public string[]? tags { get; set; }
+        public Dictionary<string, object>? tags { get; set; }
         public string? site_name { get; set; }
         public int? word_count { get; set; }
         public string? created_at { get; set; }

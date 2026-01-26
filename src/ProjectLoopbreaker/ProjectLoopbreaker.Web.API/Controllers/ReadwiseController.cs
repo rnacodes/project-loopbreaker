@@ -190,5 +190,6 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return StatusCode(500, new { error = "Failed to fetch article content", details = ex.Message });
             }
         }
+
     }
 }
