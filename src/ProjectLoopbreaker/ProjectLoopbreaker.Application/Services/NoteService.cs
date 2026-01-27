@@ -60,6 +60,7 @@ namespace ProjectLoopbreaker.Application.Services
         {
             var query = _context.Notes
                 .Include(n => n.MediaItemNotes)
+                    .ThenInclude(min => min.MediaItem)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(vaultName))

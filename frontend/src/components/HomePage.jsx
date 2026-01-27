@@ -4,10 +4,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedia, CardContent, Button, useTheme, CircularProgress } from '@mui/material';
-import { 
-    Search, Book, Movie, Tv, Article, LibraryMusic, Podcasts, SportsEsports, YouTube, Language, MenuBook, AutoAwesome, 
-    AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos, Forest, 
-    PlaylistAdd, NoteAlt, ImportExport, Topic, FileDownload, LocalLibrary, Apps
+import {
+    Search, Book, Movie, Tv, Article, LibraryMusic, Podcasts, SportsEsports, YouTube, Language, MenuBook, AutoAwesome,
+    AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos, Forest,
+    PlaylistAdd, NoteAlt, ImportExport, Topic, FileDownload, LocalLibrary, Apps, FormatQuote
 } from '@mui/icons-material';
 import { getAllMixlists, seedMixlists, getAllMedia } from '../api';
 
@@ -17,6 +17,7 @@ const mainMediaIcons = [
     { name: 'Books', icon: <Book sx={{ fontSize: 40 }} />, mediaType: 'Book', supported: true },
     { name: 'Courses', icon: <LocalLibrary sx={{ fontSize: 40 }} />, mediaType: 'Course', supported: false },
     { name: 'Documents', icon: <NoteAlt sx={{ fontSize: 40 }} />, mediaType: 'Document', supported: false },
+    { name: 'Highlights', icon: <FormatQuote sx={{ fontSize: 40 }} />, mediaType: 'Highlight', supported: true },
     { name: 'Movies', icon: <Movie sx={{ fontSize: 40 }} />, mediaType: 'Movie', supported: true },
     { name: 'Music', icon: <LibraryMusic sx={{ fontSize: 40 }} />, mediaType: 'Music', supported: false },
     { name: 'Online Videos', icon: <YouTube sx={{ fontSize: 40 }} />, mediaType: 'Video', supported: true },

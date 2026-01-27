@@ -11,6 +11,9 @@ export const MediaListItem = React.memo(({ item, isSelected = false, onToggleSel
     const handleClick = () => {
         if (item.isMixlist) {
             navigate(`/mixlist/${item.id}`);
+        } else if (item.isNote) {
+            // Navigate notes to their dedicated profile page
+            navigate(`/note/${item.id}`);
         } else if (item.mediaType === 'Podcast' && !item.seriesId) {
             // Navigate podcast series to their dedicated profile page
             // Podcast episodes have seriesId, series don't

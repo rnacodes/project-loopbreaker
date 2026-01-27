@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Utilities;
 using ProjectLoopbreaker.Domain.Entities;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.DTOs;
@@ -286,11 +287,14 @@ namespace ProjectLoopbreaker.Application.Services
                         CreatedAt = DateTime.UtcNow
                     };
 
-                    // Auto-link to article by source URL
+                    // Auto-link to article by source URL (using normalized URL matching)
                     if (!string.IsNullOrEmpty(bookDto.source_url))
                     {
+                        var normalizedSourceUrl = UrlNormalizer.Normalize(bookDto.source_url);
                         var article = await _context.Articles
-                            .FirstOrDefaultAsync(a => a.Link == bookDto.source_url);
+                            .FirstOrDefaultAsync(a =>
+                                a.Link != null &&
+                                EF.Functions.ILike(a.Link, normalizedSourceUrl));
                         if (article != null)
                         {
                             highlight.ArticleId = article.Id;

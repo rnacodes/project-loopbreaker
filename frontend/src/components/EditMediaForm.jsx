@@ -1,14 +1,15 @@
 //TODO: Update topics and genre boxes to select from database - reproduce Topics and Genres sections from media profile page
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import {
     Container, Typography, TextField, Button, Box, MenuItem,
     Card, CardContent, Snackbar, Alert, CircularProgress,
-    Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
+    Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
+    List, ListItem, ListItemText, IconButton, Chip, InputAdornment, Tooltip
 } from '@mui/material';
-import { Save, Cancel, ArrowBack, Delete } from '@mui/icons-material';
-import { getMediaById, updateMedia, uploadThumbnail, deleteMedia } from '../api';
+import { Save, Cancel, ArrowBack, Delete, Add as AddIcon, Search, Close, Delete as DeleteIcon, OpenInNew as OpenInNewIcon, Article as NoteIcon } from '@mui/icons-material';
+import { getMediaById, updateMedia, uploadThumbnail, deleteMedia, getNotesForMedia, getAllNotes, searchNotes, linkNoteToMedia, unlinkNoteFromMedia } from '../api';
 import { formatStatus, formatMediaType } from '../utils/formatters';
 
 function EditMediaForm() {
@@ -19,6 +20,17 @@ function EditMediaForm() {
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
     const [thumbnailFile, setThumbnailFile] = useState(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+    // Notes linking state
+    const [linkedNotes, setLinkedNotes] = useState([]);
+    const [loadingNotes, setLoadingNotes] = useState(false);
+    const [linkNoteDialog, setLinkNoteDialog] = useState(false);
+    const [noteSearchQuery, setNoteSearchQuery] = useState('');
+    const [availableNotes, setAvailableNotes] = useState([]);
+    const [loadingAvailableNotes, setLoadingAvailableNotes] = useState(false);
+    const [selectedNoteId, setSelectedNoteId] = useState(null);
+    const [linkDescription, setLinkDescription] = useState('');
+    const [savingNote, setSavingNote] = useState(false);
     
     const [formData, setFormData] = useState({
         title: '',
@@ -29,7 +41,6 @@ function EditMediaForm() {
         link: '',
         description: '',
         notes: '',
-        relatedNotes: '',
         thumbnail: '',
         genre: '',
         dateCompleted: ''
@@ -71,10 +82,9 @@ function EditMediaForm() {
                     link: media.link || media.Link || '',
                     description: media.description || media.Description || '',
                     notes: media.notes || media.Notes || '',
-                    relatedNotes: media.relatedNotes || media.RelatedNotes || '',
                     thumbnail: media.thumbnail || media.Thumbnail || '',
                     genre: media.genre || media.Genre || '',
-                    dateCompleted: media.dateCompleted || media.DateCompleted ? 
+                    dateCompleted: media.dateCompleted || media.DateCompleted ?
                         new Date(media.dateCompleted || media.DateCompleted).toISOString().split('T')[0] : ''
                 });
             } catch (error) {
@@ -89,6 +99,129 @@ function EditMediaForm() {
             fetchMedia();
         }
     }, [id]);
+
+    // Fetch linked notes
+    const fetchLinkedNotes = useCallback(async () => {
+        if (!id) return;
+        setLoadingNotes(true);
+        try {
+            const notes = await getNotesForMedia(id);
+            setLinkedNotes(notes || []);
+        } catch (error) {
+            console.error('Error fetching linked notes:', error);
+            setLinkedNotes([]);
+        } finally {
+            setLoadingNotes(false);
+        }
+    }, [id]);
+
+    useEffect(() => {
+        if (id) {
+            fetchLinkedNotes();
+        }
+    }, [id, fetchLinkedNotes]);
+
+    // Fetch available notes when dialog opens
+    const fetchAvailableNotes = useCallback(async () => {
+        setLoadingAvailableNotes(true);
+        try {
+            const notes = await getAllNotes();
+            setAvailableNotes(notes || []);
+        } catch (error) {
+            console.error('Error fetching available notes:', error);
+            setAvailableNotes([]);
+        } finally {
+            setLoadingAvailableNotes(false);
+        }
+    }, []);
+
+    // Search notes
+    const handleNoteSearch = useCallback(async (query) => {
+        if (!query || query.length < 2) {
+            fetchAvailableNotes();
+            return;
+        }
+        setLoadingAvailableNotes(true);
+        try {
+            const results = await searchNotes(query);
+            const hits = results?.hits?.map(hit => hit.document) || [];
+            setAvailableNotes(hits);
+        } catch (error) {
+            console.error('Error searching notes:', error);
+            fetchAvailableNotes();
+        } finally {
+            setLoadingAvailableNotes(false);
+        }
+    }, [fetchAvailableNotes]);
+
+    // Open link note dialog
+    const handleOpenLinkNoteDialog = () => {
+        setLinkNoteDialog(true);
+        setNoteSearchQuery('');
+        setSelectedNoteId(null);
+        setLinkDescription('');
+        fetchAvailableNotes();
+    };
+
+    // Close link note dialog
+    const handleCloseLinkNoteDialog = () => {
+        setLinkNoteDialog(false);
+        setSelectedNoteId(null);
+        setNoteSearchQuery('');
+        setLinkDescription('');
+    };
+
+    // Link note to media
+    const handleLinkNote = async () => {
+        if (!selectedNoteId) {
+            setSnackbar({ open: true, message: 'Please select a note first', severity: 'warning' });
+            return;
+        }
+        setSavingNote(true);
+        try {
+            await linkNoteToMedia(selectedNoteId, id, linkDescription || null);
+            const selectedNote = availableNotes.find(n => n.id === selectedNoteId);
+            setSnackbar({ open: true, message: `Linked note "${selectedNote?.title}"`, severity: 'success' });
+            handleCloseLinkNoteDialog();
+            fetchLinkedNotes();
+        } catch (error) {
+            console.error('Error linking note:', error);
+            setSnackbar({ open: true, message: 'Failed to link note', severity: 'error' });
+        } finally {
+            setSavingNote(false);
+        }
+    };
+
+    // Unlink note from media
+    const handleUnlinkNote = async (noteId, noteTitle) => {
+        setSavingNote(true);
+        try {
+            await unlinkNoteFromMedia(noteId, id);
+            setSnackbar({ open: true, message: `Unlinked note "${noteTitle}"`, severity: 'success' });
+            fetchLinkedNotes();
+        } catch (error) {
+            console.error('Error unlinking note:', error);
+            setSnackbar({ open: true, message: 'Failed to unlink note', severity: 'error' });
+        } finally {
+            setSavingNote(false);
+        }
+    };
+
+    // Get vault color
+    const getVaultColor = (vaultName) => {
+        switch (vaultName?.toLowerCase()) {
+            case 'general':
+                return '#4caf50';
+            case 'programming':
+                return '#2196f3';
+            default:
+                return '#9e9e9e';
+        }
+    };
+
+    // Filter available notes (exclude already linked)
+    const linkedNoteIds = linkedNotes.map(n => n.id);
+    const filteredAvailableNotes = availableNotes.filter(note => !linkedNoteIds.includes(note.id));
 
     const handleInputChange = (field, value) => {
         setFormData(prev => ({
@@ -146,7 +279,6 @@ function EditMediaForm() {
                 link: formData.link || null,
                 description: formData.description || null,
                 notes: formData.notes || null,
-                relatedNotes: formData.relatedNotes || null,
                 thumbnail: formData.thumbnail || null,
                 genre: formData.genre || null,
                 dateCompleted: formData.dateCompleted ? new Date(formData.dateCompleted).toISOString() : null,
@@ -437,16 +569,156 @@ function EditMediaForm() {
                                     onChange={(e) => handleInputChange('notes', e.target.value)}
                                 />
 
-                                {/* Related Notes */}
-                                <TextField
-                                    fullWidth
-                                    label="Related Notes"
-                                    multiline
-                                    rows={3}
-                                    value={formData.relatedNotes}
-                                    onChange={(e) => handleInputChange('relatedNotes', e.target.value)}
-                                    helperText="Links to Obsidian notes or other documents"
-                                />
+                                {/* Linked Notes Section */}
+                                <Box sx={{
+                                    border: '1px solid rgba(255, 255, 255, 0.23)',
+                                    borderRadius: 1,
+                                    p: 2
+                                }}>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        mb: 2
+                                    }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <NoteIcon sx={{ fontSize: 20, color: 'rgba(255, 255, 255, 0.7)' }} />
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                                                Linked Notes ({linkedNotes.length})
+                                            </Typography>
+                                        </Box>
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            startIcon={<AddIcon />}
+                                            onClick={handleOpenLinkNoteDialog}
+                                            disabled={savingNote}
+                                            sx={{
+                                                borderColor: 'rgba(255, 255, 255, 0.5)',
+                                                color: 'white',
+                                                '&:hover': {
+                                                    borderColor: 'white',
+                                                    backgroundColor: 'rgba(255, 255, 255, 0.08)'
+                                                }
+                                            }}
+                                        >
+                                            Link Note
+                                        </Button>
+                                    </Box>
+
+                                    {loadingNotes ? (
+                                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+                                            <CircularProgress size={24} />
+                                        </Box>
+                                    ) : linkedNotes.length > 0 ? (
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                            {linkedNotes.map((note) => (
+                                                <Box
+                                                    key={note.id}
+                                                    sx={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        p: 1.5,
+                                                        borderRadius: 1,
+                                                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                        '&:hover': {
+                                                            backgroundColor: 'rgba(255, 255, 255, 0.08)'
+                                                        }
+                                                    }}
+                                                >
+                                                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                                            <Typography
+                                                                component={RouterLink}
+                                                                to={`/note/${note.id}`}
+                                                                sx={{
+                                                                    fontWeight: 'bold',
+                                                                    color: 'white',
+                                                                    textDecoration: 'none',
+                                                                    '&:hover': {
+                                                                        textDecoration: 'underline',
+                                                                        color: '#90caf9'
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {note.title}
+                                                            </Typography>
+                                                            <Chip
+                                                                label={note.vaultName}
+                                                                size="small"
+                                                                sx={{
+                                                                    backgroundColor: getVaultColor(note.vaultName),
+                                                                    color: 'white',
+                                                                    fontWeight: 'bold',
+                                                                    fontSize: '0.65rem',
+                                                                    height: '18px'
+                                                                }}
+                                                            />
+                                                        </Box>
+                                                        {note.linkDescription && (
+                                                            <Typography
+                                                                variant="caption"
+                                                                sx={{
+                                                                    color: 'rgba(255, 255, 255, 0.5)',
+                                                                    fontStyle: 'italic'
+                                                                }}
+                                                            >
+                                                                "{note.linkDescription}"
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                                        {note.sourceUrl && (
+                                                            <Tooltip title="View in Quartz">
+                                                                <IconButton
+                                                                    href={note.sourceUrl}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    size="small"
+                                                                    sx={{
+                                                                        color: 'rgba(255, 255, 255, 0.5)',
+                                                                        '&:hover': {
+                                                                            color: 'white',
+                                                                            backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <OpenInNewIcon fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        )}
+                                                        <Tooltip title="Unlink note">
+                                                            <IconButton
+                                                                onClick={() => handleUnlinkNote(note.id, note.title)}
+                                                                size="small"
+                                                                disabled={savingNote}
+                                                                sx={{
+                                                                    color: 'rgba(255, 255, 255, 0.5)',
+                                                                    '&:hover': {
+                                                                        color: '#f44336',
+                                                                        backgroundColor: 'rgba(244, 67, 54, 0.1)'
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <DeleteIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </Box>
+                                                </Box>
+                                            ))}
+                                        </Box>
+                                    ) : (
+                                        <Typography
+                                            variant="body2"
+                                            color="text.secondary"
+                                            sx={{ fontStyle: 'italic', textAlign: 'center', py: 1 }}
+                                        >
+                                            No linked notes. Click "Link Note" to connect Obsidian notes.
+                                        </Typography>
+                                    )}
+                                </Box>
 
                                 {/* Action Buttons */}
                                 <Box sx={{ 
@@ -555,6 +827,178 @@ function EditMediaForm() {
                     </Button>
                     <Button onClick={handleDelete} color="error" variant="contained">
                         Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Link Note Dialog */}
+            <Dialog
+                open={linkNoteDialog}
+                onClose={handleCloseLinkNoteDialog}
+                maxWidth="sm"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="h6">Link Note</Typography>
+                        <IconButton
+                            onClick={handleCloseLinkNoteDialog}
+                            size="small"
+                            sx={{
+                                color: 'rgba(255, 255, 255, 0.7)',
+                                '&:hover': {
+                                    color: 'white',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                                }
+                            }}
+                        >
+                            <Close fontSize="small" />
+                        </IconButton>
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Select a note to link to "{formData.title}":
+                    </Typography>
+
+                    {/* Search Bar */}
+                    <Box sx={{ mb: 2 }}>
+                        <TextField
+                            fullWidth
+                            placeholder="Search notes..."
+                            value={noteSearchQuery}
+                            onChange={(e) => {
+                                setNoteSearchQuery(e.target.value);
+                                handleNoteSearch(e.target.value);
+                            }}
+                            variant="outlined"
+                            size="small"
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Search sx={{ color: 'rgba(255, 255, 255, 0.5)' }} />
+                                    </InputAdornment>
+                                ),
+                            }}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    color: 'white',
+                                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                                    '&.Mui-focused fieldset': { borderColor: 'rgba(255, 255, 255, 0.7)' },
+                                },
+                                '& .MuiInputBase-input::placeholder': {
+                                    color: 'rgba(255, 255, 255, 0.5)',
+                                    opacity: 1,
+                                },
+                            }}
+                        />
+                    </Box>
+
+                    {/* Note List */}
+                    {loadingAvailableNotes ? (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                            <CircularProgress size={30} />
+                        </Box>
+                    ) : (
+                        <List sx={{ maxHeight: '250px', overflowY: 'auto', mb: 2 }}>
+                            {filteredAvailableNotes.length > 0 ? (
+                                filteredAvailableNotes.map((note) => (
+                                    <ListItem
+                                        key={note.id}
+                                        onClick={() => setSelectedNoteId(note.id)}
+                                        sx={{
+                                            borderRadius: 1,
+                                            mb: 1,
+                                            cursor: 'pointer',
+                                            backgroundColor: selectedNoteId === note.id
+                                                ? 'rgba(25, 118, 210, 0.3)'
+                                                : 'transparent',
+                                            border: selectedNoteId === note.id
+                                                ? '2px solid rgba(25, 118, 210, 0.8)'
+                                                : '1px solid rgba(255, 255, 255, 0.1)',
+                                            '&:hover': {
+                                                backgroundColor: selectedNoteId === note.id
+                                                    ? 'rgba(25, 118, 210, 0.4)'
+                                                    : 'rgba(255, 255, 255, 0.05)'
+                                            }
+                                        }}
+                                    >
+                                        <ListItemText
+                                            primary={
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    {note.title}
+                                                    <Chip
+                                                        label={note.vaultName || note.vault_name}
+                                                        size="small"
+                                                        sx={{
+                                                            backgroundColor: getVaultColor(note.vaultName || note.vault_name),
+                                                            color: 'white',
+                                                            fontWeight: 'bold',
+                                                            fontSize: '0.65rem',
+                                                            height: '18px'
+                                                        }}
+                                                    />
+                                                </Box>
+                                            }
+                                            secondary={note.description}
+                                            secondaryTypographyProps={{
+                                                sx: {
+                                                    color: 'rgba(255, 255, 255, 0.5)',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap'
+                                                }
+                                            }}
+                                        />
+                                    </ListItem>
+                                ))
+                            ) : (
+                                <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                                    {noteSearchQuery
+                                        ? 'No notes match your search.'
+                                        : 'No available notes to link. Create notes by syncing from your Quartz vaults.'}
+                                </Typography>
+                            )}
+                        </List>
+                    )}
+
+                    {/* Link Description */}
+                    {selectedNoteId && (
+                        <TextField
+                            fullWidth
+                            placeholder="Optional: Describe how this note relates to this media..."
+                            value={linkDescription}
+                            onChange={(e) => setLinkDescription(e.target.value)}
+                            variant="outlined"
+                            size="small"
+                            multiline
+                            rows={2}
+                            sx={{
+                                '& .MuiOutlinedInput-root': {
+                                    color: 'white',
+                                    '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                                    '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                                    '&.Mui-focused fieldset': { borderColor: 'rgba(255, 255, 255, 0.7)' },
+                                },
+                                '& .MuiInputBase-input::placeholder': {
+                                    color: 'rgba(255, 255, 255, 0.5)',
+                                    opacity: 1,
+                                },
+                            }}
+                        />
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCloseLinkNoteDialog} sx={{ color: 'white' }}>
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={handleLinkNote}
+                        variant="contained"
+                        disabled={!selectedNoteId || savingNote}
+                    >
+                        {savingNote ? 'Linking...' : 'Link Note'}
                     </Button>
                 </DialogActions>
             </Dialog>

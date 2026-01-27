@@ -23,11 +23,14 @@ namespace ProjectLoopbreaker.Application.Services
 
         public async Task<bool> IsEnabledAsync(string key)
         {
+            _logger.LogDebug("Querying database for feature flag '{Key}'", key);
+
             var flag = await _context.FeatureFlags
                 .FirstOrDefaultAsync(f => f.Key == key);
 
             var isEnabled = flag?.IsEnabled ?? false;
-            _logger.LogDebug("Feature flag '{Key}' checked: {IsEnabled}", key, isEnabled);
+            _logger.LogDebug("Feature flag '{Key}' query result: Found={Found}, IsEnabled={IsEnabled}",
+                key, flag != null, isEnabled);
             return isEnabled;
         }
 

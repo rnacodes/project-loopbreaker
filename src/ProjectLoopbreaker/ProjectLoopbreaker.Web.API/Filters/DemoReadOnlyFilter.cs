@@ -62,7 +62,10 @@ namespace ProjectLoopbreaker.Web.API.Filters
                 // Check database feature flag first (highest priority - instant effect without restart)
                 try
                 {
+                    _logger.LogDebug("Checking database feature flag '{FlagKey}' for demo write access", DemoWriteEnabledFlag);
                     var dbFlagEnabled = await _featureFlagService.IsEnabledAsync(DemoWriteEnabledFlag);
+                    _logger.LogDebug("Database feature flag '{FlagKey}' returned: {IsEnabled}", DemoWriteEnabledFlag, dbFlagEnabled);
+
                     if (dbFlagEnabled)
                     {
                         _logger.LogInformation(
@@ -72,11 +75,16 @@ namespace ProjectLoopbreaker.Web.API.Filters
                         await next();
                         return;
                     }
+                    else
+                    {
+                        _logger.LogDebug("Database feature flag '{FlagKey}' is disabled or not found", DemoWriteEnabledFlag);
+                    }
                 }
                 catch (Exception ex)
                 {
                     // If we can't check the database, log and continue to fallback checks
-                    _logger.LogWarning(ex, "Failed to check database feature flag, falling back to other methods");
+                    _logger.LogError(ex, "Failed to check database feature flag '{FlagKey}'. Exception type: {ExceptionType}. This could indicate a database connectivity issue or missing table.",
+                        DemoWriteEnabledFlag, ex.GetType().Name);
                 }
 
                 // Fallback: Check for environment variable (requires restart)

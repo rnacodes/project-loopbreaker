@@ -223,6 +223,7 @@ export {
 export {
     syncHighlightsFromReadwise,
     getAllHighlights,
+    getHighlightById,
     getHighlightsByArticle,
     getHighlightsByBook,
     getHighlightsByTag,

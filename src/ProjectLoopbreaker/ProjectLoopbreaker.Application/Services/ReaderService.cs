@@ -146,7 +146,9 @@ namespace ProjectLoopbreaker.Application.Services
 
                 if (updatedAfter.HasValue)
                 {
-                    baseQuery = baseQuery.Where(a => a.LastReaderSync >= updatedAfter.Value);
+                    // Include articles with null LastReaderSync (never synced) or synced after the date
+                    baseQuery = baseQuery.Where(a =>
+                        a.LastReaderSync == null || a.LastReaderSync >= updatedAfter.Value);
                 }
 
                 var articles = await baseQuery

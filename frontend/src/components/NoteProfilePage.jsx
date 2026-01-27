@@ -10,9 +10,10 @@ import {
     Edit as EditIcon,
     Save as SaveIcon,
     Close as CloseIcon,
-    Article as NoteIcon
+    Article as NoteIcon,
+    AutoAwesome as AutoAwesomeIcon
 } from '@mui/icons-material';
-import { getNoteById, getMediaForNote, updateNote } from '../api';
+import { getNoteById, getMediaForNote, updateNote, generateNoteDescription } from '../api';
 import { formatMediaType, getMediaTypeColor } from '../utils/formatters';
 import SimilarNotesSection from './SimilarNotesSection';
 import RelatedMediaByEmbeddingSection from './RelatedMediaByEmbeddingSection';
@@ -27,6 +28,7 @@ function NoteProfilePage() {
     const [editingDescription, setEditingDescription] = useState(false);
     const [editedDescription, setEditedDescription] = useState('');
     const [saving, setSaving] = useState(false);
+    const [generatingDescription, setGeneratingDescription] = useState(false);
 
     const { id } = useParams();
     const navigate = useNavigate();
@@ -104,6 +106,27 @@ function NoteProfilePage() {
     const handleCancelEdit = () => {
         setEditedDescription(note.description || '');
         setEditingDescription(false);
+    };
+
+    // Generate AI description
+    const handleGenerateDescription = async () => {
+        setGeneratingDescription(true);
+        try {
+            const result = await generateNoteDescription(id);
+            if (result.generatedDescription) {
+                setNote(prev => ({ ...prev, description: result.generatedDescription }));
+                setEditedDescription(result.generatedDescription);
+                setSnackbar({ open: true, message: 'Description generated successfully', severity: 'success' });
+            }
+        } catch (error) {
+            console.error('Error generating description:', error);
+            const errorMessage = error.response?.status === 503
+                ? 'AI service is not configured or unavailable'
+                : 'Failed to generate description';
+            setSnackbar({ open: true, message: errorMessage, severity: 'error' });
+        } finally {
+            setGeneratingDescription(false);
+        }
     };
 
     if (loading) {
@@ -229,15 +252,31 @@ function NoteProfilePage() {
                                     Description
                                 </Typography>
                                 {!editingDescription && (
-                                    <Tooltip title="Edit description">
-                                        <IconButton
-                                            onClick={() => setEditingDescription(true)}
-                                            size="small"
-                                            sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
-                                        >
-                                            <EditIcon fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
+                                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                        <Tooltip title="Generate AI description">
+                                            <IconButton
+                                                onClick={handleGenerateDescription}
+                                                size="small"
+                                                disabled={generatingDescription}
+                                                sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
+                                            >
+                                                {generatingDescription ? (
+                                                    <CircularProgress size={18} sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
+                                                ) : (
+                                                    <AutoAwesomeIcon fontSize="small" />
+                                                )}
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Edit description">
+                                            <IconButton
+                                                onClick={() => setEditingDescription(true)}
+                                                size="small"
+                                                sx={{ color: 'rgba(255, 255, 255, 0.7)' }}
+                                            >
+                                                <EditIcon fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
                                 )}
                             </Box>
 

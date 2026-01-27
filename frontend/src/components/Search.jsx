@@ -33,6 +33,7 @@ const mediaTypeOptions = [
     { value: 'Book', label: 'Books' },
     { value: 'Channel', label: 'Channels' },
     { value: 'Document', label: 'Documents' },
+    { value: 'Highlight', label: 'Highlights' },
     { value: 'Movie', label: 'Movies' },
     { value: 'Music', label: 'Music' },
     { value: 'Note', label: 'Notes' },

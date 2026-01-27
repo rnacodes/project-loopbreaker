@@ -32,6 +32,7 @@ import {
     getBookById, getPodcastSeriesById, getPodcastEpisodeById, getEpisodesBySeriesId,
     getMovieById, getTvShowById, getVideoById, getArticleById,
     getHighlightsByArticle, getHighlightsByBook, getPlaylistsForVideo,
+    fetchArticleContent,
 } from '../api';
 
 function MediaProfilePage() {
@@ -47,6 +48,7 @@ function MediaProfilePage() {
   const [highlightsLoading, setHighlightsLoading] = useState(false);
   const [videoPlaylists, setVideoPlaylists] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [fetchingContent, setFetchingContent] = useState(false);
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -296,6 +298,22 @@ function MediaProfilePage() {
     fetchVideoPlaylists();
   }, [mediaItem]);
 
+  // Handle fetching content for articles from Readwise Reader
+  const handleFetchContent = async () => {
+    if (!mediaItem?.id) return;
+
+    setFetchingContent(true);
+    try {
+      await fetchArticleContent(mediaItem.id);
+      setSnackbar({ open: true, message: 'Content fetched successfully!', severity: 'success' });
+      setRefreshKey(prev => prev + 1); // Refresh to show updated content
+    } catch (error) {
+      console.error('Failed to fetch article content:', error);
+      setSnackbar({ open: true, message: 'Failed to fetch content', severity: 'error' });
+    } finally {
+      setFetchingContent(false);
+    }
+  };
 
   const handleAddToMixlist = async () => {
     if (!selectedMixlistId) {
@@ -451,7 +469,14 @@ function MediaProfilePage() {
             />
 
 
-        <MediaDetailAccordion mediaItem={mediaItem} navigate={navigate} videoPlaylists={videoPlaylists} onBookEnriched={() => setRefreshKey(k => k + 1)} />
+        <MediaDetailAccordion
+          mediaItem={mediaItem}
+          navigate={navigate}
+          videoPlaylists={videoPlaylists}
+          onBookEnriched={() => setRefreshKey(k => k + 1)}
+          onFetchContent={handleFetchContent}
+          fetchingContent={fetchingContent}
+        />
 
         <HighlightsSection mediaItem={mediaItem} highlights={highlights} highlightsLoading={highlightsLoading} />
 

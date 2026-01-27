@@ -1380,6 +1380,66 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return StatusCode(500, new { error = "Failed to disable feature flag", details = ex.Message });
             }
         }
+
+        // GET: api/dev/demo-write-status
+        // Diagnostic endpoint to check why demo write operations might be blocked
+        [HttpGet("demo-write-status")]
+        public async Task<IActionResult> GetDemoWriteStatus()
+        {
+            var result = new Dictionary<string, object>
+            {
+                ["environment"] = _environment.EnvironmentName,
+                ["isDemo"] = _environment.EnvironmentName.Equals("Demo", StringComparison.OrdinalIgnoreCase)
+            };
+
+            // Check database feature flag
+            try
+            {
+                var dbFlagEnabled = await _featureFlagService.IsEnabledAsync("demo_write_enabled");
+                var dbFlag = await _featureFlagService.GetAsync("demo_write_enabled");
+                result["databaseFeatureFlag"] = new
+                {
+                    isEnabled = dbFlagEnabled,
+                    flagExists = dbFlag != null,
+                    flagDetails = dbFlag
+                };
+            }
+            catch (Exception ex)
+            {
+                result["databaseFeatureFlag"] = new
+                {
+                    error = ex.Message,
+                    exceptionType = ex.GetType().Name
+                };
+            }
+
+            // Check environment variable
+            var envVarValue = Environment.GetEnvironmentVariable("DEMO_WRITE_ENABLED");
+            result["environmentVariable"] = new
+            {
+                name = "DEMO_WRITE_ENABLED",
+                value = envVarValue,
+                isEnabled = !string.IsNullOrEmpty(envVarValue) && envVarValue.Equals("true", StringComparison.OrdinalIgnoreCase)
+            };
+
+            // Check admin key configuration
+            var adminKey = Environment.GetEnvironmentVariable("DEMO_ADMIN_KEY");
+            result["adminKeyConfigured"] = !string.IsNullOrEmpty(adminKey);
+
+            // Determine if writes would be allowed
+            var dbEnabled = result.ContainsKey("databaseFeatureFlag") &&
+                           result["databaseFeatureFlag"] is { } dbFlagObj &&
+                           dbFlagObj.GetType().GetProperty("isEnabled")?.GetValue(dbFlagObj) is true;
+            var envEnabled = result["environmentVariable"] is { } envObj &&
+                            envObj.GetType().GetProperty("isEnabled")?.GetValue(envObj) is true;
+
+            result["writesWouldBeAllowed"] = !result["isDemo"].Equals(true) || dbEnabled || envEnabled;
+            result["recommendation"] = result["writesWouldBeAllowed"].Equals(true)
+                ? "Write operations should be allowed"
+                : "Enable the feature flag or set DEMO_WRITE_ENABLED=true to allow writes";
+
+            return Ok(result);
+        }
     }
 
     /// <summary>

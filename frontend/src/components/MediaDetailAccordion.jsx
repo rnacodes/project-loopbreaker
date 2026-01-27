@@ -3,7 +3,7 @@ import {
     Button, Card, Box, Typography, Accordion, AccordionSummary, AccordionDetails, Link, Chip, IconButton, Tooltip, Alert,
     CircularProgress, Divider
 } from '@mui/material';
-import { ExpandMore, OpenInNew, Star, RssFeed, ContentCopy, Language, Schedule, Article, AutoFixHigh } from '@mui/icons-material';
+import { ExpandMore, OpenInNew, Star, RssFeed, ContentCopy, Language, Schedule, Article, AutoFixHigh, Download } from '@mui/icons-material';
 import { getWebsiteRssFeedItems, enrichBookById } from '../api';
 
 function getJustWatchUrl(title) {
@@ -12,7 +12,7 @@ function getJustWatchUrl(title) {
   return `https://www.justwatch.com/us/search?q=${encodeURIComponent(title)}`;
 }
 
-function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [], onBookEnriched }) {
+function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [], onBookEnriched, onFetchContent, fetchingContent }) {
   const [rssFeedItems, setRssFeedItems] = useState([]);
   const [loadingRss, setLoadingRss] = useState(false);
   const [rssError, setRssError] = useState(null);
@@ -1115,6 +1115,45 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [], onBook
               </Box>
             )}
 
+            {mediaItem.link && (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                gap: { xs: 0.5, sm: 0 }
+              }}>
+                <Typography variant="body1" sx={{ mr: 1, minWidth: { sm: '180px' }, fontSize: '0.875rem' }}>
+                  <strong>Source:</strong>
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Link
+                    href={mediaItem.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{
+                      fontSize: '0.875rem',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0.5,
+                      '&:hover': {
+                        color: '#e3f2fd'
+                      }
+                    }}
+                  >
+                    {(() => {
+                      try {
+                        return new URL(mediaItem.link).hostname.replace('www.', '');
+                      } catch {
+                        return mediaItem.link;
+                      }
+                    })()}
+                    <OpenInNew sx={{ fontSize: 16 }} />
+                  </Link>
+                </Box>
+              </Box>
+            )}
+
             {mediaItem.publication && (
               <Box sx={{
                 display: 'flex',
@@ -1190,6 +1229,29 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [], onBook
                   <strong>Starred:</strong>
                 </Typography>
                 <Star sx={{ color: '#FFD700', fontSize: 20 }} />
+              </Box>
+            )}
+
+            {/* Fetch Content Button - show if article has Reader document ID but no content */}
+            {!mediaItem.fullTextContent && mediaItem.readwiseDocumentId && onFetchContent && (
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={onFetchContent}
+                  disabled={fetchingContent}
+                  startIcon={fetchingContent ? <CircularProgress size={16} /> : <Download />}
+                  sx={{
+                    color: 'white',
+                    borderColor: 'rgba(255,255,255,0.3)',
+                    '&:hover': {
+                      borderColor: 'rgba(255,255,255,0.5)',
+                      backgroundColor: 'rgba(255,255,255,0.05)'
+                    }
+                  }}
+                >
+                  {fetchingContent ? 'Fetching...' : 'Fetch Content from Reader'}
+                </Button>
               </Box>
             )}
 

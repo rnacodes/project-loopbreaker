@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Application.Utilities;
 using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.DTOs;
 using ProjectLoopbreaker.Shared.Interfaces;
@@ -111,11 +112,14 @@ namespace ProjectLoopbreaker.Application.Services
 
                 foreach (var highlight in unlinkedHighlights)
                 {
-                    // Try to match by source URL first (for articles)
+                    // Try to match by source URL first (for articles) - using normalized URL matching
                     if (!string.IsNullOrEmpty(highlight.SourceUrl))
                     {
+                        var normalizedSourceUrl = UrlNormalizer.Normalize(highlight.SourceUrl);
                         var article = await _context.Articles
-                            .FirstOrDefaultAsync(a => a.Link == highlight.SourceUrl);
+                            .FirstOrDefaultAsync(a =>
+                                a.Link != null &&
+                                EF.Functions.ILike(a.Link, normalizedSourceUrl));
 
                         if (article != null)
                         {

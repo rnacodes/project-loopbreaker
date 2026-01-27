@@ -46,6 +46,20 @@ export const getAllHighlights = async () => {
 };
 
 /**
+ * Gets a specific highlight by ID
+ * @param {string} id - The highlight ID
+ */
+export const getHighlightById = async (id) => {
+    try {
+        const response = await apiClient.get(`/highlight/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching highlight:', error);
+        throw error;
+    }
+};
+
+/**
  * Gets highlights for a specific article
  * @param {string} articleId - The article ID
  */

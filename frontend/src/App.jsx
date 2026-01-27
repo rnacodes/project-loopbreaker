@@ -46,6 +46,7 @@ import TypesenseAdminPage from './components/TypesenseAdminPage';
 import GoodreadsUploadPage from './components/GoodreadsUploadPage';
 import BackgroundJobsPage from './components/BackgroundJobsPage';
 import NoteProfilePage from './components/NoteProfilePage';
+import HighlightProfilePage from './components/HighlightProfilePage';
 import ScriptExecutionPage from './components/ScriptExecutionPage';
 import NotesListingPage from './components/NotesListingPage';
 import AiAdminPage from './components/AiAdminPage';
@@ -187,6 +188,9 @@ function App() {
             } />
             <Route path="/notes" element={
               <ConditionalProtectedRoute><NotesListingPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/highlight/:id" element={
+              <ConditionalProtectedRoute><HighlightProfilePage /></ConditionalProtectedRoute>
             } />
             <Route path="/ai-admin" element={
               <ConditionalProtectedRoute><AiAdminPage /></ConditionalProtectedRoute>
