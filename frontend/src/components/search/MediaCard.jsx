@@ -22,6 +22,9 @@ export const MediaCard = React.memo(({ item, isSelected = false, onToggleSelect,
         } else if (item.isNote) {
             // Navigate notes to their dedicated profile page
             navigate(`/note/${item.id}`);
+        } else if (item.isHighlight) {
+            // Navigate highlights to their dedicated profile page
+            navigate(`/highlight/${item.id}`);
         } else if (item.mediaType === 'Podcast' && !item.seriesId) {
             // Navigate podcast series to their dedicated profile page
             // Podcast episodes have seriesId, series don't
@@ -50,6 +53,9 @@ export const MediaCard = React.memo(({ item, isSelected = false, onToggleSelect,
                 return item.publisher;
             case 'Mixlist':
                 return null; // Mixlists don't have a primary credit
+            case 'Highlight':
+                // Show the linked media title if available, otherwise the source title
+                return item.linkedMediaTitle || (item.author ? `From: ${item.author}` : null);
             default:
                 return item.creator || item.author || null;
         }

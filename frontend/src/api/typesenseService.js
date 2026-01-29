@@ -265,3 +265,119 @@ export const reindexMixlists = async () => {
         throw error;
     }
 };
+
+// ============================================
+// Highlights Search
+// ============================================
+
+/**
+ * Search highlights using Typesense
+ * @param {string} query - The search query (searches text, note, title, author, tags)
+ * @param {string} filter - Optional filter string (e.g., "category:=books", "is_favorite:=true")
+ * @param {number} page - Page number (default 1)
+ * @param {number} perPage - Results per page (default 20)
+ * @returns {Promise<Object>} Typesense search response with hits
+ */
+export const searchHighlights = async (query = '*', filter = null, page = 1, perPage = 20) => {
+    try {
+        const params = { q: query, page, per_page: perPage };
+        if (filter) params.filter = filter;
+
+        const response = await apiClient.get('/search/highlights', { params });
+        return response.data;
+    } catch (error) {
+        console.error('Error searching highlights:', error);
+        throw error;
+    }
+};
+
+/**
+ * Advanced highlight search with multiple filters
+ * @param {Object} options - Search options
+ * @param {string} options.query - Search query text
+ * @param {string[]} options.categories - Filter by categories (books, articles, etc.)
+ * @param {string[]} options.tags - Filter by tags
+ * @param {boolean} options.isFavorite - Filter by favorite status
+ * @param {string} options.linkedMediaType - Filter by linked media type (article, book, or null for unlinked)
+ * @param {number} options.page - Page number
+ * @param {number} options.perPage - Results per page
+ * @returns {Promise<Object>} Typesense search response
+ */
+export const searchHighlightsAdvanced = async (options) => {
+    const {
+        query = '*',
+        categories = [],
+        tags = [],
+        isFavorite = null,
+        linkedMediaType = null,
+        page = 1,
+        perPage = 20
+    } = options;
+
+    try {
+        const filters = [];
+
+        // Category filter
+        if (categories.length > 0) {
+            const categoryFilter = categories.map(c => `category:=${c}`).join(' || ');
+            filters.push(`(${categoryFilter})`);
+        }
+
+        // Tags filter
+        if (tags.length > 0) {
+            const tagFilter = tags.map(t => `tags:=${t}`).join(' || ');
+            filters.push(`(${tagFilter})`);
+        }
+
+        // Favorite filter
+        if (isFavorite !== null) {
+            filters.push(`is_favorite:=${isFavorite}`);
+        }
+
+        // Linked media type filter
+        if (linkedMediaType !== null) {
+            if (linkedMediaType === 'unlinked') {
+                // Unlinked means no article_id and no book_id
+                // Typesense doesn't support null checks directly, so we filter for empty linked_media_type
+                filters.push(`linked_media_type:=null`);
+            } else {
+                filters.push(`linked_media_type:=${linkedMediaType}`);
+            }
+        }
+
+        const filterString = filters.length > 0 ? filters.join(' && ') : null;
+        return await searchHighlights(query, filterString, page, perPage);
+    } catch (error) {
+        console.error('Error performing advanced highlight search:', error);
+        throw error;
+    }
+};
+
+/**
+ * Reindex all highlights in Typesense
+ * @returns {Promise<Object>} Reindex results with count
+ */
+export const reindexHighlights = async () => {
+    try {
+        const response = await apiClient.post('/search/reindex-highlights');
+        return response.data;
+    } catch (error) {
+        console.error('Error reindexing highlights:', error);
+        throw error;
+    }
+};
+
+/**
+ * Reset the highlights collection in Typesense
+ * WARNING: This will delete all indexed highlights!
+ * @returns {Promise<Object>} Reset result
+ */
+export const resetHighlightsCollection = async () => {
+    try {
+        const response = await apiClient.post('/search/reset-highlights');
+        return response.data;
+    } catch (error) {
+        console.error('Error resetting highlights collection:', error);
+        throw error;
+    }
+};

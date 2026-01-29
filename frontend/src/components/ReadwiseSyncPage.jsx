@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   validateReadwiseConnection,
   syncReadwiseAll,
@@ -112,8 +113,9 @@ const ReadwiseSyncPage = () => {
         getAllBooks(),
         getAllArticles()
       ]);
+      // getAllBooks returns axios response, getAllArticles returns data directly
       setBooks(booksRes.data || []);
-      setArticles(articlesRes.data || []);
+      setArticles(Array.isArray(articlesRes) ? articlesRes : (articlesRes.data || []));
     } catch (err) {
       console.error('Error loading media options:', err);
     }
@@ -390,9 +392,11 @@ const ReadwiseSyncPage = () => {
             <div className="unlinked-highlights-list">
               {unlinkedHighlights.map((highlight) => (
                 <div key={highlight.id} className="highlight-card">
-                  <div className="highlight-text">
-                    "{truncateText(highlight.text)}"
-                  </div>
+                  <Link to={`/highlight/${highlight.id}`} className="highlight-text-link">
+                    <div className="highlight-text">
+                      "{truncateText(highlight.text)}"
+                    </div>
+                  </Link>
                   <div className="highlight-meta">
                     {highlight.title && (
                       <span className="meta-item">

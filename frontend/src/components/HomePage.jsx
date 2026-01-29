@@ -334,7 +334,7 @@ export default function HomePage() {
               <Grid container spacing={{ xs: 1, sm: 2 }} justifyContent="center" sx={{ mt: { xs: 2, sm: 3, md: 4 }, mb: 2, maxWidth: '900px' }}>
                 {mainMediaIcons.map((item, index) => (
                     <Grid item xs={4} sm={3} md={2} key={`media-${index}`} sx={{ display: 'flex', justifyContent: 'center' }}>
-                        <Box 
+                        <Box
                             onClick={() => {
                                 if (item.supported) {
                                     navigate(`/search?mediaType=${item.mediaType}`);

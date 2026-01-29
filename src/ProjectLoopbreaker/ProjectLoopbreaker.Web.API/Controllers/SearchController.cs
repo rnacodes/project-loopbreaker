@@ -661,6 +661,100 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 return StatusCode(500, new { error = "An error occurred during vibe search. Please try again." });
             }
         }
+
+        // ============================================
+        // Highlights Search Endpoints
+        // ============================================
+
+        /// <summary>
+        /// Search highlights in Typesense.
+        /// GET /api/search/highlights?q=query&filter=category:=books&page=1&per_page=20
+        /// Searchable fields: text, note, title, author, tags
+        /// Filterable fields: category, tags, source_type, is_favorite, linked_media_type
+        /// </summary>
+        [HttpGet("highlights")]
+        public async Task<IActionResult> SearchHighlights(
+            [FromQuery] string q = "*",
+            [FromQuery] string? filter = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int per_page = 20)
+        {
+            try
+            {
+                var perPage = Math.Clamp(per_page, 1, 100);
+                var pageNum = Math.Max(page, 1);
+
+                _logger.LogInformation("Searching highlights: query='{Query}', filter='{Filter}', page={Page}", q, filter, pageNum);
+
+                var results = await _typeSenseService.SearchHighlightsAsync(q, filter, perPage, pageNum);
+
+                return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching highlights for query '{Query}'", q);
+                return StatusCode(500, new { error = "An error occurred while searching highlights. Please try again." });
+            }
+        }
+
+        /// <summary>
+        /// Triggers a full re-index of all highlights from the database.
+        /// POST /api/search/reindex-highlights
+        /// </summary>
+        [HttpPost("reindex-highlights")]
+        [Authorize]
+        public async Task<IActionResult> ReindexHighlights()
+        {
+            try
+            {
+                _logger.LogInformation("Starting full re-index of highlights...");
+
+                var count = await _typeSenseService.BulkReindexAllHighlightsAsync();
+
+                _logger.LogInformation("Highlights re-index complete. Indexed {Count} highlights.", count);
+
+                return Ok(new
+                {
+                    message = $"Successfully re-indexed {count} highlights.",
+                    indexed_count = count
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error re-indexing highlights.");
+                return StatusCode(500, new { error = "An error occurred while re-indexing highlights. Please check logs." });
+            }
+        }
+
+        /// <summary>
+        /// Completely resets the highlights collection by deleting and recreating it.
+        /// POST /api/search/reset-highlights
+        /// WARNING: This will delete all indexed highlights from Typesense!
+        /// </summary>
+        [HttpPost("reset-highlights")]
+        [Authorize]
+        public async Task<IActionResult> ResetHighlightsCollection()
+        {
+            try
+            {
+                _logger.LogInformation("Resetting highlights collection...");
+
+                await _typeSenseService.ResetHighlightsCollectionAsync();
+
+                _logger.LogInformation("Highlights collection reset complete.");
+
+                return Ok(new
+                {
+                    message = "Highlights collection reset successfully. All old data has been cleared.",
+                    collection = "highlights"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting highlights collection.");
+                return StatusCode(500, new { error = "An error occurred while resetting the collection. Please check logs." });
+            }
+        }
     }
 
     /// <summary>

@@ -97,7 +97,7 @@ namespace ProjectLoopbreaker.Infrastructure.Clients
         {
             try
             {
-                var query = includeHtml ? "?html=true" : "";
+                var query = includeHtml ? "&html=true" : "";
                 var response = await _httpClient.GetAsync($"list/?id={documentId}{query}");
                 
                 if (!response.IsSuccessStatusCode)

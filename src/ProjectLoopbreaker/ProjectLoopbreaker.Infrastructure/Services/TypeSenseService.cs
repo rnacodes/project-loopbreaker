@@ -21,6 +21,7 @@ namespace ProjectLoopbreaker.Infrastructure.Services
         private readonly string _mediaCollectionName;
         private readonly string _mixlistCollectionName;
         private readonly string _notesCollectionName;
+        private readonly string _highlightsCollectionName;
 
         public TypeSenseService(
             ITypesenseClient typesenseClient,
@@ -31,19 +32,20 @@ namespace ProjectLoopbreaker.Infrastructure.Services
             _typesenseClient = typesenseClient;
             _context = context;
             _logger = logger;
-            
+
             // Get the collection prefix from configuration (e.g., "demo_" for demo site)
-            var collectionPrefix = Environment.GetEnvironmentVariable("TYPESENSE_COLLECTION_PREFIX") ?? 
-                                 configuration["Typesense:CollectionPrefix"] ?? 
+            var collectionPrefix = Environment.GetEnvironmentVariable("TYPESENSE_COLLECTION_PREFIX") ??
+                                 configuration["Typesense:CollectionPrefix"] ??
                                  string.Empty;
-            
+
             // Dynamically set collection names with prefix
             _mediaCollectionName = $"{collectionPrefix}media_items";
             _mixlistCollectionName = $"{collectionPrefix}mixlists";
             _notesCollectionName = $"{collectionPrefix}obsidian_notes";
+            _highlightsCollectionName = $"{collectionPrefix}highlights";
 
-            _logger.LogInformation("TypeSense collections configured with prefix '{Prefix}': {MediaCollection}, {MixlistCollection}, {NotesCollection}",
-                collectionPrefix, _mediaCollectionName, _mixlistCollectionName, _notesCollectionName);
+            _logger.LogInformation("TypeSense collections configured with prefix '{Prefix}': {MediaCollection}, {MixlistCollection}, {NotesCollection}, {HighlightsCollection}",
+                collectionPrefix, _mediaCollectionName, _mixlistCollectionName, _notesCollectionName, _highlightsCollectionName);
         }
 
         /// <summary>
@@ -1070,6 +1072,316 @@ namespace ProjectLoopbreaker.Infrastructure.Services
             // Embeddings are stored in PostgreSQL with pgvector, not in Typesense
             _logger.LogDebug("UpdateNoteEmbeddingAsync called for {Id} - embeddings are stored in PostgreSQL, not Typesense.", id);
             return Task.CompletedTask;
+        }
+
+        // ============================================
+        // Highlights collection methods
+        // ============================================
+
+        /// <summary>
+        /// Ensures the highlights collection exists with proper schema.
+        /// Called once during application startup.
+        /// </summary>
+        public async Task EnsureHighlightsCollectionExistsAsync()
+        {
+            try
+            {
+                await _typesenseClient.RetrieveCollection(_highlightsCollectionName);
+                _logger.LogInformation("Typesense collection '{CollectionName}' already exists.", _highlightsCollectionName);
+            }
+            catch (TypesenseApiNotFoundException)
+            {
+                _logger.LogInformation("Creating Typesense collection '{CollectionName}'...", _highlightsCollectionName);
+
+                var schema = new Schema(_highlightsCollectionName, new List<Field>
+                {
+                    new Field("id", FieldType.String, false),
+                    new Field("text", FieldType.String, false), // Main highlight content - searchable
+                    new Field("note", FieldType.String, false, optional: true), // User annotation - searchable
+                    new Field("title", FieldType.String, false, optional: true), // Source title - searchable
+                    new Field("author", FieldType.String, true, optional: true), // Facetable
+                    new Field("category", FieldType.String, true, optional: true), // Facetable (books, articles, etc.)
+                    new Field("tags", FieldType.StringArray, true), // Facetable array
+                    new Field("source_url", FieldType.String, false, optional: true, index: false), // Not indexed
+                    new Field("source_type", FieldType.String, true, optional: true), // Facetable (kindle, instapaper, etc.)
+                    new Field("is_favorite", FieldType.Bool, true), // Facetable
+                    new Field("highlighted_at", FieldType.Int64, false, optional: true), // Unix timestamp
+                    new Field("created_at", FieldType.Int64, false), // Unix timestamp - default sort
+                    new Field("article_id", FieldType.String, false, optional: true),
+                    new Field("book_id", FieldType.String, false, optional: true),
+                    new Field("linked_media_id", FieldType.String, false, optional: true),
+                    new Field("linked_media_title", FieldType.String, false, optional: true),
+                    new Field("linked_media_type", FieldType.String, true, optional: true), // Facetable (article, book, or null)
+                    new Field("location", FieldType.Int32, false, optional: true),
+                    new Field("image_url", FieldType.String, false, optional: true, index: false) // Not indexed
+                })
+                {
+                    DefaultSortingField = "created_at"
+                };
+
+                await _typesenseClient.CreateCollection(schema);
+                _logger.LogInformation("Successfully created Typesense collection '{CollectionName}'.", _highlightsCollectionName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error ensuring Typesense highlights collection exists.");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Indexes or updates a highlight document in Typesense.
+        /// </summary>
+        public async Task IndexHighlightAsync(
+            Guid id,
+            string text,
+            string? note,
+            string? title,
+            string? author,
+            string? category,
+            List<string> tags,
+            string? sourceUrl,
+            string? sourceType,
+            bool isFavorite,
+            DateTime? highlightedAt,
+            DateTime createdAt,
+            Guid? articleId,
+            Guid? bookId,
+            string? linkedMediaTitle,
+            int? location,
+            string? imageUrl)
+        {
+            try
+            {
+                // Determine linked media type and ID
+                string? linkedMediaId = null;
+                string? linkedMediaType = null;
+                if (articleId.HasValue)
+                {
+                    linkedMediaId = articleId.Value.ToString();
+                    linkedMediaType = "article";
+                }
+                else if (bookId.HasValue)
+                {
+                    linkedMediaId = bookId.Value.ToString();
+                    linkedMediaType = "book";
+                }
+
+                var document = new HighlightDocument
+                {
+                    Id = id.ToString(),
+                    Text = text,
+                    Note = note,
+                    Title = title,
+                    Author = author,
+                    Category = category,
+                    Tags = tags ?? new List<string>(),
+                    SourceUrl = sourceUrl,
+                    SourceType = sourceType,
+                    IsFavorite = isFavorite,
+                    HighlightedAt = highlightedAt.HasValue ? ((DateTimeOffset)highlightedAt.Value).ToUnixTimeSeconds() : null,
+                    CreatedAt = ((DateTimeOffset)createdAt).ToUnixTimeSeconds(),
+                    ArticleId = articleId?.ToString(),
+                    BookId = bookId?.ToString(),
+                    LinkedMediaId = linkedMediaId,
+                    LinkedMediaTitle = linkedMediaTitle,
+                    LinkedMediaType = linkedMediaType,
+                    Location = location,
+                    ImageUrl = imageUrl
+                };
+
+                await _typesenseClient.UpsertDocument<HighlightDocument>(_highlightsCollectionName, document);
+                _logger.LogDebug("Successfully indexed highlight {Id} in Typesense.", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error indexing highlight {Id} in Typesense.", id);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Deletes a highlight document from Typesense.
+        /// </summary>
+        public async Task DeleteHighlightAsync(Guid id)
+        {
+            try
+            {
+                await _typesenseClient.DeleteDocument<HighlightDocument>(_highlightsCollectionName, id.ToString());
+                _logger.LogDebug("Successfully deleted highlight {Id} from Typesense.", id);
+            }
+            catch (TypesenseApiNotFoundException)
+            {
+                _logger.LogWarning("Highlight {Id} not found in Typesense (may have already been deleted).", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting highlight {Id} from Typesense.", id);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Searches the highlights collection in Typesense.
+        /// </summary>
+        public async Task<object> SearchHighlightsAsync(string query, string? filters = null, int perPage = 20, int page = 1)
+        {
+            try
+            {
+                var searchParameters = new SearchParameters(
+                    query,
+                    "text,note,title,author,tags"
+                )
+                {
+                    PerPage = perPage,
+                    Page = page,
+                    SortBy = "_text_match:desc,created_at:desc"
+                };
+
+                if (!string.IsNullOrEmpty(filters))
+                {
+                    searchParameters.FilterBy = filters;
+                }
+
+                var searchResult = await _typesenseClient.Search<HighlightDocument>(_highlightsCollectionName, searchParameters);
+                _logger.LogDebug("Highlights search for '{Query}' returned {Count} results.", query, searchResult.Found);
+                return searchResult;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching Typesense highlights for query '{Query}'.", query);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Re-indexes all highlights from PostgreSQL into Typesense.
+        /// Includes linked media title for display purposes.
+        /// </summary>
+        public async Task<int> BulkReindexAllHighlightsAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Starting bulk re-index of all highlights...");
+
+                var highlights = await _context.Highlights
+                    .Include(h => h.Article)
+                    .Include(h => h.Book)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                var documents = highlights.Select(highlight =>
+                {
+                    // Determine linked media
+                    string? linkedMediaId = null;
+                    string? linkedMediaTitle = null;
+                    string? linkedMediaType = null;
+
+                    if (highlight.ArticleId.HasValue && highlight.Article != null)
+                    {
+                        linkedMediaId = highlight.ArticleId.Value.ToString();
+                        linkedMediaTitle = highlight.Article.Title;
+                        linkedMediaType = "article";
+                    }
+                    else if (highlight.BookId.HasValue && highlight.Book != null)
+                    {
+                        linkedMediaId = highlight.BookId.Value.ToString();
+                        linkedMediaTitle = highlight.Book.Title;
+                        linkedMediaType = "book";
+                    }
+
+                    // Parse tags from comma-separated string
+                    var tags = string.IsNullOrWhiteSpace(highlight.Tags)
+                        ? new List<string>()
+                        : highlight.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(t => t.Trim())
+                            .Where(t => !string.IsNullOrWhiteSpace(t))
+                            .ToList();
+
+                    return new HighlightDocument
+                    {
+                        Id = highlight.Id.ToString(),
+                        Text = highlight.Text,
+                        Note = highlight.Note,
+                        Title = highlight.Title,
+                        Author = highlight.Author,
+                        Category = highlight.Category,
+                        Tags = tags,
+                        SourceUrl = highlight.SourceUrl,
+                        SourceType = highlight.SourceType,
+                        IsFavorite = highlight.IsFavorite,
+                        HighlightedAt = highlight.HighlightedAt.HasValue
+                            ? ((DateTimeOffset)highlight.HighlightedAt.Value).ToUnixTimeSeconds()
+                            : null,
+                        CreatedAt = ((DateTimeOffset)highlight.CreatedAt).ToUnixTimeSeconds(),
+                        ArticleId = highlight.ArticleId?.ToString(),
+                        BookId = highlight.BookId?.ToString(),
+                        LinkedMediaId = linkedMediaId,
+                        LinkedMediaTitle = linkedMediaTitle,
+                        LinkedMediaType = linkedMediaType,
+                        Location = highlight.Location,
+                        ImageUrl = highlight.ImageUrl
+                    };
+                }).ToList();
+
+                if (documents.Count == 0)
+                {
+                    _logger.LogInformation("No highlights found to index.");
+                    return 0;
+                }
+
+                var importResults = await _typesenseClient.ImportDocuments<HighlightDocument>(
+                    _highlightsCollectionName,
+                    documents,
+                    40,
+                    ImportType.Upsert
+                );
+
+                var successCount = importResults.Count(r => r.Success);
+                var failureCount = importResults.Count(r => !r.Success);
+
+                _logger.LogInformation(
+                    "Bulk re-index of highlights complete. Success: {SuccessCount}, Failures: {FailureCount}",
+                    successCount,
+                    failureCount
+                );
+
+                return successCount;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during bulk re-index of highlights.");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Deletes and recreates the highlights collection.
+        /// </summary>
+        public async Task ResetHighlightsCollectionAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Resetting Typesense collection '{CollectionName}'...", _highlightsCollectionName);
+
+                try
+                {
+                    await _typesenseClient.DeleteCollection(_highlightsCollectionName);
+                    _logger.LogInformation("Deleted existing collection '{CollectionName}'.", _highlightsCollectionName);
+                }
+                catch (TypesenseApiNotFoundException)
+                {
+                    _logger.LogInformation("Collection '{CollectionName}' doesn't exist, skipping delete.", _highlightsCollectionName);
+                }
+
+                await EnsureHighlightsCollectionExistsAsync();
+                _logger.LogInformation("Successfully reset collection '{CollectionName}'.", _highlightsCollectionName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting Typesense collection '{CollectionName}'.", _highlightsCollectionName);
+                throw;
+            }
         }
     }
 }

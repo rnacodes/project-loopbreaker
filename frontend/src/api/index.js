@@ -287,7 +287,11 @@ export {
     typesenseAdvancedSearch,
     typesenseSearchMixlists,
     typesenseAdvancedSearchMixlists,
-    reindexMixlists
+    reindexMixlists,
+    searchHighlights,
+    searchHighlightsAdvanced,
+    reindexHighlights,
+    resetHighlightsCollection
 } from './typesenseService';
 
 // Background Jobs

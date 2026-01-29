@@ -836,6 +836,8 @@ try
             Console.WriteLine("Typesense mixlists collection initialized.");
             await typeSenseService.EnsureNotesCollectionExistsAsync();
             Console.WriteLine("Typesense obsidian_notes collection initialized.");
+            await typeSenseService.EnsureHighlightsCollectionExistsAsync();
+            Console.WriteLine("Typesense highlights collection initialized.");
             Console.WriteLine("Typesense collection initialization complete.");
         }
         else

@@ -14,15 +14,18 @@ namespace ProjectLoopbreaker.Application.Services
         private readonly IApplicationDbContext _context;
         private readonly IReadwiseApiClient _readwiseClient;
         private readonly ILogger<HighlightService> _logger;
+        private readonly ITypeSenseService? _typeSenseService;
 
         public HighlightService(
             IApplicationDbContext context,
             IReadwiseApiClient readwiseClient,
-            ILogger<HighlightService> logger)
+            ILogger<HighlightService> logger,
+            ITypeSenseService? typeSenseService = null)
         {
             _context = context;
             _readwiseClient = readwiseClient;
             _logger = logger;
+            _typeSenseService = typeSenseService;
         }
 
         public async Task<IEnumerable<Highlight>> GetAllHighlightsAsync()
@@ -108,12 +111,24 @@ namespace ProjectLoopbreaker.Application.Services
 
             _logger.LogInformation("Created highlight {HighlightId}", highlight.Id);
 
+            // Index in Typesense (reload to get linked media for title)
+            var createdHighlight = await _context.Highlights
+                .Include(h => h.Article)
+                .Include(h => h.Book)
+                .FirstOrDefaultAsync(h => h.Id == highlight.Id);
+            if (createdHighlight != null)
+            {
+                await IndexHighlightInTypesenseAsync(createdHighlight);
+            }
+
             return highlight;
         }
 
         public async Task<Highlight> UpdateHighlightAsync(Guid id, CreateHighlightDto dto)
         {
             var highlight = await _context.Highlights
+                .Include(h => h.Article)
+                .Include(h => h.Book)
                 .FirstOrDefaultAsync(h => h.Id == id);
             if (highlight == null)
             {
@@ -131,6 +146,16 @@ namespace ProjectLoopbreaker.Application.Services
 
             _logger.LogInformation("Updated highlight {HighlightId}", highlight.Id);
 
+            // Re-index in Typesense (reload to get linked media)
+            var updatedHighlight = await _context.Highlights
+                .Include(h => h.Article)
+                .Include(h => h.Book)
+                .FirstOrDefaultAsync(h => h.Id == id);
+            if (updatedHighlight != null)
+            {
+                await IndexHighlightInTypesenseAsync(updatedHighlight);
+            }
+
             return highlight;
         }
 
@@ -147,6 +172,19 @@ namespace ProjectLoopbreaker.Application.Services
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("Deleted highlight {HighlightId}", id);
+
+            // Delete from Typesense
+            if (_typeSenseService != null)
+            {
+                try
+                {
+                    await _typeSenseService.DeleteHighlightAsync(id);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to delete highlight {HighlightId} from Typesense", id);
+                }
+            }
 
             return true;
         }
@@ -329,6 +367,64 @@ namespace ProjectLoopbreaker.Application.Services
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Helper method to index a highlight in Typesense.
+        /// Handles null Typesense service gracefully.
+        /// </summary>
+        private async Task IndexHighlightInTypesenseAsync(Highlight highlight)
+        {
+            if (_typeSenseService == null)
+            {
+                return;
+            }
+
+            try
+            {
+                // Parse tags from comma-separated string
+                var tags = string.IsNullOrWhiteSpace(highlight.Tags)
+                    ? new List<string>()
+                    : highlight.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(t => t.Trim())
+                        .Where(t => !string.IsNullOrWhiteSpace(t))
+                        .ToList();
+
+                // Get linked media title
+                string? linkedMediaTitle = null;
+                if (highlight.Article != null)
+                {
+                    linkedMediaTitle = highlight.Article.Title;
+                }
+                else if (highlight.Book != null)
+                {
+                    linkedMediaTitle = highlight.Book.Title;
+                }
+
+                await _typeSenseService.IndexHighlightAsync(
+                    id: highlight.Id,
+                    text: highlight.Text,
+                    note: highlight.Note,
+                    title: highlight.Title,
+                    author: highlight.Author,
+                    category: highlight.Category,
+                    tags: tags,
+                    sourceUrl: highlight.SourceUrl,
+                    sourceType: highlight.SourceType,
+                    isFavorite: highlight.IsFavorite,
+                    highlightedAt: highlight.HighlightedAt,
+                    createdAt: highlight.CreatedAt,
+                    articleId: highlight.ArticleId,
+                    bookId: highlight.BookId,
+                    linkedMediaTitle: linkedMediaTitle,
+                    location: highlight.Location,
+                    imageUrl: highlight.ImageUrl
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to index highlight {HighlightId} in Typesense", highlight.Id);
+            }
         }
     }
 }

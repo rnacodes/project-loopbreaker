@@ -13,15 +13,18 @@ namespace ProjectLoopbreaker.Application.Services
         private readonly IApplicationDbContext _context;
         private readonly IReadwiseApiClient _readwiseClient;
         private readonly ILogger<ReadwiseService> _logger;
+        private readonly ITypeSenseService? _typeSenseService;
 
         public ReadwiseService(
             IApplicationDbContext context,
             IReadwiseApiClient readwiseClient,
-            ILogger<ReadwiseService> logger)
+            ILogger<ReadwiseService> logger,
+            ITypeSenseService? typeSenseService = null)
         {
             _context = context;
             _readwiseClient = readwiseClient;
             _logger = logger;
+            _typeSenseService = typeSenseService;
         }
 
         public async Task<bool> ValidateConnectionAsync()
@@ -100,6 +103,7 @@ namespace ProjectLoopbreaker.Application.Services
             _logger.LogInformation("Starting to link highlights to media items");
 
             var linkedCount = 0;
+            var linkedHighlightIds = new List<Guid>();
 
             try
             {
@@ -125,6 +129,7 @@ namespace ProjectLoopbreaker.Application.Services
                         {
                             highlight.ArticleId = article.Id;
                             linkedCount++;
+                            linkedHighlightIds.Add(highlight.Id);
                             _logger.LogDebug("Linked highlight {HighlightId} to article {ArticleId} by URL",
                                 highlight.Id, article.Id);
                             continue;
@@ -132,12 +137,12 @@ namespace ProjectLoopbreaker.Application.Services
                     }
 
                     // Try to match books by title and author
-                    if (!string.IsNullOrEmpty(highlight.Title) && 
+                    if (!string.IsNullOrEmpty(highlight.Title) &&
                         !string.IsNullOrEmpty(highlight.Author) &&
                         highlight.Category == "books")
                     {
                         var book = await _context.Books
-                            .FirstOrDefaultAsync(b => 
+                            .FirstOrDefaultAsync(b =>
                                 b.Title.ToLower() == highlight.Title.ToLower() &&
                                 b.Author.ToLower() == highlight.Author.ToLower());
 
@@ -145,6 +150,7 @@ namespace ProjectLoopbreaker.Application.Services
                         {
                             highlight.BookId = book.Id;
                             linkedCount++;
+                            linkedHighlightIds.Add(highlight.Id);
                             _logger.LogDebug("Linked highlight {HighlightId} to book {BookId} by title/author",
                                 highlight.Id, book.Id);
                         }
@@ -152,6 +158,31 @@ namespace ProjectLoopbreaker.Application.Services
                 }
 
                 await _context.SaveChangesAsync();
+
+                // Re-index linked highlights in Typesense
+                if (_typeSenseService != null && linkedHighlightIds.Count > 0)
+                {
+                    _logger.LogInformation("Re-indexing {Count} linked highlights in Typesense", linkedHighlightIds.Count);
+                    foreach (var highlightId in linkedHighlightIds)
+                    {
+                        try
+                        {
+                            var highlight = await _context.Highlights
+                                .Include(h => h.Article)
+                                .Include(h => h.Book)
+                                .FirstOrDefaultAsync(h => h.Id == highlightId);
+
+                            if (highlight != null)
+                            {
+                                await IndexHighlightInTypesenseAsync(highlight);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to re-index highlight {HighlightId} in Typesense", highlightId);
+                        }
+                    }
+                }
 
                 _logger.LogInformation("Successfully linked {Count} highlights to media items", linkedCount);
             }
@@ -161,6 +192,60 @@ namespace ProjectLoopbreaker.Application.Services
             }
 
             return linkedCount;
+        }
+
+        /// <summary>
+        /// Helper method to index a highlight in Typesense.
+        /// </summary>
+        private async Task IndexHighlightInTypesenseAsync(Domain.Entities.Highlight highlight)
+        {
+            if (_typeSenseService == null) return;
+
+            try
+            {
+                // Parse tags from comma-separated string
+                var tags = string.IsNullOrWhiteSpace(highlight.Tags)
+                    ? new List<string>()
+                    : highlight.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(t => t.Trim())
+                        .Where(t => !string.IsNullOrWhiteSpace(t))
+                        .ToList();
+
+                // Get linked media title
+                string? linkedMediaTitle = null;
+                if (highlight.Article != null)
+                {
+                    linkedMediaTitle = highlight.Article.Title;
+                }
+                else if (highlight.Book != null)
+                {
+                    linkedMediaTitle = highlight.Book.Title;
+                }
+
+                await _typeSenseService.IndexHighlightAsync(
+                    id: highlight.Id,
+                    text: highlight.Text,
+                    note: highlight.Note,
+                    title: highlight.Title,
+                    author: highlight.Author,
+                    category: highlight.Category,
+                    tags: tags,
+                    sourceUrl: highlight.SourceUrl,
+                    sourceType: highlight.SourceType,
+                    isFavorite: highlight.IsFavorite,
+                    highlightedAt: highlight.HighlightedAt,
+                    createdAt: highlight.CreatedAt,
+                    articleId: highlight.ArticleId,
+                    bookId: highlight.BookId,
+                    linkedMediaTitle: linkedMediaTitle,
+                    location: highlight.Location,
+                    imageUrl: highlight.ImageUrl
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to index highlight {HighlightId} in Typesense", highlight.Id);
+            }
         }
 
         public async Task<bool> ExportHighlightToReadwiseAsync(Guid highlightId)

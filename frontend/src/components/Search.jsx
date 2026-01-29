@@ -16,7 +16,7 @@ import {
 import { ResultHeader } from './search/ResultHeader';
 import { MediaCard } from './search/MediaCard';
 import { MediaListItem } from './search/MediaListItem';
-import { typesenseAdvancedSearch, typesenseAdvancedSearchMixlists, searchNotes } from '../api';
+import { typesenseAdvancedSearch, typesenseAdvancedSearchMixlists, searchNotes, searchHighlights } from '../api';
 import { getAllTopics, getAllGenres, getAllMixlists, addMediaToMixlist, bulkDeleteMedia } from '../api';
 
 
@@ -302,10 +302,12 @@ export default function Search() {
                 setTotalResults(response.found || 0);
                 setTotalPages(Math.ceil((response.found || 0) / perPage));
             } else {
-                // Search media items (and optionally notes)
-                const mediaTypesWithoutNote = selectedMediaTypes.filter(type => type !== 'all' && type !== 'Note');
+                // Search media items (and optionally notes/highlights)
+                const mediaTypesFiltered = selectedMediaTypes.filter(type => type !== 'all' && type !== 'Note' && type !== 'Highlight');
                 const includeNotes = selectedMediaTypes.includes('all') || selectedMediaTypes.includes('Note');
+                const includeHighlights = selectedMediaTypes.includes('all') || selectedMediaTypes.includes('Highlight');
                 const onlyNotes = selectedMediaTypes.length === 1 && selectedMediaTypes[0] === 'Note';
+                const onlyHighlights = selectedMediaTypes.length === 1 && selectedMediaTypes[0] === 'Highlight';
 
                 // Helper to transform media hits
                 const transformMediaHits = (hits) => hits.map(hit => {
@@ -323,6 +325,7 @@ export default function Search() {
                         thumbnail: doc.thumbnail,
                         isMixlist: false,
                         isNote: false,
+                        isHighlight: false,
                         author: doc.author || null,
                         director: doc.director || null,
                         creator: doc.creator || null,
@@ -361,9 +364,38 @@ export default function Search() {
                         thumbnail: null,
                         isMixlist: false,
                         isNote: true,
+                        isHighlight: false,
                         sourceUrl: doc.source_url,
                         vaultName: doc.vault_name,
                         linkedMediaCount: doc.linked_media_count || 0
+                    };
+                });
+
+                // Helper to transform highlight hits
+                const transformHighlightHits = (hits) => hits.map(hit => {
+                    const doc = hit.document;
+                    return {
+                        id: doc.id,
+                        title: doc.title || 'Untitled Highlight',
+                        mediaType: 'Highlight',
+                        status: null,
+                        ratingType: null,
+                        topics: doc.tags || [],
+                        genres: [],
+                        author: doc.author || null,
+                        dateAdded: doc.created_at ? new Date(doc.created_at * 1000).toISOString().split('T')[0] : null,
+                        notes: doc.text || '', // The highlight text
+                        thumbnail: doc.image_url,
+                        isMixlist: false,
+                        isNote: false,
+                        isHighlight: true,
+                        highlightText: doc.text,
+                        highlightNote: doc.note,
+                        category: doc.category,
+                        isFavorite: doc.is_favorite,
+                        linkedMediaId: doc.linked_media_id,
+                        linkedMediaTitle: doc.linked_media_title,
+                        linkedMediaType: doc.linked_media_type
                     };
                 });
 
@@ -375,46 +407,92 @@ export default function Search() {
                     setSearchResults(transformedResults);
                     setTotalResults(response.found || 0);
                     setTotalPages(Math.ceil((response.found || 0) / perPage));
-                } else if (includeNotes && (mediaTypesWithoutNote.length > 0 || selectedMediaTypes.includes('all'))) {
-                    // Search both media and notes in parallel
+                } else if (onlyHighlights) {
+                    // Only searching highlights
+                    const highlightFilter = selectedTopics.length > 0 ? `tags:=[${selectedTopics.map(t => `"${t}"`).join(',')}]` : null;
+                    response = await searchHighlights(searchQuery || '*', highlightFilter, currentPage, perPage);
+                    const transformedResults = transformHighlightHits(response.hits || []);
+                    setSearchResults(transformedResults);
+                    setTotalResults(response.found || 0);
+                    setTotalPages(Math.ceil((response.found || 0) / perPage));
+                } else if ((includeNotes || includeHighlights) && (mediaTypesFiltered.length > 0 || selectedMediaTypes.includes('all'))) {
+                    // Search media and optionally notes/highlights in parallel
+                    const searchPromises = [];
+                    const resultTypes = [];
+
+                    // Calculate how to split results
+                    const numSearchTypes = 1 + (includeNotes ? 1 : 0) + (includeHighlights ? 1 : 0);
+                    const perPagePerType = Math.ceil(perPage / numSearchTypes);
+
+                    // Always search media
                     const mediaSearchOptions = {
                         query: searchQuery || '*',
-                        mediaTypes: selectedMediaTypes.includes('all') ? [] : mediaTypesWithoutNote,
+                        mediaTypes: selectedMediaTypes.includes('all') ? [] : mediaTypesFiltered,
                         topics: selectedTopics,
                         genres: selectedGenres,
                         status: selectedStatus !== 'all' ? selectedStatus : null,
                         ratings: selectedRatings,
                         page: currentPage,
-                        perPage: Math.ceil(perPage / 2), // Split results between media and notes
+                        perPage: perPagePerType,
                         sortBy: sortBy
                     };
-                    const noteFilter = selectedTopics.length > 0 ? `tags:=[${selectedTopics.map(t => `"${t}"`).join(',')}]` : null;
+                    searchPromises.push(typesenseAdvancedSearch(mediaSearchOptions));
+                    resultTypes.push('media');
 
-                    // Run both searches in parallel for speed
-                    const [mediaResponse, notesResponse] = await Promise.all([
-                        typesenseAdvancedSearch(mediaSearchOptions),
-                        searchNotes(searchQuery || '*', noteFilter, currentPage, Math.ceil(perPage / 2))
-                    ]);
+                    // Optionally search notes
+                    if (includeNotes) {
+                        const noteFilter = selectedTopics.length > 0 ? `tags:=[${selectedTopics.map(t => `"${t}"`).join(',')}]` : null;
+                        searchPromises.push(searchNotes(searchQuery || '*', noteFilter, currentPage, perPagePerType));
+                        resultTypes.push('notes');
+                    }
 
-                    const mediaResults = transformMediaHits(mediaResponse.hits || []);
-                    const noteResults = transformNoteHits(notesResponse.hits || []);
+                    // Optionally search highlights
+                    if (includeHighlights) {
+                        const highlightFilter = selectedTopics.length > 0 ? `tags:=[${selectedTopics.map(t => `"${t}"`).join(',')}]` : null;
+                        searchPromises.push(searchHighlights(searchQuery || '*', highlightFilter, currentPage, perPagePerType));
+                        resultTypes.push('highlights');
+                    }
 
-                    // Combine and interleave results
+                    // Run all searches in parallel
+                    const responses = await Promise.all(searchPromises);
+
+                    // Transform results
+                    const allResults = [];
+                    let totalFound = 0;
+
+                    responses.forEach((resp, idx) => {
+                        const type = resultTypes[idx];
+                        if (type === 'media') {
+                            allResults.push(...transformMediaHits(resp.hits || []));
+                        } else if (type === 'notes') {
+                            allResults.push(...transformNoteHits(resp.hits || []));
+                        } else if (type === 'highlights') {
+                            allResults.push(...transformHighlightHits(resp.hits || []));
+                        }
+                        totalFound += resp.found || 0;
+                    });
+
+                    // Interleave results by type for variety
+                    const mediaResults = allResults.filter(r => !r.isNote && !r.isHighlight);
+                    const noteResults = allResults.filter(r => r.isNote);
+                    const highlightResults = allResults.filter(r => r.isHighlight);
+
                     const combinedResults = [];
-                    const maxLen = Math.max(mediaResults.length, noteResults.length);
+                    const maxLen = Math.max(mediaResults.length, noteResults.length, highlightResults.length);
                     for (let i = 0; i < maxLen; i++) {
                         if (i < mediaResults.length) combinedResults.push(mediaResults[i]);
                         if (i < noteResults.length) combinedResults.push(noteResults[i]);
+                        if (i < highlightResults.length) combinedResults.push(highlightResults[i]);
                     }
 
                     setSearchResults(combinedResults);
-                    setTotalResults((mediaResponse.found || 0) + (notesResponse.found || 0));
-                    setTotalPages(Math.ceil(((mediaResponse.found || 0) + (notesResponse.found || 0)) / perPage));
+                    setTotalResults(totalFound);
+                    setTotalPages(Math.ceil(totalFound / perPage));
                 } else {
-                    // Only searching media items (no notes)
+                    // Only searching media items (no notes or highlights)
                     const searchOptions = {
                         query: searchQuery || '*',
-                        mediaTypes: mediaTypesWithoutNote,
+                        mediaTypes: mediaTypesFiltered,
                         topics: selectedTopics,
                         genres: selectedGenres,
                         status: selectedStatus !== 'all' ? selectedStatus : null,

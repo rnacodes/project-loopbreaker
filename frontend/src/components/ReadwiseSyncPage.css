@@ -385,11 +385,22 @@
   padding: 1rem 1.25rem;
 }
 
+.highlight-text-link {
+  text-decoration: none;
+  display: block;
+}
+
+.highlight-text-link:hover .highlight-text {
+  color: #ffc107;
+}
+
 .highlight-text {
   color: #fcfafa;
   font-style: italic;
   line-height: 1.6;
   margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
 
 .highlight-meta {

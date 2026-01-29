@@ -265,5 +265,84 @@ namespace ProjectLoopbreaker.Shared.Interfaces
         /// <param name="id">The note ID</param>
         /// <param name="embedding">The embedding vector</param>
         Task UpdateNoteEmbeddingAsync(Guid id, float[] embedding);
+
+        // ============================================
+        // Highlights collection methods
+        // ============================================
+
+        /// <summary>
+        /// Ensures the highlights collection exists in Typesense.
+        /// Creates the collection if it doesn't exist, or skips if it does.
+        /// Should be called during application startup.
+        /// </summary>
+        Task EnsureHighlightsCollectionExistsAsync();
+
+        /// <summary>
+        /// Indexes or updates a highlight document in Typesense.
+        /// Uses upsert operation - creates if new, updates if exists.
+        /// </summary>
+        /// <param name="id">The unique ID of the highlight</param>
+        /// <param name="text">The highlight text content</param>
+        /// <param name="note">Optional annotation/note</param>
+        /// <param name="title">Title of the source</param>
+        /// <param name="author">Author of the source</param>
+        /// <param name="category">Category (books, articles, etc.)</param>
+        /// <param name="tags">List of tags</param>
+        /// <param name="sourceUrl">URL of the source</param>
+        /// <param name="sourceType">Source type (kindle, instapaper, etc.)</param>
+        /// <param name="isFavorite">Whether this is a favorite</param>
+        /// <param name="highlightedAt">When the highlight was created</param>
+        /// <param name="createdAt">When imported to PLB</param>
+        /// <param name="articleId">Linked article ID if any</param>
+        /// <param name="bookId">Linked book ID if any</param>
+        /// <param name="linkedMediaTitle">Title of linked media for display</param>
+        /// <param name="location">Location in source</param>
+        /// <param name="imageUrl">Cover image URL</param>
+        Task IndexHighlightAsync(
+            Guid id,
+            string text,
+            string? note,
+            string? title,
+            string? author,
+            string? category,
+            List<string> tags,
+            string? sourceUrl,
+            string? sourceType,
+            bool isFavorite,
+            DateTime? highlightedAt,
+            DateTime createdAt,
+            Guid? articleId,
+            Guid? bookId,
+            string? linkedMediaTitle,
+            int? location,
+            string? imageUrl);
+
+        /// <summary>
+        /// Deletes a highlight document from Typesense.
+        /// </summary>
+        /// <param name="id">The unique ID of the highlight to delete</param>
+        Task DeleteHighlightAsync(Guid id);
+
+        /// <summary>
+        /// Performs a search across the highlights collection.
+        /// </summary>
+        /// <param name="query">The search query text</param>
+        /// <param name="filters">Optional filter string (e.g., "category:=books", "is_favorite:=true")</param>
+        /// <param name="perPage">Number of results per page (default 20)</param>
+        /// <param name="page">Page number (default 1)</param>
+        /// <returns>Search results as dynamic objects</returns>
+        Task<object> SearchHighlightsAsync(string query, string? filters = null, int perPage = 20, int page = 1);
+
+        /// <summary>
+        /// Performs a bulk re-index of all highlights from the database.
+        /// Useful for initial setup or full data synchronization.
+        /// </summary>
+        Task<int> BulkReindexAllHighlightsAsync();
+
+        /// <summary>
+        /// Deletes and recreates the highlights collection, clearing all indexed data.
+        /// Use this to completely reset the highlights search index.
+        /// </summary>
+        Task ResetHighlightsCollectionAsync();
     }
 }
