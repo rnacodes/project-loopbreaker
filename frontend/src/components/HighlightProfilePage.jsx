@@ -68,6 +68,13 @@ function HighlightProfilePage() {
         return tagsString.split(',').map(t => t.trim()).filter(t => t);
     };
 
+    // Check if a GUID is valid (not null, undefined, or empty GUID)
+    const isValidGuid = (guid) => {
+        if (!guid) return false;
+        const emptyGuid = '00000000-0000-0000-0000-000000000000';
+        return guid !== emptyGuid;
+    };
+
     if (loading) {
         return (
             <Box sx={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
@@ -180,10 +187,10 @@ function HighlightProfilePage() {
                         <Divider sx={{ mb: 3, borderColor: 'rgba(255, 255, 255, 0.1)' }} />
 
                         {/* Link to Source Article/Book */}
-                        {(highlight.articleId || highlight.bookId) && (
+                        {(isValidGuid(highlight.articleId) || isValidGuid(highlight.bookId)) && (
                             <Box sx={{ mb: 3 }}>
                                 <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>Source</Typography>
-                                {highlight.articleId && (
+                                {isValidGuid(highlight.articleId) && (
                                     <Card
                                         component={RouterLink}
                                         to={`/media/${highlight.articleId}`}
@@ -197,10 +204,10 @@ function HighlightProfilePage() {
                                         }}
                                     >
                                         <ArticleIcon sx={{ mr: 2, color: '#2196f3' }} />
-                                        <Typography sx={{ color: 'white' }}>{highlight.title || 'View Article'}</Typography>
+                                        <Typography sx={{ color: 'white' }}>{highlight.articleTitle || highlight.title || 'View Article'}</Typography>
                                     </Card>
                                 )}
-                                {highlight.bookId && (
+                                {isValidGuid(highlight.bookId) && (
                                     <Card
                                         component={RouterLink}
                                         to={`/media/${highlight.bookId}`}
@@ -214,7 +221,7 @@ function HighlightProfilePage() {
                                         }}
                                     >
                                         <BookIcon sx={{ mr: 2, color: '#8B4513' }} />
-                                        <Typography sx={{ color: 'white' }}>{highlight.title || 'View Book'}</Typography>
+                                        <Typography sx={{ color: 'white' }}>{highlight.bookTitle || highlight.title || 'View Book'}</Typography>
                                     </Card>
                                 )}
                             </Box>

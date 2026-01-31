@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using ProjectLoopbreaker.Application.Interfaces;
+using ProjectLoopbreaker.Domain.Interfaces;
 using ProjectLoopbreaker.DTOs;
 
 namespace ProjectLoopbreaker.Web.API.Controllers
@@ -10,15 +12,18 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     {
         private readonly IHighlightService _highlightService;
         private readonly IReadwiseService _readwiseService;
+        private readonly IApplicationDbContext _context;
         private readonly ILogger<HighlightController> _logger;
 
         public HighlightController(
             IHighlightService highlightService,
             IReadwiseService readwiseService,
+            IApplicationDbContext context,
             ILogger<HighlightController> logger)
         {
             _highlightService = highlightService;
             _readwiseService = readwiseService;
+            _context = context;
             _logger = logger;
         }
 
@@ -260,6 +265,27 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
+        // POST: api/highlight/clean-text
+        [HttpPost("clean-text")]
+        public async Task<ActionResult<object>> CleanHighlightText()
+        {
+            try
+            {
+                _logger.LogInformation("Starting highlight text cleanup (removing HTML/CSS)");
+                var cleanedCount = await _highlightService.CleanAllHighlightTextAsync();
+                return Ok(new
+                {
+                    cleanedCount,
+                    message = $"Successfully cleaned HTML/CSS from {cleanedCount} highlights"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cleaning highlight text");
+                return StatusCode(500, new { error = "Failed to clean highlight text", details = ex.Message });
+            }
+        }
+
         // GET: api/highlight/validate-connection
         [HttpGet("validate-connection")]
         public async Task<ActionResult<object>> ValidateConnection()
@@ -309,6 +335,99 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                     message = "Connection validation failed",
                     details = ex.Message 
                 });
+            }
+        }
+
+        // GET: api/highlight/diagnose-linking
+        /// <summary>
+        /// Diagnoses why highlights aren't linking to articles.
+        /// Shows unlinked highlights with their source URLs and potential matches.
+        /// </summary>
+        [HttpGet("diagnose-linking")]
+        public async Task<ActionResult<object>> DiagnoseLinking([FromQuery] int limit = 10)
+        {
+            try
+            {
+                var unlinkedHighlights = (await _highlightService.GetUnlinkedHighlightsAsync())
+                    .Where(h => !string.IsNullOrEmpty(h.SourceUrl) && h.Category?.ToLowerInvariant() == "articles")
+                    .Take(limit)
+                    .ToList();
+
+                var diagnostics = new List<object>();
+
+                // Get unique titles from highlights to search for matching articles
+                var uniqueTitles = unlinkedHighlights
+                    .Select(h => h.Title)
+                    .Where(t => !string.IsNullOrEmpty(t))
+                    .Distinct()
+                    .ToList();
+
+                foreach (var highlight in unlinkedHighlights)
+                {
+                    var normalizedUrl = ProjectLoopbreaker.Application.Utilities.UrlNormalizer.Normalize(highlight.SourceUrl);
+                    var urlWithoutProtocol = normalizedUrl
+                        .Replace("https://", "")
+                        .Replace("http://", "");
+
+                    // Search for potential matching articles by URL
+                    var potentialMatch = await _context.Articles
+                        .Where(a => a.Link != null && (
+                            EF.Functions.ILike(a.Link, normalizedUrl) ||
+                            EF.Functions.ILike(a.Link, $"%{urlWithoutProtocol}") ||
+                            EF.Functions.ILike(a.Link, $"%{urlWithoutProtocol}/")))
+                        .Select(a => new { a.Id, a.Title, a.Link })
+                        .FirstOrDefaultAsync();
+
+                    // Also try to find by title if no URL match
+                    object? titleMatch = null;
+                    if (potentialMatch == null && !string.IsNullOrEmpty(highlight.Title))
+                    {
+                        titleMatch = await _context.Articles
+                            .Where(a => EF.Functions.ILike(a.Title, highlight.Title))
+                            .Select(a => new { a.Id, a.Title, a.Link })
+                            .FirstOrDefaultAsync();
+                    }
+
+                    diagnostics.Add(new
+                    {
+                        highlightId = highlight.Id,
+                        highlightTitle = highlight.Title,
+                        originalSourceUrl = highlight.SourceUrl,
+                        normalizedSourceUrl = normalizedUrl,
+                        category = highlight.Category,
+                        matchingArticleByUrl = potentialMatch,
+                        matchingArticleByTitle = titleMatch,
+                        reason = potentialMatch == null && titleMatch == null
+                            ? "No matching article found in database - article may not have been imported from Reader"
+                            : (potentialMatch != null ? "URL match found but linking failed" : "Title match found but URLs don't match")
+                    });
+                }
+
+                // Get total article count for context
+                var totalArticles = await _context.Articles.CountAsync();
+
+                // Get sample article Links for comparison
+                var sampleArticleLinks = await _context.Articles
+                    .Where(a => a.Link != null)
+                    .Take(5)
+                    .Select(a => new { a.Title, a.Link })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    totalUnlinkedArticleHighlights = (await _highlightService.GetUnlinkedHighlightsAsync())
+                        .Count(h => h.Category?.ToLowerInvariant() == "articles"),
+                    totalArticlesInDatabase = totalArticles,
+                    sampleDiagnostics = diagnostics,
+                    sampleArticleLinks,
+                    suggestion = "If 'matchingArticleByUrl' is null for all highlights, the articles haven't been imported from Reader. " +
+                                 "Run 'POST /api/readwise/import-by-location?location=archive' to import archived articles, then run 'POST /api/highlight/link' to link them."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error diagnosing highlight linking");
+                return StatusCode(500, new { error = "Failed to diagnose linking", details = ex.Message });
             }
         }
 

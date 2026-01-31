@@ -24,6 +24,12 @@ namespace ProjectLoopbreaker.Application.Interfaces
         /// Syncs only highlights updated after a specific date
         /// </summary>
         Task<HighlightSyncResultDto> SyncHighlightsIncrementalAsync(DateTime lastSyncDate);
+
+        /// <summary>
+        /// Cleans all existing highlights by removing HTML/CSS from their text.
+        /// Returns the number of highlights that were cleaned.
+        /// </summary>
+        Task<int> CleanAllHighlightTextAsync();
     }
 }
 

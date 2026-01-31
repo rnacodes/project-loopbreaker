@@ -268,21 +268,29 @@ namespace ProjectLoopbreaker.Application.Services
         /// <summary>
         /// Process a book with nested highlights from the export endpoint.
         /// Book data is already included, no separate API call needed.
+        /// Also indexes highlights in Typesense after saving.
         /// </summary>
         private async Task ProcessExportBookWithHighlightsAsync(
             Shared.DTOs.Readwise.ReadwiseExportBookDto bookDto,
             HighlightSyncResultDto result)
         {
+            var highlightsToIndex = new List<Highlight>();
+
             foreach (var highlightDto in bookDto.highlights)
             {
+                // Clean HTML/CSS from highlight text
+                var cleanedText = HtmlTextCleaner.Clean(highlightDto.text);
+
                 // Check if highlight already exists by ReadwiseId
                 var existing = await _context.Highlights
+                    .Include(h => h.Article)
+                    .Include(h => h.Book)
                     .FirstOrDefaultAsync(h => h.ReadwiseId == highlightDto.id);
 
                 if (existing != null)
                 {
                     // Update existing highlight
-                    existing.Text = highlightDto.text;
+                    existing.Text = cleanedText;
                     existing.Note = highlightDto.note;
                     existing.Location = highlightDto.location;
                     existing.LocationType = highlightDto.location_type;
@@ -293,6 +301,7 @@ namespace ProjectLoopbreaker.Application.Services
                         : null;
                     existing.UpdatedAt = DateTime.UtcNow;
 
+                    highlightsToIndex.Add(existing);
                     result.UpdatedCount++;
                 }
                 else
@@ -302,7 +311,7 @@ namespace ProjectLoopbreaker.Application.Services
                     {
                         Id = Guid.NewGuid(),
                         ReadwiseId = highlightDto.id,
-                        Text = highlightDto.text,
+                        Text = cleanedText,
                         Note = highlightDto.note,
                         Title = bookDto.title,
                         Author = bookDto.author,
@@ -325,21 +334,71 @@ namespace ProjectLoopbreaker.Application.Services
                         CreatedAt = DateTime.UtcNow
                     };
 
-                    // Auto-link to article by source URL (using normalized URL matching)
+                    // Auto-link to article by URL (using multiple matching strategies)
+                    // Try source_url first, then unique_url as fallback
+                    var urlsToTry = new List<string>();
                     if (!string.IsNullOrEmpty(bookDto.source_url))
+                        urlsToTry.Add(bookDto.source_url);
+                    if (!string.IsNullOrEmpty(bookDto.unique_url) && bookDto.unique_url != bookDto.source_url)
+                        urlsToTry.Add(bookDto.unique_url);
+
+                    Article? article = null;
+                    foreach (var urlToTry in urlsToTry)
                     {
-                        var normalizedSourceUrl = UrlNormalizer.Normalize(bookDto.source_url);
-                        var article = await _context.Articles
+                        var normalizedUrl = UrlNormalizer.Normalize(urlToTry);
+
+                        // Try exact normalized match first
+                        article = await _context.Articles
                             .FirstOrDefaultAsync(a =>
                                 a.Link != null &&
-                                EF.Functions.ILike(a.Link, normalizedSourceUrl));
+                                EF.Functions.ILike(a.Link, normalizedUrl));
+
+                        // If no match, try partial URL match (without protocol)
+                        if (article == null)
+                        {
+                            var urlWithoutProtocol = normalizedUrl
+                                .Replace("https://", "")
+                                .Replace("http://", "");
+                            article = await _context.Articles
+                                .FirstOrDefaultAsync(a =>
+                                    a.Link != null &&
+                                    (EF.Functions.ILike(a.Link, $"%{urlWithoutProtocol}") ||
+                                     EF.Functions.ILike(a.Link, $"%{urlWithoutProtocol}/")));
+                        }
+
+                        if (article != null)
+                            break;
+                    }
+
+                    // Fallback: Try to match by title if URL matching failed
+                    if (article == null &&
+                        bookDto.category?.ToLowerInvariant() == "articles" &&
+                        !string.IsNullOrEmpty(bookDto.title))
+                    {
+                        article = await _context.Articles
+                            .FirstOrDefaultAsync(a =>
+                                EF.Functions.ILike(a.Title, bookDto.title));
+
                         if (article != null)
                         {
-                            highlight.ArticleId = article.Id;
-                            result.LinkedCount++;
-                            _logger.LogDebug("Auto-linked highlight {HighlightId} to article {ArticleId}",
+                            _logger.LogDebug("Auto-linked highlight {HighlightId} to article {ArticleId} by title match (URL match failed)",
                                 highlight.Id, article.Id);
                         }
+                    }
+
+                    if (article != null)
+                    {
+                        highlight.ArticleId = article.Id;
+                        highlight.Article = article;
+                        result.LinkedCount++;
+                        _logger.LogDebug("Auto-linked highlight {HighlightId} to article {ArticleId} (title: {Title})",
+                            highlight.Id, article.Id, article.Title);
+                    }
+                    else if ((urlsToTry.Count > 0 || !string.IsNullOrEmpty(bookDto.title)) && bookDto.category?.ToLowerInvariant() == "articles")
+                    {
+                        // Log unlinked article highlights for debugging
+                        _logger.LogDebug("Could not link highlight to article. Source URL: {SourceUrl}, Title: {Title}",
+                            bookDto.source_url, bookDto.title);
                     }
 
                     // Auto-link to book by title and author if category is "books"
@@ -355,6 +414,7 @@ namespace ProjectLoopbreaker.Application.Services
                         if (book != null)
                         {
                             highlight.BookId = book.Id;
+                            highlight.Book = book;
                             result.LinkedCount++;
                             _logger.LogDebug("Auto-linked highlight {HighlightId} to book {BookId}",
                                 highlight.Id, book.Id);
@@ -362,11 +422,18 @@ namespace ProjectLoopbreaker.Application.Services
                     }
 
                     _context.Add(highlight);
+                    highlightsToIndex.Add(highlight);
                     result.CreatedCount++;
                 }
             }
 
             await _context.SaveChangesAsync();
+
+            // Index all highlights in Typesense after saving
+            foreach (var highlight in highlightsToIndex)
+            {
+                await IndexHighlightInTypesenseAsync(highlight);
+            }
         }
 
         /// <summary>
@@ -425,6 +492,53 @@ namespace ProjectLoopbreaker.Application.Services
             {
                 _logger.LogWarning(ex, "Failed to index highlight {HighlightId} in Typesense", highlight.Id);
             }
+        }
+
+        /// <summary>
+        /// Cleans all existing highlights by removing HTML/CSS from their text.
+        /// Returns the number of highlights that were cleaned.
+        /// </summary>
+        public async Task<int> CleanAllHighlightTextAsync()
+        {
+            _logger.LogInformation("Starting to clean HTML/CSS from all highlight text");
+
+            var cleanedCount = 0;
+
+            try
+            {
+                var highlights = await _context.Highlights.ToListAsync();
+
+                foreach (var highlight in highlights)
+                {
+                    if (HtmlTextCleaner.ContainsHtmlOrCss(highlight.Text))
+                    {
+                        var cleanedText = HtmlTextCleaner.Clean(highlight.Text);
+                        if (cleanedText != highlight.Text)
+                        {
+                            highlight.Text = cleanedText;
+                            highlight.UpdatedAt = DateTime.UtcNow;
+                            cleanedCount++;
+                        }
+                    }
+                }
+
+                if (cleanedCount > 0)
+                {
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Cleaned HTML/CSS from {Count} highlights", cleanedCount);
+                }
+                else
+                {
+                    _logger.LogInformation("No highlights needed HTML/CSS cleaning");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cleaning highlight text");
+                throw;
+            }
+
+            return cleanedCount;
         }
     }
 }

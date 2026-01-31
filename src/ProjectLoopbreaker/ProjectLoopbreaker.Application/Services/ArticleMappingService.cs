@@ -49,7 +49,10 @@ namespace ProjectLoopbreaker.Application.Services
                 PublicationDate = article.PublicationDate,
                 ReadingProgress = article.ReadingProgress,
                 WordCount = article.WordCount,
-                EstimatedReadingTime = article.GetEstimatedReadingTime()
+                EstimatedReadingTime = article.GetEstimatedReadingTime(),
+                ReadwiseDocumentId = article.ReadwiseDocumentId,
+                HasFullTextContent = !string.IsNullOrEmpty(article.FullTextContent),
+                ReaderLocation = article.ReaderLocation
             });
         }
 

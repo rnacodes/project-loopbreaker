@@ -117,12 +117,21 @@ function NoteProfilePage() {
                 setNote(prev => ({ ...prev, description: result.generatedDescription }));
                 setEditedDescription(result.generatedDescription);
                 setSnackbar({ open: true, message: 'Description generated successfully', severity: 'success' });
+            } else if (result.success === false) {
+                setSnackbar({ open: true, message: result.errorMessage || 'Failed to generate description', severity: 'error' });
+            } else {
+                setSnackbar({ open: true, message: 'No description was generated', severity: 'warning' });
             }
         } catch (error) {
             console.error('Error generating description:', error);
-            const errorMessage = error.response?.status === 503
-                ? 'AI service is not configured or unavailable'
-                : 'Failed to generate description';
+            let errorMessage = 'Failed to generate description';
+            if (error.response?.status === 503) {
+                errorMessage = 'AI service is not configured or unavailable';
+            } else if (error.response?.status === 404) {
+                errorMessage = error.response?.data?.message || 'Note not found or has no content';
+            } else if (error.response?.data?.message) {
+                errorMessage = error.response.data.message;
+            }
             setSnackbar({ open: true, message: errorMessage, severity: 'error' });
         } finally {
             setGeneratingDescription(false);

@@ -30,7 +30,7 @@ import {
   Note as NoteIcon,
   Folder as FolderIcon,
 } from '@mui/icons-material';
-import { getAllNotes, searchNotes } from '../api';
+import { searchNotes } from '../api';
 
 // Vault color mapping
 const vaultColors = {
@@ -57,13 +57,23 @@ function NotesListingPage() {
       setLoading(true);
       setError(null);
 
-      const vault = selectedVault === 'all' ? null : selectedVault;
-      const response = await getAllNotes(vault);
+      // Use Typesense search with wildcard query for faster initial load
+      const filter = selectedVault !== 'all' ? `vault_name:${selectedVault}` : null;
+      const response = await searchNotes('*', filter, 1, 250);
 
-      if (response && Array.isArray(response)) {
+      if (response && response.hits) {
+        // Transform Typesense results to note format
+        const fetchedNotes = response.hits.map(hit => ({
+          id: hit.document.id,
+          title: hit.document.title,
+          vaultName: hit.document.vault_name || hit.document.vaultName,
+          description: hit.document.description,
+          tags: hit.document.tags || [],
+          dateImported: hit.document.date_imported || hit.document.dateImported,
+        }));
+        setNotes(fetchedNotes);
+      } else if (response && Array.isArray(response)) {
         setNotes(response);
-      } else if (response && response.data) {
-        setNotes(response.data);
       } else {
         setNotes([]);
       }
@@ -85,7 +95,7 @@ function NotesListingPage() {
       setSearching(true);
       setError(null);
 
-      const filter = selectedVault !== 'all' ? `vaultName:${selectedVault}` : null;
+      const filter = selectedVault !== 'all' ? `vault_name:${selectedVault}` : null;
       const response = await searchNotes(searchQuery, filter, 1, 100);
 
       if (response && response.hits) {
@@ -93,10 +103,10 @@ function NotesListingPage() {
         const searchedNotes = response.hits.map(hit => ({
           id: hit.document.id,
           title: hit.document.title,
-          vaultName: hit.document.vaultName || hit.document.vault_name,
+          vaultName: hit.document.vault_name || hit.document.vaultName,
           description: hit.document.description,
           tags: hit.document.tags || [],
-          dateImported: hit.document.dateImported || hit.document.date_imported,
+          dateImported: hit.document.date_imported || hit.document.dateImported,
         }));
         setNotes(searchedNotes);
       } else if (response && Array.isArray(response)) {
