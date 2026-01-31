@@ -7,7 +7,14 @@ namespace ProjectLoopbreaker.Shared.DTOs.ReadwiseReader
     public class ReaderDocumentDto
     {
         public string id { get; set; } = string.Empty;
+        /// <summary>
+        /// The Readwise Reader URL (e.g., https://read.readwise.io/read/...)
+        /// </summary>
         public string? url { get; set; }
+        /// <summary>
+        /// The original source URL of the article (e.g., https://example.com/article)
+        /// </summary>
+        public string? source_url { get; set; }
         public string? title { get; set; }
         public string? author { get; set; }
         public string? source { get; set; }
@@ -23,6 +30,7 @@ namespace ProjectLoopbreaker.Shared.DTOs.ReadwiseReader
         public string? image_url { get; set; }
         public string? content { get; set; }
         public string? html { get; set; }
+        public string? html_content { get; set; }
         public double? reading_progress { get; set; }
         public bool? favorite { get; set; }
         public string? parent_id { get; set; }

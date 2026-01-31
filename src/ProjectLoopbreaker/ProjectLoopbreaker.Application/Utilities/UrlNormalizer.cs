@@ -68,13 +68,31 @@ namespace ProjectLoopbreaker.Application.Utilities
 
                 // Convert to lowercase and remove trailing slash
                 var normalized = builder.Uri.ToString().ToLowerInvariant();
-                return normalized.TrimEnd('/');
+                normalized = normalized.TrimEnd('/');
+
+                // Remove www. prefix for consistent matching
+                normalized = RemoveWwwPrefix(normalized);
+
+                return normalized;
             }
             catch (UriFormatException)
             {
                 // If URL parsing fails, just do basic normalization
                 return url.Trim().ToLowerInvariant().TrimEnd('/');
             }
+        }
+
+        /// <summary>
+        /// Removes www. prefix from a URL string for consistent matching.
+        /// </summary>
+        private static string RemoveWwwPrefix(string url)
+        {
+            // Handle both http:// and https://
+            if (url.StartsWith("https://www."))
+                return "https://" + url.Substring(12);
+            if (url.StartsWith("http://www."))
+                return "http://" + url.Substring(11);
+            return url;
         }
 
         /// <summary>

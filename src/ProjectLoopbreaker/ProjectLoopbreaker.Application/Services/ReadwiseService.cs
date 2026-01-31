@@ -116,24 +116,57 @@ namespace ProjectLoopbreaker.Application.Services
 
                 foreach (var highlight in unlinkedHighlights)
                 {
-                    // Try to match by source URL first (for articles) - using normalized URL matching
+                    Domain.Entities.Article? article = null;
+
+                    // Try to match by source URL first (for articles) - using multiple matching strategies
                     if (!string.IsNullOrEmpty(highlight.SourceUrl))
                     {
                         var normalizedSourceUrl = UrlNormalizer.Normalize(highlight.SourceUrl);
-                        var article = await _context.Articles
+
+                        // Try exact normalized match first
+                        article = await _context.Articles
                             .FirstOrDefaultAsync(a =>
                                 a.Link != null &&
                                 EF.Functions.ILike(a.Link, normalizedSourceUrl));
 
+                        // If no match, try partial URL match (without protocol)
+                        if (article == null)
+                        {
+                            var urlWithoutProtocol = normalizedSourceUrl
+                                .Replace("https://", "")
+                                .Replace("http://", "");
+                            article = await _context.Articles
+                                .FirstOrDefaultAsync(a =>
+                                    a.Link != null &&
+                                    (EF.Functions.ILike(a.Link, $"%{urlWithoutProtocol}") ||
+                                     EF.Functions.ILike(a.Link, $"%{urlWithoutProtocol}/")));
+                        }
+                    }
+
+                    // Fallback: Try to match by title for article highlights if URL match failed
+                    if (article == null &&
+                        highlight.Category?.ToLowerInvariant() == "articles" &&
+                        !string.IsNullOrEmpty(highlight.Title))
+                    {
+                        article = await _context.Articles
+                            .FirstOrDefaultAsync(a =>
+                                EF.Functions.ILike(a.Title, highlight.Title));
+
                         if (article != null)
                         {
-                            highlight.ArticleId = article.Id;
-                            linkedCount++;
-                            linkedHighlightIds.Add(highlight.Id);
-                            _logger.LogDebug("Linked highlight {HighlightId} to article {ArticleId} by URL",
+                            _logger.LogDebug("Linked highlight {HighlightId} to article {ArticleId} by title match (URL match failed)",
                                 highlight.Id, article.Id);
-                            continue;
                         }
+                    }
+
+                    if (article != null)
+                    {
+                        highlight.ArticleId = article.Id;
+                        linkedCount++;
+                        linkedHighlightIds.Add(highlight.Id);
+                        _logger.LogDebug("Linked highlight {HighlightId} to article {ArticleId}",
+                            highlight.Id, article.Id);
+                        continue;
                     }
 
                     // Try to match books by title and author

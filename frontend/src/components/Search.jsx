@@ -218,12 +218,12 @@ export default function Search() {
     useEffect(() => {
         const fetchFiltersData = async () => {
             try {
-                const [topicsData, genresData] = await Promise.all([
+                const [topicsResponse, genresResponse] = await Promise.all([
                     getAllTopics(),
                     getAllGenres()
                 ]);
-                setAllTopics(topicsData.map(t => t.name));
-                setAllGenres(genresData.map(g => g.name));
+                setAllTopics(topicsResponse.data.map(t => t.name));
+                setAllGenres(genresResponse.data.map(g => g.name));
             } catch (err) {
                 console.error('Error fetching filter data:', err);
             }

@@ -128,15 +128,15 @@ export const typesenseAdvancedSearch = async (options) => {
             filters.push(`(${mediaTypeFilter})`);
         }
 
-        // Topics filter
+        // Topics filter - wrap values in backticks for Typesense (handles spaces/special chars)
         if (topics.length > 0) {
-            const topicFilter = topics.map(topic => `topics:=${topic}`).join(' || ');
+            const topicFilter = topics.map(topic => `topics:=\`${topic}\``).join(' || ');
             filters.push(`(${topicFilter})`);
         }
 
-        // Genres filter
+        // Genres filter - wrap values in backticks for Typesense (handles spaces/special chars)
         if (genres.length > 0) {
-            const genreFilter = genres.map(genre => `genres:=${genre}`).join(' || ');
+            const genreFilter = genres.map(genre => `genres:=\`${genre}\``).join(' || ');
             filters.push(`(${genreFilter})`);
         }
 
@@ -222,15 +222,15 @@ export const typesenseAdvancedSearchMixlists = async (options) => {
         // Build filter string
         const filters = [];
 
-        // Topics filter
+        // Topics filter - wrap values in backticks for Typesense (handles spaces/special chars)
         if (topics.length > 0) {
-            const topicFilter = topics.map(topic => `topics:=${topic}`).join(' || ');
+            const topicFilter = topics.map(topic => `topics:=\`${topic}\``).join(' || ');
             filters.push(`(${topicFilter})`);
         }
 
-        // Genres filter
+        // Genres filter - wrap values in backticks for Typesense (handles spaces/special chars)
         if (genres.length > 0) {
-            const genreFilter = genres.map(genre => `genres:=${genre}`).join(' || ');
+            const genreFilter = genres.map(genre => `genres:=\`${genre}\``).join(' || ');
             filters.push(`(${genreFilter})`);
         }
 
@@ -317,15 +317,15 @@ export const searchHighlightsAdvanced = async (options) => {
     try {
         const filters = [];
 
-        // Category filter
+        // Category filter - wrap values in backticks for Typesense (handles spaces/special chars)
         if (categories.length > 0) {
-            const categoryFilter = categories.map(c => `category:=${c}`).join(' || ');
+            const categoryFilter = categories.map(c => `category:=\`${c}\``).join(' || ');
             filters.push(`(${categoryFilter})`);
         }
 
-        // Tags filter
+        // Tags filter - wrap values in backticks for Typesense (handles spaces/special chars)
         if (tags.length > 0) {
-            const tagFilter = tags.map(t => `tags:=${t}`).join(' || ');
+            const tagFilter = tags.map(t => `tags:=\`${t}\``).join(' || ');
             filters.push(`(${tagFilter})`);
         }
 
@@ -341,7 +341,7 @@ export const searchHighlightsAdvanced = async (options) => {
                 // Typesense doesn't support null checks directly, so we filter for empty linked_media_type
                 filters.push(`linked_media_type:=null`);
             } else {
-                filters.push(`linked_media_type:=${linkedMediaType}`);
+                filters.push(`linked_media_type:=\`${linkedMediaType}\``);
             }
         }
 

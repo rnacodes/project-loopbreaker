@@ -191,5 +191,135 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Test endpoint: Fetches a document directly from Reader API by its document ID.
+        /// Returns detailed information about what the API returns, useful for debugging.
+        /// </summary>
+        /// <param name="documentId">The Readwise Reader document ID (found in article.ReadwiseDocumentId)</param>
+        /// <param name="includeHtml">Whether to request HTML content (default true)</param>
+        [HttpGet("test-fetch/{documentId}")]
+        public async Task<ActionResult<ReaderDocumentTestResultDto>> TestFetchDocument(
+            string documentId,
+            [FromQuery] bool includeHtml = true)
+        {
+            try
+            {
+                _logger.LogInformation("Testing fetch for document {DocumentId}", documentId);
+                var result = await _readerService.TestFetchDocumentByIdAsync(documentId, includeHtml);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error testing fetch for document {DocumentId}", documentId);
+                return StatusCode(500, new { error = "Test fetch failed", details = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Fetch and store content for a specific article using its Reader document ID.
+        /// Bypasses status checks, allowing you to fetch content for any article.
+        /// </summary>
+        /// <param name="documentId">The Readwise Reader document ID</param>
+        [HttpPost("fetch-by-document-id/{documentId}")]
+        public async Task<ActionResult<object>> FetchByDocumentId(string documentId)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching content by Reader document ID: {DocumentId}", documentId);
+                var (success, message, contentLength) = await _readerService.FetchContentByReaderDocumentIdAsync(documentId);
+
+                return Ok(new
+                {
+                    success,
+                    message,
+                    contentLength
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching content by document ID {DocumentId}", documentId);
+                return StatusCode(500, new { error = "Fetch failed", details = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Lists articles that have Reader document IDs. Useful for finding articles to test with.
+        /// Queries the LOCAL DATABASE.
+        /// </summary>
+        /// <param name="limit">Maximum number of articles to return (default 20)</param>
+        /// <param name="onlyWithoutContent">If true, only returns articles without stored content</param>
+        /// <param name="status">Filter by article status (e.g., "Completed" for archived, "Uncharted" for unread)</param>
+        [HttpGet("articles-with-document-ids")]
+        public async Task<ActionResult<IEnumerable<ReaderArticleSummaryDto>>> GetArticlesWithDocumentIds(
+            [FromQuery] int limit = 20,
+            [FromQuery] bool onlyWithoutContent = false,
+            [FromQuery] string? status = null)
+        {
+            try
+            {
+                var articles = await _readerService.GetArticlesWithReaderDocumentIdsAsync(limit, onlyWithoutContent, status);
+                return Ok(articles);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving articles with document IDs");
+                return StatusCode(500, new { error = "Failed to retrieve articles", details = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Fetches documents directly from the Readwise Reader API (NOT the local database).
+        /// Useful for seeing what's in your Reader library.
+        /// </summary>
+        /// <param name="location">Filter by Reader location: "new", "later", "archive", "feed" (default: all)</param>
+        /// <param name="limit">Maximum number of documents to return (default 50)</param>
+        [HttpGet("reader-api/documents")]
+        public async Task<ActionResult<IEnumerable<ReaderArticleSummaryDto>>> GetDocumentsFromReaderApi(
+            [FromQuery] string? location = null,
+            [FromQuery] int limit = 50)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching documents from Reader API (location: {Location}, limit: {Limit})",
+                    location ?? "all", limit);
+                var documents = await _readerService.FetchDocumentsFromReaderApiAsync(location, limit);
+                return Ok(documents);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching documents from Reader API");
+                return StatusCode(500, new { error = "Failed to fetch from Reader API", details = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Imports documents from the Reader API filtered by location and saves them to the database.
+        /// Use this to selectively sync only archived articles, new articles, etc.
+        /// </summary>
+        /// <param name="location">Filter by Reader location: "new", "later", "archive", "feed" (required)</param>
+        /// <param name="limit">Maximum number of documents to import (default 50)</param>
+        [HttpPost("import-by-location")]
+        public async Task<ActionResult<ReaderSyncResultDto>> ImportByLocation(
+            [FromQuery] string location,
+            [FromQuery] int limit = 50)
+        {
+            if (string.IsNullOrEmpty(location))
+            {
+                return BadRequest(new { error = "Location parameter is required. Use: new, later, archive, or feed" });
+            }
+
+            try
+            {
+                _logger.LogInformation("Importing {Limit} documents from Reader with location: {Location}", limit, location);
+                var result = await _readerService.SyncDocumentsByLocationAsync(location, limit);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing documents by location");
+                return StatusCode(500, new { error = "Failed to import documents", details = ex.Message });
+            }
+        }
+
     }
 }

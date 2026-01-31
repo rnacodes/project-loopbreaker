@@ -108,21 +108,24 @@ namespace ProjectLoopbreaker.Application.Services
 
                 // Fetch document with HTML content
                 var document = await _readerClient.GetDocumentByIdAsync(article.ReadwiseDocumentId, includeHtml: true);
-                if (document == null || string.IsNullOrEmpty(document.html))
+
+                // Check for html_content (from withHtmlContent=true) or fall back to html
+                var htmlContent = document?.html_content ?? document?.html;
+                if (document == null || string.IsNullOrEmpty(htmlContent))
                 {
                     _logger.LogWarning("No HTML content available for document {DocumentId}", article.ReadwiseDocumentId);
                     return false;
                 }
 
                 // Store content directly in database
-                article.FullTextContent = document.html;
+                article.FullTextContent = htmlContent;
                 article.WordCount = document.word_count;
                 article.LastReaderSync = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Successfully stored content for article {ArticleId} in database ({Size} chars)",
-                    articleId, document.html.Length);
+                    articleId, htmlContent.Length);
 
                 return true;
             }
@@ -188,12 +191,15 @@ namespace ProjectLoopbreaker.Application.Services
             ProjectLoopbreaker.Shared.DTOs.ReadwiseReader.ReaderDocumentDto dto,
             ReaderSyncResultDto result)
         {
+            // Use source_url (original article URL) if available, fall back to url (Reader URL)
+            var originalUrl = dto.source_url ?? dto.url;
+
             // Normalize URL for consistent comparison
-            var normalizedUrl = UrlNormalizer.Normalize(dto.url);
-            
+            var normalizedUrl = UrlNormalizer.Normalize(originalUrl);
+
             // Check if article exists by Reader document ID OR normalized URL
             var existing = await _context.Articles
-                .FirstOrDefaultAsync(a => 
+                .FirstOrDefaultAsync(a =>
                     a.ReadwiseDocumentId == dto.id ||
                     (a.Link != null && EF.Functions.ILike(a.Link, normalizedUrl)));
 
@@ -222,23 +228,33 @@ namespace ProjectLoopbreaker.Application.Services
                 // Mark as synced with Reader
                 existing.SyncStatus |= SyncStatus.ReaderSynced;
 
+                // Fix Link if it has a Reader URL but we have the original source_url
+                if (!string.IsNullOrEmpty(dto.source_url) &&
+                    existing.Link != null &&
+                    existing.Link.Contains("read.readwise.io"))
+                {
+                    existing.Link = normalizedUrl;
+                    _logger.LogDebug("Fixed article {ArticleId} Link from Reader URL to source URL: {SourceUrl}",
+                        existing.Id, normalizedUrl);
+                }
+
                 // Update metadata fields (prefer Reader's data if more complete)
-                if (!string.IsNullOrEmpty(dto.title) && 
+                if (!string.IsNullOrEmpty(dto.title) &&
                     (string.IsNullOrEmpty(existing.Title) || existing.Title == "Untitled"))
                     existing.Title = dto.title;
-                    
+
                 if (!string.IsNullOrEmpty(dto.summary) && string.IsNullOrEmpty(existing.Description))
                     existing.Description = dto.summary;
-                    
+
                 if (!string.IsNullOrEmpty(dto.author) && string.IsNullOrEmpty(existing.Author))
                     existing.Author = dto.author;
-                    
+
                 if (!string.IsNullOrEmpty(dto.site_name) && string.IsNullOrEmpty(existing.Publication))
                     existing.Publication = dto.site_name;
-                    
+
                 if (!string.IsNullOrEmpty(dto.image_url) && string.IsNullOrEmpty(existing.Thumbnail))
                     existing.Thumbnail = dto.image_url;
-                    
+
                 if (dto.word_count.HasValue && (!existing.WordCount.HasValue || existing.WordCount == 0))
                     existing.WordCount = dto.word_count;
 
@@ -285,6 +301,295 @@ namespace ProjectLoopbreaker.Application.Services
             }
 
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<ReaderDocumentTestResultDto> TestFetchDocumentByIdAsync(string readerDocumentId, bool includeHtml = true)
+        {
+            var result = new ReaderDocumentTestResultDto
+            {
+                DocumentId = readerDocumentId
+            };
+
+            try
+            {
+                _logger.LogInformation("Testing fetch for Reader document {DocumentId} (includeHtml: {IncludeHtml})",
+                    readerDocumentId, includeHtml);
+
+                // Fetch document from Reader API
+                var document = await _readerClient.GetDocumentByIdAsync(readerDocumentId, includeHtml);
+
+                if (document == null)
+                {
+                    result.Success = false;
+                    result.ErrorMessage = $"Document with ID '{readerDocumentId}' not found in Reader API";
+                    return result;
+                }
+
+                // Populate result with API response data
+                result.Success = true;
+                result.Title = document.title;
+                result.Url = document.url;
+                result.SourceUrl = document.source_url;
+                result.Author = document.author;
+                result.SiteName = document.site_name;
+                result.Location = document.location;
+                result.Category = document.category;
+                result.WordCount = document.word_count;
+                result.ReadingProgress = document.reading_progress;
+
+                // Check HTML content availability
+                result.HasHtmlContent = !string.IsNullOrEmpty(document.html_content);
+                result.HasHtml = !string.IsNullOrEmpty(document.html);
+
+                var htmlContent = document.html_content ?? document.html;
+                if (!string.IsNullOrEmpty(htmlContent))
+                {
+                    result.HtmlContentLength = htmlContent.Length;
+                    result.HtmlContentPreview = htmlContent.Length > 500
+                        ? htmlContent.Substring(0, 500) + "..."
+                        : htmlContent;
+                }
+
+                // List available fields for debugging
+                result.AvailableFields = new List<string>();
+                if (!string.IsNullOrEmpty(document.id)) result.AvailableFields.Add("id");
+                if (!string.IsNullOrEmpty(document.title)) result.AvailableFields.Add("title");
+                if (!string.IsNullOrEmpty(document.url)) result.AvailableFields.Add("url");
+                if (!string.IsNullOrEmpty(document.source_url)) result.AvailableFields.Add("source_url");
+                if (!string.IsNullOrEmpty(document.author)) result.AvailableFields.Add("author");
+                if (!string.IsNullOrEmpty(document.site_name)) result.AvailableFields.Add("site_name");
+                if (!string.IsNullOrEmpty(document.location)) result.AvailableFields.Add("location");
+                if (!string.IsNullOrEmpty(document.category)) result.AvailableFields.Add("category");
+                if (document.word_count.HasValue) result.AvailableFields.Add("word_count");
+                if (document.reading_progress.HasValue) result.AvailableFields.Add("reading_progress");
+                if (!string.IsNullOrEmpty(document.html_content)) result.AvailableFields.Add("html_content");
+                if (!string.IsNullOrEmpty(document.html)) result.AvailableFields.Add("html");
+                if (!string.IsNullOrEmpty(document.content)) result.AvailableFields.Add("content");
+                if (!string.IsNullOrEmpty(document.summary)) result.AvailableFields.Add("summary");
+
+                // Check if article exists in database
+                var article = await _context.Articles
+                    .FirstOrDefaultAsync(a => a.ReadwiseDocumentId == readerDocumentId);
+
+                if (article != null)
+                {
+                    result.FoundInDatabase = true;
+                    result.ArticleId = article.Id;
+                    result.ArticleStatus = article.Status.ToString();
+                    result.ArticleHasContent = !string.IsNullOrEmpty(article.FullTextContent);
+                }
+
+                _logger.LogInformation("Test fetch result for {DocumentId}: HasHtmlContent={HasHtml}, DbFound={Found}",
+                    readerDocumentId, result.HasHtmlContent || result.HasHtml, result.FoundInDatabase);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error testing fetch for document {DocumentId}", readerDocumentId);
+                result.Success = false;
+                result.ErrorMessage = ex.Message;
+                return result;
+            }
+        }
+
+        public async Task<(bool success, string message, int? contentLength)> FetchContentByReaderDocumentIdAsync(string readerDocumentId)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching content for Reader document {DocumentId}", readerDocumentId);
+
+                // Find article by Reader document ID
+                var article = await _context.Articles
+                    .FirstOrDefaultAsync(a => a.ReadwiseDocumentId == readerDocumentId);
+
+                if (article == null)
+                {
+                    return (false, $"No article found in database with Reader document ID '{readerDocumentId}'", null);
+                }
+
+                // Fetch document with HTML content from Reader API
+                var document = await _readerClient.GetDocumentByIdAsync(readerDocumentId, includeHtml: true);
+
+                if (document == null)
+                {
+                    return (false, $"Document '{readerDocumentId}' not found in Reader API", null);
+                }
+
+                var htmlContent = document.html_content ?? document.html;
+                if (string.IsNullOrEmpty(htmlContent))
+                {
+                    return (false, $"No HTML content available for document '{readerDocumentId}'. HasHtmlContent={!string.IsNullOrEmpty(document.html_content)}, HasHtml={!string.IsNullOrEmpty(document.html)}", null);
+                }
+
+                // Store content in article
+                article.FullTextContent = htmlContent;
+                article.WordCount = document.word_count;
+                article.LastReaderSync = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Successfully stored content for article {ArticleId} ({Length} chars)",
+                    article.Id, htmlContent.Length);
+
+                return (true, $"Successfully stored {htmlContent.Length} chars of content for article '{article.Title}'", htmlContent.Length);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching content for document {DocumentId}", readerDocumentId);
+                return (false, $"Error: {ex.Message}", null);
+            }
+        }
+
+        public async Task<IEnumerable<ReaderArticleSummaryDto>> GetArticlesWithReaderDocumentIdsAsync(int limit = 20, bool onlyWithoutContent = false, string? status = null)
+        {
+            var query = _context.Articles
+                .Where(a => a.ReadwiseDocumentId != null);
+
+            if (onlyWithoutContent)
+            {
+                query = query.Where(a => a.FullTextContent == null);
+            }
+
+            if (!string.IsNullOrEmpty(status) && Enum.TryParse<Status>(status, ignoreCase: true, out var statusEnum))
+            {
+                query = query.Where(a => a.Status == statusEnum);
+            }
+
+            var articles = await query
+                .OrderByDescending(a => a.LastReaderSync ?? a.DateAdded)
+                .Take(limit)
+                .Select(a => new ReaderArticleSummaryDto
+                {
+                    ArticleId = a.Id,
+                    Title = a.Title,
+                    ReadwiseDocumentId = a.ReadwiseDocumentId,
+                    Status = a.Status.ToString(),
+                    ReaderLocation = a.ReaderLocation,
+                    HasFullTextContent = a.FullTextContent != null,
+                    ContentLength = a.FullTextContent != null ? a.FullTextContent.Length : null,
+                    LastReaderSync = a.LastReaderSync
+                })
+                .ToListAsync();
+
+            return articles;
+        }
+
+        public async Task<IEnumerable<ReaderArticleSummaryDto>> FetchDocumentsFromReaderApiAsync(string? location = null, int limit = 50)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching documents directly from Reader API (location: {Location}, limit: {Limit})",
+                    location ?? "all", limit);
+
+                var results = new List<ReaderArticleSummaryDto>();
+                string? pageCursor = null;
+
+                // Fetch pages until we have enough results
+                while (results.Count < limit)
+                {
+                    var response = await _readerClient.GetDocumentsAsync(
+                        location: location,
+                        category: "article",
+                        pageCursor: pageCursor);
+
+                    if (response.results.Count == 0)
+                        break;
+
+                    foreach (var doc in response.results)
+                    {
+                        if (results.Count >= limit)
+                            break;
+
+                        results.Add(new ReaderArticleSummaryDto
+                        {
+                            ArticleId = Guid.Empty, // Not from database
+                            Title = doc.title ?? "Untitled",
+                            ReadwiseDocumentId = doc.id,
+                            Status = doc.location == "archive" ? "Completed" : "Uncharted",
+                            ReaderLocation = doc.location,
+                            HasFullTextContent = false, // We don't know without fetching
+                            LastReaderSync = null
+                        });
+                    }
+
+                    if (string.IsNullOrEmpty(response.nextPageCursor))
+                        break;
+
+                    pageCursor = response.nextPageCursor;
+
+                    // Small delay to respect rate limits
+                    await Task.Delay(250);
+                }
+
+                _logger.LogInformation("Fetched {Count} documents from Reader API", results.Count);
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching documents from Reader API");
+                throw;
+            }
+        }
+
+        public async Task<ReaderSyncResultDto> SyncDocumentsByLocationAsync(string location, int limit = 50)
+        {
+            var result = new ReaderSyncResultDto
+            {
+                StartedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                _logger.LogInformation("Syncing {Limit} documents from Reader with location: {Location}", limit, location);
+
+                string? pageCursor = null;
+                var processedCount = 0;
+
+                while (processedCount < limit)
+                {
+                    var response = await _readerClient.GetDocumentsAsync(
+                        location: location,
+                        category: "article",
+                        pageCursor: pageCursor);
+
+                    if (response.results.Count == 0)
+                        break;
+
+                    foreach (var docDto in response.results)
+                    {
+                        if (processedCount >= limit)
+                            break;
+
+                        await ProcessReaderDocument(docDto, result);
+                        processedCount++;
+                    }
+
+                    if (string.IsNullOrEmpty(response.nextPageCursor) || processedCount >= limit)
+                        break;
+
+                    pageCursor = response.nextPageCursor;
+
+                    // Small delay to respect rate limits
+                    await Task.Delay(250);
+                }
+
+                result.CompletedAt = DateTime.UtcNow;
+                result.Success = true;
+
+                _logger.LogInformation("Synced {Count} documents by location. Created: {Created}, Updated: {Updated}",
+                    processedCount, result.CreatedCount, result.UpdatedCount);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error syncing documents by location");
+                result.Success = false;
+                result.ErrorMessage = ex.Message;
+                result.CompletedAt = DateTime.UtcNow;
+            }
+
+            return result;
         }
 
     }

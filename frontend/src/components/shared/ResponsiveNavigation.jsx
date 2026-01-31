@@ -59,7 +59,8 @@ import {
   Note as NoteIcon,
   AutoAwesome,
   Psychology,
-  Terminal
+  Terminal,
+  FormatQuote
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -121,6 +122,7 @@ const ResponsiveNavigation = () => {
     { text: 'Books', path: '/search?mediaType=Book', icon: <Book /> },
     { text: 'Channels', path: '/search?mediaType=Channel', icon: <YouTube /> },
     { text: 'Documents', path: '/search?mediaType=Document', icon: <Description /> },
+    { text: 'Highlights', path: '/search?mediaType=Highlight', icon: <FormatQuote /> },
     { text: 'Movies', path: '/search?mediaType=Movie', icon: <Movie /> },
     { text: 'Music', path: '/search?mediaType=Music', icon: <MusicNote /> },
     { text: 'Notes', path: '/notes', icon: <NoteIcon /> },

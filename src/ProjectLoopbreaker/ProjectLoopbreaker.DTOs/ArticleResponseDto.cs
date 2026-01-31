@@ -84,5 +84,14 @@ namespace ProjectLoopbreaker.DTOs
 
         [JsonPropertyName("estimatedReadingTime")]
         public int? EstimatedReadingTime { get; set; }
+
+        [JsonPropertyName("readwiseDocumentId")]
+        public string? ReadwiseDocumentId { get; set; }
+
+        [JsonPropertyName("hasFullTextContent")]
+        public bool HasFullTextContent { get; set; }
+
+        [JsonPropertyName("readerLocation")]
+        public string? ReaderLocation { get; set; }
     }
 }
