@@ -62,10 +62,18 @@ function HighlightProfilePage() {
         }
     };
 
-    // Parse tags from comma-separated string
-    const parseTags = (tagsString) => {
-        if (!tagsString) return [];
-        return tagsString.split(',').map(t => t.trim()).filter(t => t);
+    // Parse tags - handles both array (from API) and string (legacy) formats
+    const parseTags = (tags) => {
+        if (!tags) return [];
+        // If already an array, just filter empty values
+        if (Array.isArray(tags)) {
+            return tags.filter(t => t && t.trim());
+        }
+        // If string (legacy), split by comma
+        if (typeof tags === 'string') {
+            return tags.split(',').map(t => t.trim()).filter(t => t);
+        }
+        return [];
     };
 
     // Check if a GUID is valid (not null, undefined, or empty GUID)

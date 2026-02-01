@@ -88,10 +88,13 @@ namespace ProjectLoopbreaker.Application.Services
 
         public async Task<Highlight> CreateHighlightAsync(CreateHighlightDto dto)
         {
+            // Clean text to prevent CSS/HTML contamination
+            var cleanedText = HtmlTextCleaner.Clean(dto.Text);
+
             var highlight = new Highlight
             {
                 Id = Guid.NewGuid(),
-                Text = dto.Text,
+                Text = cleanedText,
                 Note = dto.Note,
                 Title = dto.Title,
                 Author = dto.Author,
@@ -135,7 +138,8 @@ namespace ProjectLoopbreaker.Application.Services
                 throw new InvalidOperationException($"Highlight with ID {id} not found");
             }
 
-            highlight.Text = dto.Text;
+            // Clean text to prevent CSS/HTML contamination
+            highlight.Text = HtmlTextCleaner.Clean(dto.Text);
             highlight.Note = dto.Note;
             highlight.Tags = dto.Tags != null ? string.Join(",", dto.Tags.Select(t => t.ToLowerInvariant())) : null;
             highlight.ArticleId = dto.ArticleId;

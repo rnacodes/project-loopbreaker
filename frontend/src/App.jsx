@@ -32,6 +32,7 @@ import DemoAdminPage from './components/DemoAdminPage';
 import UploadMediaPage from './components/UploadMediaPage';
 import YouTubeCallback from './pages/YouTubeCallback';
 import ReadwiseSyncPage from './components/ReadwiseSyncPage';
+import HighlightLinkingPage from './components/HighlightLinkingPage';
 import ArticlesPage from './components/ArticlesPage';
 import DocumentsPage from './components/DocumentsPage';
 import SourceDirectoryPage from './components/SourceDirectoryPage';
@@ -140,6 +141,9 @@ function App() {
             } />
             <Route path="/readwise-sync" element={
               <ConditionalProtectedRoute><ReadwiseSyncPage /></ConditionalProtectedRoute>
+            } />
+            <Route path="/highlight-linking" element={
+              <ConditionalProtectedRoute><HighlightLinkingPage /></ConditionalProtectedRoute>
             } />
             <Route path="/articles" element={
               <ConditionalProtectedRoute><ArticlesPage /></ConditionalProtectedRoute>

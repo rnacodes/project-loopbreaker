@@ -20,18 +20,39 @@ namespace ProjectLoopbreaker.Application.Utilities
 
             var result = text;
 
-            // Remove inline CSS styles (e.g., "color:#FFD700;margin-right:0.5rem;")
-            // Pattern matches CSS property:value pairs with optional semicolons
-            result = Regex.Replace(result, @"[a-z\-]+:\s*[^;}]+[;}]", " ", RegexOptions.IgnoreCase);
+            // First, handle the specific MUI/styled-components CSS contamination pattern
+            // This pattern appears at the start: ";color:#FFD700;margin-right:0.5rem;}&::after{@media...content:"
+            // We need to remove everything up to and including the last "content:" if it looks like CSS
+            var muiCssPattern = @"^[;\s]*(?:[a-z\-]+:[^;]+;)*\s*\}?\s*&?::(?:before|after)\s*\{.*?content\s*:\s*";
+            result = Regex.Replace(result, muiCssPattern, "", RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
-            // Remove CSS selectors and blocks (e.g., "@media (min-width:600px){font-size:1.5rem;}")
-            result = Regex.Replace(result, @"@[a-z\-]+\s*\([^)]*\)\s*\{[^}]*\}", " ", RegexOptions.IgnoreCase);
+            // Remove @media blocks with nested content (iterative to handle nesting)
+            // Match @media queries - handle nested braces by matching balanced pairs
+            var prevResult = "";
+            var iterations = 0;
+            while (prevResult != result && iterations < 10)
+            {
+                prevResult = result;
+                // Remove @media blocks (matching innermost braces first, then outer)
+                result = Regex.Replace(result, @"@media\s*\([^)]*\)\s*\{[^{}]*\}", " ", RegexOptions.IgnoreCase);
+                iterations++;
+            }
 
             // Remove pseudo-elements (e.g., "&::after{...}" or "::before{...}")
-            result = Regex.Replace(result, @"&?::[a-z\-]+\s*\{[^}]*\}", " ", RegexOptions.IgnoreCase);
+            result = Regex.Replace(result, @"&?::(?:before|after|first-child|last-child)\s*\{[^{}]*\}", " ", RegexOptions.IgnoreCase);
 
-            // Remove remaining CSS-like patterns (e.g., "{font-size:1.2rem;}")
-            result = Regex.Replace(result, @"\{[^}]*\}", " ", RegexOptions.IgnoreCase);
+            // Remove remaining CSS blocks with properties inside
+            result = Regex.Replace(result, @"\{[^{}]*:[^{}]*\}", " ", RegexOptions.IgnoreCase);
+
+            // Remove inline CSS property patterns that are clearly CSS (require colon and semicolon or close brace)
+            // Be more specific to avoid matching actual content
+            result = Regex.Replace(result, @"(?:^|;)\s*(?:color|font-size|margin-right|margin-left|margin|padding|background|border|display|width|height|content)\s*:\s*[^;{}]+[;}]", " ", RegexOptions.IgnoreCase);
+
+            // Remove any remaining "content:" at the start or after whitespace
+            result = Regex.Replace(result, @"(?:^|\s)content\s*:\s*", " ", RegexOptions.IgnoreCase);
+
+            // Remove orphan braces and semicolons at the start
+            result = Regex.Replace(result, @"^[\s;{}&]+", "");
 
             // Remove HTML tags
             result = Regex.Replace(result, @"<[^>]+>", " ", RegexOptions.IgnoreCase);
@@ -39,9 +60,6 @@ namespace ProjectLoopbreaker.Application.Utilities
             // Remove HTML entities
             result = Regex.Replace(result, @"&[a-zA-Z]+;", " ");
             result = Regex.Replace(result, @"&#\d+;", " ");
-
-            // Remove "content:" CSS property remnants
-            result = Regex.Replace(result, @"content\s*:", " ", RegexOptions.IgnoreCase);
 
             // Clean up multiple spaces and trim
             result = Regex.Replace(result, @"\s+", " ");
@@ -60,8 +78,9 @@ namespace ProjectLoopbreaker.Application.Utilities
             if (string.IsNullOrWhiteSpace(text))
                 return false;
 
-            // Check for common HTML/CSS patterns
-            return Regex.IsMatch(text, @"<[a-z]+|</[a-z]+>|[a-z\-]+:\s*[^;]+;|@media|::after|::before", RegexOptions.IgnoreCase);
+            // Check for common HTML/CSS patterns including MUI CSS contamination
+            // Look for: HTML tags, @media queries, pseudo-elements, or common CSS properties with values
+            return Regex.IsMatch(text, @"<[a-z]+[^>]*>|</[a-z]+>|@media|&?::(?:after|before)|(?:color|font-size|margin|padding|content)\s*:\s*[^;]+;", RegexOptions.IgnoreCase);
         }
     }
 }

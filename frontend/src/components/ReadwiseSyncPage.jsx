@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import {
   validateReadwiseConnection,
   syncReadwiseAll,
@@ -7,7 +6,8 @@ import {
   getUnlinkedHighlights,
   updateHighlight,
   getAllBooks,
-  getAllArticles
+  getAllArticles,
+  cleanHighlightText
 } from '../api';
 import './ReadwiseSyncPage.css';
 
@@ -24,9 +24,28 @@ const ReadwiseSyncPage = () => {
   const [books, setBooks] = useState([]);
   const [articles, setArticles] = useState([]);
   const [expandedHighlight, setExpandedHighlight] = useState(null);
+  const [expandedText, setExpandedText] = useState(new Set()); // Track which highlights have expanded text
   const [searchQuery, setSearchQuery] = useState('');
   const [linkingId, setLinkingId] = useState(null);
   const [linkSuccess, setLinkSuccess] = useState(null);
+  const [cleaningHighlights, setCleaningHighlights] = useState(false);
+  const [cleanResult, setCleanResult] = useState(null);
+
+  const handleCleanHighlightText = async () => {
+    setCleaningHighlights(true);
+    setCleanResult(null);
+    setError(null);
+    try {
+      const result = await cleanHighlightText();
+      setCleanResult(result);
+      // Reload highlights to show cleaned text
+      await loadUnlinkedHighlights();
+    } catch (err) {
+      setError(`Cleanup failed: ${err.response?.data?.details || err.message}`);
+    } finally {
+      setCleaningHighlights(false);
+    }
+  };
 
   const handleValidateConnection = async () => {
     setLoading(true);
@@ -164,9 +183,25 @@ const ReadwiseSyncPage = () => {
     )
   ).slice(0, 10);
 
-  const truncateText = (text, maxLength = 150) => {
+  const TEXT_CUTOFF = 200;
+
+  const truncateText = (text, maxLength = TEXT_CUTOFF) => {
     if (!text || text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
+  };
+
+  const isTextLong = (text) => text && text.length > TEXT_CUTOFF;
+
+  const toggleTextExpansion = (highlightId) => {
+    setExpandedText(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(highlightId)) {
+        newSet.delete(highlightId);
+      } else {
+        newSet.add(highlightId);
+      }
+      return newSet;
+    });
   };
 
   return (
@@ -354,6 +389,37 @@ const ReadwiseSyncPage = () => {
         </ul>
       </section>
 
+      {/* Maintenance Section */}
+      <section className="sync-section">
+        <h2>Maintenance</h2>
+        <p>
+          Clean highlight text to remove any CSS or HTML formatting that may have been accidentally stored.
+        </p>
+
+        <button
+          onClick={handleCleanHighlightText}
+          disabled={cleaningHighlights || loading}
+          className="btn btn-secondary"
+        >
+          {cleaningHighlights ? 'Cleaning...' : 'Clean Highlight Text'}
+        </button>
+
+        {cleanResult && (
+          <div className="sync-result success" style={{ marginTop: '1rem' }}>
+            <div className="result-grid">
+              <div className="result-item">
+                <span className="result-label">Highlights Cleaned:</span>
+                <span className="result-value">{cleanResult.cleanedCount}</span>
+              </div>
+              <div className="result-item full-width">
+                <span className="result-label">Status:</span>
+                <span className="result-value">{cleanResult.message}</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </section>
+
       {/* Unlinked Highlights Section */}
       <section className="sync-section unlinked-highlights-section">
         <h2>Manage Unlinked Highlights</h2>
@@ -392,11 +458,17 @@ const ReadwiseSyncPage = () => {
             <div className="unlinked-highlights-list">
               {unlinkedHighlights.map((highlight) => (
                 <div key={highlight.id} className="highlight-card">
-                  <Link to={`/highlight/${highlight.id}`} className="highlight-text-link">
-                    <div className="highlight-text">
-                      "{truncateText(highlight.text)}"
-                    </div>
-                  </Link>
+                  <div className="highlight-text">
+                    "{expandedText.has(highlight.id) ? highlight.text : truncateText(highlight.text)}"
+                    {isTextLong(highlight.text) && (
+                      <button
+                        className="read-more-btn"
+                        onClick={() => toggleTextExpansion(highlight.id)}
+                      >
+                        {expandedText.has(highlight.id) ? 'Show Less' : 'Read More'}
+                      </button>
+                    )}
+                  </div>
                   <div className="highlight-meta">
                     {highlight.title && (
                       <span className="meta-item">

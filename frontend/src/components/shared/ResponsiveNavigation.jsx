@@ -60,7 +60,8 @@ import {
   AutoAwesome,
   Psychology,
   Terminal,
-  FormatQuote
+  FormatQuote,
+  AddLink
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -148,6 +149,7 @@ const ResponsiveNavigation = () => {
     { text: 'Documents', path: '/documents', icon: <Description />, requiresAuth: true },
     { text: 'Local Scripts', path: '/script-execution', icon: <Terminal />, requiresAuth: true },
     { text: 'Readwise Sync', path: '/readwise-sync', icon: <Sync />, requiresAuth: true },
+    { text: 'Link Highlights', path: '/highlight-linking', icon: <AddLink />, requiresAuth: true },
     { text: 'Sources', path: '/sources', icon: <Apps />, requiresAuth: true },
     { text: 'Typesense Admin', path: '/typesense-admin', icon: <StorageIcon />, requiresAuth: true }
   ];

@@ -182,3 +182,17 @@ export const exportHighlightToReadwise = async (id) => {
         throw error;
     }
 };
+
+/**
+ * Cleans HTML/CSS from all highlight text in the database
+ * Removes any CSS contamination that may have been accidentally stored
+ */
+export const cleanHighlightText = async () => {
+    try {
+        const response = await apiClient.post('/highlight/clean-text');
+        return response.data;
+    } catch (error) {
+        console.error('Error cleaning highlight text:', error);
+        throw error;
+    }
+};

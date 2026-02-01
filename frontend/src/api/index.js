@@ -232,7 +232,8 @@ export {
     updateHighlight,
     deleteHighlight,
     linkHighlightsToMedia,
-    exportHighlightToReadwise
+    exportHighlightToReadwise,
+    cleanHighlightText
 } from './highlightService';
 
 // Readwise (unified sync)

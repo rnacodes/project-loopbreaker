@@ -385,22 +385,30 @@
   padding: 1rem 1.25rem;
 }
 
-.highlight-text-link {
-  text-decoration: none;
-  display: block;
-}
-
-.highlight-text-link:hover .highlight-text {
-  color: #ffc107;
-}
+/* Read More button is used for expanding long highlights */
 
 .highlight-text {
   color: #fcfafa;
   font-style: italic;
   line-height: 1.6;
   margin-bottom: 0.75rem;
+}
+
+.read-more-btn {
+  background: none;
+  border: none;
+  color: #ffc107;
   cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0;
+  margin-left: 0.5rem;
+  text-decoration: underline;
   transition: color 0.2s ease;
+}
+
+.read-more-btn:hover {
+  color: #ffca28;
 }
 
 .highlight-meta {

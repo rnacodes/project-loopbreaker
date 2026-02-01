@@ -8,6 +8,7 @@ namespace ProjectLoopbreaker.Web.API.Filters
     /// Filter that blocks write operations (POST, PUT, DELETE, PATCH) in Demo environment.
     /// Allows browsing and GET requests only for demo users.
     /// Can be bypassed with:
+    /// - Cloudflare Access JWT (CF-Access-JWT-Assertion header) for SSO authentication
     /// - X-Demo-Admin-Key header matching DEMO_ADMIN_KEY environment variable
     /// - Database feature flag "demo_write_enabled" set to true (no restart required)
     /// - DEMO_WRITE_ENABLED environment variable set to "true" (requires restart)
@@ -57,6 +58,28 @@ namespace ProjectLoopbreaker.Web.API.Filters
                     _logger.LogDebug("Allowing feature flag management endpoint: {Path}", path);
                     await next();
                     return;
+                }
+
+                // Check for Cloudflare Access JWT bypass (highest priority - secure SSO bypass)
+                var cfAccessJwt = context.HttpContext.Request.Headers["CF-Access-JWT-Assertion"].FirstOrDefault();
+                if (!string.IsNullOrEmpty(cfAccessJwt))
+                {
+                    try
+                    {
+                        var cloudflareService = context.HttpContext.RequestServices.GetService<ICloudflareAccessService>();
+                        if (cloudflareService != null && await cloudflareService.ValidateTokenAsync(cfAccessJwt))
+                        {
+                            _logger.LogInformation(
+                                "Cloudflare Access bypass used. Method: {Method}, Path: {Path}",
+                                httpMethod, path);
+                            await next();
+                            return;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Cloudflare Access token validation failed");
+                    }
                 }
 
                 // Check database feature flag first (highest priority - instant effect without restart)
