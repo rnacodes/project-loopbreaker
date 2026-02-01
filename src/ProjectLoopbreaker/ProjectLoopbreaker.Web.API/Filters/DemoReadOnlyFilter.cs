@@ -8,6 +8,7 @@ namespace ProjectLoopbreaker.Web.API.Filters
     /// Filter that blocks write operations (POST, PUT, DELETE, PATCH) in Demo environment.
     /// Allows browsing and GET requests only for demo users.
     /// Can be bypassed with:
+    /// - TOTP cookie (Demo_Write_Access) set by /api/demo/unlock endpoint (20 min expiry)
     /// - Cloudflare Access JWT (CF-Access-JWT-Assertion header) for SSO authentication
     /// - X-Demo-Admin-Key header matching DEMO_ADMIN_KEY environment variable
     /// - Database feature flag "demo_write_enabled" set to true (no restart required)
@@ -21,6 +22,7 @@ namespace ProjectLoopbreaker.Web.API.Filters
         private readonly IFeatureFlagService _featureFlagService;
         private const string AdminKeyHeader = "X-Demo-Admin-Key";
         private const string DemoWriteEnabledFlag = "demo_write_enabled";
+        private const string TotpCookieName = "Demo_Write_Access";
 
         public DemoReadOnlyFilter(
             IWebHostEnvironment environment,
@@ -60,7 +62,18 @@ namespace ProjectLoopbreaker.Web.API.Filters
                     return;
                 }
 
-                // Check for Cloudflare Access JWT bypass (highest priority - secure SSO bypass)
+                // Check for TOTP cookie bypass (highest priority for user-initiated access)
+                if (context.HttpContext.Request.Cookies.TryGetValue(TotpCookieName, out var cookieValue) &&
+                    cookieValue == "true")
+                {
+                    _logger.LogInformation(
+                        "TOTP cookie bypass used. Method: {Method}, Path: {Path}",
+                        httpMethod, path);
+                    await next();
+                    return;
+                }
+
+                // Check for Cloudflare Access JWT bypass (secure SSO bypass)
                 var cfAccessJwt = context.HttpContext.Request.Headers["CF-Access-JWT-Assertion"].FirstOrDefault();
                 if (!string.IsNullOrEmpty(cfAccessJwt))
                 {

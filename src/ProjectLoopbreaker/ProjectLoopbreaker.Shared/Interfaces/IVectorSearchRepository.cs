@@ -48,6 +48,11 @@ namespace ProjectLoopbreaker.Shared.Interfaces
         /// Checks if pgvector extension is available in the database.
         /// </summary>
         Task<bool> IsPgVectorAvailableAsync();
+
+        /// <summary>
+        /// Checks if any media items have embeddings stored.
+        /// </summary>
+        Task<bool> HasAnyMediaEmbeddingsAsync();
     }
 
     /// <summary>

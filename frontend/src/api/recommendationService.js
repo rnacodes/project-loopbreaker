@@ -29,10 +29,10 @@ export const getRecommendationStatus = async () => {
  */
 export const getSimilarMedia = async (id, limit = 10, mediaType = null) => {
     try {
-        const params = { limit };
+        const params = { count: limit };
         if (mediaType) params.mediaType = mediaType;
         const response = await apiClient.get(`/recommendation/similar/media/${id}`, { params });
-        return response.data;
+        return response.data.items || [];
     } catch (error) {
         console.error('Error getting similar media:', error);
         throw error;
@@ -47,10 +47,10 @@ export const getSimilarMedia = async (id, limit = 10, mediaType = null) => {
  */
 export const getSimilarNotes = async (id, limit = 10, vault = null) => {
     try {
-        const params = { limit };
+        const params = { count: limit };
         if (vault) params.vault = vault;
         const response = await apiClient.get(`/recommendation/similar/note/${id}`, { params });
-        return response.data;
+        return response.data.notes || [];
     } catch (error) {
         console.error('Error getting similar notes:', error);
         throw error;
@@ -69,10 +69,10 @@ export const getSimilarNotes = async (id, limit = 10, vault = null) => {
  */
 export const searchByVibe = async (query, mediaType = null, limit = 20) => {
     try {
-        const data = { query, limit };
+        const data = { description: query, count: limit };
         if (mediaType) data.mediaType = mediaType;
         const response = await apiClient.post('/recommendation/by-vibe', data);
-        return response.data;
+        return response.data.items || [];
     } catch (error) {
         console.error('Error searching by vibe:', error);
         throw error;
@@ -90,10 +90,10 @@ export const searchByVibe = async (query, mediaType = null, limit = 20) => {
  */
 export const getForYouRecommendations = async (limit = 20, mediaType = null) => {
     try {
-        const params = { limit };
+        const params = { count: limit };
         if (mediaType) params.mediaType = mediaType;
         const response = await apiClient.get('/recommendation/for-you', { params });
-        return response.data;
+        return response.data.items || [];
     } catch (error) {
         console.error('Error getting personalized recommendations:', error);
         throw error;
@@ -112,10 +112,10 @@ export const getForYouRecommendations = async (limit = 20, mediaType = null) => 
  */
 export const getMediaForNote = async (noteId, limit = 10, mediaType = null) => {
     try {
-        const params = { limit };
+        const params = { count: limit };
         if (mediaType) params.mediaType = mediaType;
         const response = await apiClient.get(`/recommendation/media-for-note/${noteId}`, { params });
-        return response.data;
+        return response.data.items || [];
     } catch (error) {
         console.error('Error getting media for note:', error);
         throw error;
@@ -130,10 +130,10 @@ export const getMediaForNote = async (noteId, limit = 10, mediaType = null) => {
  */
 export const getNotesForMedia = async (mediaItemId, limit = 10, vault = null) => {
     try {
-        const params = { limit };
+        const params = { count: limit };
         if (vault) params.vault = vault;
         const response = await apiClient.get(`/recommendation/notes-for-media/${mediaItemId}`, { params });
-        return response.data;
+        return response.data.notes || [];
     } catch (error) {
         console.error('Error getting notes for media:', error);
         throw error;

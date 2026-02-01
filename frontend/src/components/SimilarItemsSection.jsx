@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   Box,
@@ -11,20 +11,25 @@ import {
   Alert,
   IconButton,
   Tooltip,
+  Button,
+  Collapse,
 } from '@mui/material';
 import {
   AutoAwesome as AutoAwesomeIcon,
   Refresh as RefreshIcon,
-  OpenInNew as OpenInNewIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { getSimilarMedia } from '../api';
 import { formatMediaType } from '../utils/formatters';
 
 function SimilarItemsSection({ mediaItem, setSnackbar }) {
   const [similarItems, setSimilarItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasEmbedding, setHasEmbedding] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
   const fetchSimilarItems = useCallback(async () => {
     if (!mediaItem?.id) return;
@@ -36,6 +41,7 @@ function SimilarItemsSection({ mediaItem, setSnackbar }) {
       const items = await getSimilarMedia(mediaItem.id, 8);
       setSimilarItems(items || []);
       setHasEmbedding(true);
+      setHasFetched(true);
     } catch (err) {
       console.error('Error fetching similar items:', err);
       // Check if error is due to missing embedding
@@ -45,17 +51,23 @@ function SimilarItemsSection({ mediaItem, setSnackbar }) {
       } else {
         setError(err.response?.data?.message || err.message || 'Failed to load similar items');
       }
+      setHasFetched(true);
     } finally {
       setLoading(false);
     }
   }, [mediaItem?.id]);
 
-  useEffect(() => {
-    fetchSimilarItems();
-  }, [fetchSimilarItems]);
+  const handleExpandClick = () => {
+    const newExpanded = !expanded;
+    setExpanded(newExpanded);
+    // Fetch on first expand
+    if (newExpanded && !hasFetched) {
+      fetchSimilarItems();
+    }
+  };
 
-  // Don't render if no embedding
-  if (!hasEmbedding && !loading) {
+  // Don't render if no embedding (only show after we've fetched)
+  if (!hasEmbedding && hasFetched) {
     return (
       <Card sx={{ mb: 3 }}>
         <CardContent>
@@ -75,60 +87,87 @@ function SimilarItemsSection({ mediaItem, setSnackbar }) {
 
   return (
     <Card sx={{ mb: 3 }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+      <CardContent sx={{ pb: expanded ? 2 : '16px !important' }}>
+        {/* Clickable header for expand/collapse */}
+        <Box
+          onClick={handleExpandClick}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            '&:hover': { opacity: 0.8 },
+          }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AutoAwesomeIcon color="primary" />
+            <AutoAwesomeIcon color={expanded ? 'primary' : 'action'} />
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
               Similar Items
             </Typography>
             <Chip label="AI" size="small" color="secondary" sx={{ ml: 1 }} />
           </Box>
-          <Tooltip title="Refresh recommendations">
-            <IconButton onClick={fetchSimilarItems} disabled={loading} size="small">
-              <RefreshIcon />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {expanded && hasFetched && (
+              <Tooltip title="Refresh recommendations">
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fetchSimilarItems();
+                  }}
+                  disabled={loading}
+                  size="small"
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+            <IconButton size="small">
+              {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
-          </Tooltip>
+          </Box>
         </Box>
 
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-            <CircularProgress size={32} />
-          </Box>
-        )}
+        {/* Collapsible content */}
+        <Collapse in={expanded}>
+          <Box sx={{ mt: 2 }}>
+            {loading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                <CircularProgress size={32} />
+              </Box>
+            )}
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
 
-        {!loading && !error && similarItems.length === 0 && (
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-            No similar items found
-          </Typography>
-        )}
+            {!loading && !error && hasFetched && similarItems.length === 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                No similar items found
+              </Typography>
+            )}
 
-        {!loading && !error && similarItems.length > 0 && (
-          <Box
-            sx={{
-              display: 'flex',
-              overflowX: 'auto',
-              gap: 2,
-              pb: 1,
-              '&::-webkit-scrollbar': {
-                height: 6,
-              },
-              '&::-webkit-scrollbar-track': {
-                bgcolor: 'action.hover',
-                borderRadius: 3,
-              },
-              '&::-webkit-scrollbar-thumb': {
-                bgcolor: 'action.selected',
-                borderRadius: 3,
-              },
-            }}
-          >
+            {!loading && !error && similarItems.length > 0 && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  overflowX: 'auto',
+                  gap: 2,
+                  pb: 1,
+                  '&::-webkit-scrollbar': {
+                    height: 6,
+                  },
+                  '&::-webkit-scrollbar-track': {
+                    bgcolor: 'action.hover',
+                    borderRadius: 3,
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    bgcolor: 'action.selected',
+                    borderRadius: 3,
+                  },
+                }}
+              >
             {similarItems.map((item) => (
               <Card
                 key={item.id}
@@ -192,8 +231,10 @@ function SimilarItemsSection({ mediaItem, setSnackbar }) {
                 </CardContent>
               </Card>
             ))}
+              </Box>
+            )}
           </Box>
-        )}
+        </Collapse>
       </CardContent>
     </Card>
   );

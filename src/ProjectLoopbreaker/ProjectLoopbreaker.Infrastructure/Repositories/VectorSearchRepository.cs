@@ -46,6 +46,30 @@ namespace ProjectLoopbreaker.Infrastructure.Repositories
         }
 
         /// <inheritdoc />
+        public async Task<bool> HasAnyMediaEmbeddingsAsync()
+        {
+            try
+            {
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open)
+                {
+                    await connection.OpenAsync();
+                }
+
+                using var command = connection.CreateCommand();
+                command.CommandText = @"SELECT EXISTS(SELECT 1 FROM ""MediaItems"" WHERE ""Embedding"" IS NOT NULL LIMIT 1)";
+
+                var result = await command.ExecuteScalarAsync();
+                return result is bool b && b;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking for media embeddings");
+                return false;
+            }
+        }
+
+        /// <inheritdoc />
         public async Task<List<VectorSearchResult>> FindSimilarMediaItemsAsync(
             float[] embedding,
             Guid? excludeId = null,
@@ -117,14 +141,11 @@ namespace ProjectLoopbreaker.Infrastructure.Repositories
 
                 if (!string.IsNullOrEmpty(mediaTypeFilter))
                 {
-                    // Parse media type to int enum value
-                    if (Enum.TryParse<ProjectLoopbreaker.Domain.Entities.MediaType>(mediaTypeFilter, true, out var mediaType))
-                    {
-                        var mediaTypeParam = command.CreateParameter();
-                        mediaTypeParam.ParameterName = "@mediaType";
-                        mediaTypeParam.Value = (int)mediaType;
-                        command.Parameters.Add(mediaTypeParam);
-                    }
+                    // MediaType is stored as varchar, pass the string value
+                    var mediaTypeParam = command.CreateParameter();
+                    mediaTypeParam.ParameterName = "@mediaType";
+                    mediaTypeParam.Value = mediaTypeFilter;
+                    command.Parameters.Add(mediaTypeParam);
                 }
 
                 using var reader = await command.ExecuteReaderAsync();
@@ -134,11 +155,11 @@ namespace ProjectLoopbreaker.Infrastructure.Repositories
                     {
                         Id = reader.GetGuid(0),
                         Title = reader.GetString(1),
-                        MediaType = ((ProjectLoopbreaker.Domain.Entities.MediaType)reader.GetInt32(2)).ToString(),
+                        MediaType = reader.GetString(2),  // Stored as varchar
                         Description = reader.IsDBNull(3) ? null : reader.GetString(3),
                         Thumbnail = reader.IsDBNull(4) ? null : reader.GetString(4),
-                        Status = ((ProjectLoopbreaker.Domain.Entities.Status)reader.GetInt32(5)).ToString(),
-                        Rating = reader.IsDBNull(6) ? null : ((ProjectLoopbreaker.Domain.Entities.Rating)reader.GetInt32(6)).ToString(),
+                        Status = reader.GetString(5),  // Stored as varchar
+                        Rating = reader.IsDBNull(6) ? null : reader.GetString(6),  // Stored as varchar
                         SimilarityScore = reader.GetDouble(7)
                     });
                 }
@@ -269,14 +290,30 @@ namespace ProjectLoopbreaker.Infrastructure.Repositories
         {
             try
             {
-                var embedding = await _context.MediaItems
-                    .AsNoTracking()
-                    .Where(m => m.Id == id)
-                    .Select(m => m.Embedding)
-                    .FirstOrDefaultAsync();
+                // Use raw SQL because Embedding property is ignored in EF Core
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open)
+                {
+                    await connection.OpenAsync();
+                }
 
-                // Convert Vector to float[] for callers
-                return embedding?.ToArray();
+                using var command = connection.CreateCommand();
+                command.CommandText = @"SELECT ""Embedding""::text FROM ""MediaItems"" WHERE ""Id"" = @id AND ""Embedding"" IS NOT NULL";
+
+                var idParam = command.CreateParameter();
+                idParam.ParameterName = "@id";
+                idParam.Value = id;
+                command.Parameters.Add(idParam);
+
+                var result = await command.ExecuteScalarAsync();
+                if (result == null || result == DBNull.Value)
+                {
+                    return null;
+                }
+
+                // Parse the vector string format: [0.1,0.2,0.3,...]
+                var vectorString = result.ToString();
+                return ParseVectorString(vectorString);
             }
             catch (Exception ex)
             {
@@ -290,14 +327,30 @@ namespace ProjectLoopbreaker.Infrastructure.Repositories
         {
             try
             {
-                var embedding = await _context.Notes
-                    .AsNoTracking()
-                    .Where(n => n.Id == id)
-                    .Select(n => n.Embedding)
-                    .FirstOrDefaultAsync();
+                // Use raw SQL because Embedding property is ignored in EF Core
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open)
+                {
+                    await connection.OpenAsync();
+                }
 
-                // Convert Vector to float[] for callers
-                return embedding?.ToArray();
+                using var command = connection.CreateCommand();
+                command.CommandText = @"SELECT ""Embedding""::text FROM ""Notes"" WHERE ""Id"" = @id AND ""Embedding"" IS NOT NULL";
+
+                var idParam = command.CreateParameter();
+                idParam.ParameterName = "@id";
+                idParam.Value = id;
+                command.Parameters.Add(idParam);
+
+                var result = await command.ExecuteScalarAsync();
+                if (result == null || result == DBNull.Value)
+                {
+                    return null;
+                }
+
+                // Parse the vector string format: [0.1,0.2,0.3,...]
+                var vectorString = result.ToString();
+                return ParseVectorString(vectorString);
             }
             catch (Exception ex)
             {
@@ -313,6 +366,38 @@ namespace ProjectLoopbreaker.Infrastructure.Repositories
         private static string FormatEmbeddingForPgVector(float[] embedding)
         {
             return "[" + string.Join(",", embedding.Select(f => f.ToString("G9", CultureInfo.InvariantCulture))) + "]";
+        }
+
+        /// <summary>
+        /// Parses a pgvector string format back to a float array.
+        /// Format: [0.1,0.2,0.3,...]
+        /// </summary>
+        private static float[]? ParseVectorString(string? vectorString)
+        {
+            if (string.IsNullOrWhiteSpace(vectorString))
+            {
+                return null;
+            }
+
+            // Remove brackets and split by comma
+            var trimmed = vectorString.Trim('[', ']');
+            if (string.IsNullOrWhiteSpace(trimmed))
+            {
+                return null;
+            }
+
+            var parts = trimmed.Split(',');
+            var result = new float[parts.Length];
+
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (!float.TryParse(parts[i], NumberStyles.Float, CultureInfo.InvariantCulture, out result[i]))
+                {
+                    return null;
+                }
+            }
+
+            return result;
         }
     }
 }

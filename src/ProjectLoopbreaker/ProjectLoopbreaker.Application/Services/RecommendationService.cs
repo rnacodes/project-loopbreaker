@@ -49,9 +49,8 @@ namespace ProjectLoopbreaker.Application.Services
                     _logger.LogWarning("Recommendation service: pgvector extension not available in database");
                 }
 
-                // Check if we have any items with embeddings
-                var hasEmbeddings = await _context.MediaItems
-                    .AnyAsync(m => m.Embedding != null);
+                // Check if we have any items with embeddings (use raw SQL via repository)
+                var hasEmbeddings = await _vectorSearch.HasAnyMediaEmbeddingsAsync();
 
                 if (!hasEmbeddings)
                 {

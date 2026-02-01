@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   Box,
@@ -12,19 +12,24 @@ import {
   IconButton,
   Tooltip,
   Grid,
+  Collapse,
 } from '@mui/material';
 import {
   AutoAwesome as AutoAwesomeIcon,
   Refresh as RefreshIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import { getRecommendedMediaForNote } from '../api';
 import { formatMediaType } from '../utils/formatters';
 
 function RelatedMediaByEmbeddingSection({ note, setSnackbar }) {
   const [relatedMedia, setRelatedMedia] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasEmbedding, setHasEmbedding] = useState(true);
+  const [expanded, setExpanded] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
   const fetchRelatedMedia = useCallback(async () => {
     if (!note?.id) return;
@@ -36,6 +41,7 @@ function RelatedMediaByEmbeddingSection({ note, setSnackbar }) {
       const media = await getRecommendedMediaForNote(note.id, 8);
       setRelatedMedia(media || []);
       setHasEmbedding(true);
+      setHasFetched(true);
     } catch (err) {
       console.error('Error fetching related media:', err);
       // Check if error is due to missing embedding
@@ -45,17 +51,23 @@ function RelatedMediaByEmbeddingSection({ note, setSnackbar }) {
       } else {
         setError(err.response?.data?.message || err.message || 'Failed to load related media');
       }
+      setHasFetched(true);
     } finally {
       setLoading(false);
     }
   }, [note?.id]);
 
-  useEffect(() => {
-    fetchRelatedMedia();
-  }, [fetchRelatedMedia]);
+  const handleExpandClick = () => {
+    const newExpanded = !expanded;
+    setExpanded(newExpanded);
+    // Fetch on first expand
+    if (newExpanded && !hasFetched) {
+      fetchRelatedMedia();
+    }
+  };
 
-  // Don't render if no embedding
-  if (!hasEmbedding && !loading) {
+  // Don't render if no embedding (only show after we've fetched)
+  if (!hasEmbedding && hasFetched) {
     return (
       <Card sx={{ mb: 3 }}>
         <CardContent>
@@ -75,106 +87,135 @@ function RelatedMediaByEmbeddingSection({ note, setSnackbar }) {
 
   return (
     <Card sx={{ mb: 3 }}>
-      <CardContent>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+      <CardContent sx={{ pb: expanded ? 2 : '16px !important' }}>
+        {/* Clickable header for expand/collapse */}
+        <Box
+          onClick={handleExpandClick}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            '&:hover': { opacity: 0.8 },
+          }}
+        >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <AutoAwesomeIcon color="primary" />
+            <AutoAwesomeIcon color={expanded ? 'primary' : 'action'} />
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
               Related Media
             </Typography>
             <Chip label="AI" size="small" color="secondary" sx={{ ml: 1 }} />
           </Box>
-          <Tooltip title="Refresh recommendations">
-            <IconButton onClick={fetchRelatedMedia} disabled={loading} size="small">
-              <RefreshIcon />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            {expanded && hasFetched && (
+              <Tooltip title="Refresh recommendations">
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fetchRelatedMedia();
+                  }}
+                  disabled={loading}
+                  size="small"
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+            )}
+            <IconButton size="small">
+              {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
             </IconButton>
-          </Tooltip>
+          </Box>
         </Box>
 
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-            <CircularProgress size={32} />
-          </Box>
-        )}
+        {/* Collapsible content */}
+        <Collapse in={expanded}>
+          <Box sx={{ mt: 2 }}>
+            {loading && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                <CircularProgress size={32} />
+              </Box>
+            )}
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
 
-        {!loading && !error && relatedMedia.length === 0 && (
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-            No related media found
-          </Typography>
-        )}
+            {!loading && !error && hasFetched && relatedMedia.length === 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
+                No related media found
+              </Typography>
+            )}
 
-        {!loading && !error && relatedMedia.length > 0 && (
-          <Grid container spacing={2}>
-            {relatedMedia.map((item) => (
-              <Grid item xs={6} sm={4} md={3} key={item.id}>
-                <Card
-                  component={RouterLink}
-                  to={`/media/${item.id}`}
-                  sx={{
-                    height: '100%',
-                    textDecoration: 'none',
-                    '&:hover': {
-                      transform: 'translateY(-2px)',
-                      boxShadow: 3,
-                    },
-                    transition: 'all 0.2s ease-in-out',
-                  }}
-                >
-                  {item.thumbnail && (
-                    <CardMedia
-                      component="img"
-                      height="100"
-                      image={item.thumbnail}
-                      alt={item.title}
-                      sx={{ objectFit: 'cover' }}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  )}
-                  <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                    <Typography
-                      variant="body2"
+            {!loading && !error && relatedMedia.length > 0 && (
+              <Grid container spacing={2}>
+                {relatedMedia.map((item) => (
+                  <Grid item xs={6} sm={4} md={3} key={item.id}>
+                    <Card
+                      component={RouterLink}
+                      to={`/media/${item.id}`}
                       sx={{
-                        fontWeight: 'bold',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        lineHeight: 1.3,
-                        mb: 0.5,
+                        height: '100%',
+                        textDecoration: 'none',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: 3,
+                        },
+                        transition: 'all 0.2s ease-in-out',
                       }}
                     >
-                      {item.title}
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-                      <Chip
-                        label={formatMediaType(item.mediaType)}
-                        size="small"
-                        sx={{ fontSize: '0.65rem', height: 20 }}
-                      />
-                      {item.similarityScore && (
-                        <Chip
-                          label={`${Math.round(item.similarityScore * 100)}%`}
-                          size="small"
-                          color="secondary"
-                          sx={{ fontSize: '0.65rem', height: 20 }}
+                      {item.thumbnail && (
+                        <CardMedia
+                          component="img"
+                          height="100"
+                          image={item.thumbnail}
+                          alt={item.title}
+                          sx={{ objectFit: 'cover' }}
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
                         />
                       )}
-                    </Box>
-                  </CardContent>
-                </Card>
+                      <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 'bold',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            lineHeight: 1.3,
+                            mb: 0.5,
+                          }}
+                        >
+                          {item.title}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                          <Chip
+                            label={formatMediaType(item.mediaType)}
+                            size="small"
+                            sx={{ fontSize: '0.65rem', height: 20 }}
+                          />
+                          {item.similarityScore && (
+                            <Chip
+                              label={`${Math.round(item.similarityScore * 100)}%`}
+                              size="small"
+                              color="secondary"
+                              sx={{ fontSize: '0.65rem', height: 20 }}
+                            />
+                          )}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
               </Grid>
-            ))}
-          </Grid>
-        )}
+            )}
+          </Box>
+        </Collapse>
       </CardContent>
     </Card>
   );
