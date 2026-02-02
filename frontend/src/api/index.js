@@ -271,11 +271,7 @@ export {
     cleanupAllGenres,
     cleanupOrphanedTopics,
     cleanupOrphanedGenres,
-    cleanupAllMedia,
-    getAllFeatureFlags,
-    getFeatureFlag,
-    enableFeatureFlag,
-    disableFeatureFlag
+    cleanupAllMedia
 } from './devService';
 
 // Typesense Search
@@ -359,3 +355,11 @@ export {
     getMediaForNote as getRecommendedMediaForNote,
     getNotesForMedia as getRecommendedNotesForMedia
 } from './recommendationService';
+
+// Related Media (Saved Recommendations)
+export {
+    getRelatedMedia,
+    saveRelatedMedia,
+    removeRelatedMedia,
+    saveRelatedMediaBatch
+} from './relatedMediaService';

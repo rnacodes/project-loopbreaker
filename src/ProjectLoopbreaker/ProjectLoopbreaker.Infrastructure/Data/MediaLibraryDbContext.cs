@@ -29,7 +29,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Note> Notes { get; set; }
         public DbSet<MediaItemNote> MediaItemNotes { get; set; }
-        public DbSet<FeatureFlag> FeatureFlags { get; set; }
+        public DbSet<MediaItemRelation> MediaItemRelations { get; set; }
 
         // IApplicationDbContext interface implementations
         IQueryable<BaseMediaItem> IApplicationDbContext.MediaItems => MediaItems;
@@ -51,7 +51,7 @@ namespace ProjectLoopbreaker.Infrastructure.Data
         IQueryable<RefreshToken> IApplicationDbContext.RefreshTokens => RefreshTokens;
         IQueryable<Note> IApplicationDbContext.Notes => Notes;
         IQueryable<MediaItemNote> IApplicationDbContext.MediaItemNotes => MediaItemNotes;
-        IQueryable<FeatureFlag> IApplicationDbContext.FeatureFlags => FeatureFlags;
+        IQueryable<MediaItemRelation> IApplicationDbContext.MediaItemRelations => MediaItemRelations;
 
 
         public MediaLibraryDbContext(DbContextOptions<MediaLibraryDbContext> options) : base(options) { }
@@ -782,29 +782,6 @@ namespace ProjectLoopbreaker.Infrastructure.Data
                 entity.HasIndex(e => e.IsDescriptionManual);
             });
 
-            // Configure FeatureFlag entity
-            modelBuilder.Entity<FeatureFlag>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-
-                entity.Property(e => e.Key)
-                    .HasMaxLength(100)
-                    .IsRequired();
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(500);
-
-                entity.Property(e => e.IsEnabled)
-                    .HasDefaultValue(false);
-
-                entity.Property(e => e.CreatedAt)
-                    .IsRequired();
-
-                // Create unique index on Key to prevent duplicates
-                entity.HasIndex(e => e.Key)
-                    .IsUnique();
-            });
-
             // Configure MediaItemNote join entity
             modelBuilder.Entity<MediaItemNote>(entity =>
             {
@@ -831,6 +808,42 @@ namespace ProjectLoopbreaker.Infrastructure.Data
 
                 // Create index on LinkedAt for sorting
                 entity.HasIndex(e => e.LinkedAt);
+            });
+
+            // Configure MediaItemRelation join entity (self-referential many-to-many for saved related items)
+            modelBuilder.Entity<MediaItemRelation>(entity =>
+            {
+                // Composite primary key
+                entity.HasKey(e => new { e.SourceMediaItemId, e.RelatedMediaItemId });
+
+                // Configure relationship with source media item
+                entity.HasOne(e => e.SourceMediaItem)
+                    .WithMany(m => m.RelatedToItems)
+                    .HasForeignKey(e => e.SourceMediaItemId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Configure relationship with related media item
+                entity.HasOne(e => e.RelatedMediaItem)
+                    .WithMany(m => m.RelatedFromItems)
+                    .HasForeignKey(e => e.RelatedMediaItemId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(e => e.Source)
+                    .HasConversion<string>()
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(e => e.Note)
+                    .HasMaxLength(500);
+
+                entity.Property(e => e.CreatedAt)
+                    .IsRequired();
+
+                // Create indexes for better query performance
+                entity.HasIndex(e => e.SourceMediaItemId);
+                entity.HasIndex(e => e.RelatedMediaItemId);
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => e.Source);
             });
         }
 

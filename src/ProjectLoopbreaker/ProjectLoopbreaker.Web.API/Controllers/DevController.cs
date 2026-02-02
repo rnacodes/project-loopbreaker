@@ -14,19 +14,16 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         private readonly ILogger<DevController> _logger;
         private readonly IWebHostEnvironment _environment;
         private readonly ITypeSenseService? _typeSenseService;
-        private readonly IFeatureFlagService _featureFlagService;
 
         public DevController(
             Infrastructure.Data.MediaLibraryDbContext context,
             ILogger<DevController> logger,
             IWebHostEnvironment environment,
-            IFeatureFlagService featureFlagService,
             ITypeSenseService? typeSenseService = null)
         {
             _context = context;
             _logger = logger;
             _environment = environment;
-            _featureFlagService = featureFlagService;
             _typeSenseService = typeSenseService;
         }
 
@@ -1291,162 +1288,5 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
-        // ==================== Feature Flag Endpoints ====================
-
-        // GET: api/dev/feature-flags
-        // Note: Feature flag endpoints are allowed in production for demo site management
-        [HttpGet("feature-flags")]
-        public async Task<IActionResult> GetAllFeatureFlags()
-        {
-            try
-            {
-                var flags = await _featureFlagService.GetAllAsync();
-                return Ok(new
-                {
-                    message = "Feature flags retrieved successfully",
-                    flags = flags
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving feature flags");
-                return StatusCode(500, new { error = "Failed to retrieve feature flags", details = ex.Message });
-            }
-        }
-
-        // GET: api/dev/feature-flags/{key}
-        [HttpGet("feature-flags/{key}")]
-        public async Task<IActionResult> GetFeatureFlag(string key)
-        {
-            try
-            {
-                var flag = await _featureFlagService.GetAsync(key);
-                if (flag == null)
-                {
-                    return NotFound(new { error = $"Feature flag '{key}' not found" });
-                }
-
-                return Ok(flag);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving feature flag {Key}", key);
-                return StatusCode(500, new { error = "Failed to retrieve feature flag", details = ex.Message });
-            }
-        }
-
-        // POST: api/dev/feature-flags/{key}/enable
-        [HttpPost("feature-flags/{key}/enable")]
-        public async Task<IActionResult> EnableFeatureFlag(string key, [FromBody] FeatureFlagDescriptionRequest? request = null)
-        {
-            try
-            {
-                await _featureFlagService.EnableAsync(key, request?.Description);
-                _logger.LogInformation("Feature flag '{Key}' enabled", key);
-
-                return Ok(new
-                {
-                    message = $"Feature flag '{key}' enabled successfully",
-                    key = key,
-                    isEnabled = true
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error enabling feature flag {Key}", key);
-                return StatusCode(500, new { error = "Failed to enable feature flag", details = ex.Message });
-            }
-        }
-
-        // POST: api/dev/feature-flags/{key}/disable
-        [HttpPost("feature-flags/{key}/disable")]
-        public async Task<IActionResult> DisableFeatureFlag(string key, [FromBody] FeatureFlagDescriptionRequest? request = null)
-        {
-            try
-            {
-                await _featureFlagService.DisableAsync(key, request?.Description);
-                _logger.LogInformation("Feature flag '{Key}' disabled", key);
-
-                return Ok(new
-                {
-                    message = $"Feature flag '{key}' disabled successfully",
-                    key = key,
-                    isEnabled = false
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error disabling feature flag {Key}", key);
-                return StatusCode(500, new { error = "Failed to disable feature flag", details = ex.Message });
-            }
-        }
-
-        // GET: api/dev/demo-write-status
-        // Diagnostic endpoint to check why demo write operations might be blocked
-        [HttpGet("demo-write-status")]
-        public async Task<IActionResult> GetDemoWriteStatus()
-        {
-            var result = new Dictionary<string, object>
-            {
-                ["environment"] = _environment.EnvironmentName,
-                ["isDemo"] = _environment.EnvironmentName.Equals("Demo", StringComparison.OrdinalIgnoreCase)
-            };
-
-            // Check database feature flag
-            try
-            {
-                var dbFlagEnabled = await _featureFlagService.IsEnabledAsync("demo_write_enabled");
-                var dbFlag = await _featureFlagService.GetAsync("demo_write_enabled");
-                result["databaseFeatureFlag"] = new
-                {
-                    isEnabled = dbFlagEnabled,
-                    flagExists = dbFlag != null,
-                    flagDetails = dbFlag
-                };
-            }
-            catch (Exception ex)
-            {
-                result["databaseFeatureFlag"] = new
-                {
-                    error = ex.Message,
-                    exceptionType = ex.GetType().Name
-                };
-            }
-
-            // Check environment variable
-            var envVarValue = Environment.GetEnvironmentVariable("DEMO_WRITE_ENABLED");
-            result["environmentVariable"] = new
-            {
-                name = "DEMO_WRITE_ENABLED",
-                value = envVarValue,
-                isEnabled = !string.IsNullOrEmpty(envVarValue) && envVarValue.Equals("true", StringComparison.OrdinalIgnoreCase)
-            };
-
-            // Check admin key configuration
-            var adminKey = Environment.GetEnvironmentVariable("DEMO_ADMIN_KEY");
-            result["adminKeyConfigured"] = !string.IsNullOrEmpty(adminKey);
-
-            // Determine if writes would be allowed
-            var dbEnabled = result.ContainsKey("databaseFeatureFlag") &&
-                           result["databaseFeatureFlag"] is { } dbFlagObj &&
-                           dbFlagObj.GetType().GetProperty("isEnabled")?.GetValue(dbFlagObj) is true;
-            var envEnabled = result["environmentVariable"] is { } envObj &&
-                            envObj.GetType().GetProperty("isEnabled")?.GetValue(envObj) is true;
-
-            result["writesWouldBeAllowed"] = !result["isDemo"].Equals(true) || dbEnabled || envEnabled;
-            result["recommendation"] = result["writesWouldBeAllowed"].Equals(true)
-                ? "Write operations should be allowed"
-                : "Enable the feature flag or set DEMO_WRITE_ENABLED=true to allow writes";
-
-            return Ok(result);
-        }
-    }
-
-    /// <summary>
-    /// Request model for feature flag operations that accept an optional description
-    /// </summary>
-    public class FeatureFlagDescriptionRequest
-    {
-        public string? Description { get; set; }
     }
 }

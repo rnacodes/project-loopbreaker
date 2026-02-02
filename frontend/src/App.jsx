@@ -28,7 +28,6 @@ import SearchByTopicOrGenre from './components/SearchByTopicOrGenre';
 import SearchResults from './components/SearchResults';
 import Search from './components/Search';
 import DemoPage from './components/DemoPage';
-import DemoAdminPage from './components/DemoAdminPage';
 import UploadMediaPage from './components/UploadMediaPage';
 import YouTubeCallback from './pages/YouTubeCallback';
 import ReadwiseSyncPage from './components/ReadwiseSyncPage';
@@ -82,8 +81,7 @@ function App() {
             {/* Public routes - always accessible */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/demo" element={<DemoPage />} />
-            <Route path="/demo-admin" element={<DemoAdminPage />} />
-            
+
             {/* Protected routes - require login in production, open in demo */}
             <Route path="/" element={
               <ConditionalProtectedRoute><HomePage /></ConditionalProtectedRoute>

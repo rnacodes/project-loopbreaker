@@ -321,7 +321,6 @@ if (builder.Environment.EnvironmentName != "Testing")
 
 // Register Application Services
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IFeatureFlagService, FeatureFlagService>();
 builder.Services.AddScoped<IPodcastMappingService, PodcastMappingService>();
 builder.Services.AddScoped<IPodcastService, PodcastService>();
 builder.Services.AddScoped<IBookService, BookService>();
@@ -380,24 +379,6 @@ builder.Services.AddHttpClient("ScriptRunner", client =>
 builder.Services.AddScoped<IHighlightService, HighlightService>();
 builder.Services.AddScoped<IReadwiseService, ReadwiseService>();
 builder.Services.AddScoped<IReaderService, ReaderService>();
-
-// Configure Cloudflare Access service for demo write mode bypass
-builder.Services.AddHttpClient<ICloudflareAccessService, CloudflareAccessService>(client =>
-{
-    client.DefaultRequestHeaders.Add("User-Agent", "ProjectLoopbreaker/1.0");
-    client.Timeout = TimeSpan.FromSeconds(10);
-});
-
-var cfTeamDomain = Environment.GetEnvironmentVariable("CLOUDFLARE_ACCESS_TEAM_DOMAIN");
-var cfAud = Environment.GetEnvironmentVariable("CLOUDFLARE_ACCESS_AUD");
-if (!string.IsNullOrEmpty(cfTeamDomain) && !string.IsNullOrEmpty(cfAud))
-{
-    Console.WriteLine($"Cloudflare Access configured. Team domain: {cfTeamDomain}");
-}
-else
-{
-    Console.WriteLine("INFO: Cloudflare Access not configured. Demo write mode SSO bypass is disabled.");
-}
 
 // Configure YouTube API client  
 builder.Services.AddHttpClient<IYouTubeApiClient, YouTubeApiClient>(client =>

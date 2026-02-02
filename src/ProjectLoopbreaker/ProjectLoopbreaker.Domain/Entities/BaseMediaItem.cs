@@ -55,6 +55,19 @@ namespace ProjectLoopbreaker.Domain.Entities
         // Navigation property for many-to-many relationship with Mixlists
         public ICollection<Mixlist> Mixlists { get; set; } = new List<Mixlist>();
 
+        // Navigation properties for self-referential many-to-many relationship (saved related items)
+        /// <summary>
+        /// Media items that this item is related TO (outgoing relationships).
+        /// These are items the user has saved as related from this item's perspective.
+        /// </summary>
+        public ICollection<MediaItemRelation> RelatedToItems { get; set; } = new List<MediaItemRelation>();
+
+        /// <summary>
+        /// Media items that are related TO THIS item (incoming relationships).
+        /// These are relationships where other items link to this one.
+        /// </summary>
+        public ICollection<MediaItemRelation> RelatedFromItems { get; set; } = new List<MediaItemRelation>();
+
         // AI/Embedding fields for semantic search and recommendations
         /// <summary>
         /// Vector embedding for semantic similarity search.

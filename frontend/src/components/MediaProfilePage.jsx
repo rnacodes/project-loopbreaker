@@ -26,6 +26,7 @@ import HighlightsSection from './HighlightsSection';
 import TopicsGenresSection from './TopicsGenresSection';
 import RelatedNotesSection from './RelatedNotesSection';
 import SimilarItemsSection from './SimilarItemsSection';
+import SavedRelatedMediaSection from './SavedRelatedMediaSection';
 import { formatMediaType, formatStatus, getMediaTypeColor, getStatusColor, getRatingIcon, getRatingText } from '../utils/formatters';
 import {
     getMediaById, getAllMixlists,
@@ -49,6 +50,7 @@ function MediaProfilePage() {
   const [videoPlaylists, setVideoPlaylists] = useState([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [fetchingContent, setFetchingContent] = useState(false);
+  const [relatedMediaRefreshTrigger, setRelatedMediaRefreshTrigger] = useState(0);
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -492,9 +494,16 @@ function MediaProfilePage() {
           onUpdate={() => setRefreshKey(k => k + 1)}
         />
 
+        <SavedRelatedMediaSection
+          mediaItem={mediaItem}
+          setSnackbar={setSnackbar}
+          refreshTrigger={relatedMediaRefreshTrigger}
+        />
+
         <SimilarItemsSection
           mediaItem={mediaItem}
           setSnackbar={setSnackbar}
+          onRelatedMediaSaved={() => setRelatedMediaRefreshTrigger(prev => prev + 1)}
         />
 
         <MixlistCarousel 

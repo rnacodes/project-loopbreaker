@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using ProjectLoopbreaker.Infrastructure.Data;
@@ -12,9 +13,11 @@ using ProjectLoopbreaker.Infrastructure.Data;
 namespace ProjectLoopbreaker.Infrastructure.Migrations
 {
     [DbContext(typeof(MediaLibraryDbContext))]
-    partial class MediaLibraryDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260202212257_RemoveFeatureFlagsTable")]
+    partial class RemoveFeatureFlagsTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -283,42 +286,6 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                     b.HasIndex("NoteId");
 
                     b.ToTable("MediaItemNotes");
-                });
-
-            modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.MediaItemRelation", b =>
-                {
-                    b.Property<Guid>("SourceMediaItemId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RelatedMediaItemId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<double?>("SimilarityScore")
-                        .HasColumnType("double precision");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("SourceMediaItemId", "RelatedMediaItemId");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("RelatedMediaItemId");
-
-                    b.HasIndex("Source");
-
-                    b.HasIndex("SourceMediaItemId");
-
-                    b.ToTable("MediaItemRelations");
                 });
 
             modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.Mixlist", b =>
@@ -1203,25 +1170,6 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                     b.Navigation("Note");
                 });
 
-            modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.MediaItemRelation", b =>
-                {
-                    b.HasOne("ProjectLoopbreaker.Domain.Entities.BaseMediaItem", "RelatedMediaItem")
-                        .WithMany("RelatedFromItems")
-                        .HasForeignKey("RelatedMediaItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ProjectLoopbreaker.Domain.Entities.BaseMediaItem", "SourceMediaItem")
-                        .WithMany("RelatedToItems")
-                        .HasForeignKey("SourceMediaItemId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RelatedMediaItem");
-
-                    b.Navigation("SourceMediaItem");
-                });
-
             modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.YouTubePlaylistVideo", b =>
                 {
                     b.HasOne("ProjectLoopbreaker.Domain.Entities.Video", "Video")
@@ -1367,13 +1315,6 @@ namespace ProjectLoopbreaker.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("LinkedYouTubeChannel");
-                });
-
-            modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.BaseMediaItem", b =>
-                {
-                    b.Navigation("RelatedFromItems");
-
-                    b.Navigation("RelatedToItems");
                 });
 
             modelBuilder.Entity("ProjectLoopbreaker.Domain.Entities.Note", b =>

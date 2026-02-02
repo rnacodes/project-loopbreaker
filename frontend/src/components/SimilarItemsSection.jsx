@@ -19,17 +19,21 @@ import {
   Refresh as RefreshIcon,
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
+  AddCircle as AddCircleIcon,
+  CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
-import { getSimilarMedia } from '../api';
+import { getSimilarMedia, saveRelatedMedia } from '../api';
 import { formatMediaType } from '../utils/formatters';
 
-function SimilarItemsSection({ mediaItem, setSnackbar }) {
+function SimilarItemsSection({ mediaItem, setSnackbar, onRelatedMediaSaved }) {
   const [similarItems, setSimilarItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasEmbedding, setHasEmbedding] = useState(true);
   const [expanded, setExpanded] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
+  const [savedItemIds, setSavedItemIds] = useState(new Set());
+  const [savingItemId, setSavingItemId] = useState(null);
 
   const fetchSimilarItems = useCallback(async () => {
     if (!mediaItem?.id) return;
@@ -63,6 +67,33 @@ function SimilarItemsSection({ mediaItem, setSnackbar }) {
     // Fetch on first expand
     if (newExpanded && !hasFetched) {
       fetchSimilarItems();
+    }
+  };
+
+  const handleSaveAsRelated = async (item, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (savedItemIds.has(item.id) || savingItemId === item.id) return;
+
+    setSavingItemId(item.id);
+    try {
+      await saveRelatedMedia(
+        mediaItem.id,
+        item.id,
+        'AiRecommended',
+        item.similarityScore,
+        null
+      );
+      setSavedItemIds(prev => new Set([...prev, item.id]));
+      setSnackbar?.({ open: true, message: `"${item.title}" saved as related`, severity: 'success' });
+      onRelatedMediaSaved?.();
+    } catch (err) {
+      console.error('Error saving related media:', err);
+      const errorMsg = err.response?.data?.error || err.message || 'Failed to save';
+      setSnackbar?.({ open: true, message: errorMsg, severity: 'error' });
+    } finally {
+      setSavingItemId(null);
     }
   };
 
@@ -171,13 +202,11 @@ function SimilarItemsSection({ mediaItem, setSnackbar }) {
             {similarItems.map((item) => (
               <Card
                 key={item.id}
-                component={RouterLink}
-                to={`/media/${item.id}`}
                 sx={{
                   minWidth: 160,
                   maxWidth: 160,
-                  textDecoration: 'none',
                   flexShrink: 0,
+                  position: 'relative',
                   '&:hover': {
                     transform: 'translateY(-2px)',
                     boxShadow: 3,
@@ -185,50 +214,81 @@ function SimilarItemsSection({ mediaItem, setSnackbar }) {
                   transition: 'all 0.2s ease-in-out',
                 }}
               >
-                {item.thumbnail && (
-                  <CardMedia
-                    component="img"
-                    height="100"
-                    image={item.thumbnail}
-                    alt={item.title}
-                    sx={{ objectFit: 'cover' }}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                )}
-                <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
-                  <Typography
-                    variant="body2"
+                {/* Save button */}
+                <Tooltip title={savedItemIds.has(item.id) ? 'Saved as related' : 'Save as related'}>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleSaveAsRelated(item, e)}
+                    disabled={savedItemIds.has(item.id) || savingItemId === item.id}
                     sx={{
-                      fontWeight: 'bold',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      lineHeight: 1.3,
-                      mb: 0.5,
+                      position: 'absolute',
+                      top: 4,
+                      right: 4,
+                      zIndex: 2,
+                      bgcolor: 'background.paper',
+                      boxShadow: 1,
+                      '&:hover': { bgcolor: 'background.paper' },
                     }}
                   >
-                    {item.title}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
-                    <Chip
-                      label={formatMediaType(item.mediaType)}
-                      size="small"
-                      sx={{ fontSize: '0.65rem', height: 20 }}
+                    {savedItemIds.has(item.id) ? (
+                      <CheckCircleIcon fontSize="small" color="success" />
+                    ) : savingItemId === item.id ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      <AddCircleIcon fontSize="small" color="primary" />
+                    )}
+                  </IconButton>
+                </Tooltip>
+                <Box
+                  component={RouterLink}
+                  to={`/media/${item.id}`}
+                  sx={{ textDecoration: 'none', display: 'block' }}
+                >
+                  {item.thumbnail && (
+                    <CardMedia
+                      component="img"
+                      height="100"
+                      image={item.thumbnail}
+                      alt={item.title}
+                      sx={{ objectFit: 'cover' }}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
                     />
-                    {item.similarityScore && (
+                  )}
+                  <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 'bold',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        lineHeight: 1.3,
+                        mb: 0.5,
+                      }}
+                    >
+                      {item.title}
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
                       <Chip
-                        label={`${Math.round(item.similarityScore * 100)}%`}
+                        label={formatMediaType(item.mediaType)}
                         size="small"
-                        color="secondary"
                         sx={{ fontSize: '0.65rem', height: 20 }}
                       />
-                    )}
-                  </Box>
-                </CardContent>
+                      {item.similarityScore && (
+                        <Chip
+                          label={`${Math.round(item.similarityScore * 100)}%`}
+                          size="small"
+                          color="secondary"
+                          sx={{ fontSize: '0.65rem', height: 20 }}
+                        />
+                      )}
+                    </Box>
+                  </CardContent>
+                </Box>
               </Card>
             ))}
               </Box>
