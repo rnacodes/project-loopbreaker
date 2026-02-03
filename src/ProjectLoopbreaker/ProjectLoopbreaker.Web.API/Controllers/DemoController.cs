@@ -108,6 +108,7 @@ namespace ProjectLoopbreaker.Web.API.Controllers
         /// <summary>
         /// Revokes write access by clearing the cookie.
         /// </summary>
+        [HttpGet("lock")]
         [HttpPost("lock")]
         public IActionResult Lock()
         {

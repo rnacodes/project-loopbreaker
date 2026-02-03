@@ -1,55 +1,397 @@
-# My MediaVerse
+# My MediaVerse v1
 
-My MediaVerse (formerly Project Loopbreaker) is an in-progress .NET 8 web API comprehensive media library management system with options to manually add items or fetch them using external APIs. The program is designed to help users manage and organize their media consumption across multiple content types. Each media item has its own profile page with thumbnail and content information. The organization system is based around "mixlists," which are themed user-created playlists that can contain any type of media or utilize any criteria.
+**A personal media library management system for tracking and organizing your entire media consumption journey.**
+
+<!-- Add project logo here -->
+
+> **Note:** This project was originally developed under the placeholder name "Project Loopbreaker" during development. You may see this name throughout the codebase and documentation. A complete rebrand to "My MediaVerse" is planned for a future version.
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Screenshots](#screenshots)
+- [Getting Started](#getting-started)
+- [Architecture](#architecture)
+- [API Endpoints](#api-endpoints)
+- [Demo Site](#demo-site)
+- [Testing](#testing)
+- [Upcoming Features](#upcoming-features)
+- [Project Status](#project-status)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
+
+---
+
+## Overview
+
+My MediaVerse is a comprehensive personal media library management application designed to help you track, organize, and discover content across multiple media formats. Whether you're tracking books you've read, podcasts you're listening to, movies on your watchlist, or articles you've saved, My MediaVerse brings everything together in one unified platform. 
+
+I created My MediaVerse after years of trying to organize my entertainment options, and not finding any existing tools that had the exact functionality that I wanted. I found platforms that would support specific types of media, such as movies, but none that could bring all of my options together. The placeholder name "Project Loopbreaker" partially came about because it's very easy to fall into a loop of pointless phone scrolling if you can't decide what you want to do - but having everything in one place could help avoid that. If I'm bored, I can just pull up one of my mixlists for the topic I'm interested at the time, and easily find something to read, watch, or listen to.
+
+### Who is it for?
+
+- **Avid media consumers** who want to track their consumption across multiple formats
+- **Note-takers** who want to connect their reading highlights and notes to source material
+- **Curators** who enjoy creating themed collections (mixlists) of diverse content
+- **Knowledge workers** who want to integrate their Obsidian notes with their media library
+
+---
 
 ## Features
 
 ### Media Library Management
 
-- **Multi-format Support**: Can currently be used to track books and podcasts, with more media formats coming soon.
-- **Status Tracking**: Mark items' status with Uncharted, In Progress, Consumed, Did Not Finish statuses.
-- **Rating System**: Rate content with SuperLike, Like, Neutral, or Dislike ratings
-- **Personal Notes**: Add custom notes and link to external documentation
-- **Genre & Topic Classification**: Categorize content with genres and topics for better organization
-- **Book-Specific Features**: Author tracking, ISBN/ASIN support, format classification (Digital, Paperback, Hardcover, Audiobook), series identification
-- **Playlist Management**: Create themed collections of mixed media types (replacing the old "playlist" concept)
-- **Ownership Status**: Track whether you own, want to buy, or have borrowed items
+- **8 Media Types Supported:** Books, Podcasts (shows and episodes), Movies, TV Shows, YouTube (Videos, Channels, and Playlists), Articles, Websites, and Notes
+- **Status Tracking:** Mark items as Uncharted, In Progress, Consumed, or Did Not Finish
+- **Rating System:** Rate content with SuperLike, Like, Neutral, or Dislike
+- **Classification:** Organize with genres and topics for better discoverability
+- **Personal Notes:** Add custom notes and link to external documentation
+- **Ownership Tracking:** Track whether you own, want to buy, or have borrowed items
 
-## External API Integrations
+### Mixlists (Custom Collections)
 
-- **OpenLibrary API Integration**: Search and import books by title, author, or ISBN with automatic metadata retrieval
-- **ListenNotes API Integration**: Search and import podcasts with comprehensive metadata
-  - **Media Management**: Full CRUD operations for all media types
-- **Book Management**: Specialized book operations with OpenLibrary integration
-- **Mixlist Management**: Create, update, and manage themed collections
+Create themed playlists called "Mixlists" that can contain any combination of media types. Unlike traditional playlists, Mixlists are flexible collections based on themes, topics, or any criteria you choose.
 
-## File Management & Storage
+### External API Integrations
 
-- **DigitalOcean Spaces Integration**: Automatic thumbnail upload and storage
-- **Bulk Import**: CSV and JSON import capabilities for existing media collections
+| Service              | Functionality                                              |
+| -------------------- | ---------------------------------------------------------- |
+| **Readwise/Reader**  | Sync articles and highlights with automatic source linking |
+| **ListenNotes**      | Search and import podcasts with comprehensive metadata     |
+| **TMDB**             | Movie and TV show metadata enrichment                      |
+| **YouTube Data API** | Import videos, channels, and playlists                     |
+| **Google Books API** | Book search and metadata retrieval                         |
 
-## Technology Stack
+### Search & Discovery
 
-- **.NET 8**: Modern C# web API framework
-- **Entity Framework Core**: ORM with PostgreSQL database support
-- **PostgreSQL**: Primary database for media library storage. Enhanced with proper indexing and relationship management.
-- **ASP.NET Core**: Web API framework with CORS support
-- **Swagger/OpenAPI**: API documentation and testing interface
-- **Digital Ocean Spaces**: Cloud storage for thumbnails and eventually personal documents. 
-- **Render.com**: platform to deploy app frontend and backend and also hosts Postgres database.
-- **AWS SDK for .NET**: S3-compatible storage integration
+- **Typesense-Powered Search:** Fast, typo-tolerant full-text search across your entire library
+- **Advanced Filtering:** Filter by media type, topic, genre, or status
+- **Combined Queries:** Search with multiple filters simultaneously
 
-## Roadmap
+### Highlights System
 
-- **Additional Media Type Support**: App will support specific fields for articles, personal documents, movies, music, TV shows, videos, video games, and websites, with option to add other kinds of media.
-- **Search & Filtering**: Advanced search by topic, genre, and media type
-- **Search engine integration**: Likely Elasticsearch or Meilisearch. This will allow for indexing of the database and documents to produce more precise searches when looking for particular types of media to enjoy.
-- **Connection with Digital Notebook**: I use Obsidian as a Commonplace Book/Second Brain/Zettelkasten.
-- **File Upload Support**: Drag & drop interface for media files and thumbnails
-- **AI Integration**: the user will be able to generate thumbnails for mixlists using AI. AI will also be used to provide more detailed search suggestions and recommendations.
+- Import highlights from your Readwise account
+- Automatic linking of highlights to source articles and books
+- Bulk linking functionality for associating highlights with sources
 
-*** Please do not copy or redistribute ***
+### Notes Integration
+
+- Sync notes from your Obsidian vaults
+- AI-powered description generation for notes
+- Link notes to related media items in your library
+- Search notes alongside other media types
+
+### AI-Powered Features
+
+My MediaVerse leverages AI to enhance discovery and organization:
+
+| Feature                       | Description                                                                                                                                     |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Vector Embeddings**         | Semantic embeddings generated for all media items and notes using OpenAI's text-embedding-3-large model, stored in PostgreSQL with pgvector     |
+| **Search by Vibe**            | Natural language search that finds content matching a mood or description (e.g., "dark atmospheric sci-fi" or "uplifting productivity content") |
+| **Similar Items**             | Discover semantically related media items and notes based on embedding similarity                                                               |
+| **AI Description Generation** | Automatic concise summaries generated for notes using DigitalOcean Gradient AI                                                                  |
+
+---
+
+## Tech Stack
+
+### Frontend
+
+| Technology        | Purpose                   |
+| ----------------- | ------------------------- |
+| React 18          | UI framework              |
+| Vite              | Build tool and dev server |
+| Material-UI (MUI) | Component library         |
+| React Router v7   | Client-side routing       |
+| Axios             | HTTP client               |
+| Vitest            | Testing framework         |
+
+### Backend
+
+| Technology            | Purpose               |
+| --------------------- | --------------------- |
+| ASP.NET Core 8.0      | Web API framework     |
+| Entity Framework Core | ORM                   |
+| PostgreSQL            | Primary database      |
+| JWT                   | Authentication        |
+| Clean Architecture    | Architectural pattern |
+
+### Infrastructure
+
+| Service               | Purpose                   |
+| --------------------- | ------------------------- |
+| Typesense             | Full-text search engine   |
+| PostgreSQL + pgvector | Vector similarity search  |
+| DigitalOcean Spaces   | File/thumbnail storage    |
+| Render.com            | Application hosting       |
+| Cloudflare            | DNS, SSL, DDoS protection |
+
+### AI Services
+
+| Provider                 | Purpose                                    |
+| ------------------------ | ------------------------------------------ |
+| OpenAI                   | Vector embeddings (text-embedding-3-large) |
+| DigitalOcean Gradient AI | Text generation for note descriptions      |
+
+---
+
+## Screenshots
+
+[Coming Soon]
+
+<!-- Add screenshot: Homepage with media type icons -->
+
+<!-- Add screenshot: Search results page -->
+
+<!-- Add screenshot: Media profile page -->
+
+<!-- Add screenshot: Mixlist view -->
+
+<!-- Add screenshot: Highlight profile page -->
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- .NET 8 SDK
+- PostgreSQL 15+
+- Typesense server (optional for local development)
+
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will start at `http://localhost:5173`
+
+### Backend Setup
+
+```bash
+cd src/ProjectLoopbreaker/ProjectLoopbreaker.Web.API
+dotnet build
+dotnet run
+```
+
+The API will start at `http://localhost:5033`
+
+### Environment Variables
+
+#### Required
+
+| Variable                                                 | Description                         |
+| -------------------------------------------------------- | ----------------------------------- |
+| `DATABASE_URL` or `ConnectionStrings__DefaultConnection` | PostgreSQL connection string        |
+| `JWT_SECRET`                                             | JWT signing key (min 32 characters) |
+| `AUTH_USERNAME`                                          | Login username                      |
+| `AUTH_PASSWORD`                                          | Login password                      |
+| `FRONTEND_URL`                                           | Frontend URL for CORS               |
+
+#### Optional (API Integrations)
+
+| Variable                        | Description              |
+| ------------------------------- | ------------------------ |
+| `LISTENNOTES_API_KEY`           | ListenNotes podcast API  |
+| `TMDB_API_KEY`                  | TMDB movie/TV API        |
+| `YOUTUBE_API_KEY`               | YouTube Data API         |
+| `READWISE_API_KEY`              | Readwise/Reader API      |
+| `TYPESENSE_ADMIN_API_KEY`       | Typesense search         |
+| `TYPESENSE_HOST`                | Typesense server URL     |
+| `DIGITALOCEANSPACES__ACCESSKEY` | DO Spaces access         |
+| `DIGITALOCEANSPACES__SECRETKEY` | DO Spaces secret         |
+| `OPENAI_API_KEY`                | OpenAI embeddings        |
+| `GRADIENT_API_KEY`              | DigitalOcean Gradient AI |
+
+---
+
+## Architecture
+
+My MediaVerse follows **Clean Architecture** principles with a layered structure that promotes separation of concerns and testability.
+
+```
+┌─────────────────────────────────────┐
+│           Web.API Layer             │  Controllers, Middleware, Filters
+├─────────────────────────────────────┤
+│         Application Layer           │  Services, Business Logic, Interfaces
+├─────────────────────────────────────┤
+│           Domain Layer              │  Entities, Domain Models
+├─────────────────────────────────────┤
+│       Infrastructure Layer          │  EF Core, External API Clients
+├─────────────────────────────────────┤
+│           Shared Layer              │  DTOs, Utilities, Common Interfaces
+└─────────────────────────────────────┘
+```
+
+### Key Architectural Patterns
+
+- **Clean Architecture:** Dependencies flow inward, with the domain at the center
+- **Domain-Driven Design:** Rich domain models with business logic
+- **SOLID Principles:** Single responsibility, dependency injection throughout
+- **Repository Pattern:** Abstracted data access
+- **Service Layer:** Business logic separated from controllers
+
+---
+
+## API Endpoints
+
+The API is RESTful with a base URL of `/api`. Key controllers include:
+
+| Controller     | Endpoint              | Description                              |
+| -------------- | --------------------- | ---------------------------------------- |
+| Media          | `/api/media`          | CRUD operations for all media types      |
+| Mixlist        | `/api/mixlist`        | Collection management                    |
+| Highlights     | `/api/highlight`      | Highlight operations and linking         |
+| Search         | `/api/search`         | Typesense search integration             |
+| Readwise       | `/api/readwise`       | Readwise sync operations                 |
+| Podcast        | `/api/podcast`        | Podcast-specific operations              |
+| Book           | `/api/book`           | Book-specific operations                 |
+| Movie          | `/api/movie`          | Movie operations with TMDB               |
+| TVShow         | `/api/tvshow`         | TV show operations                       |
+| YouTube        | `/api/youtube`        | Video/channel/playlist management        |
+| Topics         | `/api/topics`         | Topic management                         |
+| Genres         | `/api/genres`         | Genre management                         |
+| Notes          | `/api/note`           | Notes management                         |
+| AI             | `/api/ai`             | Embedding generation and AI descriptions |
+| Recommendation | `/api/recommendation` | Similar items and personalized discovery |
+
+---
+
+## Demo Site
+
+**Live Demo:** [https://demo.mymediaverseuniverse.com](https://demo.mymediaverseuniverse.com)
+
+The demo site runs in **read-only mode** by default, allowing you to explore the interface and features without modifying data. Sample data is included to demonstrate all media types and functionality.
+
+---
+
+## Testing
+
+### Run All Tests
+
+```powershell
+.\run-all-tests.ps1
+```
+
+### Backend Tests Only
+
+```bash
+dotnet test src/ProjectLoopbreaker/ProjectLoopbreaker.sln
+```
+
+### Frontend Tests Only
+
+```bash
+cd frontend
+npm test        # Watch mode
+npm run test:run    # Single run
+npm run test:coverage   # With coverage
+```
+
+Test results are saved to the `logs/` directory with timestamps.
+
+---
+
+## Upcoming Features
+
+Future releases will include:
+
+* **Support for additional media types:**
+  
+  * Music
+  * Courses
+  * Video Games
+  * Panorama: a custom media type for anything that doesn't fit neatly into an existing category
+
+* **Integration with self-hosted media services** to manage actual media files. Services under consideration include:
+  
+  * Audiobookshelf for podcasts and audiobooks
+  * Paperless-ngx for documents
+  * Calibre-Web for eBooks
+  * Navidrome for music
+
+* **Automated metadata enrichment** via scheduled N8N jobs
+
+* **Webpage archival** using ArchiveBox
+
+* **Podcast and video transcription import**
+
+* 
+
+---
+
+## Project Status
+
+**Current Version:** v1 (MVP)
+
+This is the Minimum Viable Product release with core functionality complete. Active development is ongoing with additional features and polish planned for future versions.
+
+### MVP Completion Status
+
+- Media library management for all 8 types
+- Mixlist creation and management
+- Typesense search integration
+- AI-powered "Search by Vibe" and similar items
+- Vector embeddings for semantic discovery
+- Readwise article and highlight sync
+- Notes integration with Obsidian
+- Topic and genre classification
+- Demo site with sample data
+
+---
+
+## Documentation
+
+For detailed documentation, including architecture deep-dives and code examples, see:
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/rnacodes/project-loopbreaker)
 
+---
 
+## Contributing
+
+This is a personal project, but feedback and suggestions are welcome. Please open an issue on GitHub to:
+
+- Report bugs
+- Suggest features
+- Ask questions
+
+---
+
+## License
+
+**Proprietary License**
+
+> Please do not copy or redistribute this code without permission.
+
+This project is not open source. All rights reserved.
+
+---
+
+## Acknowledgments
+
+This project integrates with and is grateful for the following services and APIs:
+
+- [ListenNotes](https://www.listennotes.com/) - Podcast search API
+- [TMDB](https://www.themoviedb.org/) - Movie and TV database
+- [YouTube Data API](https://developers.google.com/youtube/v3) - Video platform integration
+- [Readwise](https://readwise.io/) - Reading highlights service
+- [Google Books API](https://developers.google.com/books) - Book metadata
+- [Typesense](https://typesense.org/) - Open source search engine
+- [OpenAI](https://openai.com/) - Embedding models for semantic search
+- [Material-UI](https://mui.com/) - React component library
+
+---
+
+*Built with care for personal media management.*

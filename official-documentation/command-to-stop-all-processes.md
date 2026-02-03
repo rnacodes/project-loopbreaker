@@ -1,1 +1,0 @@
-Stop-Process -Name "ProjectLoopbreaker.Web.API" -Force -ErrorAction SilentlyContinue; Stop-Process -Name "dotnet" -Force -ErrorAction SilentlyContinue; Stop-Process -Name "node" -Force -ErrorAction SilentlyContinue
