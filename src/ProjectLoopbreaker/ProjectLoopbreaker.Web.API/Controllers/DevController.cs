@@ -1274,6 +1274,70 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
+        // POST: api/dev/cleanup-documents
+        [HttpPost("cleanup-documents")]
+        public async Task<IActionResult> CleanupDocuments()
+        {
+            var envCheck = CheckEnvironment();
+            if (envCheck != null) return envCheck;
+
+            try
+            {
+                _logger.LogInformation("Starting documents data cleanup...");
+
+                var documents = await _context.Documents.ToListAsync();
+                _context.Documents.RemoveRange(documents);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Deleted {documents.Count} documents");
+
+                return Ok(new
+                {
+                    message = "Documents cleanup completed successfully",
+                    deleted = new
+                    {
+                        documents = documents.Count
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during documents cleanup");
+                return StatusCode(500, new { error = "Failed to cleanup documents", details = ex.Message });
+            }
+        }
+
+        // POST: api/dev/cleanup-videos
+        [HttpPost("cleanup-videos")]
+        public async Task<IActionResult> CleanupVideos()
+        {
+            var envCheck = CheckEnvironment();
+            if (envCheck != null) return envCheck;
+
+            try
+            {
+                _logger.LogInformation("Starting videos data cleanup...");
+
+                var videos = await _context.Videos.ToListAsync();
+                _context.Videos.RemoveRange(videos);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Deleted {videos.Count} videos");
+
+                return Ok(new
+                {
+                    message = "Videos cleanup completed successfully",
+                    deleted = new
+                    {
+                        videos = videos.Count
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during videos cleanup");
+                return StatusCode(500, new { error = "Failed to cleanup videos", details = ex.Message });
+            }
+        }
+
         // POST: api/dev/cleanup-all-media
         [HttpPost("cleanup-all-media")]
         public async Task<IActionResult> CleanupAllMedia()

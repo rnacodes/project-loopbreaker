@@ -154,6 +154,36 @@ export const cleanupPlaylists = async () => {
     }
 };
 
+export const cleanupNotes = async () => {
+    try {
+        const response = await apiClient.post('/dev/cleanup-notes');
+        return response.data;
+    } catch (error) {
+        console.error('Error cleaning up notes:', error);
+        throw error;
+    }
+};
+
+export const cleanupDocuments = async () => {
+    try {
+        const response = await apiClient.post('/dev/cleanup-documents');
+        return response.data;
+    } catch (error) {
+        console.error('Error cleaning up documents:', error);
+        throw error;
+    }
+};
+
+export const cleanupVideos = async () => {
+    try {
+        const response = await apiClient.post('/dev/cleanup-videos');
+        return response.data;
+    } catch (error) {
+        console.error('Error cleaning up videos:', error);
+        throw error;
+    }
+};
+
 export const cleanupAllMedia = async () => {
     try {
         const response = await apiClient.post('/dev/cleanup-all-media');

@@ -35,7 +35,10 @@ import {
     cleanupRefreshTokens,
     cleanupWebsites,
     cleanupChannels,
-    cleanupPlaylists
+    cleanupPlaylists,
+    cleanupNotes,
+    cleanupDocuments,
+    cleanupVideos
 } from '../api';
 
 const CleanupManagementPage = () => {
@@ -146,6 +149,27 @@ const CleanupManagementPage = () => {
             title: 'Playlists',
             description: 'Delete all YouTube playlists and playlist-video associations',
             action: () => executeCleanup(cleanupPlaylists, 'Playlists deleted successfully'),
+            severity: 'medium',
+            color: 'error'
+        },
+        {
+            title: 'Videos',
+            description: 'Delete all videos (standalone, does not affect channels or playlists)',
+            action: () => executeCleanup(cleanupVideos, 'Videos deleted successfully'),
+            severity: 'medium',
+            color: 'error'
+        },
+        {
+            title: 'Notes',
+            description: 'Delete all notes and note-media links',
+            action: () => executeCleanup(cleanupNotes, 'Notes deleted successfully'),
+            severity: 'medium',
+            color: 'error'
+        },
+        {
+            title: 'Documents',
+            description: 'Delete all documents',
+            action: () => executeCleanup(cleanupDocuments, 'Documents deleted successfully'),
             severity: 'medium',
             color: 'error'
         },

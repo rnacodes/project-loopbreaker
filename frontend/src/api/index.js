@@ -274,6 +274,9 @@ export {
     cleanupWebsites,
     cleanupChannels,
     cleanupPlaylists,
+    cleanupNotes,
+    cleanupDocuments,
+    cleanupVideos,
     cleanupAllMedia
 } from './devService';
 

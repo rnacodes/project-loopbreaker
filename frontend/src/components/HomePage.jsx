@@ -6,8 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedia, CardContent, Button, useTheme, CircularProgress } from '@mui/material';
 import {
     Search, Book, Movie, Tv, Article, LibraryMusic, Podcasts, SportsEsports, YouTube, Language, MenuBook, AutoAwesome,
-    AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos, Forest,
-    PlaylistAdd, NoteAlt, ImportExport, Topic, FileDownload, LocalLibrary, Apps, FormatQuote
+    AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos,
+    NoteAlt, ImportExport, Topic, FileDownload, LocalLibrary, Apps, FormatQuote
 } from '@mui/icons-material';
 import { getAllMixlists, seedMixlists, getAllMedia } from '../api';
 
@@ -21,23 +21,17 @@ const mainMediaIcons = [
     { name: 'Movies', icon: <Movie sx={{ fontSize: 40 }} />, mediaType: 'Movie', supported: true },
     { name: 'Music', icon: <LibraryMusic sx={{ fontSize: 40 }} />, mediaType: 'Music', supported: false },
     { name: 'Online Videos', icon: <YouTube sx={{ fontSize: 40 }} />, mediaType: 'Video,Channel,Playlist', supported: true },
-    { name: 'Podcasts', icon: <Podcasts sx={{ fontSize: 40 }} />, mediaType: 'Podcast,Channel', supported: true },
+    { name: 'Podcasts', icon: <Podcasts sx={{ fontSize: 40 }} />, mediaType: 'Podcast', supported: true },
     { name: 'TV Shows', icon: <Tv sx={{ fontSize: 40 }} />, mediaType: 'TVShow', supported: true },
     { name: 'Video Games', icon: <SportsEsports sx={{ fontSize: 40 }} />, mediaType: 'VideoGame', supported: false },
     { name: 'Websites', icon: <Language sx={{ fontSize: 40 }} />, mediaType: 'Website', supported: true },
 ];
 
 const specialMediaIcons = [
-    { name: 'Commonplace ZK', icon: <MenuBook sx={{ fontSize: 40 }} />, key: 'zk' },
-    { name: 'Panorama', icon: <AutoAwesome sx={{ fontSize: 40 }} />, key: 'panorama', caption: 'Everything else - coming soon!' },
+    { name: 'Online Notebook', icon: <MenuBook sx={{ fontSize: 40 }} />, key: 'zk', mediaType: 'Note', supported: true },
+    { name: 'Panorama', icon: <AutoAwesome sx={{ fontSize: 40 }} />, key: 'panorama', supported: false, caption: 'For everything else - coming soon!' },
 ];
 
-const smartSearches = [
-  'Medium-length online article',
-  '20+ min YouTube video',
-  'Quick summary podcast',
-  'In-depth research paper',
-];
 
 // COMPONENTS
 import SearchBar from './shared/SearchBar';
@@ -400,29 +394,36 @@ export default function HomePage() {
               <Grid container spacing={{ xs: 1, sm: 2 }} justifyContent="center" sx={{ mb: { xs: 2, sm: 3, md: 4 }, maxWidth: '900px' }}>
                   {specialMediaIcons.map((item) => (
                       <Grid item xs={6} sm={4} md={3} key={item.key} sx={{ display: 'flex', justifyContent: 'center' }}>
-                          <Box sx={{ 
-                              display: 'flex', 
-                              flexDirection: 'column', 
-                              alignItems: 'center', 
-                              justifyContent: 'center',
-                              cursor: 'pointer', 
-                              color: 'text.secondary',
-                              minHeight: { xs: '70px', sm: '80px' },
-                              p: { xs: 1.5, sm: 2 },
-                              borderRadius: '12px',
-                              transition: 'all 0.2s ease',
-                              '&:hover': { 
-                                  color: 'text.primary',
-                                  backgroundColor: 'rgba(255, 255, 255, 0.05)'
-                              },
-                              '&:active': {
-                                  transform: 'scale(0.98)'
-                              }
-                          }}>
+                          <Box
+                              onClick={() => {
+                                  if (item.supported && item.mediaType) {
+                                      navigate(`/search?mediaType=${item.mediaType}`);
+                                  }
+                              }}
+                              sx={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: item.supported ? 'pointer' : 'default',
+                                  color: item.supported ? 'text.secondary' : 'text.disabled',
+                                  minHeight: { xs: '70px', sm: '80px' },
+                                  p: { xs: 1.5, sm: 2 },
+                                  borderRadius: '12px',
+                                  transition: 'all 0.2s ease',
+                                  opacity: item.supported ? 1 : 0.5,
+                                  '&:hover': item.supported ? {
+                                      color: 'text.primary',
+                                      backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                                  } : {},
+                                  '&:active': item.supported ? {
+                                      transform: 'scale(0.98)'
+                                  } : {}
+                              }}>
                               {React.cloneElement(item.icon, { sx: { fontSize: { xs: 40, sm: 50 } } })}
-                              <Typography 
-                                  variant="body2" 
-                                  sx={{ 
+                              <Typography
+                                  variant="body2"
+                                  sx={{
                                       mt: 0.5,
                                       fontSize: { xs: '0.8rem', sm: '0.875rem' },
                                       textAlign: 'center'
@@ -430,6 +431,19 @@ export default function HomePage() {
                               >
                                   {item.name}
                               </Typography>
+                              {item.caption && (
+                                  <Typography
+                                      variant="caption"
+                                      sx={{
+                                          fontSize: { xs: '0.55rem', sm: '0.65rem' },
+                                          color: 'text.disabled',
+                                          fontStyle: 'italic',
+                                          textAlign: 'center'
+                                      }}
+                                  >
+                                      {item.caption}
+                                  </Typography>
+                              )}
                           </Box>
                       </Grid>
                   ))}
@@ -799,50 +813,6 @@ export default function HomePage() {
             </Button>
         </Box>
 
-        {/* Smart Search Section */}
-        <Section title="Smart Search and Recommendations - Coming Soon!">
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 2 }, alignItems: 'center', justifyContent: { xs: 'center', sm: 'flex-start' } }}>
-                {smartSearches.map((search, index) => (
-                    <Button 
-                        key={index} 
-                        variant="contained" 
-                        color="primary"
-                        sx={{
-                            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                            padding: { xs: '6px 12px', sm: '8px 16px' },
-                            minHeight: '44px'
-                        }}
-                    >
-                        {search}
-                    </Button>
-                ))}
-                <Button 
-                    key="topics-tree" 
-                    variant="contained" 
-                    color="primary" 
-                    startIcon={<Forest />}
-                    sx={{
-                        fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                        padding: { xs: '6px 12px', sm: '8px 16px' },
-                        minHeight: '44px'
-                    }}
-                >
-                    View Topics Tree
-                </Button>
-                <IconButton 
-                    key="add-list" 
-                    sx={{ 
-                        backgroundColor: 'primary.main', 
-                        color: 'white',
-                        width: { xs: 44, sm: 48 },
-                        height: { xs: 44, sm: 48 },
-                        '&:hover': { backgroundColor: 'primary.dark' } 
-                    }}
-                >
-                    <PlaylistAdd />
-                </IconButton>
-            </Box>
-        </Section>
 
       </Container>
       )}
