@@ -29,47 +29,35 @@ namespace ProjectLoopbreaker.IntegrationTests
             // This prevents accidental pollution of production database during tests
             var isInMemory = context.Database.IsInMemory();
             var providerName = context.Database.ProviderName;
-            var databaseName = context.Database.GetDbConnection().Database;
-            
+
             Console.WriteLine("=== INTEGRATION TEST SAFETY CHECK ===");
             Console.WriteLine($"Database Provider: {providerName}");
-            Console.WriteLine($"Database Name: {databaseName}");
             Console.WriteLine($"Is InMemory: {isInMemory}");
-            Console.WriteLine($"Connection String: {context.Database.GetConnectionString()?.Substring(0, Math.Min(50, context.Database.GetConnectionString()?.Length ?? 0))}...");
-            
+
             // CRITICAL SAFETY CHECK #2: Ensure it's NOT PostgreSQL
             if (providerName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true ||
                 providerName?.Contains("Postgres", StringComparison.OrdinalIgnoreCase) == true)
             {
                 throw new InvalidOperationException(
-                    "🚨 CRITICAL SAFETY VIOLATION: Integration tests are using PostgreSQL database! 🚨\n" +
+                    "CRITICAL SAFETY VIOLATION: Integration tests are using PostgreSQL database!\n" +
                     $"Provider: {providerName}\n" +
-                    $"Database: {databaseName}\n" +
                     "This would POLLUTE THE PRODUCTION DATABASE!\n" +
                     "Tests have been ABORTED.\n" +
                     "DO NOT RUN TESTS UNTIL THIS IS FIXED!");
             }
-            
+
             // CRITICAL SAFETY CHECK #3: Ensure it IS InMemory
             if (!isInMemory)
             {
                 throw new InvalidOperationException(
-                    "🚨 CRITICAL SAFETY VIOLATION: Integration tests are NOT using in-memory database! 🚨\n" +
+                    "CRITICAL SAFETY VIOLATION: Integration tests are NOT using in-memory database!\n" +
                     $"Provider: {providerName}\n" +
                     $"Is InMemory: {isInMemory}\n" +
                     "This would pollute a real database. Tests have been ABORTED.\n" +
                     "Check that WebApplicationFactory is properly configured.");
             }
-            
-            // CRITICAL SAFETY CHECK #4: Ensure database name contains "Test"
-            if (!databaseName.Contains("Test", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new InvalidOperationException(
-                    $"🚨 SAFETY WARNING: Database name '{databaseName}' doesn't contain 'Test'! 🚨\n" +
-                    "This might not be a test database. Tests have been ABORTED.");
-            }
-            
-            Console.WriteLine("✅ ✅ ✅ ALL SAFETY CHECKS PASSED ✅ ✅ ✅");
+
+            Console.WriteLine("ALL SAFETY CHECKS PASSED");
             Console.WriteLine("Integration tests using IN-MEMORY database (isolated from production)");
             Console.WriteLine("==========================================");
             
