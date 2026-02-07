@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Typography, Button, ButtonGroup, ToggleButtonGroup, ToggleButton, FormControl, InputLabel, Select, MenuItem, Chip } from '@mui/material';
-import { ViewModule, ViewList, FilterList } from '@mui/icons-material';
+import { ViewModule, ViewList, FilterList, Search as SearchIcon } from '@mui/icons-material';
 
 const sortOptions = [
     { value: 'relevance', label: 'Most Relevant' },
@@ -19,6 +19,8 @@ export const ResultHeader = React.memo(({
     setSortBy,
     showFilters,
     setShowFilters,
+    showSearchBar,
+    setShowSearchBar,
     selectedTopics,
     selectedGenres,
     selectedMediaTypes,
@@ -79,13 +81,22 @@ export const ResultHeader = React.memo(({
                     </ToggleButton>
                 </ToggleButtonGroup>
 
-                {/* Toggle Filters Button (mobile) */}
+                {/* Toggle Search Bar */}
+                <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => setShowSearchBar(!showSearchBar)}
+                    startIcon={<SearchIcon />}
+                >
+                    {showSearchBar ? 'Hide' : 'Show'} Search
+                </Button>
+
+                {/* Toggle Filters */}
                 <Button
                     variant="outlined"
                     size="small"
                     onClick={() => setShowFilters(!showFilters)}
                     startIcon={<FilterList />}
-                    sx={{ display: { xs: 'flex', md: 'none' } }}
                 >
                     {showFilters ? 'Hide' : 'Show'} Filters
                 </Button>

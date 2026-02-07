@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     Container, Box, Typography, Grid,
-    Chip, Button, ButtonGroup, Divider,
+    Chip, Button, ButtonGroup, Divider, Collapse,
     CircularProgress, Paper, Alert, Checkbox, Toolbar,
     Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,
     Snackbar, FormControl, InputLabel, Select, MenuItem
@@ -64,6 +64,7 @@ export default function Search() {
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [selectedRatings, setSelectedRatings] = useState([]);
     const [showFilters, setShowFilters] = useState(true);
+    const [showSearchBar, setShowSearchBar] = useState(true);
     const [topicSearchQuery, setTopicSearchQuery] = useState('');
     const [genreSearchQuery, setGenreSearchQuery] = useState('');
     const [showAllTopics, setShowAllTopics] = useState(false);
@@ -589,20 +590,23 @@ export default function Search() {
                 </Box>
 
                 {/* Search Bar */}
-                <SearchBarSection
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    allTopics={allTopics}
-                    selectedTopics={selectedTopics}
-                    handleTopicToggle={handleTopicToggle}
-                    searchMode={searchMode}
-                    setSearchMode={setSearchMode}
-                    setCurrentPage={setCurrentPage}
-                />
+                <Collapse in={showSearchBar}>
+                    <SearchBarSection
+                        searchQuery={searchQuery}
+                        setSearchQuery={setSearchQuery}
+                        allTopics={allTopics}
+                        selectedTopics={selectedTopics}
+                        handleTopicToggle={handleTopicToggle}
+                        searchMode={searchMode}
+                        setSearchMode={setSearchMode}
+                        setCurrentPage={setCurrentPage}
+                    />
+                </Collapse>
 
                 <Grid container spacing={3}>
                     {showFilters && (
                         <SearchFilterSidebar
+                            key="filter-sidebar"
                             searchMode={searchMode}
                             selectedMediaTypes={selectedMediaTypes}
                             setSelectedMediaTypes={setSelectedMediaTypes}
@@ -641,6 +645,8 @@ export default function Search() {
                             setSortBy={setSortBy}
                             showFilters={showFilters}
                             setShowFilters={setShowFilters}
+                            showSearchBar={showSearchBar}
+                            setShowSearchBar={setShowSearchBar}
                             selectedTopics={selectedTopics}
                             selectedGenres={selectedGenres}
                             selectedMediaTypes={selectedMediaTypes}
