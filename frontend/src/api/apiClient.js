@@ -143,6 +143,20 @@ apiClient.interceptors.response.use(
             }
         }
 
+        // Check for demo mode 403 error and dispatch custom event
+        if (error.response?.status === 403) {
+            const errorData = error.response?.data;
+            if (errorData?.error === 'Write operations are disabled in demo mode') {
+                window.dispatchEvent(new CustomEvent('demoWriteBlocked', {
+                    detail: {
+                        blockedOperation: errorData.blockedOperation,
+                        path: error.config?.url,
+                        message: errorData.message
+                    }
+                }));
+            }
+        }
+
         return Promise.reject(error);
     }
 );

@@ -271,6 +271,9 @@ export {
     cleanupAllGenres,
     cleanupOrphanedTopics,
     cleanupOrphanedGenres,
+    cleanupWebsites,
+    cleanupChannels,
+    cleanupPlaylists,
     cleanupAllMedia
 } from './devService';
 
@@ -363,3 +366,10 @@ export {
     removeRelatedMedia,
     saveRelatedMediaBatch
 } from './relatedMediaService';
+
+// Demo Mode
+export {
+    getDemoStatus,
+    unlockDemoWriteAccess,
+    lockDemoWriteAccess
+} from './demoService';

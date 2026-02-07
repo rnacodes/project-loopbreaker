@@ -1170,6 +1170,110 @@ namespace ProjectLoopbreaker.Web.API.Controllers
             }
         }
 
+        // POST: api/dev/cleanup-websites
+        [HttpPost("cleanup-websites")]
+        public async Task<IActionResult> CleanupWebsites()
+        {
+            var envCheck = CheckEnvironment();
+            if (envCheck != null) return envCheck;
+
+            try
+            {
+                _logger.LogInformation("Starting websites data cleanup...");
+
+                var websites = await _context.Websites.ToListAsync();
+                _context.Websites.RemoveRange(websites);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Deleted {websites.Count} websites");
+
+                return Ok(new
+                {
+                    message = "Websites cleanup completed successfully",
+                    deleted = new
+                    {
+                        websites = websites.Count
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during websites cleanup");
+                return StatusCode(500, new { error = "Failed to cleanup websites", details = ex.Message });
+            }
+        }
+
+        // POST: api/dev/cleanup-channels
+        [HttpPost("cleanup-channels")]
+        public async Task<IActionResult> CleanupChannels()
+        {
+            var envCheck = CheckEnvironment();
+            if (envCheck != null) return envCheck;
+
+            try
+            {
+                _logger.LogInformation("Starting YouTube channels data cleanup...");
+
+                var channels = await _context.YouTubeChannels.ToListAsync();
+                _context.YouTubeChannels.RemoveRange(channels);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Deleted {channels.Count} YouTube channels");
+
+                return Ok(new
+                {
+                    message = "YouTube channels cleanup completed successfully",
+                    deleted = new
+                    {
+                        channels = channels.Count
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during YouTube channels cleanup");
+                return StatusCode(500, new { error = "Failed to cleanup YouTube channels", details = ex.Message });
+            }
+        }
+
+        // POST: api/dev/cleanup-playlists
+        [HttpPost("cleanup-playlists")]
+        public async Task<IActionResult> CleanupPlaylists()
+        {
+            var envCheck = CheckEnvironment();
+            if (envCheck != null) return envCheck;
+
+            try
+            {
+                _logger.LogInformation("Starting YouTube playlists data cleanup...");
+
+                // Delete playlist-video associations first
+                var playlistVideos = await _context.Set<YouTubePlaylistVideo>().ToListAsync();
+                _context.Set<YouTubePlaylistVideo>().RemoveRange(playlistVideos);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Deleted {playlistVideos.Count} playlist-video associations");
+
+                // Delete playlists
+                var playlists = await _context.YouTubePlaylists.ToListAsync();
+                _context.YouTubePlaylists.RemoveRange(playlists);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation($"Deleted {playlists.Count} YouTube playlists");
+
+                return Ok(new
+                {
+                    message = "YouTube playlists cleanup completed successfully",
+                    deleted = new
+                    {
+                        playlistVideoAssociations = playlistVideos.Count,
+                        playlists = playlists.Count
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during YouTube playlists cleanup");
+                return StatusCode(500, new { error = "Failed to cleanup YouTube playlists", details = ex.Message });
+            }
+        }
+
         // POST: api/dev/cleanup-all-media
         [HttpPost("cleanup-all-media")]
         public async Task<IActionResult> CleanupAllMedia()

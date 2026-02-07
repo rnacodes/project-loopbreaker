@@ -5,6 +5,7 @@ import { ThemeProvider, CssBaseline, Typography, Button, Box } from '@mui/materi
 // --- Import Auth Context ---
 import { AuthProvider } from './contexts/AuthContext';
 import { DemoAdminProvider } from './contexts/DemoAdminContext';
+import { DemoReadOnlyProvider } from './contexts/DemoReadOnlyContext';
 
 // --- Import Route Protection ---
 import ConditionalProtectedRoute from './components/ConditionalProtectedRoute';
@@ -51,6 +52,10 @@ import ScriptExecutionPage from './components/ScriptExecutionPage';
 import NotesListingPage from './components/NotesListingPage';
 import AiAdminPage from './components/AiAdminPage';
 import SearchByVibePage from './components/SearchByVibePage';
+import DemoUnlockPage from './components/DemoUnlockPage';
+
+// --- Import Demo Read-Only Dialog ---
+import DemoReadOnlyDialog from './components/shared/DemoReadOnlyDialog';
 
 // --- Import Design System ---
 import { theme } from './components/shared/DesignSystem';
@@ -65,6 +70,8 @@ function App() {
       <Router>
         <AuthProvider>
           <DemoAdminProvider>
+          <DemoReadOnlyProvider>
+          <DemoReadOnlyDialog />
           <Box
             sx={{
               display: 'flex',
@@ -200,6 +207,9 @@ function App() {
             <Route path="/search-by-vibe" element={
               <ConditionalProtectedRoute><SearchByVibePage /></ConditionalProtectedRoute>
             } />
+            <Route path="/demo-unlock" element={
+              <ConditionalProtectedRoute><DemoUnlockPage /></ConditionalProtectedRoute>
+            } />
           {/* Catch-all route for 404 */}
           <Route path="*" element={
             <div style={{ padding: '2rem', textAlign: 'center' }}>
@@ -216,6 +226,7 @@ function App() {
             {/* Footer Component */}
             <Footer />
           </Box>
+          </DemoReadOnlyProvider>
           </DemoAdminProvider>
         </AuthProvider>
       </Router>

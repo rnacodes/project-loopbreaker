@@ -60,7 +60,8 @@ import {
   Psychology,
   Terminal,
   FormatQuote,
-  AddLink
+  AddLink,
+  LockOpen
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -144,7 +145,7 @@ const ResponsiveNavigation = () => {
     { text: 'AI Admin', path: '/ai-admin', icon: <Psychology />, requiresAuth: true },
     { text: 'Background Jobs', path: '/background-jobs', icon: <Work />, requiresAuth: true },
     { text: 'Cleanup', path: '/cleanup', icon: <CleaningServices />, requiresAuth: true },
-    { text: 'Documents', path: '/documents', icon: <Description />, requiresAuth: true },
+    { text: 'Demo Unlock', path: '/demo-unlock', icon: <LockOpen />, requiresAuth: true },
     { text: 'Local Scripts', path: '/script-execution', icon: <Terminal />, requiresAuth: true },
     { text: 'Readwise Sync', path: '/readwise-sync', icon: <Sync />, requiresAuth: true },
     { text: 'Link Highlights', path: '/highlight-linking', icon: <AddLink />, requiresAuth: true },

@@ -202,7 +202,7 @@ export default function Search() {
             const mode = searchParams.get('searchMode');
 
             if (query) setSearchQuery(query);
-            if (mediaType) setSelectedMediaTypes([mediaType]);
+            if (mediaType) setSelectedMediaTypes(mediaType.split(',').map(t => t.trim()));
             if (topics) setSelectedTopics(topics.split(',').map(t => t.trim()));
             if (genres) setSelectedGenres(genres.split(',').map(g => g.trim()));
             if (status) setSelectedStatus(status);

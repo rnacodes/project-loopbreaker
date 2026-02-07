@@ -124,6 +124,36 @@ export const cleanupOrphanedGenres = async () => {
     }
 };
 
+export const cleanupWebsites = async () => {
+    try {
+        const response = await apiClient.post('/dev/cleanup-websites');
+        return response.data;
+    } catch (error) {
+        console.error('Error cleaning up websites:', error);
+        throw error;
+    }
+};
+
+export const cleanupChannels = async () => {
+    try {
+        const response = await apiClient.post('/dev/cleanup-channels');
+        return response.data;
+    } catch (error) {
+        console.error('Error cleaning up channels:', error);
+        throw error;
+    }
+};
+
+export const cleanupPlaylists = async () => {
+    try {
+        const response = await apiClient.post('/dev/cleanup-playlists');
+        return response.data;
+    } catch (error) {
+        console.error('Error cleaning up playlists:', error);
+        throw error;
+    }
+};
+
 export const cleanupAllMedia = async () => {
     try {
         const response = await apiClient.post('/dev/cleanup-all-media');

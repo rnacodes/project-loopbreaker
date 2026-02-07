@@ -32,7 +32,10 @@ import {
     cleanupOrphanedTopics,
     cleanupOrphanedGenres,
     cleanupAllMedia,
-    cleanupRefreshTokens
+    cleanupRefreshTokens,
+    cleanupWebsites,
+    cleanupChannels,
+    cleanupPlaylists
 } from '../api';
 
 const CleanupManagementPage = () => {
@@ -122,6 +125,27 @@ const CleanupManagementPage = () => {
             title: 'Articles',
             description: 'Delete all articles (highlights will be unlinked)',
             action: () => executeCleanup(cleanupArticles, 'Articles deleted successfully'),
+            severity: 'medium',
+            color: 'error'
+        },
+        {
+            title: 'Websites',
+            description: 'Delete all websites',
+            action: () => executeCleanup(cleanupWebsites, 'Websites deleted successfully'),
+            severity: 'medium',
+            color: 'error'
+        },
+        {
+            title: 'Channels',
+            description: 'Delete all YouTube channels',
+            action: () => executeCleanup(cleanupChannels, 'Channels deleted successfully'),
+            severity: 'medium',
+            color: 'error'
+        },
+        {
+            title: 'Playlists',
+            description: 'Delete all YouTube playlists and playlist-video associations',
+            action: () => executeCleanup(cleanupPlaylists, 'Playlists deleted successfully'),
             severity: 'medium',
             color: 'error'
         },

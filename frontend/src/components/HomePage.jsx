@@ -20,8 +20,8 @@ const mainMediaIcons = [
     { name: 'Highlights', icon: <FormatQuote sx={{ fontSize: 40 }} />, mediaType: 'Highlight', supported: true },
     { name: 'Movies', icon: <Movie sx={{ fontSize: 40 }} />, mediaType: 'Movie', supported: true },
     { name: 'Music', icon: <LibraryMusic sx={{ fontSize: 40 }} />, mediaType: 'Music', supported: false },
-    { name: 'Online Videos', icon: <YouTube sx={{ fontSize: 40 }} />, mediaType: 'Video', supported: true },
-    { name: 'Podcasts', icon: <Podcasts sx={{ fontSize: 40 }} />, mediaType: 'Podcast', supported: true },
+    { name: 'Online Videos', icon: <YouTube sx={{ fontSize: 40 }} />, mediaType: 'Video,Channel,Playlist', supported: true },
+    { name: 'Podcasts', icon: <Podcasts sx={{ fontSize: 40 }} />, mediaType: 'Podcast,Channel', supported: true },
     { name: 'TV Shows', icon: <Tv sx={{ fontSize: 40 }} />, mediaType: 'TVShow', supported: true },
     { name: 'Video Games', icon: <SportsEsports sx={{ fontSize: 40 }} />, mediaType: 'VideoGame', supported: false },
     { name: 'Websites', icon: <Language sx={{ fontSize: 40 }} />, mediaType: 'Website', supported: true },
@@ -29,7 +29,7 @@ const mainMediaIcons = [
 
 const specialMediaIcons = [
     { name: 'Commonplace ZK', icon: <MenuBook sx={{ fontSize: 40 }} />, key: 'zk' },
-    { name: 'Panorama', icon: <AutoAwesome sx={{ fontSize: 40 }} />, key: 'panorama' },
+    { name: 'Panorama', icon: <AutoAwesome sx={{ fontSize: 40 }} />, key: 'panorama', caption: 'Everything else - coming soon!' },
 ];
 
 const smartSearches = [
