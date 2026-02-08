@@ -1,6 +1,4 @@
 // TODO: Create functioning "I'm feeling lucky" button
-// TODO: Change Browse All Media button to white
-//TODO: Change "Seed mixlists" button to purple with white text
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedia, CardContent, Button, useTheme, CircularProgress } from '@mui/material';
@@ -723,12 +721,14 @@ export default function HomePage() {
               >
                 Add Media
               </Button>
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="contained"
+                color="secondary"
                 onClick={() => navigate('/all-media')}
                 sx={{
                     width: { xs: '100%', sm: 'auto' },
-                    minHeight: '44px'
+                    minHeight: '44px',
+                    color: '#1B1B1B'
                 }}
               >
                 Browse All Media
@@ -766,11 +766,11 @@ export default function HomePage() {
                       >
                           Create New Mixlist
                       </Button>
-                      <Button 
-                          variant="outlined" 
-                          color="secondary" 
+                      <Button
+                          variant="contained"
+                          color="primary"
                           onClick={handleSeedMixlists}
-                          sx={{ 
+                          sx={{
                               mt: { xs: 1, sm: 2 },
                               width: { xs: '100%', sm: 'auto' },
                               minHeight: '44px'

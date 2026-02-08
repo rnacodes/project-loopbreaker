@@ -1,5 +1,4 @@
 //TODO: Include YouTube channel and any playlists it is a part of in the video details section for YouTube videos
-//TODO: Add description cutoff at 500 characters that has "View More" button that expands the description to view the full description
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';

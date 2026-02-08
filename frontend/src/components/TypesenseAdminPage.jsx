@@ -1,5 +1,3 @@
-//TODO: Change refresh button color to white
-//TODO: Media Items Reindex Complete message and similar text to be white
 import React, { useState, useEffect } from 'react';
 import {
   Container,
@@ -338,10 +336,10 @@ const TypesenseAdminPage = () => {
             onClick={checkHealth}
             disabled={healthLoading}
             sx={{
-              backgroundColor: '#9c27b0',
-              color: 'white',
+              backgroundColor: '#fcfafa',
+              color: '#1B1B1B',
               '&:hover': {
-                backgroundColor: '#7b1fa2'
+                backgroundColor: '#e0e0e0'
               }
             }}
           >
@@ -448,7 +446,7 @@ const TypesenseAdminPage = () => {
         {reindexResult && (
           <Card variant="outlined" sx={{ mt: 2, bgcolor: 'success.light' }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#fcfafa' }}>
                 ✓ Media Items Reindex Complete
               </Typography>
               
@@ -480,7 +478,7 @@ const TypesenseAdminPage = () => {
         {reindexMixlistsResult && (
           <Card variant="outlined" sx={{ mt: 2, bgcolor: 'success.light' }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#fcfafa' }}>
                 ✓ Mixlists Reindex Complete
               </Typography>
               
@@ -701,7 +699,7 @@ const TypesenseAdminPage = () => {
         {deduplicationResult && (
           <Card variant="outlined" sx={{ mt: 2, bgcolor: 'success.light' }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#fcfafa' }}>
                 ✓ Deduplication Complete
               </Typography>
               
@@ -842,7 +840,7 @@ const TypesenseAdminPage = () => {
         {syncNotesResult && (
           <Card variant="outlined" sx={{ mt: 2, bgcolor: 'success.light' }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#fcfafa' }}>
                 Sync Complete
               </Typography>
 
@@ -881,7 +879,7 @@ const TypesenseAdminPage = () => {
         {reindexNotesResult && (
           <Card variant="outlined" sx={{ mt: 2, bgcolor: 'success.light' }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'success.dark' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: '#fcfafa' }}>
                 Notes Reindex Complete
               </Typography>
 

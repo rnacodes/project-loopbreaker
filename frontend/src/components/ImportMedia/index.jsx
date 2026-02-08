@@ -1,6 +1,3 @@
-//TODO: Podcast not redirecting after import
-//TODO: Podcast "view details" link isn't working properly
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {

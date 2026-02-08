@@ -302,7 +302,14 @@ export {
     getBookEnrichmentStatus,
     runBookEnrichment,
     runBookEnrichmentAll,
-    enrichBookById
+    enrichBookById,
+    getMovieTvEnrichmentStatus,
+    runMovieEnrichment,
+    runTvShowEnrichment,
+    runMovieTvEnrichmentAll,
+    getPodcastEnrichmentStatus,
+    runPodcastEnrichment,
+    runPodcastEnrichmentAll
 } from './backgroundJobsService';
 
 // Notes (Obsidian)

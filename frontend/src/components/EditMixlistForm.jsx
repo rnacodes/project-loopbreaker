@@ -1,6 +1,4 @@
 //TODO: Add feature parity with the Edit Media form
-//TODO: Update outline button to be white instead of purple
-//TODO: Change floating label to be white instead of purple
 //TODO: Update placeholder image to new-placeholder.png (stored in New-Downloads)
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -190,6 +188,7 @@ function EditMixlistForm() {
                                     onChange={(e) => handleInputChange('name', e.target.value)}
                                     required
                                     placeholder="Enter a name for your mixlist"
+                                    InputLabelProps={{ sx: { color: '#fcfafa' } }}
                                 />
 
                                 {/* Description */}
@@ -201,6 +200,7 @@ function EditMixlistForm() {
                                     value={formData.description}
                                     onChange={(e) => handleInputChange('description', e.target.value)}
                                     placeholder="Describe what this mixlist is about..."
+                                    InputLabelProps={{ sx: { color: '#fcfafa' } }}
                                 />
 
                                 {/* Thumbnail URL */}
@@ -211,6 +211,7 @@ function EditMixlistForm() {
                                     onChange={(e) => handleInputChange('thumbnail', e.target.value)}
                                     placeholder="https://example.com/image.jpg"
                                     helperText="Optional: URL to an image for this mixlist"
+                                    InputLabelProps={{ sx: { color: '#fcfafa' } }}
                                 />
 
                                 {/* Thumbnail Upload */}
@@ -268,11 +269,13 @@ function EditMixlistForm() {
                                     </Button>
                                     <Box sx={{ display: 'flex', gap: 2 }}>
                                         <Button
-                                            variant="outlined"
+                                            variant="contained"
+                                            color="secondary"
                                             startIcon={<Cancel />}
                                             onClick={handleCancel}
                                             disabled={saving}
                                             size="large"
+                                            sx={{ color: '#1B1B1B' }}
                                         >
                                             Cancel
                                         </Button>

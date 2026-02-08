@@ -1,4 +1,3 @@
-//TODO: Add "close" button to episode dialog
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -10,7 +9,7 @@ import {
 } from '@mui/material';
 import {
     ArrowBack, Edit, OpenInNew, Sync, Delete,
-    ExpandMore, Visibility, Add, CheckCircle
+    ExpandMore, Visibility, Add, CheckCircle, Close as CloseIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 import MediaInfoCard from './MediaInfoCard';
@@ -327,7 +326,10 @@ function PodcastSeriesProfile() {
 
             {/* View All Episodes (API Browser) */}
             <Dialog open={viewAllEpisodesDialog} onClose={() => setViewAllEpisodesDialog(false)} maxWidth="md" fullWidth>
-                <DialogTitle>ListenNotes Episode Browser</DialogTitle>
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    ListenNotes Episode Browser
+                    <IconButton onClick={() => setViewAllEpisodesDialog(false)} size="small"><CloseIcon /></IconButton>
+                </DialogTitle>
                 <DialogContent dividers>
                     {loadingAllEpisodes ? (
                         <Box textAlign="center" py={4}><CircularProgress /><Typography sx={{ mt: 2 }}>Fetching full catalog...</Typography></Box>

@@ -1,5 +1,3 @@
-//TODO: Change color of icones from dark purple to white
-//TODO: Remove username from displaying when logged in - can just show "Logged In"
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
@@ -196,7 +194,7 @@ const ResponsiveNavigation = () => {
               }
             }}
           >
-            <ListItemIcon sx={{ color: 'primary.main' }}>
+            <ListItemIcon sx={{ color: '#fcfafa' }}>
               {item.icon}
             </ListItemIcon>
             <ListItemText 
@@ -220,7 +218,7 @@ const ResponsiveNavigation = () => {
             }
           }}
         >
-          <ListItemIcon sx={{ color: 'primary.main' }}>
+          <ListItemIcon sx={{ color: '#fcfafa' }}>
             <Movie />
           </ListItemIcon>
           <ListItemText 
@@ -247,7 +245,7 @@ const ResponsiveNavigation = () => {
                   }
                 }}
               >
-                <ListItemIcon sx={{ color: 'primary.main', minWidth: 40 }}>
+                <ListItemIcon sx={{ color: '#fcfafa', minWidth: 40 }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText 
@@ -273,7 +271,7 @@ const ResponsiveNavigation = () => {
             }
           }}
         >
-          <ListItemIcon sx={{ color: 'primary.main' }}>
+          <ListItemIcon sx={{ color: '#fcfafa' }}>
             <Add />
           </ListItemIcon>
           <ListItemText
@@ -300,7 +298,7 @@ const ResponsiveNavigation = () => {
                   }
                 }}
               >
-                <ListItemIcon sx={{ color: 'primary.main', minWidth: 40 }}>
+                <ListItemIcon sx={{ color: '#fcfafa', minWidth: 40 }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText 
@@ -326,7 +324,7 @@ const ResponsiveNavigation = () => {
             }
           }}
         >
-          <ListItemIcon sx={{ color: 'primary.main' }}>
+          <ListItemIcon sx={{ color: '#fcfafa' }}>
             <AdminPanelSettings />
           </ListItemIcon>
           <ListItemText 
@@ -353,7 +351,7 @@ const ResponsiveNavigation = () => {
                   }
                 }}
               >
-                <ListItemIcon sx={{ color: 'primary.main', minWidth: 40 }}>
+                <ListItemIcon sx={{ color: '#fcfafa', minWidth: 40 }}>
                   {item.icon}
                 </ListItemIcon>
                 <ListItemText 
@@ -409,7 +407,7 @@ const ResponsiveNavigation = () => {
               mt: 1
             }}
           >
-            <ListItemIcon sx={{ color: 'primary.main' }}>
+            <ListItemIcon sx={{ color: '#fcfafa' }}>
               <LoginIcon />
             </ListItemIcon>
             <ListItemText 

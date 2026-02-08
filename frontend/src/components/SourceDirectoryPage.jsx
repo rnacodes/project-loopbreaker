@@ -1,8 +1,4 @@
-//TODO: Add Goodreads link to Sources page
-//TODO: Update with latest features and sources
-//TODO: Include Readwise and Readwise Reader
-//TODO: Combine this with the cleanup page to create an "Admin" page
-//TODO: ^ This could also be where to add authorization
+// Deferred: Combine this with the cleanup page to create an "Admin" page (with authorization)
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -10,8 +6,8 @@ import {
     Grid, Button, Chip, Divider
 } from '@mui/material';
 import {
-    Podcasts, MenuBook, MovieFilter, VideoLibrary, Article,
-    ArrowForward, CheckCircle, OpenInNew
+    Podcasts, MenuBook, MovieFilter, VideoLibrary, Article, Language,
+    ArrowForward, CheckCircle, OpenInNew, AutoStories
 } from '@mui/icons-material';
 import WhiteOutlineButton from './shared/WhiteOutlineButton';
 
@@ -32,48 +28,47 @@ function SourceDirectoryPage() {
             connected: false,
             action: () => navigate('/import-media'),
             features: [
-                'Import episodes or series',
+                'Search & import series or episodes',
                 'Auto-fetch metadata & artwork',
-                'Episode tracking',
-                'Background sync of new episodes',
-                'Import listening history from Podcasts app and Apple Podcasts'
+                'Episode tracking & sync',
+                'Background enrichment for metadata'
             ]
         },
         {
             id: 'books',
             name: 'Books',
-            provider: 'Open Library',
-            providerUrl: 'https://openlibrary.org',
+            provider: 'Google Books',
+            providerUrl: 'https://books.google.com',
             icon: <MenuBook sx={{ fontSize: 48 }} />,
-            description: 'Import books from Open Library\'s extensive catalog. Search by title, author, or ISBN.',
+            description: 'Import books from Google Books\' extensive catalog. Search by title, author, or ISBN.',
             color: '#FF9800',
             available: true,
             connected: false,
             action: () => navigate('/import-media'),
             features: [
                 'Search millions of books',
-                'Import by ISBN or title',
-                'Author information',
-                'Cover images & descriptions'
+                'Import by ISBN, title, or author',
+                'Auto-fetch metadata & cover images',
+                'Import from Goodreads CSV export'
             ]
         },
 
-        //TODO: Add TMDB credit and logo here like it is on the ImportMediaPage.jsx
         {
             id: 'movies-tv',
             name: 'Movies & TV Shows',
             provider: 'TMDB',
             providerUrl: 'https://www.themoviedb.org',
             icon: <MovieFilter sx={{ fontSize: 48 }} />,
-            description: 'Use MediaVerse as your primary tracker for movies & TV shows.',
+            description: 'Search and import movies & TV shows from The Movie Database (TMDB). This product uses the TMDB API but is not endorsed or certified by TMDB.',
             color: '#01D277',
             available: true,
             connected: false,
             action: () => navigate('/import-media'),
             features: [
-                'Import: Search movies & TV shows on TMDB',
-                'Upload: Export your watchlist from external providers and upload your spreadsheet',
-                'Metadata from uploaded lists will be filled in during daily update'
+                'Search movies & TV shows on TMDB',
+                'Auto-fetch metadata, cast & artwork',
+                'Upload watchlist CSV from external providers',
+                'Background enrichment for uploaded lists'
             ]
         },
         {
@@ -104,12 +99,48 @@ function SourceDirectoryPage() {
             color: '#D6A84E',
             available: true,
             connected: false,
-            action: () => navigate('/readwise-sync'),
+            action: () => navigate('/import-media'),
             features: [
-                'Sync from Readwise Reader',
-                'Import highlights',
-                'Status mapping (New/Archive)',
-                'Full content archival'
+                'Sync articles from Readwise Reader',
+                'Import & sync highlights across sources',
+                'Full content archival',
+                'Link highlights to books & articles'
+            ]
+        },
+        {
+            id: 'websites',
+            name: 'Websites',
+            provider: 'Web Scraper',
+            providerUrl: '',
+            icon: <Language sx={{ fontSize: 48 }} />,
+            description: 'Save and organize websites with automatic metadata extraction and RSS feed detection.',
+            color: '#26A69A',
+            available: true,
+            connected: false,
+            action: () => navigate('/import-media'),
+            features: [
+                'Import by URL with preview',
+                'Auto-extract metadata & favicon',
+                'RSS feed detection',
+                'Organize by domain'
+            ]
+        },
+        {
+            id: 'goodreads',
+            name: 'Goodreads Import',
+            provider: 'Goodreads',
+            providerUrl: 'https://www.goodreads.com',
+            icon: <AutoStories sx={{ fontSize: 48 }} />,
+            description: 'Import your Goodreads library by uploading a CSV export from your Goodreads account.',
+            color: '#553B08',
+            available: true,
+            connected: false,
+            action: () => navigate('/import-media'),
+            features: [
+                'Upload Goodreads CSV export',
+                'Import shelves & reading status',
+                'Auto-enrich with Google Books metadata',
+                'Bulk import your entire library'
             ]
         }
     ];

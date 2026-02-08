@@ -76,11 +76,9 @@ function PodcastImportSection({ expanded, onAccordionChange, onSnackbar }) {
             console.log('Podcast imported successfully:', result);
 
             const mediaId = result.id || result.Id;
-            if (mediaId) {
-                setTimeout(() => {
-                    navigate(`/media/${mediaId}`);
-                }, 1500);
-            }
+            setTimeout(() => {
+                navigate(mediaId ? `/media/${mediaId}` : '/all-media');
+            }, 1500);
 
         } catch (err) {
             console.error('Import by ID error:', err);
@@ -108,11 +106,9 @@ function PodcastImportSection({ expanded, onAccordionChange, onSnackbar }) {
             console.log('Podcast imported successfully:', result);
 
             const mediaId = result.id || result.Id;
-            if (mediaId) {
-                setTimeout(() => {
-                    navigate(`/media/${mediaId}`);
-                }, 1500);
-            }
+            setTimeout(() => {
+                navigate(mediaId ? `/media/${mediaId}` : '/all-media');
+            }, 1500);
 
         } catch (err) {
             console.error('Import by name error:', err);
@@ -134,11 +130,9 @@ function PodcastImportSection({ expanded, onAccordionChange, onSnackbar }) {
             console.log('Podcast imported successfully:', result);
 
             const mediaId = result.id || result.Id;
-            if (mediaId) {
-                setTimeout(() => {
-                    navigate(`/media/${mediaId}`);
-                }, 1500);
-            }
+            setTimeout(() => {
+                navigate(mediaId ? `/media/${mediaId}` : '/all-media');
+            }, 1500);
 
         } catch (err) {
             console.error('Import podcast error:', err);
@@ -277,7 +271,7 @@ function PodcastImportSection({ expanded, onAccordionChange, onSnackbar }) {
                                                         <Box sx={{ display: 'flex', gap: 1 }}>
                                                             <WhiteOutlineButton
                                                                 size="small"
-                                                                href={`https://www.listennotes.com/podcasts/-${podcast.id}/`}
+                                                                href={`https://www.listennotes.com/podcasts/${podcast.id}/`}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
                                                                 endIcon={<OpenInNew fontSize="small" />}

@@ -1,4 +1,3 @@
-//TODO: Make text in Job History table more readable - smaller or add scrollbar
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
@@ -462,16 +461,16 @@ const ScriptExecutionPage = () => {
                     </Button>
                 </Box>
 
-                <TableContainer>
-                    <Table size="small">
+                <TableContainer sx={{ maxHeight: 500, overflow: 'auto' }}>
+                    <Table size="small" stickyHeader>
                         <TableHead>
                             <TableRow>
-                                <TableCell width={40}></TableCell>
-                                <TableCell>Script</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Started</TableCell>
-                                <TableCell>Progress</TableCell>
-                                <TableCell>Result</TableCell>
+                                <TableCell width={40} sx={{ fontSize: '0.8rem' }}></TableCell>
+                                <TableCell sx={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Script</TableCell>
+                                <TableCell sx={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Status</TableCell>
+                                <TableCell sx={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Started</TableCell>
+                                <TableCell sx={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Progress</TableCell>
+                                <TableCell sx={{ fontSize: '0.8rem', fontWeight: 'bold' }}>Result</TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -486,13 +485,13 @@ const ScriptExecutionPage = () => {
                                                 {expandedLogs[job.job_id] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                                             </IconButton>
                                         </TableCell>
-                                        <TableCell>{job.script_type}</TableCell>
-                                        <TableCell>{getStatusChip(job.status)}</TableCell>
-                                        <TableCell>{formatDateTime(job.started_at)}</TableCell>
-                                        <TableCell>
+                                        <TableCell sx={{ fontSize: '0.8rem' }}>{job.script_type}</TableCell>
+                                        <TableCell sx={{ fontSize: '0.8rem' }}>{getStatusChip(job.status)}</TableCell>
+                                        <TableCell sx={{ fontSize: '0.8rem' }}>{formatDateTime(job.started_at)}</TableCell>
+                                        <TableCell sx={{ fontSize: '0.8rem' }}>
                                             {job.progress?.processed || 0} / {job.progress?.total || 0}
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell sx={{ fontSize: '0.8rem' }}>
                                             {job.error_message ? (
                                                 <Typography color="error" variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {job.error_message}

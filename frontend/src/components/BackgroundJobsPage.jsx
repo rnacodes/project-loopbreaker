@@ -25,44 +25,112 @@ import {
     Schedule as ScheduleIcon,
     MenuBook as BookIcon,
     Info as InfoIcon,
+    Movie as MovieIcon,
+    Podcasts as PodcastsIcon,
+    Psychology as PsychologyIcon,
 } from '@mui/icons-material';
 import {
     getBookEnrichmentStatus,
     runBookEnrichment,
-    runBookEnrichmentAll
+    runBookEnrichmentAll,
+    getMovieTvEnrichmentStatus,
+    runMovieEnrichment,
+    runTvShowEnrichment,
+    runMovieTvEnrichmentAll,
+    getPodcastEnrichmentStatus,
+    runPodcastEnrichment,
+    runPodcastEnrichmentAll,
+    getPendingMediaEmbeddings,
+    getPendingNoteEmbeddings,
+    generateMediaEmbeddingsBatch,
+    generateNoteEmbeddingsBatch,
 } from '../api';
 
 const BackgroundJobsPage = () => {
+    // ==========================================
     // Book Enrichment State
+    // ==========================================
     const [enrichmentStatus, setEnrichmentStatus] = useState(null);
     const [statusLoading, setStatusLoading] = useState(false);
     const [statusError, setStatusError] = useState(null);
-
-    // Single batch run state
     const [runningBatch, setRunningBatch] = useState(false);
     const [batchResult, setBatchResult] = useState(null);
     const [batchError, setBatchError] = useState(null);
-
-    // Run all state
     const [runningAll, setRunningAll] = useState(false);
     const [runAllResult, setRunAllResult] = useState(null);
     const [runAllError, setRunAllError] = useState(null);
-
-    // Configuration state
     const [batchSize, setBatchSize] = useState(50);
     const [delayMs, setDelayMs] = useState(1000);
     const [maxBooks, setMaxBooks] = useState(500);
     const [pauseBetweenBatches, setPauseBetweenBatches] = useState(30);
 
-    // Fetch status on mount
+    // ==========================================
+    // Movie/TV Enrichment State
+    // ==========================================
+    const [movieTvStatus, setMovieTvStatus] = useState(null);
+    const [movieTvStatusLoading, setMovieTvStatusLoading] = useState(false);
+    const [movieTvStatusError, setMovieTvStatusError] = useState(null);
+    const [runningMovies, setRunningMovies] = useState(false);
+    const [movieResult, setMovieResult] = useState(null);
+    const [movieError, setMovieError] = useState(null);
+    const [runningTvShows, setRunningTvShows] = useState(false);
+    const [tvShowResult, setTvShowResult] = useState(null);
+    const [tvShowError, setTvShowError] = useState(null);
+    const [runningMovieTvAll, setRunningMovieTvAll] = useState(false);
+    const [movieTvAllResult, setMovieTvAllResult] = useState(null);
+    const [movieTvAllError, setMovieTvAllError] = useState(null);
+    const [movieTvBatchSize, setMovieTvBatchSize] = useState(50);
+    const [movieTvDelayMs, setMovieTvDelayMs] = useState(500);
+    const [maxMovies, setMaxMovies] = useState(500);
+    const [maxTvShows, setMaxTvShows] = useState(500);
+    const [movieTvPause, setMovieTvPause] = useState(30);
+
+    // ==========================================
+    // Podcast Enrichment State
+    // ==========================================
+    const [podcastStatus, setPodcastStatus] = useState(null);
+    const [podcastStatusLoading, setPodcastStatusLoading] = useState(false);
+    const [podcastStatusError, setPodcastStatusError] = useState(null);
+    const [runningPodcastBatch, setRunningPodcastBatch] = useState(false);
+    const [podcastBatchResult, setPodcastBatchResult] = useState(null);
+    const [podcastBatchError, setPodcastBatchError] = useState(null);
+    const [runningPodcastAll, setRunningPodcastAll] = useState(false);
+    const [podcastAllResult, setPodcastAllResult] = useState(null);
+    const [podcastAllError, setPodcastAllError] = useState(null);
+    const [podcastBatchSize, setPodcastBatchSize] = useState(25);
+    const [podcastDelayMs, setPodcastDelayMs] = useState(1500);
+    const [maxPodcasts, setMaxPodcasts] = useState(100);
+    const [podcastPause, setPodcastPause] = useState(60);
+
+    // ==========================================
+    // Embedding Generation State
+    // ==========================================
+    const [pendingMediaEmbeddings, setPendingMediaEmbeddings] = useState(null);
+    const [pendingNoteEmbeddings, setPendingNoteEmbeddings] = useState(null);
+    const [embeddingStatusLoading, setEmbeddingStatusLoading] = useState(false);
+    const [embeddingStatusError, setEmbeddingStatusError] = useState(null);
+    const [runningMediaEmbeddings, setRunningMediaEmbeddings] = useState(false);
+    const [mediaEmbeddingResult, setMediaEmbeddingResult] = useState(null);
+    const [mediaEmbeddingError, setMediaEmbeddingError] = useState(null);
+    const [runningNoteEmbeddings, setRunningNoteEmbeddings] = useState(false);
+    const [noteEmbeddingResult, setNoteEmbeddingResult] = useState(null);
+    const [noteEmbeddingError, setNoteEmbeddingError] = useState(null);
+    const [embeddingBatchSize, setEmbeddingBatchSize] = useState(50);
+
+    // Fetch all statuses on mount
     useEffect(() => {
-        fetchEnrichmentStatus();
+        fetchBookStatus();
+        fetchMovieTvStatus();
+        fetchPodcastStatus();
+        fetchEmbeddingStatus();
     }, []);
 
-    const fetchEnrichmentStatus = async () => {
+    // ==========================================
+    // Book Enrichment Handlers
+    // ==========================================
+    const fetchBookStatus = async () => {
         setStatusLoading(true);
         setStatusError(null);
-
         try {
             const status = await getBookEnrichmentStatus();
             setEnrichmentStatus(status);
@@ -74,19 +142,14 @@ const BackgroundJobsPage = () => {
         }
     };
 
-    const handleRunBatch = async () => {
+    const handleRunBookBatch = async () => {
         setRunningBatch(true);
         setBatchResult(null);
         setBatchError(null);
-
         try {
-            const result = await runBookEnrichment({
-                batchSize,
-                delayBetweenCallsMs: delayMs
-            });
+            const result = await runBookEnrichment({ batchSize, delayBetweenCallsMs: delayMs });
             setBatchResult(result);
-            // Refresh status after run
-            await fetchEnrichmentStatus();
+            await fetchBookStatus();
         } catch (error) {
             setBatchError(error.response?.data?.error || error.message || 'Failed to run enrichment batch');
         } finally {
@@ -94,25 +157,15 @@ const BackgroundJobsPage = () => {
         }
     };
 
-    const handleRunAll = async () => {
-        if (!window.confirm(`This will process up to ${maxBooks} books. This may take a while. Continue?`)) {
-            return;
-        }
-
+    const handleRunBookAll = async () => {
+        if (!window.confirm(`This will process up to ${maxBooks} books. This may take a while. Continue?`)) return;
         setRunningAll(true);
         setRunAllResult(null);
         setRunAllError(null);
-
         try {
-            const result = await runBookEnrichmentAll({
-                batchSize,
-                delayBetweenCallsMs: delayMs,
-                maxBooks,
-                pauseBetweenBatchesSeconds: pauseBetweenBatches
-            });
+            const result = await runBookEnrichmentAll({ batchSize, delayBetweenCallsMs: delayMs, maxBooks, pauseBetweenBatchesSeconds: pauseBetweenBatches });
             setRunAllResult(result);
-            // Refresh status after run
-            await fetchEnrichmentStatus();
+            await fetchBookStatus();
         } catch (error) {
             setRunAllError(error.response?.data?.error || error.message || 'Failed to run full enrichment');
         } finally {
@@ -120,7 +173,210 @@ const BackgroundJobsPage = () => {
         }
     };
 
-    const isRunning = runningBatch || runningAll;
+    const isBookRunning = runningBatch || runningAll;
+
+    // ==========================================
+    // Movie/TV Enrichment Handlers
+    // ==========================================
+    const fetchMovieTvStatus = async () => {
+        setMovieTvStatusLoading(true);
+        setMovieTvStatusError(null);
+        try {
+            const status = await getMovieTvEnrichmentStatus();
+            setMovieTvStatus(status);
+        } catch (error) {
+            setMovieTvStatusError(error.response?.data?.error || error.message || 'Failed to fetch Movie/TV status');
+            setMovieTvStatus(null);
+        } finally {
+            setMovieTvStatusLoading(false);
+        }
+    };
+
+    const handleRunMovies = async () => {
+        setRunningMovies(true);
+        setMovieResult(null);
+        setMovieError(null);
+        try {
+            const result = await runMovieEnrichment({ batchSize: movieTvBatchSize, delayBetweenCallsMs: movieTvDelayMs });
+            setMovieResult(result);
+            await fetchMovieTvStatus();
+        } catch (error) {
+            setMovieError(error.response?.data?.error || error.message || 'Failed to run movie enrichment');
+        } finally {
+            setRunningMovies(false);
+        }
+    };
+
+    const handleRunTvShows = async () => {
+        setRunningTvShows(true);
+        setTvShowResult(null);
+        setTvShowError(null);
+        try {
+            const result = await runTvShowEnrichment({ batchSize: movieTvBatchSize, delayBetweenCallsMs: movieTvDelayMs });
+            setTvShowResult(result);
+            await fetchMovieTvStatus();
+        } catch (error) {
+            setTvShowError(error.response?.data?.error || error.message || 'Failed to run TV show enrichment');
+        } finally {
+            setRunningTvShows(false);
+        }
+    };
+
+    const handleRunMovieTvAll = async () => {
+        if (!window.confirm(`This will process up to ${maxMovies} movies and ${maxTvShows} TV shows. Continue?`)) return;
+        setRunningMovieTvAll(true);
+        setMovieTvAllResult(null);
+        setMovieTvAllError(null);
+        try {
+            const result = await runMovieTvEnrichmentAll({
+                batchSize: movieTvBatchSize, delayBetweenCallsMs: movieTvDelayMs,
+                maxMovies, maxTvShows, pauseBetweenBatchesSeconds: movieTvPause
+            });
+            setMovieTvAllResult(result);
+            await fetchMovieTvStatus();
+        } catch (error) {
+            setMovieTvAllError(error.response?.data?.error || error.message || 'Failed to run full Movie/TV enrichment');
+        } finally {
+            setRunningMovieTvAll(false);
+        }
+    };
+
+    const isMovieTvRunning = runningMovies || runningTvShows || runningMovieTvAll;
+
+    // ==========================================
+    // Podcast Enrichment Handlers
+    // ==========================================
+    const fetchPodcastStatus = async () => {
+        setPodcastStatusLoading(true);
+        setPodcastStatusError(null);
+        try {
+            const status = await getPodcastEnrichmentStatus();
+            setPodcastStatus(status);
+        } catch (error) {
+            setPodcastStatusError(error.response?.data?.error || error.message || 'Failed to fetch podcast status');
+            setPodcastStatus(null);
+        } finally {
+            setPodcastStatusLoading(false);
+        }
+    };
+
+    const handleRunPodcastBatch = async () => {
+        setRunningPodcastBatch(true);
+        setPodcastBatchResult(null);
+        setPodcastBatchError(null);
+        try {
+            const result = await runPodcastEnrichment({ batchSize: podcastBatchSize, delayBetweenCallsMs: podcastDelayMs });
+            setPodcastBatchResult(result);
+            await fetchPodcastStatus();
+        } catch (error) {
+            setPodcastBatchError(error.response?.data?.error || error.message || 'Failed to run podcast batch');
+        } finally {
+            setRunningPodcastBatch(false);
+        }
+    };
+
+    const handleRunPodcastAll = async () => {
+        if (!window.confirm(`This will process up to ${maxPodcasts} podcasts. ListenNotes has strict rate limits. Continue?`)) return;
+        setRunningPodcastAll(true);
+        setPodcastAllResult(null);
+        setPodcastAllError(null);
+        try {
+            const result = await runPodcastEnrichmentAll({
+                batchSize: podcastBatchSize, delayBetweenCallsMs: podcastDelayMs,
+                maxPodcasts, pauseBetweenBatchesSeconds: podcastPause
+            });
+            setPodcastAllResult(result);
+            await fetchPodcastStatus();
+        } catch (error) {
+            setPodcastAllError(error.response?.data?.error || error.message || 'Failed to run full podcast enrichment');
+        } finally {
+            setRunningPodcastAll(false);
+        }
+    };
+
+    const isPodcastRunning = runningPodcastBatch || runningPodcastAll;
+
+    // ==========================================
+    // Embedding Generation Handlers
+    // ==========================================
+    const fetchEmbeddingStatus = async () => {
+        setEmbeddingStatusLoading(true);
+        setEmbeddingStatusError(null);
+        try {
+            const [mediaCount, noteCount] = await Promise.all([
+                getPendingMediaEmbeddings(),
+                getPendingNoteEmbeddings()
+            ]);
+            setPendingMediaEmbeddings(mediaCount);
+            setPendingNoteEmbeddings(noteCount);
+        } catch (error) {
+            setEmbeddingStatusError(error.response?.data?.error || error.message || 'Failed to fetch embedding status');
+        } finally {
+            setEmbeddingStatusLoading(false);
+        }
+    };
+
+    const handleRunMediaEmbeddings = async () => {
+        setRunningMediaEmbeddings(true);
+        setMediaEmbeddingResult(null);
+        setMediaEmbeddingError(null);
+        try {
+            const result = await generateMediaEmbeddingsBatch(embeddingBatchSize);
+            setMediaEmbeddingResult(result);
+            await fetchEmbeddingStatus();
+        } catch (error) {
+            setMediaEmbeddingError(error.response?.data?.error || error.message || 'Failed to generate media embeddings');
+        } finally {
+            setRunningMediaEmbeddings(false);
+        }
+    };
+
+    const handleRunNoteEmbeddings = async () => {
+        setRunningNoteEmbeddings(true);
+        setNoteEmbeddingResult(null);
+        setNoteEmbeddingError(null);
+        try {
+            const result = await generateNoteEmbeddingsBatch(embeddingBatchSize);
+            setNoteEmbeddingResult(result);
+            await fetchEmbeddingStatus();
+        } catch (error) {
+            setNoteEmbeddingError(error.response?.data?.error || error.message || 'Failed to generate note embeddings');
+        } finally {
+            setRunningNoteEmbeddings(false);
+        }
+    };
+
+    const isEmbeddingRunning = runningMediaEmbeddings || runningNoteEmbeddings;
+
+    // ==========================================
+    // Shared helper: render error list
+    // ==========================================
+    const renderErrors = (errors) => {
+        if (!errors || errors.length === 0) return null;
+        return (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                    Errors ({errors.length}):
+                </Typography>
+                {errors.slice(0, 5).map((err, idx) => (
+                    <Typography key={idx} variant="caption" display="block">{err}</Typography>
+                ))}
+                {errors.length > 5 && (
+                    <Typography variant="caption">...and {errors.length - 5} more</Typography>
+                )}
+            </Alert>
+        );
+    };
+
+    // ==========================================
+    // Shared helper: render stat box
+    // ==========================================
+    const StatBox = ({ value, label, color = 'primary.main' }) => (
+        <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
+            <Typography variant="h4" sx={{ fontWeight: 'bold', color }}>{value}</Typography>
+            <Typography variant="caption">{label}</Typography>
+        </Box>
+    );
 
     return (
         <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -128,7 +384,9 @@ const BackgroundJobsPage = () => {
                 Background Jobs
             </Typography>
 
-            {/* Book Description Enrichment Section */}
+            {/* ==========================================
+                BOOK DESCRIPTION ENRICHMENT
+               ========================================== */}
             <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
                     <BookIcon sx={{ fontSize: 32 }} />
@@ -142,60 +400,30 @@ const BackgroundJobsPage = () => {
                     HTML tags are automatically stripped from descriptions. Respects API rate limits.
                 </Alert>
 
-                {/* Status Section */}
                 <Card variant="outlined" sx={{ mb: 3 }}>
                     <CardContent>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                             <Typography variant="h6">Current Status</Typography>
-                            <Button
-                                variant="outlined"
-                                size="small"
+                            <Button variant="outlined" size="small"
                                 startIcon={statusLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
-                                onClick={fetchEnrichmentStatus}
-                                disabled={statusLoading || isRunning}
-                            >
+                                onClick={fetchBookStatus} disabled={statusLoading || isBookRunning}>
                                 Refresh
                             </Button>
                         </Box>
-
-                        {statusError && (
-                            <Alert severity="error" sx={{ mb: 2 }}>
-                                {statusError}
-                            </Alert>
-                        )}
-
+                        {statusError && <Alert severity="error" sx={{ mb: 2 }}>{statusError}</Alert>}
                         {enrichmentStatus && (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Box sx={{ textAlign: 'center', p: 2, bgcolor: 'background.default', borderRadius: 1, minWidth: 150 }}>
-                                    <Typography variant="h3" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                                        {enrichmentStatus.booksNeedingEnrichment}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Books Need Descriptions
-                                    </Typography>
-                                </Box>
-
+                                <StatBox value={enrichmentStatus.booksNeedingEnrichment} label="Books Need Descriptions" />
                                 {enrichmentStatus.booksNeedingEnrichment === 0 ? (
-                                    <Chip
-                                        icon={<CheckCircleIcon />}
-                                        label="All books enriched!"
-                                        color="success"
-                                        sx={{ fontWeight: 'bold' }}
-                                    />
+                                    <Chip icon={<CheckCircleIcon />} label="All books enriched!" color="success" sx={{ fontWeight: 'bold' }} />
                                 ) : (
-                                    <Chip
-                                        icon={<ScheduleIcon />}
-                                        label="Enrichment available"
-                                        color="warning"
-                                        sx={{ fontWeight: 'bold' }}
-                                    />
+                                    <Chip icon={<ScheduleIcon />} label="Enrichment available" color="warning" sx={{ fontWeight: 'bold' }} />
                                 )}
                             </Box>
                         )}
                     </CardContent>
                 </Card>
 
-                {/* Configuration Section */}
                 <Accordion defaultExpanded sx={{ mb: 3 }}>
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                         <Typography variant="h6">Configuration</Typography>
@@ -203,305 +431,511 @@ const BackgroundJobsPage = () => {
                     <AccordionDetails>
                         <Grid container spacing={3}>
                             <Grid item xs={12} md={6}>
-                                <Typography gutterBottom>
-                                    Batch Size: <strong>{batchSize}</strong> books per batch
-                                </Typography>
-                                <Slider
-                                    value={batchSize}
-                                    onChange={(e, value) => setBatchSize(value)}
-                                    min={10}
-                                    max={200}
-                                    step={10}
-                                    marks={[
-                                        { value: 10, label: '10' },
-                                        { value: 50, label: '50' },
-                                        { value: 100, label: '100' },
-                                        { value: 200, label: '200' },
-                                    ]}
-                                    disabled={isRunning}
-                                />
+                                <Typography gutterBottom>Batch Size: <strong>{batchSize}</strong> books per batch</Typography>
+                                <Slider value={batchSize} onChange={(e, v) => setBatchSize(v)} min={10} max={200} step={10}
+                                    marks={[{ value: 10, label: '10' }, { value: 50, label: '50' }, { value: 100, label: '100' }, { value: 200, label: '200' }]}
+                                    disabled={isBookRunning} />
                             </Grid>
-
                             <Grid item xs={12} md={6}>
-                                <Typography gutterBottom>
-                                    API Delay: <strong>{delayMs}ms</strong> between calls
-                                </Typography>
-                                <Slider
-                                    value={delayMs}
-                                    onChange={(e, value) => setDelayMs(value)}
-                                    min={500}
-                                    max={3000}
-                                    step={100}
-                                    marks={[
-                                        { value: 500, label: '0.5s' },
-                                        { value: 1000, label: '1s' },
-                                        { value: 2000, label: '2s' },
-                                        { value: 3000, label: '3s' },
-                                    ]}
-                                    disabled={isRunning}
-                                />
+                                <Typography gutterBottom>API Delay: <strong>{delayMs}ms</strong> between calls</Typography>
+                                <Slider value={delayMs} onChange={(e, v) => setDelayMs(v)} min={500} max={3000} step={100}
+                                    marks={[{ value: 500, label: '0.5s' }, { value: 1000, label: '1s' }, { value: 2000, label: '2s' }, { value: 3000, label: '3s' }]}
+                                    disabled={isBookRunning} />
                             </Grid>
-
                             <Grid item xs={12} md={6}>
-                                <Typography gutterBottom>
-                                    Max Books (Run All): <strong>{maxBooks}</strong>
-                                </Typography>
-                                <Slider
-                                    value={maxBooks}
-                                    onChange={(e, value) => setMaxBooks(value)}
-                                    min={100}
-                                    max={2000}
-                                    step={100}
-                                    marks={[
-                                        { value: 100, label: '100' },
-                                        { value: 500, label: '500' },
-                                        { value: 1000, label: '1000' },
-                                        { value: 2000, label: '2000' },
-                                    ]}
-                                    disabled={isRunning}
-                                />
+                                <Typography gutterBottom>Max Books (Run All): <strong>{maxBooks}</strong></Typography>
+                                <Slider value={maxBooks} onChange={(e, v) => setMaxBooks(v)} min={100} max={2000} step={100}
+                                    marks={[{ value: 100, label: '100' }, { value: 500, label: '500' }, { value: 1000, label: '1000' }, { value: 2000, label: '2000' }]}
+                                    disabled={isBookRunning} />
                             </Grid>
-
                             <Grid item xs={12} md={6}>
-                                <Typography gutterBottom>
-                                    Pause Between Batches: <strong>{pauseBetweenBatches}s</strong>
-                                </Typography>
-                                <Slider
-                                    value={pauseBetweenBatches}
-                                    onChange={(e, value) => setPauseBetweenBatches(value)}
-                                    min={10}
-                                    max={120}
-                                    step={10}
-                                    marks={[
-                                        { value: 10, label: '10s' },
-                                        { value: 30, label: '30s' },
-                                        { value: 60, label: '60s' },
-                                        { value: 120, label: '120s' },
-                                    ]}
-                                    disabled={isRunning}
-                                />
+                                <Typography gutterBottom>Pause Between Batches: <strong>{pauseBetweenBatches}s</strong></Typography>
+                                <Slider value={pauseBetweenBatches} onChange={(e, v) => setPauseBetweenBatches(v)} min={10} max={120} step={10}
+                                    marks={[{ value: 10, label: '10s' }, { value: 30, label: '30s' }, { value: 60, label: '60s' }, { value: 120, label: '120s' }]}
+                                    disabled={isBookRunning} />
                             </Grid>
                         </Grid>
                     </AccordionDetails>
                 </Accordion>
 
-                {/* Action Buttons */}
                 <Grid container spacing={2} sx={{ mb: 3 }}>
                     <Grid item xs={12} md={6}>
-                        <Card variant="outlined">
-                            <CardContent>
-                                <Typography variant="h6" gutterBottom>
-                                    Run Single Batch
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Process {batchSize} books and return immediately.
-                                    Good for quick, incremental enrichment.
-                                </Typography>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    fullWidth
-                                    startIcon={runningBatch ? <CircularProgress size={20} color="inherit" /> : <PlayIcon />}
-                                    onClick={handleRunBatch}
-                                    disabled={isRunning || enrichmentStatus?.booksNeedingEnrichment === 0}
-                                >
-                                    {runningBatch ? 'Running...' : `Run Batch (${batchSize} books)`}
-                                </Button>
-                            </CardContent>
-                        </Card>
+                        <Card variant="outlined"><CardContent>
+                            <Typography variant="h6" gutterBottom>Run Single Batch</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Process {batchSize} books and return immediately.</Typography>
+                            <Button variant="contained" color="primary" fullWidth
+                                startIcon={runningBatch ? <CircularProgress size={20} color="inherit" /> : <PlayIcon />}
+                                onClick={handleRunBookBatch} disabled={isBookRunning || enrichmentStatus?.booksNeedingEnrichment === 0}>
+                                {runningBatch ? 'Running...' : `Run Batch (${batchSize} books)`}
+                            </Button>
+                        </CardContent></Card>
                     </Grid>
-
                     <Grid item xs={12} md={6}>
-                        <Card variant="outlined">
-                            <CardContent>
-                                <Typography variant="h6" gutterBottom>
-                                    Run All (Bulk)
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                                    Process up to {maxBooks} books in multiple batches.
-                                    Use for initial population after large imports.
-                                </Typography>
-                                <Button
-                                    variant="contained"
-                                    color="secondary"
-                                    fullWidth
-                                    startIcon={runningAll ? <CircularProgress size={20} color="inherit" /> : <PlayIcon />}
-                                    onClick={handleRunAll}
-                                    disabled={isRunning || enrichmentStatus?.booksNeedingEnrichment === 0}
-                                >
-                                    {runningAll ? 'Running (this may take a while)...' : `Run All (up to ${maxBooks} books)`}
-                                </Button>
-                            </CardContent>
-                        </Card>
+                        <Card variant="outlined"><CardContent>
+                            <Typography variant="h6" gutterBottom>Run All (Bulk)</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Process up to {maxBooks} books in multiple batches.</Typography>
+                            <Button variant="contained" color="secondary" fullWidth
+                                startIcon={runningAll ? <CircularProgress size={20} color="inherit" /> : <PlayIcon />}
+                                onClick={handleRunBookAll} disabled={isBookRunning || enrichmentStatus?.booksNeedingEnrichment === 0}>
+                                {runningAll ? 'Running (this may take a while)...' : `Run All (up to ${maxBooks} books)`}
+                            </Button>
+                        </CardContent></Card>
                     </Grid>
                 </Grid>
 
-                {/* Batch Results */}
-                {batchError && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                        <strong>Batch Run Failed:</strong> {batchError}
-                    </Alert>
-                )}
-
+                {batchError && <Alert severity="error" sx={{ mb: 2 }}><strong>Batch Run Failed:</strong> {batchError}</Alert>}
                 {batchResult && (
-                    <Card variant="outlined" sx={{ mb: 2, bgcolor: 'success.dark' }}>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                                Batch Run Complete
-                            </Typography>
-
-                            <Grid container spacing={2}>
-                                <Grid item xs={6} sm={3}>
-                                    <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
-                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                                            {batchResult.totalProcessed}
-                                        </Typography>
-                                        <Typography variant="caption">Processed</Typography>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={6} sm={3}>
-                                    <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
-                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                                            {batchResult.enrichedCount}
-                                        </Typography>
-                                        <Typography variant="caption">Enriched</Typography>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={6} sm={3}>
-                                    <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
-                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                                            {batchResult.failedCount}
-                                        </Typography>
-                                        <Typography variant="caption">Failed</Typography>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={6} sm={3}>
-                                    <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
-                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
-                                            {batchResult.skippedCount}
-                                        </Typography>
-                                        <Typography variant="caption">Skipped</Typography>
-                                    </Box>
-                                </Grid>
-                            </Grid>
-
-                            {batchResult.errors && batchResult.errors.length > 0 && (
-                                <Alert severity="warning" sx={{ mt: 2 }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                        Errors ({batchResult.errors.length}):
-                                    </Typography>
-                                    {batchResult.errors.slice(0, 5).map((err, idx) => (
-                                        <Typography key={idx} variant="caption" display="block">
-                                            {err}
-                                        </Typography>
-                                    ))}
-                                    {batchResult.errors.length > 5 && (
-                                        <Typography variant="caption">
-                                            ...and {batchResult.errors.length - 5} more
-                                        </Typography>
-                                    )}
-                                </Alert>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <Card variant="outlined" sx={{ mb: 2, bgcolor: 'success.dark' }}><CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>Batch Run Complete</Typography>
+                        <Grid container spacing={2}>
+                            <Grid item xs={6} sm={3}><StatBox value={batchResult.totalProcessed} label="Processed" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={batchResult.enrichedCount} label="Enriched" color="success.main" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={batchResult.failedCount} label="Failed" color="error.main" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={batchResult.skippedCount} label="Skipped" color="text.secondary" /></Grid>
+                        </Grid>
+                        {renderErrors(batchResult.errors)}
+                    </CardContent></Card>
                 )}
 
-                {/* Run All Results */}
-                {runAllError && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                        <strong>Full Run Failed:</strong> {runAllError}
-                    </Alert>
-                )}
-
+                {runAllError && <Alert severity="error" sx={{ mb: 2 }}><strong>Full Run Failed:</strong> {runAllError}</Alert>}
                 {runAllResult && (
-                    <Card variant="outlined" sx={{ mb: 2, bgcolor: 'success.dark' }}>
-                        <CardContent>
-                            <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                                Full Run Complete
-                            </Typography>
-
-                            <Grid container spacing={2}>
-                                <Grid item xs={6} sm={2}>
-                                    <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
-                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                                            {runAllResult.totalProcessed}
-                                        </Typography>
-                                        <Typography variant="caption">Processed</Typography>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={6} sm={2}>
-                                    <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
-                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'success.main' }}>
-                                            {runAllResult.totalEnriched}
-                                        </Typography>
-                                        <Typography variant="caption">Enriched</Typography>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={6} sm={2}>
-                                    <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
-                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'error.main' }}>
-                                            {runAllResult.totalFailed}
-                                        </Typography>
-                                        <Typography variant="caption">Failed</Typography>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={6} sm={2}>
-                                    <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
-                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'info.main' }}>
-                                            {runAllResult.batchesRun}
-                                        </Typography>
-                                        <Typography variant="caption">Batches</Typography>
-                                    </Box>
-                                </Grid>
-                                <Grid item xs={12} sm={4}>
-                                    <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
-                                        <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'warning.main' }}>
-                                            {runAllResult.remainingBooks}
-                                        </Typography>
-                                        <Typography variant="caption">Still Remaining</Typography>
-                                    </Box>
-                                </Grid>
-                            </Grid>
-
-                            {runAllResult.errors && runAllResult.errors.length > 0 && (
-                                <Alert severity="warning" sx={{ mt: 2 }}>
-                                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                                        Errors ({runAllResult.errors.length}):
-                                    </Typography>
-                                    {runAllResult.errors.slice(0, 5).map((err, idx) => (
-                                        <Typography key={idx} variant="caption" display="block">
-                                            {err}
-                                        </Typography>
-                                    ))}
-                                    {runAllResult.errors.length > 5 && (
-                                        <Typography variant="caption">
-                                            ...and {runAllResult.errors.length - 5} more
-                                        </Typography>
-                                    )}
-                                </Alert>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <Card variant="outlined" sx={{ mb: 2, bgcolor: 'success.dark' }}><CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>Full Run Complete</Typography>
+                        <Grid container spacing={2}>
+                            <Grid item xs={6} sm={2}><StatBox value={runAllResult.totalProcessed} label="Processed" /></Grid>
+                            <Grid item xs={6} sm={2}><StatBox value={runAllResult.totalEnriched} label="Enriched" color="success.main" /></Grid>
+                            <Grid item xs={6} sm={2}><StatBox value={runAllResult.totalFailed} label="Failed" color="error.main" /></Grid>
+                            <Grid item xs={6} sm={2}><StatBox value={runAllResult.batchesRun} label="Batches" color="info.main" /></Grid>
+                            <Grid item xs={12} sm={4}><StatBox value={runAllResult.remainingBooks} label="Still Remaining" color="warning.main" /></Grid>
+                        </Grid>
+                        {renderErrors(runAllResult.errors)}
+                    </CardContent></Card>
                 )}
 
-                {/* Scheduled Jobs Info */}
                 <Alert severity="info" icon={<ScheduleIcon />}>
                     <Typography variant="body2">
-                        <strong>Scheduled Execution:</strong> For automated enrichment, set up a cron job on your
-                        server to call the <code>/api/bookenrichment/run-all</code> endpoint on a schedule.
-                        See the documentation for setup instructions.
+                        <strong>Scheduled Execution:</strong> For automated enrichment, set up a cron job to call <code>/api/bookenrichment/run-all</code> on a schedule.
                     </Typography>
                 </Alert>
             </Paper>
 
-            {/* Placeholder for future jobs */}
-            <Paper elevation={3} sx={{ p: 3, opacity: 0.6 }}>
-                <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-                    More Jobs Coming Soon
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    Additional background jobs will be added here as they are implemented.
-                </Typography>
+            {/* ==========================================
+                MOVIE/TV TMDB ENRICHMENT
+               ========================================== */}
+            <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                    <MovieIcon sx={{ fontSize: 32 }} />
+                    <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                        Movie/TV TMDB Enrichment
+                    </Typography>
+                </Box>
+
+                <Alert severity="info" icon={<InfoIcon />} sx={{ mb: 3 }}>
+                    Fetches metadata from TMDB for movies and TV shows that don't have a TMDB ID.
+                    Enriches titles, descriptions, posters, and other metadata.
+                </Alert>
+
+                <Card variant="outlined" sx={{ mb: 3 }}>
+                    <CardContent>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Typography variant="h6">Current Status</Typography>
+                            <Button variant="outlined" size="small"
+                                startIcon={movieTvStatusLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
+                                onClick={fetchMovieTvStatus} disabled={movieTvStatusLoading || isMovieTvRunning}>
+                                Refresh
+                            </Button>
+                        </Box>
+                        {movieTvStatusError && <Alert severity="error" sx={{ mb: 2 }}>{movieTvStatusError}</Alert>}
+                        {movieTvStatus && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                                <StatBox value={movieTvStatus.moviesNeedingEnrichment} label="Movies Need Enrichment" />
+                                <StatBox value={movieTvStatus.tvShowsNeedingEnrichment} label="TV Shows Need Enrichment" />
+                                {(movieTvStatus.moviesNeedingEnrichment === 0 && movieTvStatus.tvShowsNeedingEnrichment === 0) ? (
+                                    <Chip icon={<CheckCircleIcon />} label="All enriched!" color="success" sx={{ fontWeight: 'bold' }} />
+                                ) : (
+                                    <Chip icon={<ScheduleIcon />} label="Enrichment available" color="warning" sx={{ fontWeight: 'bold' }} />
+                                )}
+                            </Box>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Accordion sx={{ mb: 3 }}>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Typography variant="h6">Configuration</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Grid container spacing={3}>
+                            <Grid item xs={12} md={6}>
+                                <Typography gutterBottom>Batch Size: <strong>{movieTvBatchSize}</strong> items per batch</Typography>
+                                <Slider value={movieTvBatchSize} onChange={(e, v) => setMovieTvBatchSize(v)} min={10} max={200} step={10}
+                                    marks={[{ value: 10, label: '10' }, { value: 50, label: '50' }, { value: 100, label: '100' }, { value: 200, label: '200' }]}
+                                    disabled={isMovieTvRunning} />
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <Typography gutterBottom>API Delay: <strong>{movieTvDelayMs}ms</strong> between calls</Typography>
+                                <Slider value={movieTvDelayMs} onChange={(e, v) => setMovieTvDelayMs(v)} min={100} max={5000} step={100}
+                                    marks={[{ value: 100, label: '0.1s' }, { value: 500, label: '0.5s' }, { value: 2000, label: '2s' }, { value: 5000, label: '5s' }]}
+                                    disabled={isMovieTvRunning} />
+                            </Grid>
+                            <Grid item xs={12} md={4}>
+                                <Typography gutterBottom>Max Movies: <strong>{maxMovies}</strong></Typography>
+                                <Slider value={maxMovies} onChange={(e, v) => setMaxMovies(v)} min={0} max={5000} step={100}
+                                    marks={[{ value: 0, label: '0' }, { value: 500, label: '500' }, { value: 2500, label: '2500' }, { value: 5000, label: '5000' }]}
+                                    disabled={isMovieTvRunning} />
+                            </Grid>
+                            <Grid item xs={12} md={4}>
+                                <Typography gutterBottom>Max TV Shows: <strong>{maxTvShows}</strong></Typography>
+                                <Slider value={maxTvShows} onChange={(e, v) => setMaxTvShows(v)} min={0} max={5000} step={100}
+                                    marks={[{ value: 0, label: '0' }, { value: 500, label: '500' }, { value: 2500, label: '2500' }, { value: 5000, label: '5000' }]}
+                                    disabled={isMovieTvRunning} />
+                            </Grid>
+                            <Grid item xs={12} md={4}>
+                                <Typography gutterBottom>Pause Between Batches: <strong>{movieTvPause}s</strong></Typography>
+                                <Slider value={movieTvPause} onChange={(e, v) => setMovieTvPause(v)} min={10} max={120} step={10}
+                                    marks={[{ value: 10, label: '10s' }, { value: 30, label: '30s' }, { value: 60, label: '60s' }, { value: 120, label: '120s' }]}
+                                    disabled={isMovieTvRunning} />
+                            </Grid>
+                        </Grid>
+                    </AccordionDetails>
+                </Accordion>
+
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid item xs={12} md={4}>
+                        <Card variant="outlined"><CardContent>
+                            <Typography variant="h6" gutterBottom>Run Movies</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Enrich {movieTvBatchSize} movies from TMDB.</Typography>
+                            <Button variant="contained" color="primary" fullWidth
+                                startIcon={runningMovies ? <CircularProgress size={20} color="inherit" /> : <PlayIcon />}
+                                onClick={handleRunMovies} disabled={isMovieTvRunning || movieTvStatus?.moviesNeedingEnrichment === 0}>
+                                {runningMovies ? 'Running...' : 'Run Movies'}
+                            </Button>
+                        </CardContent></Card>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                        <Card variant="outlined"><CardContent>
+                            <Typography variant="h6" gutterBottom>Run TV Shows</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Enrich {movieTvBatchSize} TV shows from TMDB.</Typography>
+                            <Button variant="contained" color="primary" fullWidth
+                                startIcon={runningTvShows ? <CircularProgress size={20} color="inherit" /> : <PlayIcon />}
+                                onClick={handleRunTvShows} disabled={isMovieTvRunning || movieTvStatus?.tvShowsNeedingEnrichment === 0}>
+                                {runningTvShows ? 'Running...' : 'Run TV Shows'}
+                            </Button>
+                        </CardContent></Card>
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                        <Card variant="outlined"><CardContent>
+                            <Typography variant="h6" gutterBottom>Run All (Bulk)</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Process all movies and TV shows.</Typography>
+                            <Button variant="contained" color="secondary" fullWidth
+                                startIcon={runningMovieTvAll ? <CircularProgress size={20} color="inherit" /> : <PlayIcon />}
+                                onClick={handleRunMovieTvAll} disabled={isMovieTvRunning}>
+                                {runningMovieTvAll ? 'Running...' : 'Run All'}
+                            </Button>
+                        </CardContent></Card>
+                    </Grid>
+                </Grid>
+
+                {movieError && <Alert severity="error" sx={{ mb: 2 }}><strong>Movie Enrichment Failed:</strong> {movieError}</Alert>}
+                {movieResult && (
+                    <Card variant="outlined" sx={{ mb: 2, bgcolor: 'success.dark' }}><CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>Movie Enrichment Complete</Typography>
+                        <Grid container spacing={2}>
+                            <Grid item xs={6} sm={3}><StatBox value={movieResult.totalProcessed} label="Processed" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={movieResult.enrichedCount} label="Enriched" color="success.main" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={movieResult.notFoundCount} label="Not Found" color="warning.main" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={movieResult.failedCount} label="Failed" color="error.main" /></Grid>
+                        </Grid>
+                        {renderErrors(movieResult.errors)}
+                    </CardContent></Card>
+                )}
+
+                {tvShowError && <Alert severity="error" sx={{ mb: 2 }}><strong>TV Show Enrichment Failed:</strong> {tvShowError}</Alert>}
+                {tvShowResult && (
+                    <Card variant="outlined" sx={{ mb: 2, bgcolor: 'success.dark' }}><CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>TV Show Enrichment Complete</Typography>
+                        <Grid container spacing={2}>
+                            <Grid item xs={6} sm={3}><StatBox value={tvShowResult.totalProcessed} label="Processed" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={tvShowResult.enrichedCount} label="Enriched" color="success.main" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={tvShowResult.notFoundCount} label="Not Found" color="warning.main" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={tvShowResult.failedCount} label="Failed" color="error.main" /></Grid>
+                        </Grid>
+                        {renderErrors(tvShowResult.errors)}
+                    </CardContent></Card>
+                )}
+
+                {movieTvAllError && <Alert severity="error" sx={{ mb: 2 }}><strong>Full Run Failed:</strong> {movieTvAllError}</Alert>}
+                {movieTvAllResult && (
+                    <Card variant="outlined" sx={{ mb: 2, bgcolor: 'success.dark' }}><CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>Full Movie/TV Enrichment Complete</Typography>
+                        <Grid container spacing={2}>
+                            <Grid item xs={6} sm={2}><StatBox value={movieTvAllResult.totalMoviesProcessed} label="Movies Processed" /></Grid>
+                            <Grid item xs={6} sm={2}><StatBox value={movieTvAllResult.totalMoviesEnriched} label="Movies Enriched" color="success.main" /></Grid>
+                            <Grid item xs={6} sm={2}><StatBox value={movieTvAllResult.totalTvShowsProcessed} label="TV Processed" /></Grid>
+                            <Grid item xs={6} sm={2}><StatBox value={movieTvAllResult.totalTvShowsEnriched} label="TV Enriched" color="success.main" /></Grid>
+                            <Grid item xs={6} sm={2}><StatBox value={movieTvAllResult.remainingMovies} label="Movies Left" color="warning.main" /></Grid>
+                            <Grid item xs={6} sm={2}><StatBox value={movieTvAllResult.remainingTvShows} label="TV Left" color="warning.main" /></Grid>
+                        </Grid>
+                        {renderErrors(movieTvAllResult.errors)}
+                    </CardContent></Card>
+                )}
+
+                <Alert severity="info" icon={<ScheduleIcon />}>
+                    <Typography variant="body2">
+                        <strong>Scheduled Execution:</strong> Call <code>/api/movietvenrichment/run-all</code> on a schedule for automated TMDB enrichment.
+                    </Typography>
+                </Alert>
+            </Paper>
+
+            {/* ==========================================
+                PODCAST LISTENNOTES ENRICHMENT
+               ========================================== */}
+            <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                    <PodcastsIcon sx={{ fontSize: 32 }} />
+                    <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                        Podcast ListenNotes Enrichment
+                    </Typography>
+                </Box>
+
+                <Alert severity="info" icon={<InfoIcon />} sx={{ mb: 3 }}>
+                    Fetches podcast metadata from ListenNotes for podcast series without an external ID.
+                    ListenNotes has strict rate limits — use conservative settings.
+                </Alert>
+
+                <Card variant="outlined" sx={{ mb: 3 }}>
+                    <CardContent>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Typography variant="h6">Current Status</Typography>
+                            <Button variant="outlined" size="small"
+                                startIcon={podcastStatusLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
+                                onClick={fetchPodcastStatus} disabled={podcastStatusLoading || isPodcastRunning}>
+                                Refresh
+                            </Button>
+                        </Box>
+                        {podcastStatusError && <Alert severity="error" sx={{ mb: 2 }}>{podcastStatusError}</Alert>}
+                        {podcastStatus && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <StatBox value={podcastStatus.podcastsNeedingEnrichment} label="Podcasts Need Enrichment" />
+                                {podcastStatus.podcastsNeedingEnrichment === 0 ? (
+                                    <Chip icon={<CheckCircleIcon />} label="All podcasts enriched!" color="success" sx={{ fontWeight: 'bold' }} />
+                                ) : (
+                                    <Chip icon={<ScheduleIcon />} label="Enrichment available" color="warning" sx={{ fontWeight: 'bold' }} />
+                                )}
+                            </Box>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Accordion sx={{ mb: 3 }}>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Typography variant="h6">Configuration</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Grid container spacing={3}>
+                            <Grid item xs={12} md={6}>
+                                <Typography gutterBottom>Batch Size: <strong>{podcastBatchSize}</strong> podcasts per batch</Typography>
+                                <Slider value={podcastBatchSize} onChange={(e, v) => setPodcastBatchSize(v)} min={5} max={50} step={5}
+                                    marks={[{ value: 5, label: '5' }, { value: 25, label: '25' }, { value: 50, label: '50' }]}
+                                    disabled={isPodcastRunning} />
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <Typography gutterBottom>API Delay: <strong>{podcastDelayMs}ms</strong> between calls</Typography>
+                                <Slider value={podcastDelayMs} onChange={(e, v) => setPodcastDelayMs(v)} min={500} max={10000} step={500}
+                                    marks={[{ value: 500, label: '0.5s' }, { value: 1500, label: '1.5s' }, { value: 5000, label: '5s' }, { value: 10000, label: '10s' }]}
+                                    disabled={isPodcastRunning} />
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <Typography gutterBottom>Max Podcasts (Run All): <strong>{maxPodcasts}</strong></Typography>
+                                <Slider value={maxPodcasts} onChange={(e, v) => setMaxPodcasts(v)} min={10} max={500} step={10}
+                                    marks={[{ value: 10, label: '10' }, { value: 100, label: '100' }, { value: 250, label: '250' }, { value: 500, label: '500' }]}
+                                    disabled={isPodcastRunning} />
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <Typography gutterBottom>Pause Between Batches: <strong>{podcastPause}s</strong></Typography>
+                                <Slider value={podcastPause} onChange={(e, v) => setPodcastPause(v)} min={30} max={180} step={10}
+                                    marks={[{ value: 30, label: '30s' }, { value: 60, label: '60s' }, { value: 120, label: '120s' }, { value: 180, label: '180s' }]}
+                                    disabled={isPodcastRunning} />
+                            </Grid>
+                        </Grid>
+                    </AccordionDetails>
+                </Accordion>
+
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid item xs={12} md={6}>
+                        <Card variant="outlined"><CardContent>
+                            <Typography variant="h6" gutterBottom>Run Single Batch</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Process {podcastBatchSize} podcasts.</Typography>
+                            <Button variant="contained" color="primary" fullWidth
+                                startIcon={runningPodcastBatch ? <CircularProgress size={20} color="inherit" /> : <PlayIcon />}
+                                onClick={handleRunPodcastBatch} disabled={isPodcastRunning || podcastStatus?.podcastsNeedingEnrichment === 0}>
+                                {runningPodcastBatch ? 'Running...' : `Run Batch (${podcastBatchSize} podcasts)`}
+                            </Button>
+                        </CardContent></Card>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                        <Card variant="outlined"><CardContent>
+                            <Typography variant="h6" gutterBottom>Run All (Bulk)</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Process up to {maxPodcasts} podcasts.</Typography>
+                            <Button variant="contained" color="secondary" fullWidth
+                                startIcon={runningPodcastAll ? <CircularProgress size={20} color="inherit" /> : <PlayIcon />}
+                                onClick={handleRunPodcastAll} disabled={isPodcastRunning || podcastStatus?.podcastsNeedingEnrichment === 0}>
+                                {runningPodcastAll ? 'Running...' : `Run All (up to ${maxPodcasts})`}
+                            </Button>
+                        </CardContent></Card>
+                    </Grid>
+                </Grid>
+
+                {podcastBatchError && <Alert severity="error" sx={{ mb: 2 }}><strong>Batch Failed:</strong> {podcastBatchError}</Alert>}
+                {podcastBatchResult && (
+                    <Card variant="outlined" sx={{ mb: 2, bgcolor: 'success.dark' }}><CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>Podcast Batch Complete</Typography>
+                        <Grid container spacing={2}>
+                            <Grid item xs={6} sm={3}><StatBox value={podcastBatchResult.totalProcessed} label="Processed" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={podcastBatchResult.enrichedCount} label="Enriched" color="success.main" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={podcastBatchResult.notFoundCount} label="Not Found" color="warning.main" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={podcastBatchResult.failedCount} label="Failed" color="error.main" /></Grid>
+                        </Grid>
+                        {renderErrors(podcastBatchResult.errors)}
+                    </CardContent></Card>
+                )}
+
+                {podcastAllError && <Alert severity="error" sx={{ mb: 2 }}><strong>Full Run Failed:</strong> {podcastAllError}</Alert>}
+                {podcastAllResult && (
+                    <Card variant="outlined" sx={{ mb: 2, bgcolor: 'success.dark' }}><CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>Full Podcast Enrichment Complete</Typography>
+                        <Grid container spacing={2}>
+                            <Grid item xs={6} sm={3}><StatBox value={podcastAllResult.totalProcessed} label="Processed" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={podcastAllResult.totalEnriched} label="Enriched" color="success.main" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={podcastAllResult.batchesRun} label="Batches" color="info.main" /></Grid>
+                            <Grid item xs={6} sm={3}><StatBox value={podcastAllResult.remainingPodcasts} label="Remaining" color="warning.main" /></Grid>
+                        </Grid>
+                        {renderErrors(podcastAllResult.errors)}
+                    </CardContent></Card>
+                )}
+
+                <Alert severity="info" icon={<ScheduleIcon />}>
+                    <Typography variant="body2">
+                        <strong>Rate Limits:</strong> ListenNotes has strict rate limits. Use higher delays (1.5s+) and smaller batches to avoid throttling.
+                    </Typography>
+                </Alert>
+            </Paper>
+
+            {/* ==========================================
+                EMBEDDING GENERATION
+               ========================================== */}
+            <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+                    <PsychologyIcon sx={{ fontSize: 32 }} />
+                    <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                        Embedding Generation
+                    </Typography>
+                </Box>
+
+                <Alert severity="info" icon={<InfoIcon />} sx={{ mb: 3 }}>
+                    Generates vector embeddings for media items and notes using OpenAI.
+                    Embeddings power the AI recommendation and similarity features.
+                </Alert>
+
+                <Card variant="outlined" sx={{ mb: 3 }}>
+                    <CardContent>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Typography variant="h6">Current Status</Typography>
+                            <Button variant="outlined" size="small"
+                                startIcon={embeddingStatusLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
+                                onClick={fetchEmbeddingStatus} disabled={embeddingStatusLoading || isEmbeddingRunning}>
+                                Refresh
+                            </Button>
+                        </Box>
+                        {embeddingStatusError && <Alert severity="error" sx={{ mb: 2 }}>{embeddingStatusError}</Alert>}
+                        {(pendingMediaEmbeddings !== null || pendingNoteEmbeddings !== null) && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                                <StatBox value={pendingMediaEmbeddings?.pendingCount ?? 0} label="Media Pending Embeddings" />
+                                <StatBox value={pendingNoteEmbeddings?.pendingCount ?? 0} label="Notes Pending Embeddings" />
+                                {(pendingMediaEmbeddings?.pendingCount === 0 && pendingNoteEmbeddings?.pendingCount === 0) ? (
+                                    <Chip icon={<CheckCircleIcon />} label="All embeddings generated!" color="success" sx={{ fontWeight: 'bold' }} />
+                                ) : (
+                                    <Chip icon={<ScheduleIcon />} label="Generation available" color="warning" sx={{ fontWeight: 'bold' }} />
+                                )}
+                            </Box>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Accordion sx={{ mb: 3 }}>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                        <Typography variant="h6">Configuration</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                        <Grid container spacing={3}>
+                            <Grid item xs={12} md={6}>
+                                <Typography gutterBottom>Batch Size: <strong>{embeddingBatchSize}</strong> items per batch</Typography>
+                                <Slider value={embeddingBatchSize} onChange={(e, v) => setEmbeddingBatchSize(v)} min={10} max={200} step={10}
+                                    marks={[{ value: 10, label: '10' }, { value: 50, label: '50' }, { value: 100, label: '100' }, { value: 200, label: '200' }]}
+                                    disabled={isEmbeddingRunning} />
+                            </Grid>
+                        </Grid>
+                    </AccordionDetails>
+                </Accordion>
+
+                <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid item xs={12} md={6}>
+                        <Card variant="outlined"><CardContent>
+                            <Typography variant="h6" gutterBottom>Generate Media Embeddings</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Generate embeddings for {embeddingBatchSize} media items.
+                            </Typography>
+                            <Button variant="contained" color="primary" fullWidth
+                                startIcon={runningMediaEmbeddings ? <CircularProgress size={20} color="inherit" /> : <PlayIcon />}
+                                onClick={handleRunMediaEmbeddings} disabled={isEmbeddingRunning || pendingMediaEmbeddings?.pendingCount === 0}>
+                                {runningMediaEmbeddings ? 'Generating...' : 'Run Media Embeddings'}
+                            </Button>
+                        </CardContent></Card>
+                    </Grid>
+                    <Grid item xs={12} md={6}>
+                        <Card variant="outlined"><CardContent>
+                            <Typography variant="h6" gutterBottom>Generate Note Embeddings</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                                Generate embeddings for {embeddingBatchSize} notes.
+                            </Typography>
+                            <Button variant="contained" color="primary" fullWidth
+                                startIcon={runningNoteEmbeddings ? <CircularProgress size={20} color="inherit" /> : <PlayIcon />}
+                                onClick={handleRunNoteEmbeddings} disabled={isEmbeddingRunning || pendingNoteEmbeddings?.pendingCount === 0}>
+                                {runningNoteEmbeddings ? 'Generating...' : 'Run Note Embeddings'}
+                            </Button>
+                        </CardContent></Card>
+                    </Grid>
+                </Grid>
+
+                {mediaEmbeddingError && <Alert severity="error" sx={{ mb: 2 }}><strong>Media Embeddings Failed:</strong> {mediaEmbeddingError}</Alert>}
+                {mediaEmbeddingResult && (
+                    <Card variant="outlined" sx={{ mb: 2, bgcolor: 'success.dark' }}><CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>Media Embeddings Complete</Typography>
+                        <Grid container spacing={2}>
+                            <Grid item xs={6} sm={4}><StatBox value={mediaEmbeddingResult.generated ?? mediaEmbeddingResult.totalProcessed ?? 0} label="Generated" color="success.main" /></Grid>
+                            <Grid item xs={6} sm={4}><StatBox value={mediaEmbeddingResult.failed ?? mediaEmbeddingResult.totalFailed ?? 0} label="Failed" color="error.main" /></Grid>
+                            <Grid item xs={12} sm={4}><StatBox value={mediaEmbeddingResult.skipped ?? 0} label="Skipped" color="text.secondary" /></Grid>
+                        </Grid>
+                    </CardContent></Card>
+                )}
+
+                {noteEmbeddingError && <Alert severity="error" sx={{ mb: 2 }}><strong>Note Embeddings Failed:</strong> {noteEmbeddingError}</Alert>}
+                {noteEmbeddingResult && (
+                    <Card variant="outlined" sx={{ mb: 2, bgcolor: 'success.dark' }}><CardContent>
+                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>Note Embeddings Complete</Typography>
+                        <Grid container spacing={2}>
+                            <Grid item xs={6} sm={4}><StatBox value={noteEmbeddingResult.generated ?? noteEmbeddingResult.totalProcessed ?? 0} label="Generated" color="success.main" /></Grid>
+                            <Grid item xs={6} sm={4}><StatBox value={noteEmbeddingResult.failed ?? noteEmbeddingResult.totalFailed ?? 0} label="Failed" color="error.main" /></Grid>
+                            <Grid item xs={12} sm={4}><StatBox value={noteEmbeddingResult.skipped ?? 0} label="Skipped" color="text.secondary" /></Grid>
+                        </Grid>
+                    </CardContent></Card>
+                )}
+
+                <Alert severity="info" icon={<ScheduleIcon />}>
+                    <Typography variant="body2">
+                        <strong>Note:</strong> Embedding generation uses the OpenAI API. Ensure your API key is configured and has sufficient quota.
+                    </Typography>
+                </Alert>
             </Paper>
         </Container>
     );

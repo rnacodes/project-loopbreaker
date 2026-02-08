@@ -1,4 +1,3 @@
-//TODO: Change color of the buttons to match the theme
 //TODO: Update topics and genre boxes to select from database
 //TODO: "Available Notes" not working correctly
 
@@ -176,9 +175,9 @@ function WebsiteImportPage() {
                         disabled={isLoading || isImporting || !url.trim()}
                         startIcon={isImporting ? <CircularProgress size={20} color="inherit" /> : <Download />}
                         sx={{
-                            backgroundColor: '#7c4dff',
+                            backgroundColor: '#362759',
                             '&:hover': {
-                                backgroundColor: '#651fff'
+                                backgroundColor: '#1f1a35'
                             }
                         }}
                     >
