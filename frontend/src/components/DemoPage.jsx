@@ -1,4 +1,3 @@
-//TODO: Update with latest design changes
 import React, { useState } from 'react';
 import {
   Container,

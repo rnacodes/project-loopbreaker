@@ -1,5 +1,3 @@
-//TODO: Update topics and genre boxes to select from database - reproduce Topics and Genres sections from media profile page
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link as RouterLink } from 'react-router-dom';
 import {

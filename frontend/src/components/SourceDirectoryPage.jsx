@@ -1,4 +1,3 @@
-// Deferred: Combine this with the cleanup page to create an "Admin" page (with authorization)
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {

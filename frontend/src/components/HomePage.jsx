@@ -1,4 +1,3 @@
-// TODO: Create functioning "I'm feeling lucky" button
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Box, Typography, TextField, IconButton, Grid, Card, CardMedia, CardContent, Button, useTheme, CircularProgress } from '@mui/material';

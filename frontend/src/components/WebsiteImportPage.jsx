@@ -1,6 +1,3 @@
-//TODO: Update topics and genre boxes to select from database
-//TODO: "Available Notes" not working correctly
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {

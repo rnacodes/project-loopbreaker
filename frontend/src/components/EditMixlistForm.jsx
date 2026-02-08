@@ -1,5 +1,3 @@
-//TODO: Add feature parity with the Edit Media form
-//TODO: Update placeholder image to new-placeholder.png (stored in New-Downloads)
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {

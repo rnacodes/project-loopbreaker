@@ -1,5 +1,3 @@
-//TODO: Include YouTube channel and any playlists it is a part of in the video details section for YouTube videos
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';

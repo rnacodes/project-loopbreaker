@@ -15,11 +15,13 @@ namespace ProjectLoopbreaker.Web.API.Controllers
     {
         private readonly INoteService _noteService;
         private readonly ILogger<NoteController> _logger;
+        private readonly IConfiguration _configuration;
 
-        public NoteController(INoteService noteService, ILogger<NoteController> logger)
+        public NoteController(INoteService noteService, ILogger<NoteController> logger, IConfiguration configuration)
         {
             _noteService = noteService;
             _logger = logger;
+            _configuration = configuration;
         }
 
         // ============================================
@@ -271,8 +273,10 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 {
                     vaultUrl = vault.ToLower() switch
                     {
-                        "general" => Environment.GetEnvironmentVariable("OBSIDIAN_GENERAL_VAULT_URL"),
-                        "programming" => Environment.GetEnvironmentVariable("OBSIDIAN_PROGRAMMING_VAULT_URL"),
+                        "general" => Environment.GetEnvironmentVariable("OBSIDIAN_GENERAL_VAULT_URL")
+                            ?? _configuration["ObsidianNoteSync:GeneralVaultUrl"],
+                        "programming" => Environment.GetEnvironmentVariable("OBSIDIAN_PROGRAMMING_VAULT_URL")
+                            ?? _configuration["ObsidianNoteSync:ProgrammingVaultUrl"],
                         _ => null
                     };
                 }
@@ -288,8 +292,10 @@ namespace ProjectLoopbreaker.Web.API.Controllers
                 {
                     token = vault.ToLower() switch
                     {
-                        "general" => Environment.GetEnvironmentVariable("OBSIDIAN_GENERAL_VAULT_AUTH_TOKEN"),
-                        "programming" => Environment.GetEnvironmentVariable("OBSIDIAN_PROGRAMMING_VAULT_AUTH_TOKEN"),
+                        "general" => Environment.GetEnvironmentVariable("OBSIDIAN_GENERAL_VAULT_AUTH_TOKEN")
+                            ?? _configuration["ObsidianNoteSync:GeneralVaultAuthToken"],
+                        "programming" => Environment.GetEnvironmentVariable("OBSIDIAN_PROGRAMMING_VAULT_AUTH_TOKEN")
+                            ?? _configuration["ObsidianNoteSync:ProgrammingVaultAuthToken"],
                         _ => null
                     };
                 }

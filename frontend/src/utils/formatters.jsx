@@ -10,8 +10,9 @@ import { Favorite, ThumbUp, Remove, ThumbDown } from '@mui/icons-material';
  * - "Uncharted" -> "Uncharted" (no change needed)
  */
 export const formatEnumValue = (value) => {
-  if (!value) return value;
-  
+  if (!value && value !== 0) return value;
+  if (typeof value !== 'string') return String(value);
+
   // Add space before capital letters (except the first one)
   // and before sequences of capitals followed by a lowercase letter
   return value
