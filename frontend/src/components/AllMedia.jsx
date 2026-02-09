@@ -8,7 +8,7 @@ import {
     Snackbar, Alert
 } from '@mui/material';
 import { ViewModule, ViewList, OpenInNew, FileDownload, Delete, CheckBox, CheckBoxOutlineBlank } from '@mui/icons-material';
-import { getAllMedia, getMediaByType, bulkDeleteMedia } from '../api';
+import { getAllMedia, getMediaByType, bulkDeleteMedia } from '../api/mediaService';
 import { formatMediaType, formatStatus } from '../utils/formatters';
 
 // Helper function to get aspect ratio based on media type

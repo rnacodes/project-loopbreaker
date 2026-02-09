@@ -25,13 +25,15 @@ import RelatedNotesSection from './RelatedNotesSection';
 import SimilarItemsSection from './SimilarItemsSection';
 import SavedRelatedMediaSection from './SavedRelatedMediaSection';
 import { formatMediaType, formatStatus, getMediaTypeColor, getStatusColor, getRatingIcon, getRatingText } from '../utils/formatters';
-import {
-    getMediaById, getAllMixlists,
-    getBookById, getPodcastSeriesById, getPodcastEpisodeById, getEpisodesBySeriesId,
-    getMovieById, getTvShowById, getVideoById, getArticleById,
-    getHighlightsByArticle, getHighlightsByBook, getPlaylistsForVideo,
-    fetchArticleContent,
-} from '../api';
+import { getMediaById } from '../api/mediaService';
+import { getAllMixlists } from '../api/mixlistService';
+import { getBookById } from '../api/bookService';
+import { getPodcastSeriesById, getPodcastEpisodeById, getEpisodesBySeriesId } from '../api/podcastService';
+import { getMovieById } from '../api/movieService';
+import { getTvShowById } from '../api/tvShowService';
+import { getVideoById, getPlaylistsForVideo } from '../api/videoService';
+import { getArticleById, fetchArticleContent } from '../api/articleService';
+import { getHighlightsByArticle, getHighlightsByBook } from '../api/highlightService';
 
 function MediaProfilePage() {
   const [mediaItem, setMediaItem] = useState(null);

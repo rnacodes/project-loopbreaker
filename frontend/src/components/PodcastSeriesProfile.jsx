@@ -18,14 +18,8 @@ import MixlistCarousel from './MixlistCarousel';
 import TopicsGenresSection from './TopicsGenresSection';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import {
-    getPodcastSeriesById,
-    getEpisodesBySeriesId,
-    syncPodcastSeriesEpisodes,
-    deletePodcastSeries,
-    getAllMixlists,
-    importPodcastEpisodeFromApi
-} from '../api';
+import { getPodcastSeriesById, getEpisodesBySeriesId, syncPodcastSeriesEpisodes, deletePodcastSeries, importPodcastEpisodeFromApi } from '../api/podcastService';
+import { getAllMixlists } from '../api/mixlistService';
 import { 
     formatMediaType, 
     formatStatus, 

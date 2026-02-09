@@ -16,8 +16,11 @@ import {
 import { ResultHeader } from './search/ResultHeader';
 import { MediaCard } from './search/MediaCard';
 import { MediaListItem } from './search/MediaListItem';
-import { typesenseAdvancedSearch, typesenseAdvancedSearchMixlists, searchNotes, searchHighlights } from '../api';
-import { getAllTopics, getAllGenres, getAllMixlists, addMediaToMixlist, bulkDeleteMedia } from '../api';
+import { typesenseAdvancedSearch, typesenseAdvancedSearchMixlists, searchHighlights } from '../api/typesenseService';
+import { searchNotes } from '../api/noteService';
+import { getAllTopics, getAllGenres } from '../api/topicGenreService';
+import { getAllMixlists, addMediaToMixlist } from '../api/mixlistService';
+import { bulkDeleteMedia } from '../api/mediaService';
 
 
 const sortOptions = [

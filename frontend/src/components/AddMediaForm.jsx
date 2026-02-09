@@ -7,11 +7,15 @@ import {
     FormLabel, Chip, OutlinedInput, Paper, Grid,
     Autocomplete
 } from '@mui/material';
-import {
-    addMedia, getAllMixlists, addMediaToMixlist, createPodcastEpisode,
-    searchTopics, searchGenres, searchPodcastSeries, createBook,
-    createMovie, createTvShow, createVideo, uploadThumbnail
-} from '../api';
+import { addMedia } from '../api/mediaService';
+import { getAllMixlists, addMediaToMixlist } from '../api/mixlistService';
+import { createPodcastEpisode, searchPodcastSeries } from '../api/podcastService';
+import { searchTopics, searchGenres } from '../api/topicGenreService';
+import { createBook } from '../api/bookService';
+import { createMovie } from '../api/movieService';
+import { createTvShow } from '../api/tvShowService';
+import { createVideo } from '../api/videoService';
+import { uploadThumbnail } from '../api/uploadService';
 
 function AddMediaForm() {
     const [title, setTitle] = useState('');

@@ -24,9 +24,9 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        if (builder.Environment.IsDevelopment())
+        if (builder.Environment.IsDevelopment() || builder.Environment.EnvironmentName == "Demo")
         {
-            // Development: Allow localhost on common frontend ports
+            // Development/Demo: Allow localhost on common frontend ports
             policy.WithOrigins(
                       "http://localhost:3000",    // React default
                       "https://localhost:3000",   // React HTTPS
@@ -169,16 +169,24 @@ else
 
 // --- Configure EF Core & PostgreSQL ---
 // Try to get connection string from various sources with priority:
-// 1. Environment variable DATABASE_URL (Render.com standard)
-// 2. Environment variable ConnectionStrings__DefaultConnection
-// 3. Configuration DefaultConnection
-var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL") ??
-                      Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") ??
-                      builder.Configuration.GetConnectionString("DefaultConnection");
+// 1. Configuration DefaultConnection (respects environment-specific appsettings like appsettings.Demo.json)
+// 2. Environment variable DATABASE_URL (Render.com standard)
+// 3. Environment variable ConnectionStrings__DefaultConnection
+var configConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = (!string.IsNullOrEmpty(configConnectionString) ? configConnectionString : null) ??
+                      Environment.GetEnvironmentVariable("DATABASE_URL") ??
+                      Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 
-Console.WriteLine($"Connection string source: {(Environment.GetEnvironmentVariable("DATABASE_URL") != null ? "DATABASE_URL env var" : 
-                                               Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") != null ? "ConnectionStrings__DefaultConnection env var" : 
-                                               "appsettings.json")}");
+string connectionSource;
+if (!string.IsNullOrEmpty(configConnectionString))
+    connectionSource = $"appsettings.{builder.Environment.EnvironmentName}.json";
+else if (Environment.GetEnvironmentVariable("DATABASE_URL") != null)
+    connectionSource = "DATABASE_URL env var";
+else if (Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") != null)
+    connectionSource = "ConnectionStrings__DefaultConnection env var";
+else
+    connectionSource = "none";
+Console.WriteLine($"Connection string source: {connectionSource}");
 
 // Validate connection string before proceeding
 if (string.IsNullOrEmpty(connectionString))

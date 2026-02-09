@@ -327,8 +327,6 @@ Future releases will include:
 
 * **Podcast and video transcription import**
 
-* 
-
 ---
 
 ## Project Status

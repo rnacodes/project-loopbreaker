@@ -11,9 +11,8 @@ import {
     ArrowBack, ExpandMore, ExpandLess, OpenInNew, Edit,
     Search, Upload, FileDownload, AddCircle, Add, Delete
 } from '@mui/icons-material';
-import {
-    getMixlistById, removeMediaFromMixlist, searchMedia, addMediaToMixlist
-} from '../api';
+import { getMixlistById, removeMediaFromMixlist, addMediaToMixlist } from '../api/mixlistService';
+import { searchMedia } from '../api/mediaService';
 import SimpleMediaCarousel from './shared/SimpleMediaCarousel';
 import { formatMediaType, formatStatus } from '../utils/formatters';
 

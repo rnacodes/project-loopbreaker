@@ -8,7 +8,7 @@ import {
     Snackbar, Alert
 } from '@mui/material';
 import { Add, FileDownload, Upload, ViewModule, ViewList, OpenInNew, Delete, CheckBox, CheckBoxOutlineBlank } from '@mui/icons-material';
-import { getAllMixlists } from '../api';
+import { getAllMixlists } from '../api/mixlistService';
 
 function MixlistsPage() {
     const [mixlists, setMixlists] = useState([]);

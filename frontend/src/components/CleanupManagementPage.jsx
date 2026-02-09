@@ -19,27 +19,13 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete';
 import WarningIcon from '@mui/icons-material/Warning';
 import {
-    cleanupYouTubeData,
-    cleanupPodcasts,
-    cleanupBooks,
-    cleanupMovies,
-    cleanupTvShows,
-    cleanupArticles,
-    cleanupHighlights,
-    cleanupMixlists,
-    cleanupAllTopics,
-    cleanupAllGenres,
-    cleanupOrphanedTopics,
-    cleanupOrphanedGenres,
-    cleanupAllMedia,
-    cleanupRefreshTokens,
-    cleanupWebsites,
-    cleanupChannels,
-    cleanupPlaylists,
-    cleanupNotes,
-    cleanupDocuments,
-    cleanupVideos
-} from '../api';
+    cleanupYouTubeData, cleanupPodcasts, cleanupBooks, cleanupMovies,
+    cleanupTvShows, cleanupArticles, cleanupHighlights, cleanupMixlists,
+    cleanupAllTopics, cleanupAllGenres, cleanupOrphanedTopics, cleanupOrphanedGenres,
+    cleanupAllMedia, cleanupWebsites, cleanupChannels, cleanupPlaylists,
+    cleanupNotes, cleanupDocuments, cleanupVideos
+} from '../api/devService';
+import { cleanupRefreshTokens } from '../api/authService';
 
 const CleanupManagementPage = () => {
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });

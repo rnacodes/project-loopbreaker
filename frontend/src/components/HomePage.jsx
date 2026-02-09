@@ -6,7 +6,8 @@ import {
     AddCircleOutline, BookmarkAdd, CloudUpload, Settings, Info, Help, Share, AccountCircle, ArrowForwardIos,
     NoteAlt, ImportExport, Topic, FileDownload, LocalLibrary, Apps, FormatQuote
 } from '@mui/icons-material';
-import { getAllMixlists, seedMixlists, getAllMedia } from '../api';
+import { getAllMixlists, seedMixlists } from '../api/mixlistService';
+import { getAllMedia } from '../api/mediaService';
 
 // MOCK DATA
 const mainMediaIcons = [

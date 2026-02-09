@@ -1,14 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {
-  validateReadwiseConnection,
-  syncReadwiseAll,
-  fetchReadwiseContent,
-  getUnlinkedHighlights,
-  updateHighlight,
-  getAllBooks,
-  getAllArticles,
-  cleanHighlightText
-} from '../api';
+import { validateReadwiseConnection, syncAll as syncReadwiseAll, fetchArticleContent as fetchReadwiseContent } from '../api/readwiseService';
+import { getUnlinkedHighlights, updateHighlight, cleanHighlightText } from '../api/highlightService';
+import { getAllBooks } from '../api/bookService';
+import { getAllArticles } from '../api/articleService';
 import './ReadwiseSyncPage.css';
 
 const ReadwiseSyncPage = () => {

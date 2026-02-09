@@ -10,7 +10,7 @@ import {
     Article as NoteIcon, Add as AddIcon, Search, Close,
     OpenInNew as OpenInNewIcon, Delete as DeleteIcon
 } from '@mui/icons-material';
-import { getNotesForMedia, getAllNotes, linkNoteToMedia, unlinkNoteFromMedia, searchNotes } from '../api';
+import { getNotesForMedia, getAllNotes, linkNoteToMedia, unlinkNoteFromMedia, searchNotes } from '../api/noteService';
 
 function RelatedNotesSection({ mediaItem, setSnackbar, onUpdate }) {
     // State for linked notes

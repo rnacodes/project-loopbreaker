@@ -4,7 +4,8 @@ import {
     CircularProgress, Divider
 } from '@mui/material';
 import { ExpandMore, OpenInNew, Star, RssFeed, ContentCopy, Language, Schedule, Article, AutoFixHigh, Download } from '@mui/icons-material';
-import { getWebsiteRssFeedItems, enrichBookById } from '../api';
+import { getWebsiteRssFeedItems } from '../api/websiteService';
+import { enrichBookById } from '../api/backgroundJobsService';
 
 function getJustWatchUrl(title) {
   // Simple heuristic for generating a JustWatch search URL.

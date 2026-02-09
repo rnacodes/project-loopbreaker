@@ -13,7 +13,8 @@ import {
     Article as NoteIcon,
     AutoAwesome as AutoAwesomeIcon
 } from '@mui/icons-material';
-import { getNoteById, getMediaForNote, updateNote, generateNoteDescription } from '../api';
+import { getNoteById, getMediaForNote, updateNote } from '../api/noteService';
+import { generateNoteDescription } from '../api/aiService';
 import { formatMediaType, getMediaTypeColor } from '../utils/formatters';
 import SimilarNotesSection from './SimilarNotesSection';
 import RelatedMediaByEmbeddingSection from './RelatedMediaByEmbeddingSection';
