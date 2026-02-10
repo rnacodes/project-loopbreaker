@@ -6,7 +6,7 @@ import {
     ListItemSecondaryAction, IconButton, Divider
 } from '@mui/material';
 import { ViewModule, ViewList, OpenInNew } from '@mui/icons-material';
-import { getAllMedia, getMediaByTopic, getMediaByGenre } from '../api';
+import { getAllMedia, getMediaByTopic, getMediaByGenre } from '../api/mediaService';
 import { formatMediaType } from '../utils/formatters';
 
 function SearchResults() {

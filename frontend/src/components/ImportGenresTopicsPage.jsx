@@ -9,7 +9,7 @@ import {
     ArrowBack, CloudUpload, FileDownload, CheckCircle,
     Error, Info
 } from '@mui/icons-material';
-import { importGenresFromCsv, importTopicsFromCsv } from '../api';
+import { importGenresFromCsv, importTopicsFromCsv } from '../api/topicGenreService';
 
 function ImportGenresTopicsPage() {
     const [activeTab, setActiveTab] = useState(0); // 0 for Genres, 1 for Topics

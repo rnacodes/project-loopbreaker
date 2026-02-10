@@ -20,7 +20,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
-import { getRecommendedMediaForNote } from '../api';
+import { getMediaForNote as getRecommendedMediaForNote } from '../api/recommendationService';
 import { formatMediaType } from '../utils/formatters';
 
 function RelatedMediaByEmbeddingSection({ note, setSnackbar }) {

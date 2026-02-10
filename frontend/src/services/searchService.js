@@ -1,4 +1,5 @@
-import { searchMedia, searchMixlists } from '../api';
+import { searchMedia } from '../api/mediaService';
+import { searchMixlists } from '../api/mixlistService';
 
 export const searchAll = async (query) => {
     if (!query || !query.trim()) {

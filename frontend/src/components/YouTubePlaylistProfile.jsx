@@ -17,14 +17,8 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import MediaInfoCard from './MediaInfoCard';
 import MixlistCarousel from './MixlistCarousel';
 import TopicsGenresSection from './TopicsGenresSection';
-import {
-    getYouTubePlaylistById,
-    getYouTubePlaylistVideos,
-    deleteYouTubePlaylist,
-    syncYouTubePlaylist,
-    getAllMixlists,
-    addVideoToYouTubePlaylist
-} from '../api';
+import { getYouTubePlaylistById, getYouTubePlaylistVideos, deleteYouTubePlaylist, syncYouTubePlaylist, addVideoToYouTubePlaylist } from '../api/youtubeService';
+import { getAllMixlists } from '../api/mixlistService';
 import {
     formatMediaType,
     formatStatus,

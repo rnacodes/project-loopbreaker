@@ -5,7 +5,7 @@ import {
     Grid, CircularProgress, Alert, TextField, InputAdornment
 } from '@mui/material';
 import { Add, Search, YouTube } from '@mui/icons-material';
-import { getAllYouTubeChannels } from '../api';
+import { getAllYouTubeChannels } from '../api/youtubeService';
 
 function YouTubeChannelList() {
     const [channels, setChannels] = useState([]);

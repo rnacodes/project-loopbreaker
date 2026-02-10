@@ -22,8 +22,11 @@ import {
   AddCircle as AddCircleIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
-import { getSimilarMedia, saveRelatedMedia } from '../api';
+import { getSimilarMedia } from '../api/recommendationService';
+import { saveRelatedMedia, getRelatedMedia } from '../api/relatedMediaService';
 import { formatMediaType } from '../utils/formatters';
+
+const SIMILARITY_THRESHOLD = 0.70;
 
 function SimilarItemsSection({ mediaItem, setSnackbar, onRelatedMediaSaved }) {
   const [similarItems, setSimilarItems] = useState([]);
@@ -35,20 +38,39 @@ function SimilarItemsSection({ mediaItem, setSnackbar, onRelatedMediaSaved }) {
   const [savedItemIds, setSavedItemIds] = useState(new Set());
   const [savingItemId, setSavingItemId] = useState(null);
 
-  const fetchSimilarItems = useCallback(async () => {
+  const generateSimilarItems = useCallback(async () => {
     if (!mediaItem?.id) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const items = await getSimilarMedia(mediaItem.id, 8);
-      setSimilarItems(items || []);
+      // Fetch existing related media to exclude from results and initialize saved IDs
+      let relatedIds = new Set();
+      try {
+        const relatedItems = await getRelatedMedia(mediaItem.id);
+        relatedIds = new Set(
+          (relatedItems || []).map(r => r.relatedMediaItem?.id).filter(Boolean)
+        );
+        setSavedItemIds(relatedIds);
+      } catch {
+        // If fetching related media fails, continue without exclusion
+      }
+
+      // Request more items to account for filtering
+      const items = await getSimilarMedia(mediaItem.id, 20);
+
+      // Filter: exclude already-saved related items and items below threshold
+      const filtered = (items || []).filter(item =>
+        !relatedIds.has(item.id) &&
+        item.similarityScore >= SIMILARITY_THRESHOLD
+      );
+
+      setSimilarItems(filtered);
       setHasEmbedding(true);
       setHasFetched(true);
     } catch (err) {
       console.error('Error fetching similar items:', err);
-      // Check if error is due to missing embedding
       if (err.response?.status === 400 || err.response?.data?.message?.includes('embedding')) {
         setHasEmbedding(false);
         setSimilarItems([]);
@@ -66,7 +88,7 @@ function SimilarItemsSection({ mediaItem, setSnackbar, onRelatedMediaSaved }) {
     setExpanded(newExpanded);
     // Fetch on first expand
     if (newExpanded && !hasFetched) {
-      fetchSimilarItems();
+      generateSimilarItems();
     }
   };
 
@@ -105,7 +127,7 @@ function SimilarItemsSection({ mediaItem, setSnackbar, onRelatedMediaSaved }) {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <AutoAwesomeIcon color="action" />
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Similar Items
+              Get Recommendations
             </Typography>
           </Box>
           <Alert severity="info">
@@ -133,17 +155,17 @@ function SimilarItemsSection({ mediaItem, setSnackbar, onRelatedMediaSaved }) {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <AutoAwesomeIcon color={expanded ? 'primary' : 'action'} />
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Similar Items
+              Get Recommendations
             </Typography>
             <Chip label="AI" size="small" color="secondary" sx={{ ml: 1 }} />
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             {expanded && hasFetched && (
-              <Tooltip title="Refresh recommendations">
+              <Tooltip title="Re-generate recommendations">
                 <IconButton
                   onClick={(e) => {
                     e.stopPropagation();
-                    fetchSimilarItems();
+                    generateSimilarItems();
                   }}
                   disabled={loading}
                   size="small"
@@ -162,8 +184,11 @@ function SimilarItemsSection({ mediaItem, setSnackbar, onRelatedMediaSaved }) {
         <Collapse in={expanded}>
           <Box sx={{ mt: 2 }}>
             {loading && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 3, gap: 1.5 }}>
                 <CircularProgress size={32} />
+                <Typography variant="body2" color="text.secondary">
+                  {hasFetched ? 'Re-generating list...' : 'Generating list...'}
+                </Typography>
               </Box>
             )}
 
@@ -175,7 +200,7 @@ function SimilarItemsSection({ mediaItem, setSnackbar, onRelatedMediaSaved }) {
 
             {!loading && !error && hasFetched && similarItems.length === 0 && (
               <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>
-                No similar items found
+                No similar items found with high enough similarity
               </Typography>
             )}
 

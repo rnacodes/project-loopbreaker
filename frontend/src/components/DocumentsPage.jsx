@@ -12,7 +12,7 @@ import {
     Search, FilterList, Archive, Sort, Refresh,
     Description, FolderOpen, Person, CalendarToday
 } from '@mui/icons-material';
-import { getAllDocuments, syncDocumentsFromPaperless, getPaperlessStatus } from '../api';
+import { getAllDocuments, syncDocumentsFromPaperless, getPaperlessStatus } from '../api/documentService';
 import DocumentCard from './shared/DocumentCard';
 
 function DocumentsPage() {

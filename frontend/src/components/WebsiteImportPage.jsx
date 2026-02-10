@@ -6,7 +6,7 @@ import {
     Chip, Grid, Paper
 } from '@mui/material';
 import { Language, Download, Visibility, OpenInNew, RssFeed, ArrowBack } from '@mui/icons-material';
-import { scrapeWebsitePreview, importWebsite } from '../api';
+import { scrapeWebsitePreview, importWebsite } from '../api/websiteService';
 
 function WebsiteImportPage() {
     const [url, setUrl] = useState('');

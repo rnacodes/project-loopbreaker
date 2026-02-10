@@ -9,7 +9,8 @@ import {
     Topic as TopicIcon, Category as GenreIcon, Add as AddIcon,
     Search, Close, Remove as RemoveIcon
 } from '@mui/icons-material';
-import { getAllTopics, getAllGenres, updateMediaTopicsGenres } from '../api';
+import { getAllTopics, getAllGenres } from '../api/topicGenreService';
+import { updateMediaTopicsGenres } from '../api/mediaService';
 
 function TopicsGenresSection({ mediaItem, setSnackbar, onUpdate }) {
     const navigate = useNavigate();

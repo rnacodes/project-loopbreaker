@@ -6,7 +6,8 @@ import {
     Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
 import { Save, Cancel, ArrowBack, Delete } from '@mui/icons-material';
-import { getMixlistById, updateMixlist, uploadThumbnail, deleteMixlist } from '../api';
+import { getMixlistById, updateMixlist, deleteMixlist } from '../api/mixlistService';
+import { uploadThumbnail } from '../api/uploadService';
 
 function EditMixlistForm() {
     const { id } = useParams();

@@ -7,7 +7,9 @@ import {
     List, ListItem, ListItemText, IconButton, Chip, InputAdornment, Tooltip
 } from '@mui/material';
 import { Save, Cancel, ArrowBack, Delete, Add as AddIcon, Search, Close, Delete as DeleteIcon, OpenInNew as OpenInNewIcon, Article as NoteIcon } from '@mui/icons-material';
-import { getMediaById, updateMedia, uploadThumbnail, deleteMedia, getNotesForMedia, getAllNotes, searchNotes, linkNoteToMedia, unlinkNoteFromMedia } from '../api';
+import { getMediaById, updateMedia, deleteMedia } from '../api/mediaService';
+import { uploadThumbnail } from '../api/uploadService';
+import { getNotesForMedia, getAllNotes, searchNotes, linkNoteToMedia, unlinkNoteFromMedia } from '../api/noteService';
 import { formatStatus, formatMediaType } from '../utils/formatters';
 
 function EditMediaForm() {

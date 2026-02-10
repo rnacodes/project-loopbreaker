@@ -23,7 +23,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
-import { getSimilarNotes } from '../api';
+import { getSimilarNotes } from '../api/recommendationService';
 
 // Vault color mapping
 const vaultColors = {

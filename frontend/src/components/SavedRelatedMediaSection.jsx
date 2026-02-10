@@ -34,7 +34,8 @@ import {
   Search as SearchIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import { getRelatedMedia, saveRelatedMedia, removeRelatedMedia, searchMedia } from '../api';
+import { getRelatedMedia, saveRelatedMedia, removeRelatedMedia } from '../api/relatedMediaService';
+import { searchMedia } from '../api/mediaService';
 import { formatMediaType } from '../utils/formatters';
 
 function SavedRelatedMediaSection({ mediaItem, setSnackbar, refreshTrigger }) {
@@ -159,7 +160,7 @@ function SavedRelatedMediaSection({ mediaItem, setSnackbar, refreshTrigger }) {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <LinkIcon color={expanded ? 'primary' : 'action'} />
+            <LinkIcon sx={{ color: '#fcfafa' }} />
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
               Related Media
             </Typography>
@@ -189,9 +190,8 @@ function SavedRelatedMediaSection({ mediaItem, setSnackbar, refreshTrigger }) {
                       setAddDialogOpen(true);
                     }}
                     size="small"
-                    color="primary"
                   >
-                    <AddIcon />
+                    <AddIcon sx={{ color: '#fcfafa' }} />
                   </IconButton>
                 </Tooltip>
               </>
@@ -228,6 +228,7 @@ function SavedRelatedMediaSection({ mediaItem, setSnackbar, refreshTrigger }) {
                   onClick={() => setAddDialogOpen(true)}
                   variant="outlined"
                   size="small"
+                  sx={{ color: '#fcfafa', borderColor: '#fcfafa', '&:hover': { borderColor: '#fcfafa', bgcolor: 'rgba(252,250,250,0.08)' } }}
                 >
                   Add Related Item
                 </Button>

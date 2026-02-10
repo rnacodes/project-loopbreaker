@@ -13,7 +13,9 @@ import {
     CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon,
     MenuBook as BookIcon, Article as ArticleIcon
 } from '@mui/icons-material';
-import { getUnlinkedHighlights, updateHighlight, getAllBooks, getAllArticles } from '../api';
+import { getUnlinkedHighlights, updateHighlight } from '../api/highlightService';
+import { getAllBooks } from '../api/bookService';
+import { getAllArticles } from '../api/articleService';
 
 export default function HighlightLinkingPage() {
     // Data state

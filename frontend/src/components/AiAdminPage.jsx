@@ -22,15 +22,11 @@ import {
   AutoAwesome as AutoAwesomeIcon,
 } from '@mui/icons-material';
 import {
-  getAiStatus,
-  generateNoteDescriptionsBatch,
-  getPendingNoteDescriptions,
-  generateMediaEmbeddingsBatch,
-  generateNoteEmbeddingsBatch,
-  getPendingMediaEmbeddings,
-  getPendingNoteEmbeddings,
-  getRecommendationStatus,
-} from '../api';
+  getAiStatus, generateNoteDescriptionsBatch, getPendingNoteDescriptions,
+  generateMediaEmbeddingsBatch, generateNoteEmbeddingsBatch,
+  getPendingMediaEmbeddings, getPendingNoteEmbeddings,
+} from '../api/aiService';
+import { getRecommendationStatus } from '../api/recommendationService';
 
 const AiAdminPage = () => {
   // State for AI service status

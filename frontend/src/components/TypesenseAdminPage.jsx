@@ -33,7 +33,9 @@ import {
   Error as ErrorIcon,
   Info as InfoIcon,
 } from '@mui/icons-material';
-import { typesenseReindex, reindexMixlists, typesenseHealth, typesenseSearch, typesenseResetMediaItems, typesenseResetMixlists, findDuplicateArticles, deduplicateArticles, syncAllVaults, reindexNotes, resetNotesCollection, getSyncStatus } from '../api';
+import { typesenseReindex, reindexMixlists, typesenseHealth, typesenseSearch, typesenseResetMediaItems, typesenseResetMixlists, reindexNotes, resetNotesCollection } from '../api/typesenseService';
+import { findDuplicateArticles, deduplicateArticles } from '../api/articleService';
+import { syncAllVaults, getSyncStatus } from '../api/noteService';
 import { formatStatus } from '../utils/formatters';
 
 const TypesenseAdminPage = () => {

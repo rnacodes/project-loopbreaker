@@ -30,7 +30,7 @@ import {
   Note as NoteIcon,
   Folder as FolderIcon,
 } from '@mui/icons-material';
-import { searchNotes } from '../api';
+import { searchNotes } from '../api/noteService';
 
 // Vault color mapping
 const vaultColors = {

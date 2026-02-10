@@ -267,6 +267,39 @@ export const reindexMixlists = async () => {
 };
 
 // ============================================
+// Notes Reindex/Reset
+// ============================================
+
+/**
+ * Reindex all notes in Typesense
+ * @returns {Promise<Object>} Reindex results with count
+ */
+export const reindexNotes = async () => {
+    try {
+        const response = await apiClient.post('/search/reindex-notes');
+        return response.data;
+    } catch (error) {
+        console.error('Error reindexing notes:', error);
+        throw error;
+    }
+};
+
+/**
+ * Reset the obsidian_notes collection in Typesense
+ * WARNING: This will delete all indexed notes!
+ * @returns {Promise<Object>} Reset result
+ */
+export const resetNotesCollection = async () => {
+    try {
+        const response = await apiClient.post('/search/reset-notes');
+        return response.data;
+    } catch (error) {
+        console.error('Error resetting notes collection:', error);
+        throw error;
+    }
+};
+
+// ============================================
 // Highlights Search
 // ============================================
 

@@ -12,7 +12,7 @@ import {
     Search, FilterList, Star, Archive, CheckCircle,
     Inbox, Sort, Refresh, OpenInNew
 } from '@mui/icons-material';
-import { getAllArticles } from '../api';
+import { getAllArticles } from '../api/articleService';
 import ArticleCard from './shared/ArticleCard';
 import { formatStatus } from '../utils/formatters';
 

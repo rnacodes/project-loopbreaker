@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import { PlaylistAdd, Search, Close } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { addMediaToMixlist } from '../api';
+import { addMediaToMixlist } from '../api/mixlistService';
 
 function MixlistCarousel({
   mediaItem,

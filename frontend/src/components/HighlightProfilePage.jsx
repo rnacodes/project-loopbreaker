@@ -12,7 +12,7 @@ import {
     Article as ArticleIcon,
     Book as BookIcon
 } from '@mui/icons-material';
-import { getHighlightById } from '../api';
+import { getHighlightById } from '../api/highlightService';
 
 function HighlightProfilePage() {
     const [highlight, setHighlight] = useState(null);

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { uploadGoodreadsCsv } from '../api';
+import { uploadGoodreadsCsv } from '../api/uploadService';
 import './GoodreadsUploadPage.css';
 
 const GoodreadsUploadPage = () => {

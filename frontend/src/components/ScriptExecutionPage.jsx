@@ -39,13 +39,9 @@ import {
     ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import {
-    checkScriptRunnerHealth,
-    getScriptJobs,
-    getScriptJob,
-    runNormalizeNotes,
-    runNormalizeVault,
-    cancelScriptJob
-} from '../api';
+    checkScriptRunnerHealth, getScriptJobs, getScriptJob,
+    runNormalizeNotes, runNormalizeVault, cancelScriptJob
+} from '../api/scriptExecutionService';
 
 const ScriptExecutionPage = () => {
     // Health state

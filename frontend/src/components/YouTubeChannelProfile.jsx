@@ -18,13 +18,8 @@ import MixlistCarousel from './MixlistCarousel';
 import TopicsGenresSection from './TopicsGenresSection';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import {
-    getYouTubeChannelById,
-    getYouTubeChannelVideos,
-    deleteYouTubeChannel,
-    syncYouTubeChannelMetadata,
-    getAllMixlists
-} from '../api';
+import { getYouTubeChannelById, getYouTubeChannelVideos, deleteYouTubeChannel, syncYouTubeChannelMetadata } from '../api/youtubeService';
+import { getAllMixlists } from '../api/mixlistService';
 import {
     formatMediaType,
     formatStatus,

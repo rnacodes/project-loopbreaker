@@ -30,21 +30,11 @@ import {
     Psychology as PsychologyIcon,
 } from '@mui/icons-material';
 import {
-    getBookEnrichmentStatus,
-    runBookEnrichment,
-    runBookEnrichmentAll,
-    getMovieTvEnrichmentStatus,
-    runMovieEnrichment,
-    runTvShowEnrichment,
-    runMovieTvEnrichmentAll,
-    getPodcastEnrichmentStatus,
-    runPodcastEnrichment,
-    runPodcastEnrichmentAll,
-    getPendingMediaEmbeddings,
-    getPendingNoteEmbeddings,
-    generateMediaEmbeddingsBatch,
-    generateNoteEmbeddingsBatch,
-} from '../api';
+    getBookEnrichmentStatus, runBookEnrichment, runBookEnrichmentAll,
+    getMovieTvEnrichmentStatus, runMovieEnrichment, runTvShowEnrichment, runMovieTvEnrichmentAll,
+    getPodcastEnrichmentStatus, runPodcastEnrichment, runPodcastEnrichmentAll,
+} from '../api/backgroundJobsService';
+import { getPendingMediaEmbeddings, getPendingNoteEmbeddings, generateMediaEmbeddingsBatch, generateNoteEmbeddingsBatch } from '../api/aiService';
 
 const BackgroundJobsPage = () => {
     // ==========================================
