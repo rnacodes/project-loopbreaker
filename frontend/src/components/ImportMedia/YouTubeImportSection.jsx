@@ -526,6 +526,9 @@ function YouTubeImportSection({ expanded, onAccordionChange, onSnackbar }) {
                                     onChange={(e) => setYoutubeUrl(e.target.value)}
                                     variant="outlined"
                                     fullWidth
+                                    InputLabelProps={{
+                                        sx: { color: 'white' }
+                                    }}
                                     placeholder={
                                         youtubeSearchType === 'video'
                                             ? "https://www.youtube.com/watch?v=..."

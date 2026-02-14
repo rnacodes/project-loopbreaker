@@ -1,39 +1,25 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Box, Card, CardContent, Chip, Typography, Checkbox } from '@mui/material';
 import { Star, AccessTime } from '@mui/icons-material';
 import { formatMediaType, formatStatus, getRatingIcon } from '../../utils/formatters';
 
+// Determine navigation path based on item type
+const getItemPath = (item) => {
+    if (item.isMixlist) return `/mixlist/${item.id}`;
+    if (item.isNote) return `/note/${item.id}`;
+    if (item.isHighlight) return `/highlight/${item.id}`;
+    if (item.mediaType === 'Podcast' && !item.seriesId) return `/podcast-series/${item.id}`;
+    if (item.mediaType === 'Channel') return `/youtube-channel/${item.id}`;
+    return `/media/${item.id}`;
+};
+
 export const MediaCard = React.memo(({ item, isSelected = false, onToggleSelect, showCheckbox = false }) => {
-    const navigate = useNavigate();
-    
     // Handle checkbox click
     const handleCheckboxChange = (event) => {
         event.stopPropagation();
         if (onToggleSelect) {
             onToggleSelect(item.id);
-        }
-    };
-
-    // Determine navigation path based on item type
-    const handleClick = () => {
-        if (item.isMixlist) {
-            navigate(`/mixlist/${item.id}`);
-        } else if (item.isNote) {
-            // Navigate notes to their dedicated profile page
-            navigate(`/note/${item.id}`);
-        } else if (item.isHighlight) {
-            // Navigate highlights to their dedicated profile page
-            navigate(`/highlight/${item.id}`);
-        } else if (item.mediaType === 'Podcast' && !item.seriesId) {
-            // Navigate podcast series to their dedicated profile page
-            // Podcast episodes have seriesId, series don't
-            navigate(`/podcast-series/${item.id}`);
-        } else if (item.mediaType === 'Channel') {
-            // Navigate YouTube channels to their dedicated profile page
-            navigate(`/youtube-channel/${item.id}`);
-        } else {
-            navigate(`/media/${item.id}`);
         }
     };
     
@@ -107,9 +93,9 @@ export const MediaCard = React.memo(({ item, isSelected = false, onToggleSelect,
     };
     
     return (
-        <Card 
-            onClick={handleClick}
-            sx={{ 
+        <Link to={getItemPath(item)} style={{ textDecoration: 'none', color: 'inherit' }}>
+        <Card
+            sx={{
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
@@ -132,7 +118,7 @@ export const MediaCard = React.memo(({ item, isSelected = false, onToggleSelect,
                         <Checkbox
                             checked={isSelected}
                             onChange={handleCheckboxChange}
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                             sx={{ p: 0, mt: 0.5 }}
                             size="small"
                         />
@@ -270,6 +256,7 @@ export const MediaCard = React.memo(({ item, isSelected = false, onToggleSelect,
             </Typography>
         </CardContent>
     </Card>
+    </Link>
     );
 });
 

@@ -196,7 +196,7 @@ export const SearchFilterSidebar = React.memo(({
                             <Button
                                 size="small"
                                 onClick={() => setShowAllTopics(true)}
-                                sx={{ mt: 1, textTransform: 'none' }}
+                                sx={{ mt: 1, textTransform: 'none', color: '#fcfafa' }}
                             >
                                 Show More
                             </Button>
@@ -205,7 +205,7 @@ export const SearchFilterSidebar = React.memo(({
                             <Button
                                 size="small"
                                 onClick={() => setShowAllTopics(false)}
-                                sx={{ mt: 1, textTransform: 'none' }}
+                                sx={{ mt: 1, textTransform: 'none', color: '#fcfafa' }}
                             >
                                 Show Less
                             </Button>
@@ -271,7 +271,7 @@ export const SearchFilterSidebar = React.memo(({
                             <Button
                                 size="small"
                                 onClick={() => setShowAllGenres(true)}
-                                sx={{ mt: 1, textTransform: 'none' }}
+                                sx={{ mt: 1, textTransform: 'none', color: '#fcfafa' }}
                             >
                                 Show More
                             </Button>
@@ -280,7 +280,7 @@ export const SearchFilterSidebar = React.memo(({
                             <Button
                                 size="small"
                                 onClick={() => setShowAllGenres(false)}
-                                sx={{ mt: 1, textTransform: 'none' }}
+                                sx={{ mt: 1, textTransform: 'none', color: '#fcfafa' }}
                             >
                                 Show Less
                             </Button>

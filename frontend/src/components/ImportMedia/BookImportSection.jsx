@@ -430,6 +430,9 @@ function BookImportSection({ expanded, onAccordionChange }) {
                                 fullWidth
                                 placeholder="978-0-123456-78-9"
                                 onKeyPress={(e) => e.key === 'Enter' && handleBookImportByIsbn()}
+                                InputLabelProps={{
+                                    sx: { color: 'white' }
+                                }}
                             />
                             <Button
                                 variant="contained"
@@ -451,6 +454,9 @@ function BookImportSection({ expanded, onAccordionChange }) {
                                 variant="outlined"
                                 fullWidth
                                 margin="normal"
+                                InputLabelProps={{
+                                    sx: { color: 'white' }
+                                }}
                             />
                             <TextField
                                 label="Author (Optional)"
@@ -459,6 +465,9 @@ function BookImportSection({ expanded, onAccordionChange }) {
                                 variant="outlined"
                                 fullWidth
                                 margin="normal"
+                                InputLabelProps={{
+                                    sx: { color: 'white' }
+                                }}
                             />
                             <Button
                                 variant="contained"

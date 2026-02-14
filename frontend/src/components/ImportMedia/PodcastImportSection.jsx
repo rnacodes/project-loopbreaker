@@ -321,6 +321,9 @@ function PodcastImportSection({ expanded, onAccordionChange, onSnackbar }) {
                                 variant="outlined"
                                 fullWidth
                                 onKeyPress={(e) => e.key === 'Enter' && handlePodcastImportById()}
+                                InputLabelProps={{
+                                    sx: { color: 'white' }
+                                }}
                             />
                             <Button
                                 variant="contained"
@@ -342,6 +345,9 @@ function PodcastImportSection({ expanded, onAccordionChange, onSnackbar }) {
                                 variant="outlined"
                                 fullWidth
                                 onKeyPress={(e) => e.key === 'Enter' && handlePodcastImportByName()}
+                                InputLabelProps={{
+                                    sx: { color: 'white' }
+                                }}
                             />
                             <Button
                                 variant="contained"

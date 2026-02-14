@@ -159,75 +159,83 @@ export default function HomePage() {
   const [activelyExploringMedia, setActivelyExploringMedia] = useState([]);
   const [activelyExploringLoading, setActivelyExploringLoading] = useState(true);
   const [activelyExploringError, setActivelyExploringError] = useState(null);
+  const [wakingUp, setWakingUp] = useState(false);
 
   useEffect(() => {
-    const fetchMixlists = async () => {
+    let cancelled = false;
+    const TIMEOUT_MS = 30000;
+    const MAX_RETRIES = 2;
+
+    const fetchWithRetry = async (apiFn, onSuccess, onError, attempt = 0) => {
       try {
-        setMixlistsLoading(true);
-        setMixlistsError(null);
-        
-        // Add a timeout to prevent infinite loading
-        const timeoutId = setTimeout(() => {
-          setMixlistsLoading(false);
-          setMixlistsError("Request timed out. Please check your connection.");
-        }, 10000); // 10 second timeout
-        
-        const response = await getAllMixlists();
-        clearTimeout(timeoutId);
-        setMixlists(response.data);
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('TIMEOUT')), TIMEOUT_MS)
+        );
+        const response = await Promise.race([apiFn(), timeoutPromise]);
+        if (!cancelled) onSuccess(response);
       } catch (error) {
-        console.error("Error fetching mixlists:", error);
-        
-        // Provide more specific error messages based on the error type
-        if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
-          setMixlistsError("Unable to connect to the server. Please make sure the backend API is running.");
-        } else if (error.response?.status === 404) {
-          setMixlistsError("API endpoint not found. Please check the backend configuration.");
-        } else if (error.response?.status >= 500) {
-          setMixlistsError("Server error occurred. Please try again later.");
-        } else {
-          setMixlistsError("Failed to load mixlists. Please check your connection.");
+        if (cancelled) return;
+        const isRetryable = error.message === 'TIMEOUT' ||
+          error.code === 'ERR_NETWORK' || error.message === 'Network Error';
+
+        if (isRetryable && attempt < MAX_RETRIES) {
+          setWakingUp(true);
+          return fetchWithRetry(apiFn, onSuccess, onError, attempt + 1);
         }
-      } finally {
-        setMixlistsLoading(false);
+        onError(error);
       }
     };
 
-    const fetchActivelyExploringMedia = async () => {
-      try {
-        setActivelyExploringLoading(true);
-        setActivelyExploringError(null);
-        
-        const response = await getAllMedia();
+    const getErrorMessage = (error, context) => {
+      if (error.message === 'TIMEOUT') {
+        return `Request timed out. The server may still be starting up — please try again.`;
+      } else if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        return "Unable to connect to the server. Please make sure the backend API is running.";
+      } else if (error.response?.status === 404) {
+        return "API endpoint not found. Please check the backend configuration.";
+      } else if (error.response?.status >= 500) {
+        return "Server error occurred. Please try again later.";
+      }
+      return `Failed to load ${context}. Please check your connection.`;
+    };
+
+    fetchWithRetry(
+      getAllMixlists,
+      (response) => {
+        setMixlists(response.data);
+        setMixlistsLoading(false);
+        setWakingUp(false);
+      },
+      (error) => {
+        console.error("Error fetching mixlists:", error);
+        setWakingUp(false);
+        setMixlistsError(getErrorMessage(error, "mixlists"));
+        setMixlistsLoading(false);
+      }
+    );
+
+    fetchWithRetry(
+      getAllMedia,
+      (response) => {
         const activelyExploring = response.data.filter(item => {
           const status = item.status || item.Status;
           return status && (
-            status.toLowerCase() === 'actively exploring' || 
+            status.toLowerCase() === 'actively exploring' ||
             status.toLowerCase() === 'activelyexploring' ||
             status.toLowerCase() === 'inprogress'
           );
         });
         setActivelyExploringMedia(activelyExploring);
-      } catch (error) {
+        setActivelyExploringLoading(false);
+      },
+      (error) => {
         console.error("Error fetching actively exploring media:", error);
-        
-        // Provide more specific error messages based on the error type
-        if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
-          setActivelyExploringError("Unable to connect to the server. Please make sure the backend API is running.");
-        } else if (error.response?.status === 404) {
-          setActivelyExploringError("API endpoint not found. Please check the backend configuration.");
-        } else if (error.response?.status >= 500) {
-          setActivelyExploringError("Server error occurred. Please try again later.");
-        } else {
-          setActivelyExploringError("Failed to load actively exploring media. Please check your connection.");
-        }
-      } finally {
+        setActivelyExploringError(getErrorMessage(error, "actively exploring media"));
         setActivelyExploringLoading(false);
       }
-    };
+    );
 
-    fetchMixlists();
-    fetchActivelyExploringMedia();
+    return () => { cancelled = true; };
   }, []);
 
   const handleCreateMixlist = () => {
@@ -270,16 +278,23 @@ export default function HomePage() {
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
           <Box sx={{ textAlign: 'center' }}>
             <CircularProgress size={60} sx={{ mb: 2 }} />
-            <Typography variant="h6" color="text.secondary">Loading My MediaVerse...</Typography>
+            <Typography variant="h6" color="text.secondary">
+              {wakingUp ? "Waking up the server..." : "Loading My MediaVerse..."}
+            </Typography>
+            {wakingUp && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1, px: 2 }}>
+                This may take a moment on first visit
+              </Typography>
+            )}
           </Box>
         </Box>
       ) : mixlistsError ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
           <Box sx={{ textAlign: 'center' }}>
-            <Typography 
-                variant="h6" 
-                color="error" 
-                sx={{ 
+            <Typography
+                variant="h6"
+                color="error"
+                sx={{
                     mb: 2,
                     fontSize: { xs: '1rem', sm: '1.25rem' },
                     px: 2
@@ -287,8 +302,8 @@ export default function HomePage() {
             >
                 {mixlistsError}
             </Typography>
-            <Button 
-                variant="contained" 
+            <Button
+                variant="contained"
                 onClick={() => window.location.reload()}
                 sx={{ minHeight: '44px', px: 3 }}
             >

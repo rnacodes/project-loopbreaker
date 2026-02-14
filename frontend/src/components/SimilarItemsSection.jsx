@@ -25,6 +25,7 @@ import {
 import { getSimilarMedia } from '../api/recommendationService';
 import { saveRelatedMedia, getRelatedMedia } from '../api/relatedMediaService';
 import { formatMediaType } from '../utils/formatters';
+import { getAspectRatio } from '../utils/mediaImageUtils';
 
 const SIMILARITY_THRESHOLD = 0.70;
 
@@ -269,18 +270,24 @@ function SimilarItemsSection({ mediaItem, setSnackbar, onRelatedMediaSaved }) {
                   to={`/media/${item.id}`}
                   sx={{ textDecoration: 'none', display: 'block' }}
                 >
-                  {item.thumbnail && (
-                    <CardMedia
-                      component="img"
-                      height="100"
-                      image={item.thumbnail}
-                      alt={item.title}
-                      sx={{ objectFit: 'cover' }}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  )}
+                  <Box sx={{
+                    width: '100%',
+                    aspectRatio: getAspectRatio(item.mediaType),
+                    overflow: 'hidden',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  }}>
+                    {item.thumbnail && (
+                      <CardMedia
+                        component="img"
+                        image={item.thumbnail}
+                        alt={item.title}
+                        sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    )}
+                  </Box>
                   <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
                     <Typography
                       variant="body2"

@@ -274,16 +274,29 @@ function EditMixlistForm() {
                                             onClick={handleCancel}
                                             disabled={saving}
                                             size="large"
-                                            sx={{ color: '#1B1B1B' }}
+                                            sx={{
+                                                color: '#1B1B1B',
+                                                fontSize: '16px',
+                                                fontWeight: 'bold',
+                                                textTransform: 'none',
+                                                py: 1.5
+                                            }}
                                         >
                                             Cancel
                                         </Button>
                                         <Button
                                             type="submit"
                                             variant="contained"
+                                            color="primary"
                                             startIcon={<Save />}
                                             disabled={saving}
                                             size="large"
+                                            sx={{
+                                                fontSize: '16px',
+                                                fontWeight: 'bold',
+                                                textTransform: 'none',
+                                                py: 1.5
+                                            }}
                                         >
                                             {saving ? 'Saving...' : 'Save Changes'}
                                         </Button>

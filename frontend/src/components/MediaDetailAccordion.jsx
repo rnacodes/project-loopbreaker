@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
     Button, Card, Box, Typography, Accordion, AccordionSummary, AccordionDetails, Link, Chip, IconButton, Tooltip, Alert,
-    CircularProgress, Divider
+    CircularProgress, Divider, Dialog, DialogTitle, DialogContent, List, ListItem, ListItemButton, ListItemText
 } from '@mui/material';
 import { ExpandMore, OpenInNew, Star, RssFeed, ContentCopy, Language, Schedule, Article, AutoFixHigh, Download } from '@mui/icons-material';
 import { getWebsiteRssFeedItems } from '../api/websiteService';
 import { enrichBookById } from '../api/backgroundJobsService';
+import { getAllYouTubeChannels } from '../api/youtubeService';
+import { updateVideo } from '../api/videoService';
 
 function getJustWatchUrl(title) {
   // Simple heuristic for generating a JustWatch search URL.
@@ -13,12 +15,16 @@ function getJustWatchUrl(title) {
   return `https://www.justwatch.com/us/search?q=${encodeURIComponent(title)}`;
 }
 
-function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [], onBookEnriched, onFetchContent, fetchingContent }) {
+function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [], onBookEnriched, onVideoLinked, onFetchContent, fetchingContent }) {
   const [rssFeedItems, setRssFeedItems] = useState([]);
   const [loadingRss, setLoadingRss] = useState(false);
   const [rssError, setRssError] = useState(null);
   const [enriching, setEnriching] = useState(false);
   const [enrichResult, setEnrichResult] = useState(null);
+  const [channelDialogOpen, setChannelDialogOpen] = useState(false);
+  const [channels, setChannels] = useState([]);
+  const [loadingChannels, setLoadingChannels] = useState(false);
+  const [linkingChannel, setLinkingChannel] = useState(false);
 
   // Fetch RSS feed items for websites with RSS feeds
   useEffect(() => {
@@ -57,6 +63,49 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [], onBook
       });
     } finally {
       setEnriching(false);
+    }
+  };
+
+  const handleOpenChannelDialog = async () => {
+    setChannelDialogOpen(true);
+    setLoadingChannels(true);
+    try {
+      const channelList = await getAllYouTubeChannels();
+      setChannels(channelList || []);
+    } catch (error) {
+      console.error('Failed to fetch channels:', error);
+      setChannels([]);
+    } finally {
+      setLoadingChannels(false);
+    }
+  };
+
+  const handleLinkToChannel = async (channelId) => {
+    setLinkingChannel(true);
+    try {
+      await updateVideo(mediaItem.id, {
+        title: mediaItem.title,
+        mediaType: mediaItem.mediaType,
+        link: mediaItem.link || '',
+        notes: mediaItem.notes || '',
+        status: mediaItem.status,
+        description: mediaItem.description || '',
+        thumbnail: mediaItem.thumbnail || '',
+        topics: mediaItem.topicNames || mediaItem.topics || [],
+        genres: mediaItem.genreNames || mediaItem.genres || [],
+        videoType: mediaItem.videoType,
+        platform: mediaItem.platform || 'YouTube',
+        lengthInSeconds: mediaItem.lengthInSeconds || 0,
+        externalId: mediaItem.externalId || '',
+        parentVideoId: mediaItem.parentVideoId || null,
+        channelId: channelId
+      });
+      setChannelDialogOpen(false);
+      if (onVideoLinked) onVideoLinked();
+    } catch (error) {
+      console.error('Failed to link video to channel:', error);
+    } finally {
+      setLinkingChannel(false);
     }
   };
 
@@ -1052,6 +1101,27 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [], onBook
               </Box>
             )}
 
+            {/* Link to Channel button - shown when video has no channel */}
+            {!mediaItem.channel && (
+              <Box sx={{ mt: 1 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={handleOpenChannelDialog}
+                  sx={{
+                    borderColor: 'rgba(255, 255, 255, 0.3)',
+                    color: 'text.primary',
+                    '&:hover': {
+                      borderColor: 'rgba(255, 255, 255, 0.5)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                    }
+                  }}
+                >
+                  Link to Channel
+                </Button>
+              </Box>
+            )}
+
             {videoPlaylists && videoPlaylists.length > 0 && (
               <Box sx={{
                 display: 'flex',
@@ -1541,6 +1611,43 @@ function MediaDetailAccordion({ mediaItem, navigate, videoPlaylists = [], onBook
         </AccordionDetails>
       </Accordion>
     </Card>
+
+      {/* Channel Selection Dialog */}
+      <Dialog
+        open={channelDialogOpen}
+        onClose={() => setChannelDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Link to YouTube Channel</DialogTitle>
+        <DialogContent>
+          {loadingChannels ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+              <CircularProgress />
+            </Box>
+          ) : channels.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+              No saved YouTube channels found. Import a channel first.
+            </Typography>
+          ) : (
+            <List>
+              {channels.map((channel) => (
+                <ListItem key={channel.id} disablePadding>
+                  <ListItemButton
+                    onClick={() => handleLinkToChannel(channel.id)}
+                    disabled={linkingChannel}
+                  >
+                    <ListItemText
+                      primary={channel.title}
+                      secondary={channel.description ? channel.description.substring(0, 100) + (channel.description.length > 100 ? '...' : '') : null}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+      </Dialog>
   );
 }
 

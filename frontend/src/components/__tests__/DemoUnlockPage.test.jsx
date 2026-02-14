@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import DemoUnlockPage from '../DemoUnlockPage';
 
 const DEMO_API_BASE = 'https://demo-api.mymediaverseuniverse.com/api/demo';
@@ -39,15 +39,24 @@ describe('DemoUnlockPage', () => {
 
     describe('Loading State', () => {
         it('should show loading indicator while fetching status', async () => {
-            // fetch never resolves
-            global.fetch.mockImplementation(() => new Promise(() => {}));
+            // Use a controlled promise so we can resolve it for clean teardown
+            let resolveFetch;
+            global.fetch.mockImplementation(
+                () => new Promise((resolve) => { resolveFetch = resolve; })
+            );
 
             render(<DemoUnlockPage />);
 
-            // Wait for CircularProgress to appear (MUI rendering can be async)
-            await waitFor(() => {
-                const progressbars = screen.getAllByRole('progressbar');
-                expect(progressbars.length).toBeGreaterThanOrEqual(1);
+            // statusLoading is initialized to true, so progressbar is in the initial render
+            const progressbars = screen.getAllByRole('progressbar');
+            expect(progressbars.length).toBeGreaterThanOrEqual(1);
+
+            // Resolve the pending fetch inside act() to flush state updates cleanly
+            await act(async () => {
+                resolveFetch({
+                    ok: true,
+                    json: () => Promise.resolve({ isDemoEnvironment: false, writeAccessEnabled: false, message: '' }),
+                });
             });
         });
     });

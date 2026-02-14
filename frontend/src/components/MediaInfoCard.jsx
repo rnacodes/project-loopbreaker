@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Box, CardMedia, Chip, Typography, Divider, Button } from '@mui/material';
 import { Star } from '@mui/icons-material';
+import { getAspectRatio, getObjectFit } from '../utils/mediaImageUtils';
 
 function MediaInfoCard({
   mediaItem,
@@ -12,6 +13,8 @@ function MediaInfoCard({
   getRatingText
 }) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const imageUrl = useMemo(() => {
     if (!mediaItem?.thumbnail) return '';
@@ -84,33 +87,45 @@ function MediaInfoCard({
         alignItems: 'center',
         order: { xs: 1, md: 2 },
         width: { xs: '100%', md: 'auto' },
-        minHeight: { xs: 200, sm: 300, md: 270 }
       }}>
-        {imageUrl && (
-          <CardMedia
-            component="img"
-            sx={{
-              width: { xs: '100%', sm: 250, md: 220 },
-              maxWidth: { xs: 300, sm: 250, md: 220 },
-              height: 'auto',
-              aspectRatio: (mediaItem.mediaType === 'Video' || mediaItem.mediaType === 'Movie' || mediaItem.mediaType === 'TVShow' || mediaItem.mediaType === 'Playlist')
-                ? '16/9'
-                : '1/1',
-              objectFit: 'cover',
-              backgroundColor: 'rgba(0, 0, 0, 0.2)',
-              borderRadius: 2,
-              boxShadow: '0 8px 16px rgba(0,0,0,0.4)',
-              mb: 2,
-              transform: 'translateZ(0)',
-              backfaceVisibility: 'hidden'
-            }}
-            image={imageUrl}
-            alt={mediaItem.title}
-            loading="lazy"
-            decoding="async"
-            referrerPolicy="no-referrer"
-          />
-        )}
+        <Box sx={{
+          width: { xs: '100%', sm: 250, md: 220 },
+          maxWidth: { xs: 300, sm: 250, md: 220 },
+          aspectRatio: getAspectRatio(mediaItem.mediaType),
+          backgroundColor: 'rgba(0, 0, 0, 0.2)',
+          borderRadius: 2,
+          boxShadow: '0 8px 16px rgba(0,0,0,0.4)',
+          mb: 2,
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          {imageUrl && !imageError ? (
+            <CardMedia
+              component="img"
+              sx={{
+                width: '100%',
+                height: '100%',
+                objectFit: getObjectFit(mediaItem.mediaType),
+                opacity: imageLoaded ? 1 : 0,
+                transition: 'opacity 0.3s ease-in-out',
+                transform: 'translateZ(0)',
+                backfaceVisibility: 'hidden',
+              }}
+              image={imageUrl}
+              alt={mediaItem.title}
+              decoding="async"
+              referrerPolicy="no-referrer"
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', px: 2 }}>
+              No Image
+            </Typography>
+          )}
+        </Box>
       </Box>
 
       {/* Media information (chips, description, and rating) */}

@@ -361,7 +361,7 @@ const BackgroundJobsPage = () => {
     // ==========================================
     // Shared helper: render stat box
     // ==========================================
-    const StatBox = ({ value, label, color = 'primary.main' }) => (
+    const StatBox = ({ value, label, color = '#fcfafa' }) => (
         <Box sx={{ textAlign: 'center', p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
             <Typography variant="h4" sx={{ fontWeight: 'bold', color }}>{value}</Typography>
             <Typography variant="caption">{label}</Typography>
@@ -394,9 +394,10 @@ const BackgroundJobsPage = () => {
                     <CardContent>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                             <Typography variant="h6">Current Status</Typography>
-                            <Button variant="outlined" size="small"
+                            <Button variant="contained" color="primary" size="small"
                                 startIcon={statusLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
-                                onClick={fetchBookStatus} disabled={statusLoading || isBookRunning}>
+                                onClick={fetchBookStatus} disabled={statusLoading || isBookRunning}
+                                sx={{ color: '#fcfafa' }}>
                                 Refresh
                             </Button>
                         </Box>
@@ -529,9 +530,10 @@ const BackgroundJobsPage = () => {
                     <CardContent>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                             <Typography variant="h6">Current Status</Typography>
-                            <Button variant="outlined" size="small"
+                            <Button variant="contained" color="primary" size="small"
                                 startIcon={movieTvStatusLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
-                                onClick={fetchMovieTvStatus} disabled={movieTvStatusLoading || isMovieTvRunning}>
+                                onClick={fetchMovieTvStatus} disabled={movieTvStatusLoading || isMovieTvRunning}
+                                sx={{ color: '#fcfafa' }}>
                                 Refresh
                             </Button>
                         </Box>
@@ -697,9 +699,10 @@ const BackgroundJobsPage = () => {
                     <CardContent>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                             <Typography variant="h6">Current Status</Typography>
-                            <Button variant="outlined" size="small"
+                            <Button variant="contained" color="primary" size="small"
                                 startIcon={podcastStatusLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
-                                onClick={fetchPodcastStatus} disabled={podcastStatusLoading || isPodcastRunning}>
+                                onClick={fetchPodcastStatus} disabled={podcastStatusLoading || isPodcastRunning}
+                                sx={{ color: '#fcfafa' }}>
                                 Refresh
                             </Button>
                         </Box>
@@ -831,9 +834,10 @@ const BackgroundJobsPage = () => {
                     <CardContent>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                             <Typography variant="h6">Current Status</Typography>
-                            <Button variant="outlined" size="small"
+                            <Button variant="contained" color="primary" size="small"
                                 startIcon={embeddingStatusLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
-                                onClick={fetchEmbeddingStatus} disabled={embeddingStatusLoading || isEmbeddingRunning}>
+                                onClick={fetchEmbeddingStatus} disabled={embeddingStatusLoading || isEmbeddingRunning}
+                                sx={{ color: '#fcfafa' }}>
                                 Refresh
                             </Button>
                         </Box>

@@ -142,7 +142,8 @@ const DemoUnlockPage = () => {
                             onClick={fetchStatus}
                             disabled={statusLoading}
                             size="small"
-                            sx={{ bgcolor: '#9c27b0', '&:hover': { bgcolor: '#7b1fa2' } }}
+                            color="primary"
+                            sx={{ color: '#fcfafa' }}
                         >
                             Refresh
                         </Button>
@@ -289,10 +290,11 @@ const DemoUnlockPage = () => {
                         Unlock
                     </Button>
                     <Button
-                        variant="outlined"
+                        variant="contained"
+                        color="primary"
                         startIcon={<OpenInNewIcon />}
                         onClick={handleGoToDemoSite}
-                        sx={{ height: 56 }}
+                        sx={{ height: 56, color: '#fcfafa' }}
                     >
                         Go to Demo Site
                     </Button>
@@ -335,7 +337,7 @@ const DemoUnlockPage = () => {
                 <List disablePadding>
                     <ListItem>
                         <ListItemIcon>
-                            <ScheduleIcon color="primary" />
+                            <ScheduleIcon sx={{ color: '#fcfafa' }} />
                         </ListItemIcon>
                         <ListItemText
                             primary="TOTP code changes every 30 seconds"
@@ -344,7 +346,7 @@ const DemoUnlockPage = () => {
                     </ListItem>
                     <ListItem>
                         <ListItemIcon>
-                            <TimerIcon color="primary" />
+                            <TimerIcon sx={{ color: '#fcfafa' }} />
                         </ListItemIcon>
                         <ListItemText
                             primary="Write access lasts 20 minutes"
@@ -353,7 +355,7 @@ const DemoUnlockPage = () => {
                     </ListItem>
                     <ListItem>
                         <ListItemIcon>
-                            <LanguageIcon color="primary" />
+                            <LanguageIcon sx={{ color: '#fcfafa' }} />
                         </ListItemIcon>
                         <ListItemText
                             primary="Write access is cookie-based and browser-specific"
@@ -362,7 +364,7 @@ const DemoUnlockPage = () => {
                     </ListItem>
                     <ListItem>
                         <ListItemIcon>
-                            <InfoIcon color="warning" />
+                            <InfoIcon sx={{ color: '#fcfafa' }} />
                         </ListItemIcon>
                         <ListItemText
                             primary="Clearing browser cookies will revoke access"
@@ -388,7 +390,7 @@ const DemoUnlockPage = () => {
                     <List>
                         <ListItem>
                             <ListItemIcon>
-                                <PhoneIcon color="primary" />
+                                <PhoneIcon sx={{ color: '#fcfafa' }} />
                             </ListItemIcon>
                             <ListItemText
                                 primary="Step 1: Install an authenticator app"
@@ -397,7 +399,7 @@ const DemoUnlockPage = () => {
                         </ListItem>
                         <ListItem>
                             <ListItemIcon>
-                                <QrCodeIcon color="primary" />
+                                <QrCodeIcon sx={{ color: '#fcfafa' }} />
                             </ListItemIcon>
                             <ListItemText
                                 primary='Step 2: Add the demo account'
@@ -406,7 +408,7 @@ const DemoUnlockPage = () => {
                         </ListItem>
                         <ListItem>
                             <ListItemIcon>
-                                <NumbersIcon color="primary" />
+                                <NumbersIcon sx={{ color: '#fcfafa' }} />
                             </ListItemIcon>
                             <ListItemText
                                 primary="Step 3: Enter the code"

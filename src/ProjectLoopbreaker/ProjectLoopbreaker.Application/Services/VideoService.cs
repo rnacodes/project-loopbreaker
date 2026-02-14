@@ -127,39 +127,65 @@ namespace ProjectLoopbreaker.Application.Services
                     ExternalId = dto.ExternalId
                 };
 
-                // Handle Topics
-                if (dto.Topics?.Length > 0)
+                // Handle Topics: use DTO topics if provided, otherwise inherit from channel or parent video
+                var topicNames = dto.Topics?.Where(t => !string.IsNullOrWhiteSpace(t)).ToArray();
+                if ((topicNames == null || topicNames.Length == 0) && dto.ChannelId.HasValue)
                 {
-                    foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
+                    var channel = await _context.YouTubeChannels
+                        .Include(c => c.Topics)
+                        .FirstOrDefaultAsync(c => c.Id == dto.ChannelId.Value);
+                    topicNames = channel?.Topics?.Select(t => t.Name).ToArray() ?? Array.Empty<string>();
+                }
+                if ((topicNames == null || topicNames.Length == 0) && dto.ParentVideoId.HasValue)
+                {
+                    var parentVideo = await _context.Videos
+                        .Include(v => v.Topics)
+                        .FirstOrDefaultAsync(v => v.Id == dto.ParentVideoId.Value);
+                    topicNames = parentVideo?.Topics?.Select(t => t.Name).ToArray() ?? Array.Empty<string>();
+                }
+
+                foreach (var topicName in topicNames ?? Array.Empty<string>())
+                {
+                    var normalizedTopicName = topicName.Trim().ToLowerInvariant();
+                    var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
+                    if (existingTopic != null)
                     {
-                        var normalizedTopicName = topicName.Trim().ToLowerInvariant();
-                        var existingTopic = await _context.Topics.FirstOrDefaultAsync(t => t.Name == normalizedTopicName);
-                        if (existingTopic != null)
-                        {
-                            video.Topics.Add(existingTopic);
-                        }
-                        else
-                        {
-                            video.Topics.Add(new Topic { Name = normalizedTopicName });
-                        }
+                        video.Topics.Add(existingTopic);
+                    }
+                    else
+                    {
+                        video.Topics.Add(new Topic { Name = normalizedTopicName });
                     }
                 }
 
-                // Handle Genres
-                if (dto.Genres?.Length > 0)
+                // Handle Genres: use DTO genres if provided, otherwise inherit from channel or parent video
+                var genreNames = dto.Genres?.Where(g => !string.IsNullOrWhiteSpace(g)).ToArray();
+                if ((genreNames == null || genreNames.Length == 0) && dto.ChannelId.HasValue)
                 {
-                    foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
+                    var channel = await _context.YouTubeChannels
+                        .Include(c => c.Genres)
+                        .FirstOrDefaultAsync(c => c.Id == dto.ChannelId.Value);
+                    genreNames = channel?.Genres?.Select(g => g.Name).ToArray() ?? Array.Empty<string>();
+                }
+                if ((genreNames == null || genreNames.Length == 0) && dto.ParentVideoId.HasValue)
+                {
+                    var parentVideo = await _context.Videos
+                        .Include(v => v.Genres)
+                        .FirstOrDefaultAsync(v => v.Id == dto.ParentVideoId.Value);
+                    genreNames = parentVideo?.Genres?.Select(g => g.Name).ToArray() ?? Array.Empty<string>();
+                }
+
+                foreach (var genreName in genreNames ?? Array.Empty<string>())
+                {
+                    var normalizedGenreName = genreName.Trim().ToLowerInvariant();
+                    var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
+                    if (existingGenre != null)
                     {
-                        var normalizedGenreName = genreName.Trim().ToLowerInvariant();
-                        var existingGenre = await _context.Genres.FirstOrDefaultAsync(g => g.Name == normalizedGenreName);
-                        if (existingGenre != null)
-                        {
-                            video.Genres.Add(existingGenre);
-                        }
-                        else
-                        {
-                            video.Genres.Add(new Genre { Name = normalizedGenreName });
-                        }
+                        video.Genres.Add(existingGenre);
+                    }
+                    else
+                    {
+                        video.Genres.Add(new Genre { Name = normalizedGenreName });
                     }
                 }
 
@@ -342,7 +368,40 @@ namespace ProjectLoopbreaker.Application.Services
             }
             else
             {
-                // It's a new video, add it
+                // It's a new video — inherit topics/genres from channel if none provided
+                if ((video.Topics == null || !video.Topics.Any()) && video.ChannelId.HasValue)
+                {
+                    var channel = await _context.YouTubeChannels
+                        .Include(c => c.Topics)
+                        .FirstOrDefaultAsync(c => c.Id == video.ChannelId.Value);
+                    if (channel?.Topics != null)
+                    {
+                        foreach (var topic in channel.Topics)
+                        {
+                            var normalizedName = topic.Name.Trim().ToLowerInvariant();
+                            var existingTopic = await _context.Topics
+                                .FirstOrDefaultAsync(t => t.Name == normalizedName);
+                            video.Topics.Add(existingTopic ?? new Topic { Name = normalizedName });
+                        }
+                    }
+                }
+                if ((video.Genres == null || !video.Genres.Any()) && video.ChannelId.HasValue)
+                {
+                    var channel = await _context.YouTubeChannels
+                        .Include(c => c.Genres)
+                        .FirstOrDefaultAsync(c => c.Id == video.ChannelId.Value);
+                    if (channel?.Genres != null)
+                    {
+                        foreach (var genre in channel.Genres)
+                        {
+                            var normalizedName = genre.Name.Trim().ToLowerInvariant();
+                            var existingGenre = await _context.Genres
+                                .FirstOrDefaultAsync(g => g.Name == normalizedName);
+                            video.Genres.Add(existingGenre ?? new Genre { Name = normalizedName });
+                        }
+                    }
+                }
+
                 _context.Add(video);
                 await _context.SaveChangesAsync();
 

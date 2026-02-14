@@ -447,6 +447,123 @@ namespace ProjectLoopbreaker.UnitTests.Application
         }
 
         #endregion
+
+        #region Topic/Genre Inheritance Tests
+
+        [Fact]
+        public async Task CreatePodcastEpisodeAsync_WithNoTopicsOrGenres_ShouldInheritFromParentSeries()
+        {
+            // Arrange
+            var seriesId = Guid.NewGuid();
+            var seriesTopic = new Topic { Name = "technology" };
+            var seriesGenre = new Genre { Name = "educational" };
+            Context.Topics.Add(seriesTopic);
+            Context.Genres.Add(seriesGenre);
+            await Context.SaveChangesAsync();
+
+            var series = new PodcastSeries
+            {
+                Id = seriesId,
+                Title = "Tech Podcast",
+                Topics = new List<Topic> { seriesTopic },
+                Genres = new List<Genre> { seriesGenre }
+            };
+            Context.PodcastSeries.Add(series);
+            await Context.SaveChangesAsync();
+
+            var dto = new CreatePodcastEpisodeDto
+            {
+                Title = "Episode 1",
+                SeriesId = seriesId,
+                Status = Status.Uncharted
+                // No topics or genres provided
+            };
+
+            // Act
+            var result = await _service.CreatePodcastEpisodeAsync(dto);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Topics.Should().HaveCount(1);
+            result.Topics.First().Name.Should().Be("technology");
+            result.Genres.Should().HaveCount(1);
+            result.Genres.First().Name.Should().Be("educational");
+        }
+
+        [Fact]
+        public async Task CreatePodcastEpisodeAsync_WithExplicitTopicsAndGenres_ShouldNotInheritFromParentSeries()
+        {
+            // Arrange
+            var seriesId = Guid.NewGuid();
+            var seriesTopic = new Topic { Name = "technology" };
+            var seriesGenre = new Genre { Name = "educational" };
+            Context.Topics.Add(seriesTopic);
+            Context.Genres.Add(seriesGenre);
+            await Context.SaveChangesAsync();
+
+            var series = new PodcastSeries
+            {
+                Id = seriesId,
+                Title = "Tech Podcast",
+                Topics = new List<Topic> { seriesTopic },
+                Genres = new List<Genre> { seriesGenre }
+            };
+            Context.PodcastSeries.Add(series);
+            await Context.SaveChangesAsync();
+
+            var dto = new CreatePodcastEpisodeDto
+            {
+                Title = "Episode 1",
+                SeriesId = seriesId,
+                Status = Status.Uncharted,
+                Topics = new[] { "science", "biology" },
+                Genres = new[] { "documentary" }
+            };
+
+            // Act
+            var result = await _service.CreatePodcastEpisodeAsync(dto);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Topics.Should().HaveCount(2);
+            result.Topics.Select(t => t.Name).Should().Contain(new[] { "science", "biology" });
+            result.Topics.Select(t => t.Name).Should().NotContain("technology");
+            result.Genres.Should().HaveCount(1);
+            result.Genres.First().Name.Should().Be("documentary");
+        }
+
+        [Fact]
+        public async Task CreatePodcastEpisodeAsync_WhenParentSeriesHasNoTopicsOrGenres_ShouldCreateWithEmptyCollections()
+        {
+            // Arrange
+            var seriesId = Guid.NewGuid();
+            var series = new PodcastSeries
+            {
+                Id = seriesId,
+                Title = "Empty Podcast",
+                Topics = new List<Topic>(),
+                Genres = new List<Genre>()
+            };
+            Context.PodcastSeries.Add(series);
+            await Context.SaveChangesAsync();
+
+            var dto = new CreatePodcastEpisodeDto
+            {
+                Title = "Episode 1",
+                SeriesId = seriesId,
+                Status = Status.Uncharted
+            };
+
+            // Act
+            var result = await _service.CreatePodcastEpisodeAsync(dto);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Topics.Should().BeEmpty();
+            result.Genres.Should().BeEmpty();
+        }
+
+        #endregion
     }
 }
 

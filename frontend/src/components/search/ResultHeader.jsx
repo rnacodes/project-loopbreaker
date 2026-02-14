@@ -87,6 +87,7 @@ export const ResultHeader = React.memo(({
                     size="small"
                     onClick={() => setShowSearchBar(!showSearchBar)}
                     startIcon={<SearchIcon />}
+                    sx={{ borderColor: '#fcfafa', color: '#fcfafa' }}
                 >
                     {showSearchBar ? 'Hide' : 'Show'} Search
                 </Button>
@@ -97,6 +98,7 @@ export const ResultHeader = React.memo(({
                     size="small"
                     onClick={() => setShowFilters(!showFilters)}
                     startIcon={<FilterList />}
+                    sx={{ borderColor: '#fcfafa', color: '#fcfafa' }}
                 >
                     {showFilters ? 'Hide' : 'Show'} Filters
                 </Button>

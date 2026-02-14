@@ -11,6 +11,7 @@ import { getMediaById, updateMedia, deleteMedia } from '../api/mediaService';
 import { uploadThumbnail } from '../api/uploadService';
 import { getNotesForMedia, getAllNotes, searchNotes, linkNoteToMedia, unlinkNoteFromMedia } from '../api/noteService';
 import { formatStatus, formatMediaType } from '../utils/formatters';
+import TopicsGenresSection from './TopicsGenresSection';
 
 function EditMediaForm() {
     const { id } = useParams();
@@ -20,6 +21,8 @@ function EditMediaForm() {
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
     const [thumbnailFile, setThumbnailFile] = useState(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [mediaItem, setMediaItem] = useState(null);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // Notes linking state
     const [linkedNotes, setLinkedNotes] = useState([]);
@@ -72,7 +75,8 @@ function EditMediaForm() {
             try {
                 const response = await getMediaById(id);
                 const media = response.data;
-                
+
+                setMediaItem(media);
                 setFormData({
                     title: media.title || media.Title || '',
                     mediaType: media.mediaType || media.MediaType || 'Other',
@@ -98,7 +102,7 @@ function EditMediaForm() {
         if (id) {
             fetchMedia();
         }
-    }, [id]);
+    }, [id, refreshKey]);
 
     // Fetch linked notes
     const fetchLinkedNotes = useCallback(async () => {
@@ -282,8 +286,8 @@ function EditMediaForm() {
                 thumbnail: formData.thumbnail || null,
                 genre: formData.genre || null,
                 dateCompleted: formData.dateCompleted ? new Date(formData.dateCompleted).toISOString() : null,
-                topics: [],
-                genres: []
+                topics: mediaItem?.topics || mediaItem?.topicNames || [],
+                genres: mediaItem?.genres || mediaItem?.genreNames || []
             };
 
             await updateMedia(id, updateData);
@@ -479,13 +483,14 @@ function EditMediaForm() {
                                     placeholder="https://example.com"
                                 />
 
-                                {/* Genre */}
-                                <TextField
-                                    fullWidth
-                                    label="Genre"
-                                    value={formData.genre}
-                                    onChange={(e) => handleInputChange('genre', e.target.value)}
-                                />
+                                {/* Topics & Genres */}
+                                {mediaItem && (
+                                    <TopicsGenresSection
+                                        mediaItem={mediaItem}
+                                        setSnackbar={setSnackbar}
+                                        onUpdate={() => setRefreshKey(k => k + 1)}
+                                    />
+                                )}
 
                                 {/* Thumbnail URL */}
                                 <TextField

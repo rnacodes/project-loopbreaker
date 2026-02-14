@@ -941,6 +941,9 @@ const TypesenseAdminPage = () => {
                 }
               }}
               placeholder="Enter search terms..."
+              InputLabelProps={{
+                sx: { color: 'white' }
+              }}
             />
           </Grid>
 

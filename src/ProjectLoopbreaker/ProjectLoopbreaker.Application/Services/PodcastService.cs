@@ -230,8 +230,10 @@ namespace ProjectLoopbreaker.Application.Services
 
         public async Task<PodcastEpisode> CreatePodcastEpisodeAsync(CreatePodcastEpisodeDto dto)
         {
-            // Verify the parent series exists
+            // Verify the parent series exists (include Topics/Genres for inheritance)
             var parentSeries = await _context.PodcastSeries
+                .Include(p => p.Topics)
+                .Include(p => p.Genres)
                 .FirstOrDefaultAsync(p => p.Id == dto.SeriesId);
 
             if (parentSeries == null)
@@ -263,43 +265,51 @@ namespace ProjectLoopbreaker.Application.Services
                 Publisher = dto.Publisher
             };
 
-            // Handle Topics array conversion
-            if (dto.Topics?.Length > 0)
+            // Handle Topics: use DTO topics if provided, otherwise inherit from parent series
+            var topicNames = dto.Topics?.Where(t => !string.IsNullOrWhiteSpace(t)).ToArray();
+            if (topicNames == null || topicNames.Length == 0)
             {
-                foreach (var topicName in dto.Topics.Where(t => !string.IsNullOrWhiteSpace(t)))
-                {
-                    var normalizedTopicName = topicName.ToLower();
-                    var existingTopic = await _context.Topics
-                        .FirstOrDefaultAsync(t => t.Name.ToLower() == normalizedTopicName);
+                // Inherit topics from parent series
+                topicNames = parentSeries.Topics?.Select(t => t.Name).ToArray() ?? Array.Empty<string>();
+            }
 
-                    if (existingTopic != null)
-                    {
-                        episode.Topics.Add(existingTopic);
-                    }
-                    else
-                    {
-                        episode.Topics.Add(new Topic { Name = normalizedTopicName });
-                    }
+            foreach (var topicName in topicNames)
+            {
+                var normalizedTopicName = topicName.ToLower();
+                var existingTopic = await _context.Topics
+                    .FirstOrDefaultAsync(t => t.Name.ToLower() == normalizedTopicName);
+
+                if (existingTopic != null)
+                {
+                    episode.Topics.Add(existingTopic);
+                }
+                else
+                {
+                    episode.Topics.Add(new Topic { Name = normalizedTopicName });
                 }
             }
 
-            // Handle Genres array conversion
-            if (dto.Genres?.Length > 0)
+            // Handle Genres: use DTO genres if provided, otherwise inherit from parent series
+            var genreNames = dto.Genres?.Where(g => !string.IsNullOrWhiteSpace(g)).ToArray();
+            if (genreNames == null || genreNames.Length == 0)
             {
-                foreach (var genreName in dto.Genres.Where(g => !string.IsNullOrWhiteSpace(g)))
-                {
-                    var normalizedGenreName = genreName.ToLower();
-                    var existingGenre = await _context.Genres
-                        .FirstOrDefaultAsync(g => g.Name.ToLower() == normalizedGenreName);
+                // Inherit genres from parent series
+                genreNames = parentSeries.Genres?.Select(g => g.Name).ToArray() ?? Array.Empty<string>();
+            }
 
-                    if (existingGenre != null)
-                    {
-                        episode.Genres.Add(existingGenre);
-                    }
-                    else
-                    {
-                        episode.Genres.Add(new Genre { Name = normalizedGenreName });
-                    }
+            foreach (var genreName in genreNames)
+            {
+                var normalizedGenreName = genreName.ToLower();
+                var existingGenre = await _context.Genres
+                    .FirstOrDefaultAsync(g => g.Name.ToLower() == normalizedGenreName);
+
+                if (existingGenre != null)
+                {
+                    episode.Genres.Add(existingGenre);
+                }
+                else
+                {
+                    episode.Genres.Add(new Genre { Name = normalizedGenreName });
                 }
             }
 
@@ -473,6 +483,30 @@ namespace ProjectLoopbreaker.Application.Services
                             SeasonNumber = createEpisodeDto.SeasonNumber,
                             DateAdded = DateTime.UtcNow
                         };
+
+                        // Inherit topics from parent series
+                        if (series.Topics != null)
+                        {
+                            foreach (var topic in series.Topics)
+                            {
+                                var normalizedName = topic.Name.ToLower();
+                                var existingTopic = await _context.Topics
+                                    .FirstOrDefaultAsync(t => t.Name.ToLower() == normalizedName);
+                                newEpisode.Topics.Add(existingTopic ?? new Topic { Name = normalizedName });
+                            }
+                        }
+
+                        // Inherit genres from parent series
+                        if (series.Genres != null)
+                        {
+                            foreach (var genre in series.Genres)
+                            {
+                                var normalizedName = genre.Name.ToLower();
+                                var existingGenre = await _context.Genres
+                                    .FirstOrDefaultAsync(g => g.Name.ToLower() == normalizedName);
+                                newEpisode.Genres.Add(existingGenre ?? new Genre { Name = normalizedName });
+                            }
+                        }
 
                         _context.Add(newEpisode);
                         newEpisodesCount++;

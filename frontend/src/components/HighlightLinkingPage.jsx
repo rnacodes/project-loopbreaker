@@ -256,13 +256,13 @@ export default function HighlightLinkingPage() {
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                     <Chip
                         label={`${highlights.length} unlinked highlight${highlights.length !== 1 ? 's' : ''}`}
-                        color="warning"
                         variant="outlined"
+                        sx={{ borderColor: '#fcfafa', color: '#fcfafa' }}
                     />
                     <Chip
                         label={`${filteredGroups.length} source${filteredGroups.length !== 1 ? 's' : ''}`}
-                        color="primary"
                         variant="outlined"
+                        sx={{ borderColor: '#fcfafa', color: '#fcfafa' }}
                     />
                     {selectedHighlights.size > 0 && (
                         <Chip
@@ -284,6 +284,7 @@ export default function HighlightLinkingPage() {
                     <Button
                         variant="outlined"
                         onClick={loadData}
+                        sx={{ borderColor: '#fcfafa', color: '#fcfafa' }}
                     >
                         Refresh
                     </Button>
@@ -369,8 +370,8 @@ export default function HighlightLinkingPage() {
                                             <Chip
                                                 label={`${group.highlights.length} highlight${group.highlights.length !== 1 ? 's' : ''}`}
                                                 size="small"
-                                                color="primary"
                                                 variant="outlined"
+                                                sx={{ borderColor: '#fcfafa', color: '#fcfafa' }}
                                             />
                                         </Box>
                                     </Box>

@@ -10,16 +10,7 @@ import {
 import { ViewModule, ViewList, OpenInNew, FileDownload, Delete, CheckBox, CheckBoxOutlineBlank } from '@mui/icons-material';
 import { getAllMedia, getMediaByType, bulkDeleteMedia } from '../api/mediaService';
 import { formatMediaType, formatStatus } from '../utils/formatters';
-
-// Helper function to get aspect ratio based on media type
-const getAspectRatio = (mediaType) => {
-  // Videos, Movies, TV Shows, Playlists use 16:9 (rectangular)
-  if (mediaType === 'Video' || mediaType === 'Movie' || mediaType === 'TVShow' || mediaType === 'Playlist') {
-    return '56.25%'; // 16:9 aspect ratio
-  }
-  // Books, Podcasts, Articles use 2:3 (portrait)
-  return '150%'; // 2:3 aspect ratio
-};
+import { getAspectRatioPadding } from '../utils/mediaImageUtils';
 
 function AllMedia() {
   const [mediaItems, setMediaItems] = useState([]);
@@ -152,18 +143,18 @@ function AllMedia() {
               transition: 'all 0.2s ease-in-out'
             }}
           >
-            {/* Thumbnail/Image Container - Flexible */}
-            {(item.thumbnail || item.Thumbnail) && (
-              <Box
-                sx={{
-                  position: 'relative',
-                  width: '100%',
-                  maxWidth: '100%',
-                  paddingTop: getAspectRatio(item.mediaType || item.MediaType),
-                  overflow: 'hidden',
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)'
-                }}
-              >
+            {/* Thumbnail/Image Container - Always rendered for consistent card heights */}
+            <Box
+              sx={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '100%',
+                paddingTop: getAspectRatioPadding(item.mediaType || item.MediaType),
+                overflow: 'hidden',
+                backgroundColor: 'rgba(255, 255, 255, 0.05)'
+              }}
+            >
+              {(item.thumbnail || item.Thumbnail) && (
                 <CardMedia
                   component="img"
                   image={item.thumbnail || item.Thumbnail}
@@ -182,8 +173,8 @@ function AllMedia() {
                     e.target.style.display = 'none';
                   }}
                 />
-              </Box>
-            )}
+              )}
+            </Box>
             <CardContent 
               component={Link} 
               to={`/media/${item.id}`}

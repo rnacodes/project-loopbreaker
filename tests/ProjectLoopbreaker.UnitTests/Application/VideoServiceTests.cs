@@ -355,5 +355,190 @@ namespace ProjectLoopbreaker.UnitTests.Application
         }
 
         #endregion
+
+        #region Topic/Genre Inheritance Tests
+
+        [Fact]
+        public async Task CreateVideoAsync_WithNoTopicsOrGenres_ShouldInheritFromChannel()
+        {
+            // Arrange
+            var channelId = Guid.NewGuid();
+            var channelTopic = new Topic { Name = "technology" };
+            var channelGenre = new Genre { Name = "educational" };
+            Context.Topics.Add(channelTopic);
+            Context.Genres.Add(channelGenre);
+            await Context.SaveChangesAsync();
+
+            var channel = new YouTubeChannel
+            {
+                Id = channelId,
+                Title = "Tech Channel",
+                ChannelExternalId = "UC_test123",
+                Topics = new List<Topic> { channelTopic },
+                Genres = new List<Genre> { channelGenre }
+            };
+            Context.YouTubeChannels.Add(channel);
+            await Context.SaveChangesAsync();
+
+            var dto = new CreateVideoDto
+            {
+                Title = "Test Video",
+                Platform = "YouTube",
+                VideoType = VideoType.Series,
+                Status = Status.Uncharted,
+                ChannelId = channelId
+                // No topics or genres provided
+            };
+
+            // Act
+            var result = await _service.CreateVideoAsync(dto);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Topics.Should().HaveCount(1);
+            result.Topics.First().Name.Should().Be("technology");
+            result.Genres.Should().HaveCount(1);
+            result.Genres.First().Name.Should().Be("educational");
+        }
+
+        [Fact]
+        public async Task CreateVideoAsync_WithNoTopicsOrGenres_ShouldInheritFromParentVideo()
+        {
+            // Arrange
+            var parentTopic = new Topic { Name = "programming" };
+            var parentGenre = new Genre { Name = "tutorial" };
+            Context.Topics.Add(parentTopic);
+            Context.Genres.Add(parentGenre);
+            await Context.SaveChangesAsync();
+
+            var parentVideo = new Video
+            {
+                Id = Guid.NewGuid(),
+                Title = "Parent Series",
+                Platform = "YouTube",
+                VideoType = VideoType.Series,
+                Topics = new List<Topic> { parentTopic },
+                Genres = new List<Genre> { parentGenre }
+            };
+            Context.Videos.Add(parentVideo);
+            await Context.SaveChangesAsync();
+
+            var dto = new CreateVideoDto
+            {
+                Title = "Episode 1",
+                Platform = "YouTube",
+                VideoType = VideoType.Episode,
+                Status = Status.Uncharted,
+                ParentVideoId = parentVideo.Id
+                // No topics or genres, no channel
+            };
+
+            // Act
+            var result = await _service.CreateVideoAsync(dto);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Topics.Should().HaveCount(1);
+            result.Topics.First().Name.Should().Be("programming");
+            result.Genres.Should().HaveCount(1);
+            result.Genres.First().Name.Should().Be("tutorial");
+        }
+
+        [Fact]
+        public async Task CreateVideoAsync_WithExplicitTopics_ShouldNotInheritFromChannel()
+        {
+            // Arrange
+            var channelId = Guid.NewGuid();
+            var channelTopic = new Topic { Name = "technology" };
+            Context.Topics.Add(channelTopic);
+            await Context.SaveChangesAsync();
+
+            var channel = new YouTubeChannel
+            {
+                Id = channelId,
+                Title = "Tech Channel",
+                ChannelExternalId = "UC_test456",
+                Topics = new List<Topic> { channelTopic },
+                Genres = new List<Genre>()
+            };
+            Context.YouTubeChannels.Add(channel);
+            await Context.SaveChangesAsync();
+
+            var dto = new CreateVideoDto
+            {
+                Title = "Test Video",
+                Platform = "YouTube",
+                VideoType = VideoType.Series,
+                Status = Status.Uncharted,
+                ChannelId = channelId,
+                Topics = new[] { "science" },
+                Genres = new[] { "documentary" }
+            };
+
+            // Act
+            var result = await _service.CreateVideoAsync(dto);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Topics.Should().HaveCount(1);
+            result.Topics.First().Name.Should().Be("science");
+            result.Topics.Select(t => t.Name).Should().NotContain("technology");
+            result.Genres.Should().HaveCount(1);
+            result.Genres.First().Name.Should().Be("documentary");
+        }
+
+        [Fact]
+        public async Task CreateVideoAsync_ChannelInheritanceTakesPrecedenceOverParentVideo()
+        {
+            // Arrange
+            var channelId = Guid.NewGuid();
+            var channelTopic = new Topic { Name = "channel-topic" };
+            var parentTopic = new Topic { Name = "parent-topic" };
+            Context.Topics.AddRange(channelTopic, parentTopic);
+            await Context.SaveChangesAsync();
+
+            var channel = new YouTubeChannel
+            {
+                Id = channelId,
+                Title = "Channel",
+                ChannelExternalId = "UC_test789",
+                Topics = new List<Topic> { channelTopic },
+                Genres = new List<Genre>()
+            };
+            Context.YouTubeChannels.Add(channel);
+
+            var parentVideo = new Video
+            {
+                Id = Guid.NewGuid(),
+                Title = "Parent Series",
+                Platform = "YouTube",
+                VideoType = VideoType.Series,
+                Topics = new List<Topic> { parentTopic },
+                Genres = new List<Genre>()
+            };
+            Context.Videos.Add(parentVideo);
+            await Context.SaveChangesAsync();
+
+            var dto = new CreateVideoDto
+            {
+                Title = "Episode",
+                Platform = "YouTube",
+                VideoType = VideoType.Episode,
+                Status = Status.Uncharted,
+                ChannelId = channelId,
+                ParentVideoId = parentVideo.Id
+                // No topics/genres — should inherit from channel, not parent
+            };
+
+            // Act
+            var result = await _service.CreateVideoAsync(dto);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Topics.Should().HaveCount(1);
+            result.Topics.First().Name.Should().Be("channel-topic");
+        }
+
+        #endregion
     }
 }

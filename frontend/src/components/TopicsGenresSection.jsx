@@ -9,7 +9,7 @@ import {
     Topic as TopicIcon, Category as GenreIcon, Add as AddIcon,
     Search, Close, Remove as RemoveIcon
 } from '@mui/icons-material';
-import { getAllTopics, getAllGenres } from '../api/topicGenreService';
+import { getAllTopics, getAllGenres, createTopic, createGenre } from '../api/topicGenreService';
 import { updateMediaTopicsGenres } from '../api/mediaService';
 
 function TopicsGenresSection({ mediaItem, setSnackbar, onUpdate }) {
@@ -22,6 +22,11 @@ function TopicsGenresSection({ mediaItem, setSnackbar, onUpdate }) {
     const [genreSearchQuery, setGenreSearchQuery] = useState('');
     const [selectedTopicId, setSelectedTopicId] = useState(null);
     const [selectedGenreId, setSelectedGenreId] = useState(null);
+
+    // State for inline create
+    const [newTopicName, setNewTopicName] = useState('');
+    const [newGenreName, setNewGenreName] = useState('');
+    const [creating, setCreating] = useState(false);
 
     // State for available topics/genres
     const [availableTopics, setAvailableTopics] = useState([]);
@@ -168,6 +173,58 @@ function TopicsGenresSection({ mediaItem, setSnackbar, onUpdate }) {
             setSnackbar?.({ open: true, message: 'Failed to remove genre', severity: 'error' });
         } finally {
             setSaving(false);
+        }
+    };
+
+    // Create new topic and add to media
+    const handleCreateAndAddTopic = async () => {
+        const name = newTopicName.trim().toLowerCase();
+        if (!name) return;
+
+        setCreating(true);
+        try {
+            const response = await createTopic({ name });
+            const createdTopic = response.data;
+            const topicName = createdTopic?.name || createdTopic?.Name || name;
+            const newTopics = [...currentTopics, topicName];
+
+            await updateMediaTopicsGenres(mediaItem.id, newTopics, currentGenres);
+            setSnackbar?.({ open: true, message: `Created and added topic "${topicName}"`, severity: 'success' });
+            setNewTopicName('');
+            handleCloseTopicDialog();
+            onUpdate?.();
+        } catch (error) {
+            console.error('Error creating topic:', error);
+            const msg = error.response?.data?.error || error.response?.data?.message || 'Failed to create topic';
+            setSnackbar?.({ open: true, message: msg, severity: 'error' });
+        } finally {
+            setCreating(false);
+        }
+    };
+
+    // Create new genre and add to media
+    const handleCreateAndAddGenre = async () => {
+        const name = newGenreName.trim().toLowerCase();
+        if (!name) return;
+
+        setCreating(true);
+        try {
+            const response = await createGenre({ name });
+            const createdGenre = response.data;
+            const genreName = createdGenre?.name || createdGenre?.Name || name;
+            const newGenres = [...currentGenres, genreName];
+
+            await updateMediaTopicsGenres(mediaItem.id, currentTopics, newGenres);
+            setSnackbar?.({ open: true, message: `Created and added genre "${genreName}"`, severity: 'success' });
+            setNewGenreName('');
+            handleCloseGenreDialog();
+            onUpdate?.();
+        } catch (error) {
+            console.error('Error creating genre:', error);
+            const msg = error.response?.data?.error || error.response?.data?.message || 'Failed to create genre';
+            setSnackbar?.({ open: true, message: msg, severity: 'error' });
+        } finally {
+            setCreating(false);
         }
     };
 
@@ -454,6 +511,46 @@ function TopicsGenresSection({ mediaItem, setSnackbar, onUpdate }) {
                             )}
                         </List>
                     )}
+
+                    {/* Inline Create */}
+                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            Or create a new topic:
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <TextField
+                                fullWidth
+                                placeholder="New topic name..."
+                                value={newTopicName}
+                                onChange={(e) => setNewTopicName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleCreateAndAddTopic()}
+                                variant="outlined"
+                                size="small"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        color: 'white',
+                                        '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                                        '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                                        '&.Mui-focused fieldset': { borderColor: 'rgba(255, 255, 255, 0.7)' },
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: 'rgba(255, 255, 255, 0.5)',
+                                        opacity: 1,
+                                    },
+                                }}
+                            />
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                size="small"
+                                onClick={handleCreateAndAddTopic}
+                                disabled={!newTopicName.trim() || creating}
+                                sx={{ color: '#fcfafa', whiteSpace: 'nowrap' }}
+                            >
+                                {creating ? 'Creating...' : 'Create & Add'}
+                            </Button>
+                        </Box>
+                    </Box>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseTopicDialog} sx={{ color: 'white' }}>
@@ -571,6 +668,46 @@ function TopicsGenresSection({ mediaItem, setSnackbar, onUpdate }) {
                             )}
                         </List>
                     )}
+
+                    {/* Inline Create */}
+                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            Or create a new genre:
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            <TextField
+                                fullWidth
+                                placeholder="New genre name..."
+                                value={newGenreName}
+                                onChange={(e) => setNewGenreName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleCreateAndAddGenre()}
+                                variant="outlined"
+                                size="small"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        color: 'white',
+                                        '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                                        '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.5)' },
+                                        '&.Mui-focused fieldset': { borderColor: 'rgba(255, 255, 255, 0.7)' },
+                                    },
+                                    '& .MuiInputBase-input::placeholder': {
+                                        color: 'rgba(255, 255, 255, 0.5)',
+                                        opacity: 1,
+                                    },
+                                }}
+                            />
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                size="small"
+                                onClick={handleCreateAndAddGenre}
+                                disabled={!newGenreName.trim() || creating}
+                                sx={{ color: '#fcfafa', whiteSpace: 'nowrap' }}
+                            >
+                                {creating ? 'Creating...' : 'Create & Add'}
+                            </Button>
+                        </Box>
+                    </Box>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCloseGenreDialog} sx={{ color: 'white' }}>

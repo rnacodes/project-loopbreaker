@@ -236,10 +236,12 @@ const ScriptExecutionPage = () => {
                         </Typography>
                     </Box>
                     <Button
-                        variant="outlined"
+                        variant="contained"
+                        color="primary"
                         startIcon={healthLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
                         onClick={checkHealth}
                         disabled={healthLoading}
+                        sx={{ color: '#fcfafa' }}
                     >
                         Refresh
                     </Button>
@@ -448,10 +450,12 @@ const ScriptExecutionPage = () => {
                         Job History
                     </Typography>
                     <Button
-                        variant="outlined"
+                        variant="contained"
+                        color="primary"
                         startIcon={jobsLoading ? <CircularProgress size={16} /> : <RefreshIcon />}
                         onClick={loadJobs}
                         disabled={jobsLoading}
+                        sx={{ color: '#fcfafa' }}
                     >
                         Refresh
                     </Button>

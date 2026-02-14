@@ -37,6 +37,7 @@ import {
 import { getRelatedMedia, saveRelatedMedia, removeRelatedMedia } from '../api/relatedMediaService';
 import { searchMedia } from '../api/mediaService';
 import { formatMediaType } from '../utils/formatters';
+import { getAspectRatio } from '../utils/mediaImageUtils';
 
 function SavedRelatedMediaSection({ mediaItem, setSnackbar, refreshTrigger }) {
   const [relatedItems, setRelatedItems] = useState([]);
@@ -298,18 +299,24 @@ function SavedRelatedMediaSection({ mediaItem, setSnackbar, refreshTrigger }) {
                       to={`/media/${relation.relatedMediaItem?.id}`}
                       sx={{ textDecoration: 'none', display: 'block' }}
                     >
-                      {relation.relatedMediaItem?.thumbnail && (
-                        <CardMedia
-                          component="img"
-                          height="100"
-                          image={relation.relatedMediaItem.thumbnail}
-                          alt={relation.relatedMediaItem.title}
-                          sx={{ objectFit: 'cover' }}
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      )}
+                      <Box sx={{
+                        width: '100%',
+                        aspectRatio: getAspectRatio(relation.relatedMediaItem?.mediaType),
+                        overflow: 'hidden',
+                        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                      }}>
+                        {relation.relatedMediaItem?.thumbnail && (
+                          <CardMedia
+                            component="img"
+                            image={relation.relatedMediaItem.thumbnail}
+                            alt={relation.relatedMediaItem.title}
+                            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        )}
+                      </Box>
                       <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
                         <Typography
                           variant="body2"
