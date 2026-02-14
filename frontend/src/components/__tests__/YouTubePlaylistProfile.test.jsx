@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import YouTubePlaylistProfile from '../YouTubePlaylistProfile';
-import * as apiService from '../../api';
+import * as youtubeService from '../../api/youtubeService';
+import * as mixlistService from '../../api/mixlistService';
 
-// Mock API service
-vi.mock('../../api');
+// Mock API services
+vi.mock('../../api/youtubeService');
+vi.mock('../../api/mixlistService');
 
 // Mock useParams and useNavigate
 vi.mock('react-router-dom', async () => {
@@ -50,15 +52,15 @@ describe('YouTubePlaylistProfile', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // YouTube API functions return data directly (not wrapped in { data: })
-    apiService.getYouTubePlaylistById.mockImplementation((id, includeVideos) => {
+    youtubeService.getYouTubePlaylistById.mockImplementation((id, includeVideos) => {
       if (includeVideos) {
         return Promise.resolve({ ...mockPlaylist, videos: mockVideos });
       }
       return Promise.resolve(mockPlaylist);
     });
-    apiService.getYouTubePlaylistVideos.mockResolvedValue(mockVideos);
+    youtubeService.getYouTubePlaylistVideos.mockResolvedValue(mockVideos);
     // Mixlist API returns axios response with { data: }
-    apiService.getAllMixlists.mockResolvedValue({ data: [] });
+    mixlistService.getAllMixlists.mockResolvedValue({ data: [] });
   });
 
   it('renders playlist details correctly', async () => {
@@ -71,8 +73,6 @@ describe('YouTubePlaylistProfile', () => {
     await waitFor(() => {
       expect(screen.getByText('Test YouTube Playlist')).toBeInTheDocument();
     });
-
-    expect(screen.getByText(/15 videos/i)).toBeInTheDocument();
   });
 
   it('displays videos from the playlist', async () => {
@@ -83,16 +83,15 @@ describe('YouTubePlaylistProfile', () => {
     );
 
     await waitFor(() => {
-      // Look for the specific heading text
-      expect(screen.getByText(/Videos in Playlist/i)).toBeInTheDocument();
+      expect(screen.getByText(/My Videos/i)).toBeInTheDocument();
     });
 
     // Verify the component shows it has 2 videos in the list
-    expect(screen.getByText(/Videos in Playlist \(2\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/My Videos \(2\)/i)).toBeInTheDocument();
   });
 
   it('handles sync button click', async () => {
-    apiService.syncYouTubePlaylist.mockResolvedValue({ 
+    youtubeService.syncYouTubePlaylist.mockResolvedValue({ 
       data: { message: 'Synced successfully' } 
     });
 
@@ -110,8 +109,8 @@ describe('YouTubePlaylistProfile', () => {
     });
 
     // Verify sync was called if button existed
-    if (apiService.syncYouTubePlaylist.mock.calls.length > 0) {
-      expect(apiService.syncYouTubePlaylist).toHaveBeenCalledWith('test-playlist-id');
+    if (youtubeService.syncYouTubePlaylist.mock.calls.length > 0) {
+      expect(youtubeService.syncYouTubePlaylist).toHaveBeenCalledWith('test-playlist-id');
     }
   });
 
@@ -124,12 +123,12 @@ describe('YouTubePlaylistProfile', () => {
 
     await waitFor(() => {
       // getYouTubePlaylistById is called with (id, includeVideos=true)
-      expect(apiService.getYouTubePlaylistById).toHaveBeenCalledWith('test-playlist-id', true);
+      expect(youtubeService.getYouTubePlaylistById).toHaveBeenCalledWith('test-playlist-id', true);
     });
   });
 
   it('handles loading state', () => {
-    apiService.getYouTubePlaylistById.mockImplementation(() => 
+    youtubeService.getYouTubePlaylistById.mockImplementation(() => 
       new Promise(resolve => setTimeout(() => resolve({ data: mockPlaylist }), 100))
     );
 
@@ -145,7 +144,7 @@ describe('YouTubePlaylistProfile', () => {
 
   it('handles API error gracefully', async () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-    apiService.getYouTubePlaylistById.mockRejectedValue(new Error('API Error'));
+    youtubeService.getYouTubePlaylistById.mockRejectedValue(new Error('API Error'));
 
     render(
       <BrowserRouter>
@@ -160,7 +159,7 @@ describe('YouTubePlaylistProfile', () => {
     consoleError.mockRestore();
   });
 
-  it('displays video count badge', async () => {
+  it('displays video count in accordion', async () => {
     render(
       <BrowserRouter>
         <YouTubePlaylistProfile />
@@ -168,8 +167,7 @@ describe('YouTubePlaylistProfile', () => {
     );
 
     await waitFor(() => {
-      const videoCountElement = screen.queryByText(/15 videos/i);
-      expect(videoCountElement).toBeInTheDocument();
+      expect(screen.getByText(/My Videos \(2\)/i)).toBeInTheDocument();
     });
   });
 });

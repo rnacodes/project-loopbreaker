@@ -28,12 +28,12 @@ vi.mock('axios', () => {
 import axios from 'axios';
 
 // Mock setAccessToken from api module
-vi.mock('../../api', () => ({
+vi.mock('../../api/apiClient', () => ({
   setAccessToken: vi.fn(),
   getAccessToken: vi.fn()
 }));
 
-import * as apiModule from '../../api';
+import * as apiClient from '../../api/apiClient';
 import { AuthProvider, useAuth } from '../AuthContext';
 
 // Test component that uses useAuth hook
@@ -174,7 +174,7 @@ describe('AuthContext', () => {
         expect(screen.getByTestId('token')).toHaveTextContent('new-access-token');
       });
 
-      expect(apiModule.setAccessToken).toHaveBeenCalledWith('new-access-token');
+      expect(apiClient.setAccessToken).toHaveBeenCalledWith('new-access-token');
     });
 
     it('should handle login failure', async () => {
@@ -241,7 +241,7 @@ describe('AuthContext', () => {
         expect(screen.getByTestId('token')).toHaveTextContent('no-token');
       });
 
-      expect(apiModule.setAccessToken).toHaveBeenCalledWith(null);
+      expect(apiClient.setAccessToken).toHaveBeenCalledWith(null);
     });
 
     it('should clear local state even if server logout fails', async () => {

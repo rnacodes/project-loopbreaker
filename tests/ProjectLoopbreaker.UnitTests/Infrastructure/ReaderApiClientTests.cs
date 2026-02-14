@@ -53,7 +53,7 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                         ""source"": ""web"",
                         ""category"": ""article"",
                         ""location"": ""new"",
-                        ""tags"": [""tech""],
+                        ""tags"": {""tech"": {}},
                         ""site_name"": ""Example Site"",
                         ""word_count"": 1000,
                         ""created_at"": ""2023-01-01T12:00:00Z"",
@@ -64,11 +64,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                         ""content"": ""<html><body>Content</body></html>"",
                         ""source_url"": ""https://example.com/article1"",
                         ""published_date"": ""2023-01-01"",
-                        ""first_opened_at"": ""2023-01-01T12:00:00Z"",
-                        ""last_opened_at"": ""2023-01-01T12:00:00Z"",
                         ""reading_progress"": 0.5,
-                        ""parent_id"": null,
-                        ""reading_time_minutes"": 5
+                        ""parent_id"": null
                     },
                     {
                         ""id"": ""doc-456"",
@@ -78,7 +75,7 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                         ""source"": ""web"",
                         ""category"": ""article"",
                         ""location"": ""archive"",
-                        ""tags"": [],
+                        ""tags"": {},
                         ""site_name"": ""Example Site"",
                         ""word_count"": 2000,
                         ""created_at"": ""2023-01-02T12:00:00Z"",
@@ -89,11 +86,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                         ""content"": null,
                         ""source_url"": ""https://example.com/article2"",
                         ""published_date"": null,
-                        ""first_opened_at"": null,
-                        ""last_opened_at"": null,
                         ""reading_progress"": 0.0,
-                        ""parent_id"": null,
-                        ""reading_time_minutes"": 10
+                        ""parent_id"": null
                     }
                 ]
             }";
@@ -185,7 +179,7 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                         ""source"": ""web"",
                         ""category"": ""article"",
                         ""location"": ""new"",
-                        ""tags"": [""tech""],
+                        ""tags"": {""tech"": {}},
                         ""site_name"": ""Example Site"",
                         ""word_count"": 1000,
                         ""created_at"": ""2023-01-01T12:00:00Z"",
@@ -196,11 +190,8 @@ namespace ProjectLoopbreaker.UnitTests.Infrastructure
                         ""content"": ""<html><body>Full content here</body></html>"",
                         ""source_url"": ""https://example.com/article"",
                         ""published_date"": ""2023-01-01"",
-                        ""first_opened_at"": ""2023-01-01T12:00:00Z"",
-                        ""last_opened_at"": ""2023-01-01T12:00:00Z"",
                         ""reading_progress"": 0.5,
-                        ""parent_id"": null,
-                        ""reading_time_minutes"": 5
+                        ""parent_id"": null
                     }
                 ]
             }";

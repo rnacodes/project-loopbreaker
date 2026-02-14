@@ -7,9 +7,26 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.js'],
     globals: true,
-    css: true,
+    css: false,
     env: {
       VITE_API_URL: 'http://localhost:5033/api'
+    },
+    deps: {
+      optimizer: {
+        web: {
+          include: [
+            '@mui/material',
+            '@mui/icons-material',
+            '@emotion/react',
+            '@emotion/styled',
+            '@testing-library/react',
+            '@testing-library/jest-dom',
+            '@testing-library/user-event',
+            'react-router-dom',
+            'axios',
+          ]
+        }
+      }
     }
   },
   define: {

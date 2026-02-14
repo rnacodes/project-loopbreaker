@@ -133,7 +133,7 @@ describe('MediaCard', () => {
       const inProgressVideo = { ...mockVideoMedia, status: 'InProgress' };
       renderWithRouter(<MediaCard media={inProgressVideo} />);
 
-      const statusChip = screen.getByText('InProgress');
+      const statusChip = screen.getByText('In Progress');
       expect(statusChip).toBeInTheDocument();
     });
   });

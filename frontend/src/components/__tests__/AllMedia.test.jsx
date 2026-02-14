@@ -2,10 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter, MemoryRouter } from 'react-router-dom';
 import AllMedia from '../AllMedia';
-import * as apiService from '../../api';
+import * as mediaService from '../../api/mediaService';
 
 // Mock API service
-vi.mock('../../api');
+vi.mock('../../api/mediaService');
 
 describe('AllMedia', () => {
   const mockMediaItems = [
@@ -42,7 +42,7 @@ describe('AllMedia', () => {
 
   describe('Loading State', () => {
     it('should display loading spinner when fetching media', () => {
-      apiService.getAllMedia.mockImplementation(() => 
+      mediaService.getAllMedia.mockImplementation(() => 
         new Promise(() => {}) // Never resolves
       );
 
@@ -56,7 +56,7 @@ describe('AllMedia', () => {
     });
 
     it('should hide loading spinner after data loads', async () => {
-      apiService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
+      mediaService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
 
       render(
         <BrowserRouter>
@@ -72,7 +72,7 @@ describe('AllMedia', () => {
 
   describe('Data Display', () => {
     beforeEach(() => {
-      apiService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
+      mediaService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
     });
 
     it('should display all media items', async () => {
@@ -110,14 +110,14 @@ describe('AllMedia', () => {
       );
 
       await waitFor(() => {
-        expect(apiService.getAllMedia).toHaveBeenCalledTimes(1);
+        expect(mediaService.getAllMedia).toHaveBeenCalledTimes(1);
       });
     });
   });
 
   describe('Media Type Filtering', () => {
     it('should call getMediaByType when mediaType param is provided', async () => {
-      apiService.getMediaByType.mockResolvedValue({ data: [mockMediaItems[0]] });
+      mediaService.getMediaByType.mockResolvedValue({ data: [mockMediaItems[0]] });
 
       render(
         <MemoryRouter initialEntries={['/all-media?mediaType=Book']}>
@@ -126,12 +126,12 @@ describe('AllMedia', () => {
       );
 
       await waitFor(() => {
-        expect(apiService.getMediaByType).toHaveBeenCalledWith('Book');
+        expect(mediaService.getMediaByType).toHaveBeenCalledWith('Book');
       });
     });
 
     it('should display filtered media items', async () => {
-      apiService.getMediaByType.mockResolvedValue({ data: [mockMediaItems[0]] });
+      mediaService.getMediaByType.mockResolvedValue({ data: [mockMediaItems[0]] });
 
       render(
         <MemoryRouter initialEntries={['/all-media?mediaType=Book']}>
@@ -149,7 +149,7 @@ describe('AllMedia', () => {
 
     it('should call getMediaByType with different media types', async () => {
       // Test with Book type
-      apiService.getMediaByType.mockResolvedValue({ data: [mockMediaItems[0]] });
+      mediaService.getMediaByType.mockResolvedValue({ data: [mockMediaItems[0]] });
 
       const { unmount } = render(
         <MemoryRouter initialEntries={['/all-media?mediaType=Book']}>
@@ -158,14 +158,14 @@ describe('AllMedia', () => {
       );
 
       await waitFor(() => {
-        expect(apiService.getMediaByType).toHaveBeenCalledWith('Book');
+        expect(mediaService.getMediaByType).toHaveBeenCalledWith('Book');
       });
 
       unmount();
       vi.clearAllMocks();
 
       // Test with Video type
-      apiService.getMediaByType.mockResolvedValue({ data: [mockMediaItems[1]] });
+      mediaService.getMediaByType.mockResolvedValue({ data: [mockMediaItems[1]] });
 
       render(
         <MemoryRouter initialEntries={['/all-media?mediaType=Video']}>
@@ -174,14 +174,14 @@ describe('AllMedia', () => {
       );
 
       await waitFor(() => {
-        expect(apiService.getMediaByType).toHaveBeenCalledWith('Video');
+        expect(mediaService.getMediaByType).toHaveBeenCalledWith('Video');
       });
     });
   });
 
   describe('View Modes', () => {
     beforeEach(() => {
-      apiService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
+      mediaService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
     });
 
     it('should default to card view mode', async () => {
@@ -223,7 +223,7 @@ describe('AllMedia', () => {
 
   describe('Selection and Bulk Actions', () => {
     beforeEach(() => {
-      apiService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
+      mediaService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
     });
 
     it('should allow selecting individual items', async () => {
@@ -337,7 +337,7 @@ describe('AllMedia', () => {
     });
 
     it('should call bulkDeleteMedia when deletion is confirmed', async () => {
-      apiService.bulkDeleteMedia.mockResolvedValue({});
+      mediaService.bulkDeleteMedia.mockResolvedValue({});
 
       render(
         <BrowserRouter>
@@ -362,14 +362,14 @@ describe('AllMedia', () => {
       fireEvent.click(confirmButton);
 
       await waitFor(() => {
-        expect(apiService.bulkDeleteMedia).toHaveBeenCalled();
+        expect(mediaService.bulkDeleteMedia).toHaveBeenCalled();
       });
     });
   });
 
   describe('Empty States', () => {
     it('should display empty state when no media items exist', async () => {
-      apiService.getAllMedia.mockResolvedValue({ data: [] });
+      mediaService.getAllMedia.mockResolvedValue({ data: [] });
 
       render(
         <BrowserRouter>
@@ -383,7 +383,7 @@ describe('AllMedia', () => {
     });
 
     it('should display empty state message when filter returns no results', async () => {
-      apiService.getMediaByType.mockResolvedValue({ data: [] });
+      mediaService.getMediaByType.mockResolvedValue({ data: [] });
 
       render(
         <MemoryRouter initialEntries={['/all-media?mediaType=Book']}>
@@ -399,7 +399,7 @@ describe('AllMedia', () => {
 
   describe('Error Handling', () => {
     it('should display error message when fetch fails', async () => {
-      apiService.getAllMedia.mockRejectedValue(new Error('Network error'));
+      mediaService.getAllMedia.mockRejectedValue(new Error('Network error'));
 
       render(
         <BrowserRouter>
@@ -415,7 +415,7 @@ describe('AllMedia', () => {
     it('should display error message with API error details', async () => {
       const apiError = new Error('API Error');
       apiError.response = { data: { error: 'Invalid request' } };
-      apiService.getAllMedia.mockRejectedValue(apiError);
+      mediaService.getAllMedia.mockRejectedValue(apiError);
 
       render(
         <BrowserRouter>
@@ -429,8 +429,8 @@ describe('AllMedia', () => {
     });
 
     it('should display snackbar error when bulk delete fails', async () => {
-      apiService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
-      apiService.bulkDeleteMedia.mockRejectedValue(new Error('Delete failed'));
+      mediaService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
+      mediaService.bulkDeleteMedia.mockRejectedValue(new Error('Delete failed'));
 
       render(
         <BrowserRouter>
@@ -460,7 +460,7 @@ describe('AllMedia', () => {
 
   describe('Export Functionality', () => {
     beforeEach(() => {
-      apiService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
+      mediaService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
     });
 
     it.skip('should display export button', async () => {
@@ -481,7 +481,7 @@ describe('AllMedia', () => {
 
   describe('Accessibility', () => {
     beforeEach(() => {
-      apiService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
+      mediaService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
     });
 
     it('should have view mode buttons', async () => {
@@ -519,7 +519,7 @@ describe('AllMedia', () => {
 
   describe('Component Lifecycle', () => {
     it('should fetch media on mount', async () => {
-      apiService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
+      mediaService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
 
       render(
         <BrowserRouter>
@@ -528,13 +528,13 @@ describe('AllMedia', () => {
       );
 
       await waitFor(() => {
-        expect(apiService.getAllMedia).toHaveBeenCalledTimes(1);
+        expect(mediaService.getAllMedia).toHaveBeenCalledTimes(1);
       });
     });
 
     it('should use correct API based on URL parameters', async () => {
       // Test without mediaType param - should call getAllMedia
-      apiService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
+      mediaService.getAllMedia.mockResolvedValue({ data: mockMediaItems });
 
       const { unmount } = render(
         <MemoryRouter initialEntries={['/all-media']}>
@@ -543,14 +543,14 @@ describe('AllMedia', () => {
       );
 
       await waitFor(() => {
-        expect(apiService.getAllMedia).toHaveBeenCalledTimes(1);
+        expect(mediaService.getAllMedia).toHaveBeenCalledTimes(1);
       });
 
       unmount();
       vi.clearAllMocks();
 
       // Test with mediaType param - should call getMediaByType
-      apiService.getMediaByType.mockResolvedValue({ data: [mockMediaItems[0]] });
+      mediaService.getMediaByType.mockResolvedValue({ data: [mockMediaItems[0]] });
 
       render(
         <MemoryRouter initialEntries={['/all-media?mediaType=Book']}>
@@ -559,7 +559,7 @@ describe('AllMedia', () => {
       );
 
       await waitFor(() => {
-        expect(apiService.getMediaByType).toHaveBeenCalledWith('Book');
+        expect(mediaService.getMediaByType).toHaveBeenCalledWith('Book');
       });
     });
   });

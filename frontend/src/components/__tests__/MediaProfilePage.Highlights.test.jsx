@@ -3,10 +3,18 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter, MemoryRouter, Route, Routes } from 'react-router-dom';
 import { vi } from 'vitest';
 import MediaProfilePage from '../MediaProfilePage';
-import * as apiService from '../../api';
+import * as mediaService from '../../api/mediaService';
+import * as mixlistService from '../../api/mixlistService';
+import * as articleService from '../../api/articleService';
+import * as bookService from '../../api/bookService';
+import * as highlightService from '../../api/highlightService';
 
-// Mock the API service
-vi.mock('../../api');
+// Mock the API services
+vi.mock('../../api/mediaService');
+vi.mock('../../api/mixlistService');
+vi.mock('../../api/articleService');
+vi.mock('../../api/bookService');
+vi.mock('../../api/highlightService');
 
 const mockArticleWithReadwise = {
   id: '123e4567-e89b-12d3-a456-426614174000',
@@ -63,15 +71,15 @@ const mockBookWithHighlights = {
 describe('MediaProfilePage - Highlights Integration', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiService.getAllMixlists.mockResolvedValue({ data: [] });
+    mixlistService.getAllMixlists.mockResolvedValue({ data: [] });
   });
 
   describe('Article Highlights Display', () => {
     it('should fetch and display highlights for an article', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
+      mediaService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
+      articleService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
       // getHighlightsByArticle returns array directly, not wrapped in { data: }
-      apiService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
+      highlightService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
 
       render(
         <MemoryRouter initialEntries={['/media/123e4567-e89b-12d3-a456-426614174000']}>
@@ -87,7 +95,7 @@ describe('MediaProfilePage - Highlights Integration', () => {
 
       // Check if highlights section is displayed
       await waitFor(() => {
-        expect(screen.getByText(/Highlights/i)).toBeInTheDocument();
+        expect(screen.getByText('Highlights')).toBeInTheDocument();
       }, { timeout: 2000 });
 
       // Check if all highlights are displayed
@@ -98,13 +106,13 @@ describe('MediaProfilePage - Highlights Integration', () => {
       expect(screen.getByText('Another key insight from the reading.')).toBeInTheDocument();
       expect(screen.getByText('Final takeaway with multiple tags.')).toBeInTheDocument();
 
-      expect(apiService.getHighlightsByArticle).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000');
+      expect(highlightService.getHighlightsByArticle).toHaveBeenCalledWith('123e4567-e89b-12d3-a456-426614174000');
     });
 
     it('should display highlight notes when present', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
+      mediaService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
+      articleService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
+      highlightService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
 
       render(
         <MemoryRouter initialEntries={['/media/123e4567-e89b-12d3-a456-426614174000']}>
@@ -125,9 +133,9 @@ describe('MediaProfilePage - Highlights Integration', () => {
     });
 
     it('should display highlight tags', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
+      mediaService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
+      articleService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
+      highlightService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
 
       render(
         <MemoryRouter initialEntries={['/media/123e4567-e89b-12d3-a456-426614174000']}>
@@ -150,9 +158,9 @@ describe('MediaProfilePage - Highlights Integration', () => {
     });
 
     it('should show tag overflow indicator for highlights with many tags', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
+      mediaService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
+      articleService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
+      highlightService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
 
       render(
         <MemoryRouter initialEntries={['/media/123e4567-e89b-12d3-a456-426614174000']}>
@@ -173,9 +181,9 @@ describe('MediaProfilePage - Highlights Integration', () => {
     });
 
     it('should display formatted highlight dates', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
+      mediaService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
+      articleService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
+      highlightService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
 
       render(
         <MemoryRouter initialEntries={['/media/123e4567-e89b-12d3-a456-426614174000']}>
@@ -196,9 +204,9 @@ describe('MediaProfilePage - Highlights Integration', () => {
     });
 
     it('should display links to Readwise for each highlight', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
+      mediaService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
+      articleService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
+      highlightService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
 
       render(
         <MemoryRouter initialEntries={['/media/123e4567-e89b-12d3-a456-426614174000']}>
@@ -221,9 +229,9 @@ describe('MediaProfilePage - Highlights Integration', () => {
 
   describe('Book Highlights Display', () => {
     it('should fetch and display highlights for a book', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockBookWithHighlights });
-      apiService.getBookById.mockResolvedValue({ data: mockBookWithHighlights });
-      apiService.getHighlightsByBook.mockResolvedValue(mockHighlights);
+      mediaService.getMediaById.mockResolvedValue({ data: mockBookWithHighlights });
+      bookService.getBookById.mockResolvedValue({ data: mockBookWithHighlights });
+      highlightService.getHighlightsByBook.mockResolvedValue(mockHighlights);
 
       render(
         <MemoryRouter initialEntries={['/media/456e7890-e89b-12d3-a456-426614174001']}>
@@ -241,15 +249,15 @@ describe('MediaProfilePage - Highlights Integration', () => {
         expect(screen.getByText('Highlights')).toBeInTheDocument();
       });
 
-      expect(apiService.getHighlightsByBook).toHaveBeenCalledWith('456e7890-e89b-12d3-a456-426614174001');
+      expect(highlightService.getHighlightsByBook).toHaveBeenCalledWith('456e7890-e89b-12d3-a456-426614174001');
     });
   });
 
   describe('No Highlights Scenario', () => {
     it('should show empty state when no highlights exist', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getHighlightsByArticle.mockResolvedValue([]);
+      mediaService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
+      articleService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
+      highlightService.getHighlightsByArticle.mockResolvedValue([]);
 
       render(
         <MemoryRouter initialEntries={['/media/123e4567-e89b-12d3-a456-426614174000']}>
@@ -274,8 +282,8 @@ describe('MediaProfilePage - Highlights Integration', () => {
         mixlistIds: []
       };
 
-      apiService.getMediaById.mockResolvedValue({ data: mockVideo });
-      apiService.getAllMixlists.mockResolvedValue({ data: [] });
+      mediaService.getMediaById.mockResolvedValue({ data: mockVideo });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: [] });
 
       render(
         <MemoryRouter initialEntries={['/media/789']}>
@@ -296,10 +304,11 @@ describe('MediaProfilePage - Highlights Integration', () => {
 
   describe('Loading States', () => {
     it('should show loading indicator while fetching highlights', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getHighlightsByArticle.mockImplementation(
-        () => new Promise(resolve => setTimeout(() => resolve(mockHighlights), 100))
+      let resolveHighlights;
+      mediaService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
+      articleService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
+      highlightService.getHighlightsByArticle.mockImplementation(
+        () => new Promise(resolve => { resolveHighlights = resolve; })
       );
 
       render(
@@ -310,26 +319,25 @@ describe('MediaProfilePage - Highlights Integration', () => {
         </MemoryRouter>
       );
 
+      // Wait for loading state to appear
       await waitFor(() => {
-        expect(screen.getByText('Test Article with Highlights')).toBeInTheDocument();
+        expect(screen.getByText('Loading highlights...')).toBeInTheDocument();
       });
 
-      // Should show loading state
-      expect(screen.getByText('Loading highlights...')).toBeInTheDocument();
-
-      // Wait for highlights to load
+      // Resolve highlights and verify they render
+      resolveHighlights(mockHighlights);
       await waitFor(() => {
         expect(screen.queryByText('Loading highlights...')).not.toBeInTheDocument();
         expect(screen.getByText('This is the first highlight from the article.')).toBeInTheDocument();
-      }, { timeout: 200 });
+      });
     });
   });
 
   describe('Error Handling', () => {
     it('should handle highlight fetch errors gracefully', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getHighlightsByArticle.mockRejectedValue(new Error('Failed to fetch highlights'));
+      mediaService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
+      articleService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
+      highlightService.getHighlightsByArticle.mockRejectedValue(new Error('Failed to fetch highlights'));
 
       render(
         <MemoryRouter initialEntries={['/media/123e4567-e89b-12d3-a456-426614174000']}>
@@ -355,9 +363,9 @@ describe('MediaProfilePage - Highlights Integration', () => {
 
   describe('Highlight Count Display', () => {
     it('should display count badge with number of highlights', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
+      mediaService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
+      articleService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
+      highlightService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
 
       render(
         <MemoryRouter initialEntries={['/media/123e4567-e89b-12d3-a456-426614174000']}>
@@ -379,9 +387,9 @@ describe('MediaProfilePage - Highlights Integration', () => {
 
   describe('Visual Styling', () => {
     it('should apply golden theme to highlights section', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
-      apiService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
+      mediaService.getMediaById.mockResolvedValue({ data: mockArticleWithReadwise });
+      articleService.getArticleById.mockResolvedValue({ data: mockArticleWithReadwise });
+      highlightService.getHighlightsByArticle.mockResolvedValue(mockHighlights);
 
       const { container } = render(
         <MemoryRouter initialEntries={['/media/123e4567-e89b-12d3-a456-426614174000']}>

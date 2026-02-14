@@ -3,13 +3,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import WebsiteImportPage from '../WebsiteImportPage';
-import * as apiService from '../../api';
+import * as websiteService from '../../api/websiteService';
 
 // Create mock navigate function
 const mockNavigate = vi.fn();
 
 // Mock the API service
-vi.mock('../../api', () => ({
+vi.mock('../../api/websiteService', () => ({
   scrapeWebsitePreview: vi.fn(),
   importWebsite: vi.fn(),
 }));
@@ -32,34 +32,27 @@ const renderWithRouter = (component) => {
 
 describe('WebsiteImportPage', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
     vi.clearAllMocks();
     mockNavigate.mockClear();
-  });
-
-  afterEach(() => {
-    vi.runAllTimers();
-    vi.useRealTimers();
   });
 
   it('should render the import form with all fields', () => {
     renderWithRouter(<WebsiteImportPage />);
 
-    expect(screen.getByText('Import Website')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /Import Website/ })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('https://example.com')).toBeInTheDocument();
     expect(screen.getByText('Preview')).toBeInTheDocument();
     expect(screen.getByText('Import Directly')).toBeInTheDocument();
   });
 
-  it('should show error when submitting empty URL', async () => {
+  it('should disable Preview and Import buttons when URL is empty', () => {
     renderWithRouter(<WebsiteImportPage />);
 
     const previewButton = screen.getByText('Preview');
-    fireEvent.click(previewButton);
+    const importButton = screen.getByText('Import Directly');
 
-    await waitFor(() => {
-      expect(screen.getByText('Please enter a URL')).toBeInTheDocument();
-    });
+    expect(previewButton).toBeDisabled();
+    expect(importButton).toBeDisabled();
   });
 
   it('should show error for invalid URL format', async () => {
@@ -88,7 +81,7 @@ describe('WebsiteImportPage', () => {
       publication: 'Test Publication'
     };
 
-    apiService.scrapeWebsitePreview.mockResolvedValue(mockScrapedData);
+    websiteService.scrapeWebsitePreview.mockResolvedValue(mockScrapedData);
 
     renderWithRouter(<WebsiteImportPage />);
 
@@ -99,7 +92,7 @@ describe('WebsiteImportPage', () => {
     fireEvent.click(previewButton);
 
     await waitFor(() => {
-      expect(apiService.scrapeWebsitePreview).toHaveBeenCalledWith('https://example.com');
+      expect(websiteService.scrapeWebsitePreview).toHaveBeenCalledWith('https://example.com');
     });
 
     await waitFor(() => {
@@ -116,7 +109,7 @@ describe('WebsiteImportPage', () => {
       rssFeedUrl: 'https://example.com/feed'
     };
 
-    apiService.scrapeWebsitePreview.mockResolvedValue(mockScrapedData);
+    websiteService.scrapeWebsitePreview.mockResolvedValue(mockScrapedData);
 
     renderWithRouter(<WebsiteImportPage />);
 
@@ -139,7 +132,7 @@ describe('WebsiteImportPage', () => {
       domain: 'test.com'
     };
 
-    apiService.importWebsite.mockResolvedValue(mockImportResult);
+    websiteService.importWebsite.mockResolvedValue(mockImportResult);
 
     renderWithRouter(<WebsiteImportPage />);
 
@@ -150,7 +143,7 @@ describe('WebsiteImportPage', () => {
     fireEvent.click(importButton);
 
     await waitFor(() => {
-      expect(apiService.importWebsite).toHaveBeenCalledWith({
+      expect(websiteService.importWebsite).toHaveBeenCalledWith({
         url: 'https://test.com',
         notes: null,
         topics: null,
@@ -172,7 +165,7 @@ describe('WebsiteImportPage', () => {
       domain: 'test.com'
     };
 
-    apiService.importWebsite.mockResolvedValue(mockImportResult);
+    websiteService.importWebsite.mockResolvedValue(mockImportResult);
 
     renderWithRouter(<WebsiteImportPage />);
 
@@ -196,7 +189,7 @@ describe('WebsiteImportPage', () => {
     fireEvent.click(importButton);
 
     await waitFor(() => {
-      expect(apiService.importWebsite).toHaveBeenCalledWith({
+      expect(websiteService.importWebsite).toHaveBeenCalledWith({
         url: 'https://test.com',
         notes: 'Test notes',
         topics: ['tech', 'web'],
@@ -214,7 +207,7 @@ describe('WebsiteImportPage', () => {
       domain: 'test.com'
     };
 
-    apiService.importWebsite.mockResolvedValue(mockImportResult);
+    websiteService.importWebsite.mockResolvedValue(mockImportResult);
 
     renderWithRouter(<WebsiteImportPage />);
 
@@ -230,7 +223,7 @@ describe('WebsiteImportPage', () => {
     fireEvent.click(importButton);
 
     await waitFor(() => {
-      expect(apiService.importWebsite).toHaveBeenCalledWith({
+      expect(websiteService.importWebsite).toHaveBeenCalledWith({
         url: 'https://test.com',
         notes: null,
         topics: null,
@@ -241,7 +234,7 @@ describe('WebsiteImportPage', () => {
   });
 
   it('should display error message when import fails', async () => {
-    apiService.importWebsite.mockRejectedValue({
+    websiteService.importWebsite.mockRejectedValue({
       response: {
         data: {
           error: 'Failed to import website'
@@ -264,7 +257,7 @@ describe('WebsiteImportPage', () => {
 
   it('should disable buttons while loading', async () => {
     // Make the API call hang indefinitely
-    apiService.scrapeWebsitePreview.mockImplementation(() => new Promise(() => {}));
+    websiteService.scrapeWebsitePreview.mockImplementation(() => new Promise(() => {}));
 
     renderWithRouter(<WebsiteImportPage />);
 
@@ -282,7 +275,7 @@ describe('WebsiteImportPage', () => {
     });
   });
 
-  it('should clear form after successful import', async () => {
+  it('should navigate to media profile after successful import', async () => {
     const mockImportResult = {
       id: '123',
       title: 'Test Website',
@@ -290,32 +283,24 @@ describe('WebsiteImportPage', () => {
       domain: 'test.com'
     };
 
-    apiService.importWebsite.mockResolvedValue(mockImportResult);
+    websiteService.importWebsite.mockResolvedValue(mockImportResult);
+
+    vi.useFakeTimers();
 
     renderWithRouter(<WebsiteImportPage />);
 
     const urlInput = screen.getByPlaceholderText('https://example.com');
     fireEvent.change(urlInput, { target: { value: 'https://test.com' } });
 
-    const notesInput = screen.getByPlaceholderText('Add your personal notes about this website');
-    fireEvent.change(notesInput, { target: { value: 'Test notes' } });
-
     const importButton = screen.getByText('Import Directly');
     fireEvent.click(importButton);
 
-    // Wait for success message
-    await waitFor(() => {
-      expect(screen.getByText(/imported successfully/)).toBeInTheDocument();
-    });
+    // Flush promise resolution and advance past the 1500ms setTimeout
+    await vi.advanceTimersByTimeAsync(2000);
 
-    // Advance timers to trigger the form clear timeout
-    vi.advanceTimersByTime(2000);
+    expect(mockNavigate).toHaveBeenCalledWith('/media/123');
 
-    // Wait for form to clear
-    await waitFor(() => {
-      expect(urlInput).toHaveValue('');
-      expect(notesInput).toHaveValue('');
-    });
+    vi.useRealTimers();
   });
 });
 

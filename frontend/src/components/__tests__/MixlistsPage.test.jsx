@@ -3,10 +3,10 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import MixlistsPage from '../MixlistsPage';
-import * as apiService from '../../api';
+import * as mixlistService from '../../api/mixlistService';
 
 // Mock the API service
-vi.mock('../../api');
+vi.mock('../../api/mixlistService');
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -58,7 +58,7 @@ describe('MixlistsPage', () => {
 
   describe('Loading State', () => {
     it('should display loading spinner while fetching mixlists', async () => {
-      apiService.getAllMixlists.mockImplementation(() => new Promise(() => {}));
+      mixlistService.getAllMixlists.mockImplementation(() => new Promise(() => {}));
 
       renderWithRouter();
 
@@ -69,7 +69,7 @@ describe('MixlistsPage', () => {
 
   describe('Empty State', () => {
     it('should display empty state when no mixlists exist', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: [] });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: [] });
 
       renderWithRouter();
 
@@ -82,7 +82,7 @@ describe('MixlistsPage', () => {
     });
 
     it('should navigate to create mixlist page from empty state', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: [] });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: [] });
 
       renderWithRouter();
 
@@ -98,7 +98,7 @@ describe('MixlistsPage', () => {
 
   describe('Mixlists Display', () => {
     it('should display mixlists in card view by default', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
 
       renderWithRouter();
 
@@ -112,7 +112,7 @@ describe('MixlistsPage', () => {
     });
 
     it('should display mixlist count in header', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
 
       renderWithRouter();
 
@@ -122,7 +122,7 @@ describe('MixlistsPage', () => {
     });
 
     it('should display media item count for each mixlist', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
 
       renderWithRouter();
 
@@ -134,7 +134,7 @@ describe('MixlistsPage', () => {
     });
 
     it('should display mixlist descriptions', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
 
       renderWithRouter();
 
@@ -147,7 +147,7 @@ describe('MixlistsPage', () => {
 
   describe('View Mode Toggle', () => {
     it('should switch to list view when list button is clicked', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
 
       renderWithRouter();
 
@@ -163,7 +163,7 @@ describe('MixlistsPage', () => {
     });
 
     it('should have cards button selected by default', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
 
       renderWithRouter();
 
@@ -179,7 +179,7 @@ describe('MixlistsPage', () => {
 
   describe('Selection Functionality', () => {
     it('should select all mixlists when Select All is clicked', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
 
       renderWithRouter();
 
@@ -195,7 +195,7 @@ describe('MixlistsPage', () => {
     });
 
     it('should deselect all when Deselect All is clicked', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
 
       renderWithRouter();
 
@@ -219,7 +219,7 @@ describe('MixlistsPage', () => {
     });
 
     it('should have deselect button disabled when nothing is selected', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
 
       renderWithRouter();
 
@@ -234,7 +234,7 @@ describe('MixlistsPage', () => {
 
   describe('Navigation', () => {
     it('should navigate to mixlist detail page when FAB is clicked', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
 
       renderWithRouter();
 
@@ -251,7 +251,7 @@ describe('MixlistsPage', () => {
 
   describe('Delete Dialog', () => {
     it('should open delete dialog when delete button is clicked with selections', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
 
       renderWithRouter();
 
@@ -276,7 +276,7 @@ describe('MixlistsPage', () => {
     });
 
     it('should close delete dialog when cancel is clicked', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
 
       renderWithRouter();
 
@@ -307,7 +307,7 @@ describe('MixlistsPage', () => {
     });
 
     it('should have delete button disabled when nothing is selected', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
 
       renderWithRouter();
 
@@ -323,7 +323,7 @@ describe('MixlistsPage', () => {
 
   describe('API Error Handling', () => {
     it('should handle API error gracefully', async () => {
-      apiService.getAllMixlists.mockRejectedValue(new Error('Failed to fetch'));
+      mixlistService.getAllMixlists.mockRejectedValue(new Error('Failed to fetch'));
 
       renderWithRouter();
 

@@ -3,14 +3,17 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import CreateMixlistForm from '../CreateMixlistForm';
-import * as apiService from '../../api';
+import * as mixlistService from '../../api/mixlistService';
 
 // Create mock navigate function
 const mockNavigate = vi.fn();
 
-// Mock the API service
-vi.mock('../../api', () => ({
+// Mock the API services
+vi.mock('../../api/mixlistService', () => ({
   createMixlist: vi.fn(),
+}));
+vi.mock('../../api/uploadService', () => ({
+  uploadThumbnail: vi.fn(),
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -35,7 +38,7 @@ describe('CreateMixlistForm', () => {
     mockNavigate.mockClear();
     global.alert.mockClear();
     // Reset API mocks
-    apiService.createMixlist.mockResolvedValue({ 
+    mixlistService.createMixlist.mockResolvedValue({ 
       data: { 
         id: 1, 
         name: 'Test Mixlist',
@@ -58,8 +61,9 @@ describe('CreateMixlistForm', () => {
 
       // Verify API call with correct data structure
       await waitFor(() => {
-        expect(apiService.createMixlist).toHaveBeenCalledWith({
+        expect(mixlistService.createMixlist).toHaveBeenCalledWith({
           name: 'Test Mixlist Name',
+          description: null,
           thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });
@@ -108,8 +112,9 @@ describe('CreateMixlistForm', () => {
 
       // Verify API call with trimmed name
       await waitFor(() => {
-        expect(apiService.createMixlist).toHaveBeenCalledWith({
+        expect(mixlistService.createMixlist).toHaveBeenCalledWith({
           name: 'Test Mixlist Name',
+          description: null,
           thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });
@@ -127,15 +132,16 @@ describe('CreateMixlistForm', () => {
       fireEvent.click(screen.getByText('Create Mixlist'));
 
       await waitFor(() => {
-        expect(apiService.createMixlist).toHaveBeenCalledWith({
+        expect(mixlistService.createMixlist).toHaveBeenCalledWith({
           name: 'First Mixlist',
+          description: null,
           thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });
 
       // Clear mocks for second submission
       vi.clearAllMocks();
-      apiService.createMixlist.mockResolvedValue({ 
+      mixlistService.createMixlist.mockResolvedValue({ 
         data: { 
           id: 2, 
           name: 'Second Mixlist',
@@ -150,8 +156,9 @@ describe('CreateMixlistForm', () => {
       fireEvent.click(screen.getByText('Create Mixlist'));
 
       await waitFor(() => {
-        expect(apiService.createMixlist).toHaveBeenCalledWith({
+        expect(mixlistService.createMixlist).toHaveBeenCalledWith({
           name: 'Second Mixlist',
+          description: null,
           thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });
@@ -167,8 +174,9 @@ describe('CreateMixlistForm', () => {
       fireEvent.click(screen.getByText('Create Mixlist'));
 
       await waitFor(() => {
-        const callArgs = apiService.createMixlist.mock.calls[0][0];
+        const callArgs = mixlistService.createMixlist.mock.calls[0][0];
         expect(callArgs.thumbnail).toContain('blur=1');
+        expect(callArgs.description).toBeNull();
       });
     });
   });
@@ -176,7 +184,7 @@ describe('CreateMixlistForm', () => {
   describe('Form State Management', () => {
     it('should show loading state during submission', async () => {
       // Mock a delayed response
-      apiService.createMixlist.mockImplementation(() => 
+      mixlistService.createMixlist.mockImplementation(() => 
         new Promise(resolve => setTimeout(() => resolve({ data: { id: 1 } }), 100))
       );
 
@@ -199,7 +207,7 @@ describe('CreateMixlistForm', () => {
 
     it('should disable submit button during submission', async () => {
       // Mock a delayed response
-      apiService.createMixlist.mockImplementation(() => 
+      mixlistService.createMixlist.mockImplementation(() => 
         new Promise(resolve => setTimeout(() => resolve({ data: { id: 1 } }), 100))
       );
 
@@ -224,7 +232,7 @@ describe('CreateMixlistForm', () => {
 
   describe('Error Handling', () => {
     it('should handle API errors gracefully', async () => {
-      apiService.createMixlist.mockRejectedValue({
+      mixlistService.createMixlist.mockRejectedValue({
         response: {
           status: 400,
           data: { error: 'Validation failed' }
@@ -246,7 +254,7 @@ describe('CreateMixlistForm', () => {
     });
 
     it('should handle network errors', async () => {
-      apiService.createMixlist.mockRejectedValue({
+      mixlistService.createMixlist.mockRejectedValue({
         message: 'Network error'
       });
 
@@ -265,7 +273,7 @@ describe('CreateMixlistForm', () => {
     });
 
     it('should re-enable submit button after error', async () => {
-      apiService.createMixlist.mockRejectedValue({
+      mixlistService.createMixlist.mockRejectedValue({
         response: {
           status: 400,
           data: { error: 'Validation failed' }
@@ -327,14 +335,15 @@ describe('CreateMixlistForm', () => {
       fireEvent.click(screen.getByText('Create Mixlist'));
 
       await waitFor(() => {
-        expect(apiService.createMixlist).toHaveBeenCalledWith({
+        expect(mixlistService.createMixlist).toHaveBeenCalledWith({
           name: mixlistName,
+          description: null,
           thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });
 
       // Verify the API service was called exactly once
-      expect(apiService.createMixlist).toHaveBeenCalledTimes(1);
+      expect(mixlistService.createMixlist).toHaveBeenCalledTimes(1);
     });
 
     it('should handle special characters in mixlist name', async () => {
@@ -348,8 +357,9 @@ describe('CreateMixlistForm', () => {
       fireEvent.click(screen.getByText('Create Mixlist'));
 
       await waitFor(() => {
-        expect(apiService.createMixlist).toHaveBeenCalledWith({
+        expect(mixlistService.createMixlist).toHaveBeenCalledWith({
           name: mixlistName,
+          description: null,
           thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });
@@ -366,8 +376,9 @@ describe('CreateMixlistForm', () => {
       fireEvent.click(screen.getByText('Create Mixlist'));
 
       await waitFor(() => {
-        expect(apiService.createMixlist).toHaveBeenCalledWith({
+        expect(mixlistService.createMixlist).toHaveBeenCalledWith({
           name: longName,
+          description: null,
           thumbnail: expect.stringMatching(/^https:\/\/picsum\.photos\/400\/400\?random=\d+&blur=1$/)
         });
       });

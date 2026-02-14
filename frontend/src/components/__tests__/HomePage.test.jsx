@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import HomePage from '../HomePage';
-import * as apiService from '../../api';
+import * as mixlistService from '../../api/mixlistService';
+import * as mediaService from '../../api/mediaService';
 
-// Mock API service
-vi.mock('../../api');
+// Mock API services
+vi.mock('../../api/mixlistService');
+vi.mock('../../api/mediaService');
 
 // Mock child components
 vi.mock('../shared/SearchBar', () => ({
@@ -23,14 +25,8 @@ vi.mock('../shared/SimpleMediaCarousel', () => ({
 }));
 
 describe('HomePage', () => {
-  // Setup fake timers to prevent timer leaks
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
   afterEach(() => {
-    vi.runAllTimers();
-    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   const mockMixlists = [
@@ -75,10 +71,10 @@ describe('HomePage', () => {
 
   describe('Loading States', () => {
     it('should display loading spinner when fetching mixlists', () => {
-      apiService.getAllMixlists.mockImplementation(() => 
+      mixlistService.getAllMixlists.mockImplementation(() => 
         new Promise(() => {}) // Never resolves
       );
-      apiService.getAllMedia.mockResolvedValue({ data: [] });
+      mediaService.getAllMedia.mockResolvedValue({ data: [] });
 
       render(
         <BrowserRouter>
@@ -86,13 +82,13 @@ describe('HomePage', () => {
         </BrowserRouter>
       );
 
-      expect(screen.getByText('Loading MediaVerse...')).toBeInTheDocument();
+      expect(screen.getByText('Loading My MediaVerse...')).toBeInTheDocument();
       expect(screen.getByRole('progressbar')).toBeInTheDocument();
     });
 
     it('should display loading state for actively exploring section', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
-      apiService.getAllMedia.mockImplementation(() => 
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mediaService.getAllMedia.mockImplementation(() => 
         new Promise(() => {}) // Never resolves
       );
 
@@ -103,7 +99,7 @@ describe('HomePage', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('MediaVerse')).toBeInTheDocument();
+        expect(screen.getByText('My MediaVerse')).toBeInTheDocument();
       });
 
       expect(screen.getByText('Loading your active explorations...')).toBeInTheDocument();
@@ -112,11 +108,11 @@ describe('HomePage', () => {
 
   describe('Successful Data Loading', () => {
     beforeEach(() => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
-      apiService.getAllMedia.mockResolvedValue({ data: mockActiveMedia });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mediaService.getAllMedia.mockResolvedValue({ data: mockActiveMedia });
     });
 
-    it('should display MediaVerse title', async () => {
+    it('should display My MediaVerse title', async () => {
       render(
         <BrowserRouter>
           <HomePage />
@@ -124,7 +120,7 @@ describe('HomePage', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('MediaVerse')).toBeInTheDocument();
+        expect(screen.getByText('My MediaVerse')).toBeInTheDocument();
       });
     });
 
@@ -150,7 +146,7 @@ describe('HomePage', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('MediaVerse')).toBeInTheDocument();
+        expect(screen.getByText('My MediaVerse')).toBeInTheDocument();
       });
 
       // Check for main media types
@@ -170,7 +166,7 @@ describe('HomePage', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('MediaVerse')).toBeInTheDocument();
+        expect(screen.getByText('My MediaVerse')).toBeInTheDocument();
       });
 
       expect(screen.getByText('Source Directory')).toBeInTheDocument();
@@ -219,7 +215,7 @@ describe('HomePage', () => {
         thumbnail: `https://example.com/thumb${i}.jpg`
       }));
 
-      apiService.getAllMixlists.mockResolvedValue({ data: manyMixlists });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: manyMixlists });
 
       render(
         <BrowserRouter>
@@ -235,8 +231,8 @@ describe('HomePage', () => {
 
   describe('Empty States', () => {
     it('should display empty state when no mixlists exist', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: [] });
-      apiService.getAllMedia.mockResolvedValue({ data: [] });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: [] });
+      mediaService.getAllMedia.mockResolvedValue({ data: [] });
 
       render(
         <BrowserRouter>
@@ -253,8 +249,8 @@ describe('HomePage', () => {
     });
 
     it('should display empty state when no active explorations exist', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
-      apiService.getAllMedia.mockResolvedValue({ data: [] });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mediaService.getAllMedia.mockResolvedValue({ data: [] });
 
       render(
         <BrowserRouter>
@@ -272,8 +268,8 @@ describe('HomePage', () => {
 
   describe('Error Handling', () => {
     it('should display error message when mixlists fail to load', async () => {
-      apiService.getAllMixlists.mockRejectedValue(new Error('API Error'));
-      apiService.getAllMedia.mockResolvedValue({ data: [] });
+      mixlistService.getAllMixlists.mockRejectedValue(new Error('API Error'));
+      mediaService.getAllMedia.mockResolvedValue({ data: [] });
 
       render(
         <BrowserRouter>
@@ -291,8 +287,8 @@ describe('HomePage', () => {
     it('should display specific error for network issues', async () => {
       const networkError = new Error('Network Error');
       networkError.code = 'ERR_NETWORK';
-      apiService.getAllMixlists.mockRejectedValue(networkError);
-      apiService.getAllMedia.mockResolvedValue({ data: [] });
+      mixlistService.getAllMixlists.mockRejectedValue(networkError);
+      mediaService.getAllMedia.mockResolvedValue({ data: [] });
 
       render(
         <BrowserRouter>
@@ -306,8 +302,8 @@ describe('HomePage', () => {
     });
 
     it('should display error in actively exploring section when fetch fails', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
-      apiService.getAllMedia.mockRejectedValue(new Error('API Error'));
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mediaService.getAllMedia.mockRejectedValue(new Error('API Error'));
 
       render(
         <BrowserRouter>
@@ -316,7 +312,7 @@ describe('HomePage', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('MediaVerse')).toBeInTheDocument();
+        expect(screen.getByText('My MediaVerse')).toBeInTheDocument();
       });
 
       await waitFor(() => {
@@ -327,8 +323,8 @@ describe('HomePage', () => {
 
   describe('User Interactions', () => {
     beforeEach(() => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
-      apiService.getAllMedia.mockResolvedValue({ data: mockActiveMedia });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mediaService.getAllMedia.mockResolvedValue({ data: mockActiveMedia });
     });
 
     it('should navigate to mixlist when clicking a mixlist card', async () => {
@@ -347,9 +343,9 @@ describe('HomePage', () => {
     });
 
     it('should call seedMixlists when clicking Seed button', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: [] });
-      apiService.getAllMedia.mockResolvedValue({ data: [] });
-      apiService.seedMixlists.mockResolvedValue({});
+      mixlistService.getAllMixlists.mockResolvedValue({ data: [] });
+      mediaService.getAllMedia.mockResolvedValue({ data: [] });
+      mixlistService.seedMixlists.mockResolvedValue({});
 
       render(
         <BrowserRouter>
@@ -365,13 +361,13 @@ describe('HomePage', () => {
       fireEvent.click(seedButton);
 
       await waitFor(() => {
-        expect(apiService.seedMixlists).toHaveBeenCalled();
+        expect(mixlistService.seedMixlists).toHaveBeenCalled();
       });
     });
 
     it('should reload page when clicking Retry button', async () => {
-      apiService.getAllMixlists.mockRejectedValue(new Error('Network Error'));
-      apiService.getAllMedia.mockResolvedValue({ data: [] });
+      mixlistService.getAllMixlists.mockRejectedValue(new Error('Network Error'));
+      mediaService.getAllMedia.mockResolvedValue({ data: [] });
 
       // Mock window.location.reload
       const reloadMock = vi.fn();
@@ -397,35 +393,10 @@ describe('HomePage', () => {
     });
   });
 
-  describe('Smart Search Section', () => {
-    beforeEach(() => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
-      apiService.getAllMedia.mockResolvedValue({ data: [] });
-    });
-
-    it('should display smart search buttons', async () => {
-      render(
-        <BrowserRouter>
-          <HomePage />
-        </BrowserRouter>
-      );
-
-      await waitFor(() => {
-        expect(screen.getByText('Smart Search and Recommendations')).toBeInTheDocument();
-      });
-
-      expect(screen.getByText('Medium-length online article')).toBeInTheDocument();
-      expect(screen.getByText('20+ min YouTube video')).toBeInTheDocument();
-      expect(screen.getByText('Quick summary podcast')).toBeInTheDocument();
-      expect(screen.getByText('In-depth research paper')).toBeInTheDocument();
-      expect(screen.getByText('View Topics Tree')).toBeInTheDocument();
-    });
-  });
-
   describe('Responsive Design Elements', () => {
     beforeEach(() => {
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
-      apiService.getAllMedia.mockResolvedValue({ data: mockActiveMedia });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mediaService.getAllMedia.mockResolvedValue({ data: mockActiveMedia });
     });
 
     it('should render without crashing', async () => {
@@ -436,7 +407,7 @@ describe('HomePage', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('MediaVerse')).toBeInTheDocument();
+        expect(screen.getByText('My MediaVerse')).toBeInTheDocument();
       });
 
       expect(container).toBeInTheDocument();
@@ -450,20 +421,19 @@ describe('HomePage', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('MediaVerse')).toBeInTheDocument();
+        expect(screen.getByText('My MediaVerse')).toBeInTheDocument();
       });
 
       expect(screen.getByText('Jump back in')).toBeInTheDocument();
       expect(screen.getByText('Recent Mixlists')).toBeInTheDocument();
-      expect(screen.getByText('Smart Search and Recommendations')).toBeInTheDocument();
       expect(screen.getByText('View More Mixlists')).toBeInTheDocument();
     });
   });
 
   describe('API Call Verification', () => {
     it('should call getAllMixlists on mount', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: [] });
-      apiService.getAllMedia.mockResolvedValue({ data: [] });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: [] });
+      mediaService.getAllMedia.mockResolvedValue({ data: [] });
 
       render(
         <BrowserRouter>
@@ -472,13 +442,13 @@ describe('HomePage', () => {
       );
 
       await waitFor(() => {
-        expect(apiService.getAllMixlists).toHaveBeenCalledTimes(1);
+        expect(mixlistService.getAllMixlists).toHaveBeenCalledTimes(1);
       });
     });
 
     it('should call getAllMedia on mount', async () => {
-      apiService.getAllMixlists.mockResolvedValue({ data: [] });
-      apiService.getAllMedia.mockResolvedValue({ data: [] });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: [] });
+      mediaService.getAllMedia.mockResolvedValue({ data: [] });
 
       render(
         <BrowserRouter>
@@ -487,7 +457,7 @@ describe('HomePage', () => {
       );
 
       await waitFor(() => {
-        expect(apiService.getAllMedia).toHaveBeenCalledTimes(1);
+        expect(mediaService.getAllMedia).toHaveBeenCalledTimes(1);
       });
     });
 
@@ -499,8 +469,8 @@ describe('HomePage', () => {
         { id: '4', status: 'Uncharted', title: 'Media 4' }
       ];
 
-      apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
-      apiService.getAllMedia.mockResolvedValue({ data: allMedia });
+      mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+      mediaService.getAllMedia.mockResolvedValue({ data: allMedia });
 
       render(
         <BrowserRouter>

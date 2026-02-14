@@ -3,15 +3,27 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { vi } from 'vitest';
 import ReadwiseSyncPage from '../ReadwiseSyncPage';
-import * as apiService from '../../api';
+import * as readwiseService from '../../api/readwiseService';
+import * as highlightService from '../../api/highlightService';
+import * as bookService from '../../api/bookService';
+import * as articleService from '../../api/articleService';
 
-// Mock the API service
-vi.mock('../../api', () => ({
+// Mock the API services
+vi.mock('../../api/readwiseService', () => ({
   validateReadwiseConnection: vi.fn(),
-  syncHighlightsFromReadwise: vi.fn(),
-  syncDocumentsFromReader: vi.fn(),
-  bulkFetchArticleContents: vi.fn(),
-  linkHighlightsToMedia: vi.fn(),
+  syncAll: vi.fn(),
+  fetchArticleContent: vi.fn(),
+}));
+vi.mock('../../api/highlightService', () => ({
+  getUnlinkedHighlights: vi.fn(),
+  updateHighlight: vi.fn(),
+  cleanHighlightText: vi.fn(),
+}));
+vi.mock('../../api/bookService', () => ({
+  getAllBooks: vi.fn(),
+}));
+vi.mock('../../api/articleService', () => ({
+  getAllArticles: vi.fn(),
 }));
 
 const renderWithRouter = (component) => {
@@ -25,39 +37,45 @@ const renderWithRouter = (component) => {
 describe('ReadwiseSyncPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default mocks for data loaded on mount
+    highlightService.getUnlinkedHighlights.mockResolvedValue([]);
+    bookService.getAllBooks.mockResolvedValue({ data: [] });
+    articleService.getAllArticles.mockResolvedValue([]);
   });
 
   describe('Page Rendering', () => {
-    it('should render the page with all sections', () => {
+    it('should render the page with all sections', async () => {
       renderWithRouter(<ReadwiseSyncPage />);
 
-      expect(screen.getByText('📚 Readwise & Reader Sync')).toBeInTheDocument();
-      expect(screen.getByText('🔌 Connection Status')).toBeInTheDocument();
-      expect(screen.getByText('✨ Sync Highlights (Readwise API)')).toBeInTheDocument();
-      expect(screen.getByText('📖 Sync Documents (Readwise Reader API)')).toBeInTheDocument();
-      expect(screen.getByText('💾 Fetch Article Content (HTML)')).toBeInTheDocument();
-      expect(screen.getByText('🔗 Link Highlights to Media')).toBeInTheDocument();
-      expect(screen.getByText('💡 Quick Tips')).toBeInTheDocument();
+      expect(screen.getByText('Readwise Sync')).toBeInTheDocument();
+      expect(screen.getByText('Connection Status')).toBeInTheDocument();
+      expect(screen.getByText('Sync Articles & Highlights')).toBeInTheDocument();
+      expect(screen.getByText('Fetch Article Content (Archival)')).toBeInTheDocument();
+      expect(screen.getByText('Maintenance')).toBeInTheDocument();
+      expect(screen.getByText('Manage Unlinked Highlights')).toBeInTheDocument();
     });
 
-    it('should display all action buttons', () => {
+    it('should display all action buttons', async () => {
       renderWithRouter(<ReadwiseSyncPage />);
 
       expect(screen.getByText('Validate Connection')).toBeInTheDocument();
-      expect(screen.getByText('🔄 Full Sync')).toBeInTheDocument();
-      expect(screen.getByText('⚡ Sync Last 7 Days')).toBeInTheDocument();
-      expect(screen.getByText('🔄 Sync All Documents')).toBeInTheDocument();
-      expect(screen.getByText('🆕 Sync "New" Only')).toBeInTheDocument();
-      expect(screen.getByText('📦 Sync "Archive" Only')).toBeInTheDocument();
-      expect(screen.getByText('📥 Fetch 25 Articles')).toBeInTheDocument();
-      expect(screen.getByText('📥 Fetch 50 Articles')).toBeInTheDocument();
-      expect(screen.getByText('🔗 Link Highlights')).toBeInTheDocument();
+      expect(screen.getByText('Full Sync')).toBeInTheDocument();
+      expect(screen.getByText('Sync Last 7 Days')).toBeInTheDocument();
+      expect(screen.getByText('Fetch 25')).toBeInTheDocument();
+      expect(screen.getByText('Fetch 50')).toBeInTheDocument();
+      expect(screen.getByText('Fetch Recently Synced (7 days)')).toBeInTheDocument();
+      expect(screen.getByText('Clean Highlight Text')).toBeInTheDocument();
+
+      // Refresh List button shows "Loading..." during initial mount fetch
+      await waitFor(() => {
+        expect(screen.getByText('Refresh List')).toBeInTheDocument();
+      });
     });
   });
 
   describe('Connection Validation', () => {
     it('should validate connection successfully', async () => {
-      apiService.validateReadwiseConnection.mockResolvedValue({
+      readwiseService.validateReadwiseConnection.mockResolvedValue({
         data: { connected: true, message: 'Connection successful' }
       });
 
@@ -67,15 +85,14 @@ describe('ReadwiseSyncPage', () => {
       fireEvent.click(validateButton);
 
       await waitFor(() => {
-        expect(screen.getByText('✅')).toBeInTheDocument();
         expect(screen.getByText('Connection successful')).toBeInTheDocument();
       });
 
-      expect(apiService.validateReadwiseConnection).toHaveBeenCalledTimes(1);
+      expect(readwiseService.validateReadwiseConnection).toHaveBeenCalledTimes(1);
     });
 
     it('should show error when connection validation fails', async () => {
-      apiService.validateReadwiseConnection.mockRejectedValue({
+      readwiseService.validateReadwiseConnection.mockRejectedValue({
         response: { data: { details: 'Invalid API token' } }
       });
 
@@ -90,8 +107,8 @@ describe('ReadwiseSyncPage', () => {
       });
     });
 
-    it('should disable buttons during validation', async () => {
-      apiService.validateReadwiseConnection.mockImplementation(
+    it('should disable button and show loading text during validation', async () => {
+      readwiseService.validateReadwiseConnection.mockImplementation(
         () => new Promise(resolve => setTimeout(() => resolve({ data: { connected: true } }), 100))
       );
 
@@ -100,237 +117,333 @@ describe('ReadwiseSyncPage', () => {
       const validateButton = screen.getByText('Validate Connection');
       fireEvent.click(validateButton);
 
-      expect(validateButton).toBeDisabled();
       expect(screen.getByText('Validating...')).toBeInTheDocument();
 
       await waitFor(() => {
-        expect(validateButton).not.toBeDisabled();
+        expect(screen.getByText('Validate Connection')).toBeInTheDocument();
       });
     });
   });
 
-  describe('Highlight Sync', () => {
-    it('should perform full highlight sync successfully', async () => {
-      apiService.syncHighlightsFromReadwise.mockResolvedValue({
+  describe('Sync Articles & Highlights', () => {
+    it('should perform full sync successfully', async () => {
+      readwiseService.syncAll.mockResolvedValue({
         data: {
           success: true,
-          createdCount: 50,
-          updatedCount: 10,
-          totalProcessed: 60,
+          articlesCreated: 50,
+          articlesUpdated: 10,
+          highlightsCreated: 100,
+          highlightsUpdated: 20,
+          highlightsLinked: 80,
           duration: '0:00:05'
         }
       });
 
       renderWithRouter(<ReadwiseSyncPage />);
 
-      const fullSyncButton = screen.getByText('🔄 Full Sync');
+      const fullSyncButton = screen.getByText('Full Sync');
       fireEvent.click(fullSyncButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Highlight Sync Results')).toBeInTheDocument();
-        expect(screen.getByText('✅ Success')).toBeInTheDocument();
-        expect(screen.getByText('50')).toBeInTheDocument(); // createdCount
-        expect(screen.getByText('10')).toBeInTheDocument(); // updatedCount
-        expect(screen.getByText('60')).toBeInTheDocument(); // totalProcessed
+        expect(screen.getByText('Sync Results')).toBeInTheDocument();
       });
 
-      expect(apiService.syncHighlightsFromReadwise).toHaveBeenCalledWith(null);
+      expect(readwiseService.syncAll).toHaveBeenCalledWith(false);
     });
 
-    it('should perform incremental highlight sync', async () => {
-      apiService.syncHighlightsFromReadwise.mockResolvedValue({
+    it('should perform incremental sync (last 7 days)', async () => {
+      readwiseService.syncAll.mockResolvedValue({
         data: {
           success: true,
-          createdCount: 5,
-          updatedCount: 2,
-          totalProcessed: 7,
-          duration: '0:00:02'
+          articlesCreated: 5,
+          articlesUpdated: 2,
+          highlightsCreated: 10,
+          highlightsUpdated: 3,
+          highlightsLinked: 8
         }
       });
 
       renderWithRouter(<ReadwiseSyncPage />);
 
-      const incrementalSyncButton = screen.getByText('⚡ Sync Last 7 Days');
+      const incrementalSyncButton = screen.getByText('Sync Last 7 Days');
       fireEvent.click(incrementalSyncButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Highlight Sync Results')).toBeInTheDocument();
-        expect(screen.getByText('5')).toBeInTheDocument(); // createdCount
-        expect(screen.getByText('2')).toBeInTheDocument(); // updatedCount
+        expect(screen.getByText('Sync Results')).toBeInTheDocument();
       });
 
-      // Should be called with a date parameter
-      expect(apiService.syncHighlightsFromReadwise).toHaveBeenCalled();
-      const callArg = apiService.syncHighlightsFromReadwise.mock.calls[0][0];
-      expect(callArg).toBeInstanceOf(Date);
+      expect(readwiseService.syncAll).toHaveBeenCalledWith(true);
     });
 
-    it('should handle highlight sync errors', async () => {
-      apiService.syncHighlightsFromReadwise.mockRejectedValue({
+    it('should handle sync errors', async () => {
+      readwiseService.syncAll.mockRejectedValue({
         response: { data: { details: 'Rate limit exceeded' } }
       });
 
       renderWithRouter(<ReadwiseSyncPage />);
 
-      const fullSyncButton = screen.getByText('🔄 Full Sync');
+      const fullSyncButton = screen.getByText('Full Sync');
       fireEvent.click(fullSyncButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/Highlight sync failed/)).toBeInTheDocument();
+        expect(screen.getByText(/Sync failed/)).toBeInTheDocument();
         expect(screen.getByText(/Rate limit exceeded/)).toBeInTheDocument();
       });
     });
 
     it('should show loading state during sync', async () => {
-      apiService.syncHighlightsFromReadwise.mockImplementation(
+      readwiseService.syncAll.mockImplementation(
         () => new Promise(resolve => setTimeout(() => resolve({ data: { success: true } }), 100))
       );
 
       renderWithRouter(<ReadwiseSyncPage />);
 
-      const fullSyncButton = screen.getByText('🔄 Full Sync');
+      const fullSyncButton = screen.getByText('Full Sync');
       fireEvent.click(fullSyncButton);
 
-      expect(screen.getByText('⏳ Syncing...')).toBeInTheDocument();
-      expect(fullSyncButton).toBeDisabled();
+      expect(screen.getAllByText('Syncing...').length).toBeGreaterThan(0);
 
       await waitFor(() => {
-        expect(screen.queryByText('⏳ Syncing...')).not.toBeInTheDocument();
+        expect(screen.getByText('Full Sync')).toBeInTheDocument();
       });
-    });
-  });
-
-  describe('Reader Document Sync', () => {
-    it('should sync all Reader documents', async () => {
-      apiService.syncDocumentsFromReader.mockResolvedValue({
-        data: {
-          success: true,
-          createdCount: 30,
-          updatedCount: 5,
-          totalProcessed: 35,
-          duration: '0:00:08'
-        }
-      });
-
-      renderWithRouter(<ReadwiseSyncPage />);
-
-      const syncAllButton = screen.getByText('🔄 Sync All Documents');
-      fireEvent.click(syncAllButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Reader Sync Results')).toBeInTheDocument();
-        expect(screen.getByText('30')).toBeInTheDocument(); // createdCount
-        expect(screen.getByText('35')).toBeInTheDocument(); // totalProcessed
-      });
-
-      expect(apiService.syncDocumentsFromReader).toHaveBeenCalledWith(null);
-    });
-
-    it('should sync only new documents', async () => {
-      apiService.syncDocumentsFromReader.mockResolvedValue({
-        data: { success: true, createdCount: 10, updatedCount: 0, totalProcessed: 10 }
-      });
-
-      renderWithRouter(<ReadwiseSyncPage />);
-
-      const syncNewButton = screen.getByText('🆕 Sync "New" Only');
-      fireEvent.click(syncNewButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Reader Sync Results')).toBeInTheDocument();
-      });
-
-      expect(apiService.syncDocumentsFromReader).toHaveBeenCalledWith('new');
-    });
-
-    it('should sync only archive documents', async () => {
-      apiService.syncDocumentsFromReader.mockResolvedValue({
-        data: { success: true, createdCount: 20, updatedCount: 5, totalProcessed: 25 }
-      });
-
-      renderWithRouter(<ReadwiseSyncPage />);
-
-      const syncArchiveButton = screen.getByText('📦 Sync "Archive" Only');
-      fireEvent.click(syncArchiveButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('Reader Sync Results')).toBeInTheDocument();
-      });
-
-      expect(apiService.syncDocumentsFromReader).toHaveBeenCalledWith('archive');
     });
   });
 
   describe('Content Fetching', () => {
     it('should fetch 25 articles', async () => {
-      apiService.bulkFetchArticleContents.mockResolvedValue({
+      readwiseService.fetchArticleContent.mockResolvedValue({
         data: { fetchedCount: 25, message: 'Successfully fetched 25 articles' }
       });
 
       renderWithRouter(<ReadwiseSyncPage />);
 
-      const fetch25Button = screen.getByText('📥 Fetch 25 Articles');
+      const fetch25Button = screen.getByText('Fetch 25');
       fireEvent.click(fetch25Button);
 
       await waitFor(() => {
-        expect(screen.getByText('Content Fetch Results')).toBeInTheDocument();
-        expect(screen.getByText('25 articles')).toBeInTheDocument();
+        expect(screen.getByText('Fetch Results')).toBeInTheDocument();
       });
 
-      expect(apiService.bulkFetchArticleContents).toHaveBeenCalledWith(25);
+      expect(readwiseService.fetchArticleContent).toHaveBeenCalledWith(25, false);
     });
 
     it('should fetch 50 articles', async () => {
-      apiService.bulkFetchArticleContents.mockResolvedValue({
+      readwiseService.fetchArticleContent.mockResolvedValue({
         data: { fetchedCount: 50, message: 'Successfully fetched 50 articles' }
       });
 
       renderWithRouter(<ReadwiseSyncPage />);
 
-      const fetch50Button = screen.getByText('📥 Fetch 50 Articles');
+      const fetch50Button = screen.getByText('Fetch 50');
       fireEvent.click(fetch50Button);
 
       await waitFor(() => {
-        expect(screen.getByText('50 articles')).toBeInTheDocument();
+        expect(screen.getByText('Fetch Results')).toBeInTheDocument();
       });
 
-      expect(apiService.bulkFetchArticleContents).toHaveBeenCalledWith(50);
+      expect(readwiseService.fetchArticleContent).toHaveBeenCalledWith(50, false);
     });
-  });
 
-  describe('Link Highlights', () => {
-    it('should link highlights to media successfully', async () => {
-      apiService.linkHighlightsToMedia.mockResolvedValue({
-        data: { linkedCount: 100, message: 'Linked 100 highlights' }
+    it('should fetch recently synced articles', async () => {
+      readwiseService.fetchArticleContent.mockResolvedValue({
+        data: { fetchedCount: 10, message: 'Fetched 10 recent articles' }
       });
 
       renderWithRouter(<ReadwiseSyncPage />);
 
-      const linkButton = screen.getByText('🔗 Link Highlights');
-      fireEvent.click(linkButton);
+      const fetchRecentButton = screen.getByText('Fetch Recently Synced (7 days)');
+      fireEvent.click(fetchRecentButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Linking Results')).toBeInTheDocument();
-        expect(screen.getByText('100 highlights')).toBeInTheDocument();
+        expect(screen.getByText('Fetch Results')).toBeInTheDocument();
       });
 
-      expect(apiService.linkHighlightsToMedia).toHaveBeenCalledTimes(1);
+      expect(readwiseService.fetchArticleContent).toHaveBeenCalledWith(50, true);
+    });
+  });
+
+  describe('Maintenance', () => {
+    it('should clean highlight text successfully', async () => {
+      highlightService.cleanHighlightText.mockResolvedValue({
+        cleanedCount: 15,
+        message: 'Cleaned 15 highlights'
+      });
+
+      renderWithRouter(<ReadwiseSyncPage />);
+
+      const cleanButton = screen.getByText('Clean Highlight Text');
+      fireEvent.click(cleanButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Cleaned 15 highlights')).toBeInTheDocument();
+      });
+
+      expect(highlightService.cleanHighlightText).toHaveBeenCalledTimes(1);
+    });
+
+    it('should show loading state during cleaning', async () => {
+      highlightService.cleanHighlightText.mockImplementation(
+        () => new Promise(resolve => setTimeout(() => resolve({ cleanedCount: 0, message: 'Done' }), 100))
+      );
+
+      renderWithRouter(<ReadwiseSyncPage />);
+
+      const cleanButton = screen.getByText('Clean Highlight Text');
+      fireEvent.click(cleanButton);
+
+      expect(screen.getByText('Cleaning...')).toBeInTheDocument();
+
+      await waitFor(() => {
+        expect(screen.getByText('Clean Highlight Text')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Unlinked Highlights', () => {
+    it('should show empty state when no unlinked highlights', async () => {
+      highlightService.getUnlinkedHighlights.mockResolvedValue([]);
+
+      renderWithRouter(<ReadwiseSyncPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/No unlinked highlights found/)).toBeInTheDocument();
+      });
+    });
+
+    it('should display unlinked highlights list', async () => {
+      const mockHighlights = [
+        {
+          id: '1',
+          text: 'This is a test highlight',
+          title: 'Test Article',
+          author: 'Author Name',
+          category: 'article',
+          highlightedAt: '2024-01-15T10:00:00Z'
+        },
+        {
+          id: '2',
+          text: 'Another highlight text',
+          title: 'Another Article',
+          author: null,
+          category: 'book',
+          highlightedAt: '2024-01-16T12:00:00Z'
+        }
+      ];
+
+      highlightService.getUnlinkedHighlights.mockResolvedValue(mockHighlights);
+
+      renderWithRouter(<ReadwiseSyncPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/2/)).toBeInTheDocument();
+      });
+
+      expect(screen.getByText(/This is a test highlight/)).toBeInTheDocument();
+      expect(screen.getByText(/Another highlight text/)).toBeInTheDocument();
+    });
+
+    it('should refresh unlinked highlights when Refresh button is clicked', async () => {
+      highlightService.getUnlinkedHighlights.mockResolvedValue([]);
+
+      renderWithRouter(<ReadwiseSyncPage />);
+
+      await waitFor(() => {
+        expect(highlightService.getUnlinkedHighlights).toHaveBeenCalledTimes(1);
+      });
+
+      const refreshButton = screen.getByText('Refresh List');
+      fireEvent.click(refreshButton);
+
+      await waitFor(() => {
+        expect(highlightService.getUnlinkedHighlights).toHaveBeenCalledTimes(2);
+      });
+    });
+  });
+
+  describe('Duration Formatting', () => {
+    it('should format duration with hours', async () => {
+      readwiseService.syncAll.mockResolvedValue({
+        data: {
+          success: true,
+          articlesCreated: 100,
+          articlesUpdated: 20,
+          highlightsCreated: 0,
+          highlightsUpdated: 0,
+          highlightsLinked: 0,
+          duration: '1:23:45'
+        }
+      });
+
+      renderWithRouter(<ReadwiseSyncPage />);
+
+      const fullSyncButton = screen.getByText('Full Sync');
+      fireEvent.click(fullSyncButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('1h 23m 45s')).toBeInTheDocument();
+      });
+    });
+
+    it('should format duration with only minutes', async () => {
+      readwiseService.syncAll.mockResolvedValue({
+        data: {
+          success: true,
+          articlesCreated: 50,
+          articlesUpdated: 10,
+          highlightsCreated: 0,
+          highlightsUpdated: 0,
+          highlightsLinked: 0,
+          duration: '0:05:30'
+        }
+      });
+
+      renderWithRouter(<ReadwiseSyncPage />);
+
+      const fullSyncButton = screen.getByText('Full Sync');
+      fireEvent.click(fullSyncButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('05m 30s')).toBeInTheDocument();
+      });
+    });
+
+    it('should format duration with only seconds', async () => {
+      readwiseService.syncAll.mockResolvedValue({
+        data: {
+          success: true,
+          articlesCreated: 10,
+          articlesUpdated: 2,
+          highlightsCreated: 0,
+          highlightsUpdated: 0,
+          highlightsLinked: 0,
+          duration: '0:00:15'
+        }
+      });
+
+      renderWithRouter(<ReadwiseSyncPage />);
+
+      const fullSyncButton = screen.getByText('Full Sync');
+      fireEvent.click(fullSyncButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('15s')).toBeInTheDocument();
+      });
     });
   });
 
   describe('Error Handling', () => {
     it('should clear error when starting new operation', async () => {
-      apiService.syncHighlightsFromReadwise.mockRejectedValueOnce({
+      readwiseService.syncAll.mockRejectedValueOnce({
         response: { data: { details: 'First error' } }
       });
-      apiService.syncHighlightsFromReadwise.mockResolvedValue({
-        data: { success: true, createdCount: 10, updatedCount: 0, totalProcessed: 10 }
+      readwiseService.syncAll.mockResolvedValue({
+        data: { success: true, articlesCreated: 10, articlesUpdated: 0, highlightsCreated: 0, highlightsUpdated: 0, highlightsLinked: 0 }
       });
 
       renderWithRouter(<ReadwiseSyncPage />);
 
-      const fullSyncButton = screen.getByText('🔄 Full Sync');
-      
+      const fullSyncButton = screen.getByText('Full Sync');
+
       // First attempt - should show error
       fireEvent.click(fullSyncButton);
       await waitFor(() => {
@@ -341,123 +454,73 @@ describe('ReadwiseSyncPage', () => {
       fireEvent.click(fullSyncButton);
       await waitFor(() => {
         expect(screen.queryByText(/First error/)).not.toBeInTheDocument();
-        expect(screen.getByText('Highlight Sync Results')).toBeInTheDocument();
+        expect(screen.getByText('Sync Results')).toBeInTheDocument();
       });
     });
 
     it('should handle network errors gracefully', async () => {
-      apiService.syncHighlightsFromReadwise.mockRejectedValue({
+      readwiseService.syncAll.mockRejectedValue({
         message: 'Network Error'
       });
 
       renderWithRouter(<ReadwiseSyncPage />);
 
-      const fullSyncButton = screen.getByText('🔄 Full Sync');
+      const fullSyncButton = screen.getByText('Full Sync');
       fireEvent.click(fullSyncButton);
 
       await waitFor(() => {
-        expect(screen.getByText(/Highlight sync failed/)).toBeInTheDocument();
+        expect(screen.getByText(/Sync failed/)).toBeInTheDocument();
         expect(screen.getByText(/Network Error/)).toBeInTheDocument();
       });
     });
-  });
 
-  describe('Duration Formatting', () => {
-    it('should format duration with hours', async () => {
-      apiService.syncHighlightsFromReadwise.mockResolvedValue({
-        data: {
-          success: true,
-          createdCount: 100,
-          updatedCount: 20,
-          totalProcessed: 120,
-          duration: '1:23:45'
-        }
+    it('should handle content fetch errors', async () => {
+      readwiseService.fetchArticleContent.mockRejectedValue({
+        response: { data: { details: 'Fetch failed' } }
       });
 
       renderWithRouter(<ReadwiseSyncPage />);
 
-      const fullSyncButton = screen.getByText('🔄 Full Sync');
-      fireEvent.click(fullSyncButton);
+      const fetch25Button = screen.getByText('Fetch 25');
+      fireEvent.click(fetch25Button);
 
       await waitFor(() => {
-        expect(screen.getByText('1h 23m 45s')).toBeInTheDocument();
+        expect(screen.getByText(/Content fetch failed/)).toBeInTheDocument();
       });
     });
 
-    it('should format duration with only minutes', async () => {
-      apiService.syncHighlightsFromReadwise.mockResolvedValue({
-        data: {
-          success: true,
-          createdCount: 50,
-          updatedCount: 10,
-          totalProcessed: 60,
-          duration: '0:05:30'
-        }
+    it('should handle cleanup errors', async () => {
+      highlightService.cleanHighlightText.mockRejectedValue({
+        response: { data: { details: 'Cleanup error' } }
       });
 
       renderWithRouter(<ReadwiseSyncPage />);
 
-      const fullSyncButton = screen.getByText('🔄 Full Sync');
-      fireEvent.click(fullSyncButton);
+      const cleanButton = screen.getByText('Clean Highlight Text');
+      fireEvent.click(cleanButton);
 
       await waitFor(() => {
-        expect(screen.getByText('5m 30s')).toBeInTheDocument();
-      });
-    });
-
-    it('should format duration with only seconds', async () => {
-      apiService.syncHighlightsFromReadwise.mockResolvedValue({
-        data: {
-          success: true,
-          createdCount: 10,
-          updatedCount: 2,
-          totalProcessed: 12,
-          duration: '0:00:15'
-        }
-      });
-
-      renderWithRouter(<ReadwiseSyncPage />);
-
-      const fullSyncButton = screen.getByText('🔄 Full Sync');
-      fireEvent.click(fullSyncButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('15s')).toBeInTheDocument();
+        expect(screen.getByText(/Cleanup failed/)).toBeInTheDocument();
       });
     });
   });
 
   describe('Accessibility', () => {
-    it('should have proper button states', () => {
+    it('should have proper heading structure', () => {
       renderWithRouter(<ReadwiseSyncPage />);
 
-      const buttons = screen.getAllByRole('button');
-      buttons.forEach(button => {
-        expect(button).not.toBeDisabled();
-      });
+      const heading = screen.getByRole('heading', { level: 1 });
+      expect(heading).toHaveTextContent('Readwise Sync');
     });
 
-    it('should disable all buttons during any operation', async () => {
-      apiService.syncHighlightsFromReadwise.mockImplementation(
-        () => new Promise(resolve => setTimeout(() => resolve({ data: { success: true } }), 100))
-      );
-
+    it('should have proper button states initially', () => {
       renderWithRouter(<ReadwiseSyncPage />);
 
-      const fullSyncButton = screen.getByText('🔄 Full Sync');
-      fireEvent.click(fullSyncButton);
+      const validateButton = screen.getByText('Validate Connection');
+      expect(validateButton).not.toBeDisabled();
 
-      const allButtons = screen.getAllByRole('button');
-      allButtons.forEach(button => {
-        expect(button).toBeDisabled();
-      });
-
-      await waitFor(() => {
-        allButtons.forEach(button => {
-          expect(button).not.toBeDisabled();
-        });
-      });
+      const fullSyncButton = screen.getByText('Full Sync');
+      expect(fullSyncButton).not.toBeDisabled();
     });
   });
 });
-

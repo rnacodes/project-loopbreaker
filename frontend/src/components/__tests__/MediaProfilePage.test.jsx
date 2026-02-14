@@ -3,10 +3,20 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import MediaProfilePage from '../MediaProfilePage';
-import * as apiService from '../../api';
+import * as mediaService from '../../api/mediaService';
+import * as mixlistService from '../../api/mixlistService';
+import * as bookService from '../../api/bookService';
+import * as movieService from '../../api/movieService';
+import * as videoService from '../../api/videoService';
+import * as highlightService from '../../api/highlightService';
 
-// Mock the API service
-vi.mock('../../api');
+// Mock the API services
+vi.mock('../../api/mediaService');
+vi.mock('../../api/mixlistService');
+vi.mock('../../api/bookService');
+vi.mock('../../api/movieService');
+vi.mock('../../api/videoService');
+vi.mock('../../api/highlightService');
 
 // Mock child components to isolate page-level testing
 vi.mock('../MediaHeader', () => ({
@@ -126,12 +136,12 @@ const renderWithRouter = (id) => {
 describe('MediaProfilePage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
+    mixlistService.getAllMixlists.mockResolvedValue({ data: mockMixlists });
   });
 
   describe('Loading State', () => {
     it('should display loading indicator while fetching media', async () => {
-      apiService.getMediaById.mockImplementation(() => new Promise(() => {})); // Never resolves
+      mediaService.getMediaById.mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderWithRouter('123');
 
@@ -140,7 +150,7 @@ describe('MediaProfilePage', () => {
     });
 
     it('should show media ID in loading state', () => {
-      apiService.getMediaById.mockImplementation(() => new Promise(() => {}));
+      mediaService.getMediaById.mockImplementation(() => new Promise(() => {}));
 
       renderWithRouter('test-media-id');
 
@@ -150,7 +160,7 @@ describe('MediaProfilePage', () => {
 
   describe('Error State', () => {
     it('should display not found message when media item is null', async () => {
-      apiService.getMediaById.mockRejectedValue(new Error('Not found'));
+      mediaService.getMediaById.mockRejectedValue(new Error('Not found'));
 
       renderWithRouter('nonexistent-id');
 
@@ -160,7 +170,7 @@ describe('MediaProfilePage', () => {
     });
 
     it('should show back button when media not found', async () => {
-      apiService.getMediaById.mockRejectedValue(new Error('Not found'));
+      mediaService.getMediaById.mockRejectedValue(new Error('Not found'));
 
       renderWithRouter('nonexistent-id');
 
@@ -172,9 +182,9 @@ describe('MediaProfilePage', () => {
 
   describe('Book Media Display', () => {
     it('should render book media item with all sections', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockBook });
-      apiService.getBookById.mockResolvedValue({ data: mockBook });
-      apiService.getHighlightsByBook.mockResolvedValue([]);
+      mediaService.getMediaById.mockResolvedValue({ data: mockBook });
+      bookService.getBookById.mockResolvedValue({ data: mockBook });
+      highlightService.getHighlightsByBook.mockResolvedValue([]);
 
       renderWithRouter(mockBook.id);
 
@@ -191,22 +201,22 @@ describe('MediaProfilePage', () => {
     });
 
     it('should fetch detailed book data', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockBook });
-      apiService.getBookById.mockResolvedValue({ data: { ...mockBook, isbn: '1234567890' } });
-      apiService.getHighlightsByBook.mockResolvedValue([]);
+      mediaService.getMediaById.mockResolvedValue({ data: mockBook });
+      bookService.getBookById.mockResolvedValue({ data: { ...mockBook, isbn: '1234567890' } });
+      highlightService.getHighlightsByBook.mockResolvedValue([]);
 
       renderWithRouter(mockBook.id);
 
       await waitFor(() => {
-        expect(apiService.getBookById).toHaveBeenCalledWith(mockBook.id);
+        expect(bookService.getBookById).toHaveBeenCalledWith(mockBook.id);
       });
     });
   });
 
   describe('Movie Media Display', () => {
     it('should render movie media item', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockMovie });
-      apiService.getMovieById.mockResolvedValue({ data: mockMovie });
+      mediaService.getMediaById.mockResolvedValue({ data: mockMovie });
+      movieService.getMovieById.mockResolvedValue({ data: mockMovie });
 
       renderWithRouter(mockMovie.id);
 
@@ -217,22 +227,22 @@ describe('MediaProfilePage', () => {
     });
 
     it('should fetch detailed movie data', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockMovie });
-      apiService.getMovieById.mockResolvedValue({ data: mockMovie });
+      mediaService.getMediaById.mockResolvedValue({ data: mockMovie });
+      movieService.getMovieById.mockResolvedValue({ data: mockMovie });
 
       renderWithRouter(mockMovie.id);
 
       await waitFor(() => {
-        expect(apiService.getMovieById).toHaveBeenCalledWith(mockMovie.id);
+        expect(movieService.getMovieById).toHaveBeenCalledWith(mockMovie.id);
       });
     });
   });
 
   describe('Video Media Display', () => {
     it('should render video media item', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockVideo });
-      apiService.getVideoById.mockResolvedValue({ data: mockVideo });
-      apiService.getPlaylistsForVideo.mockResolvedValue([]);
+      mediaService.getMediaById.mockResolvedValue({ data: mockVideo });
+      videoService.getVideoById.mockResolvedValue({ data: mockVideo });
+      videoService.getPlaylistsForVideo.mockResolvedValue([]);
 
       renderWithRouter(mockVideo.id);
 
@@ -243,21 +253,21 @@ describe('MediaProfilePage', () => {
     });
 
     it('should fetch playlists for video', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockVideo });
-      apiService.getVideoById.mockResolvedValue({ data: mockVideo });
-      apiService.getPlaylistsForVideo.mockResolvedValue([{ id: 'pl1', name: 'Playlist 1' }]);
+      mediaService.getMediaById.mockResolvedValue({ data: mockVideo });
+      videoService.getVideoById.mockResolvedValue({ data: mockVideo });
+      videoService.getPlaylistsForVideo.mockResolvedValue([{ id: 'pl1', name: 'Playlist 1' }]);
 
       renderWithRouter(mockVideo.id);
 
       await waitFor(() => {
-        expect(apiService.getPlaylistsForVideo).toHaveBeenCalledWith(mockVideo.id);
+        expect(videoService.getPlaylistsForVideo).toHaveBeenCalledWith(mockVideo.id);
       });
     });
   });
 
   describe('Media Type Redirects', () => {
     it('should redirect Playlist to YouTube playlist page', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockPlaylist });
+      mediaService.getMediaById.mockResolvedValue({ data: mockPlaylist });
 
       renderWithRouter(mockPlaylist.id);
 
@@ -267,7 +277,7 @@ describe('MediaProfilePage', () => {
     });
 
     it('should redirect Channel to YouTube channel page', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockChannel });
+      mediaService.getMediaById.mockResolvedValue({ data: mockChannel });
 
       renderWithRouter(mockChannel.id);
 
@@ -280,13 +290,13 @@ describe('MediaProfilePage', () => {
   describe('Mixlist Integration', () => {
     it('should fetch and display mixlists', async () => {
       const movieWithMixlists = { ...mockMovie, mixlistIds: ['mixlist-1'] };
-      apiService.getMediaById.mockResolvedValue({ data: movieWithMixlists });
-      apiService.getMovieById.mockResolvedValue({ data: movieWithMixlists });
+      mediaService.getMediaById.mockResolvedValue({ data: movieWithMixlists });
+      movieService.getMovieById.mockResolvedValue({ data: movieWithMixlists });
 
       renderWithRouter(mockMovie.id);
 
       await waitFor(() => {
-        expect(apiService.getAllMixlists).toHaveBeenCalled();
+        expect(mixlistService.getAllMixlists).toHaveBeenCalled();
       });
 
       expect(screen.getByTestId('mixlist-carousel')).toBeInTheDocument();
@@ -295,9 +305,9 @@ describe('MediaProfilePage', () => {
 
   describe('API Error Handling', () => {
     it('should handle detailed book fetch failure gracefully', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockBook });
-      apiService.getBookById.mockRejectedValue(new Error('Book details not found'));
-      apiService.getHighlightsByBook.mockResolvedValue([]);
+      mediaService.getMediaById.mockResolvedValue({ data: mockBook });
+      bookService.getBookById.mockRejectedValue(new Error('Book details not found'));
+      highlightService.getHighlightsByBook.mockResolvedValue([]);
 
       renderWithRouter(mockBook.id);
 
@@ -308,9 +318,9 @@ describe('MediaProfilePage', () => {
     });
 
     it('should handle video playlists fetch failure gracefully', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockVideo });
-      apiService.getVideoById.mockResolvedValue({ data: mockVideo });
-      apiService.getPlaylistsForVideo.mockRejectedValue(new Error('Failed to fetch playlists'));
+      mediaService.getMediaById.mockResolvedValue({ data: mockVideo });
+      videoService.getVideoById.mockResolvedValue({ data: mockVideo });
+      videoService.getPlaylistsForVideo.mockRejectedValue(new Error('Failed to fetch playlists'));
 
       renderWithRouter(mockVideo.id);
 
@@ -321,10 +331,10 @@ describe('MediaProfilePage', () => {
     });
 
     it('should handle mixlists fetch failure gracefully', async () => {
-      apiService.getMediaById.mockResolvedValue({ data: mockBook });
-      apiService.getBookById.mockResolvedValue({ data: mockBook });
-      apiService.getAllMixlists.mockRejectedValue(new Error('Failed to fetch mixlists'));
-      apiService.getHighlightsByBook.mockResolvedValue([]);
+      mediaService.getMediaById.mockResolvedValue({ data: mockBook });
+      bookService.getBookById.mockResolvedValue({ data: mockBook });
+      mixlistService.getAllMixlists.mockRejectedValue(new Error('Failed to fetch mixlists'));
+      highlightService.getHighlightsByBook.mockResolvedValue([]);
 
       renderWithRouter(mockBook.id);
 
